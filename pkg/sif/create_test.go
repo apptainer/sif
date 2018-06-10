@@ -36,7 +36,7 @@ func TestCreateContainer(t *testing.T) {
 
 	// general info for the new SIF file creation
 	cinfo := CreateInfo{
-		pathname:   "/var/tmp/testcontainer.sif",
+		pathname:   "testdata/testcontainer.sif",
 		launchstr:  HdrLaunch,
 		sifversion: HdrVersion,
 		arch:       HdrArchAMD64,

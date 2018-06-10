@@ -112,6 +112,10 @@ func createDescriptor(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor, 
 		v   Descriptor
 	)
 
+	if fimg.header.Dfree == 0 {
+		return fmt.Errorf("no descriptor table free entry")
+	}
+
 	// look for a free entry in the descriptor table
 	for idx, v = range descrtable {
 		if v.used == false {
@@ -119,7 +123,7 @@ func createDescriptor(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor, 
 		}
 	}
 	if idx == DescrNumEntries-1 && descrtable[idx].used == true {
-		return fmt.Errorf("no descriptor table free entry")
+		return fmt.Errorf("no descriptor table free entry, warning: header.Dfree was > 0")
 	}
 
 	// extract the descriptor input info from the list element
@@ -138,6 +142,10 @@ func createDescriptor(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor, 
 		return fmt.Errorf("writing data object for SIF file: %s", err)
 	}
 
+	// update some global header fields from adding this new descriptor
+	fimg.header.Dfree--
+	fimg.header.Datalen += input.size
+
 	return
 }
 
@@ -149,7 +157,7 @@ func writeDescriptors(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor) 
 			return fmt.Errorf("binary writing descrtable to buf: %s", err)
 		}
 	}
-	fimg.header.descrlen = int64(binary.Size(descrtable))
+	fimg.header.Descrlen = int64(binary.Size(descrtable))
 
 	// first, move to descriptor start offset
 	if _, err := fimg.fp.Seek(DescrStartOffset, 0); err != nil {
@@ -200,17 +208,17 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 	}
 
 	// Prepare a fresh global header
-	copy(fimg.header.launch[:], cinfo.launchstr)
-	copy(fimg.header.magic[:], HdrMagic)
-	copy(fimg.header.version[:], cinfo.sifversion)
-	copy(fimg.header.arch[:], cinfo.arch)
-	copy(fimg.header.id[:], cinfo.id[:])
-	fimg.header.ctime = time.Now().Unix()
-	fimg.header.mtime = time.Now().Unix()
-	fimg.header.dfree = DescrNumEntries
-	fimg.header.dtotal = DescrNumEntries
-	fimg.header.descroff = DescrStartOffset
-	fimg.header.dataoff = DataStartOffset
+	copy(fimg.header.Launch[:], cinfo.launchstr)
+	copy(fimg.header.Magic[:], HdrMagic)
+	copy(fimg.header.Version[:], cinfo.sifversion)
+	copy(fimg.header.Arch[:], cinfo.arch)
+	copy(fimg.header.ID[:], cinfo.id[:])
+	fimg.header.Ctime = time.Now().Unix()
+	fimg.header.Mtime = time.Now().Unix()
+	fimg.header.Dfree = DescrNumEntries
+	fimg.header.Dtotal = DescrNumEntries
+	fimg.header.Descroff = DescrStartOffset
+	fimg.header.Dataoff = DataStartOffset
 
 	fimg.nextid = 1
 

@@ -211,22 +211,22 @@ type Descriptor struct {
 
 // Header describes a loaded SIF file
 type Header struct {
-	launch [HdrLaunchLen]byte // #! shell execution line
+	Launch [HdrLaunchLen]byte // #! shell execution line
 
-	magic   [HdrMagicLen]byte   // look for "SIF_MAGIC"
-	version [HdrVersionLen]byte // SIF version
-	arch    [HdrArchLen]byte    // arch the image is built for
-	id      uuid.UUID           // image unique identifier
+	Magic   [HdrMagicLen]byte   // look for "SIF_MAGIC"
+	Version [HdrVersionLen]byte // SIF version
+	Arch    [HdrArchLen]byte    // arch the image is built for
+	ID      uuid.UUID           // image unique identifier
 
-	ctime int64 // image creation time
-	mtime int64 // last modification time
+	Ctime int64 // image creation time
+	Mtime int64 // last modification time
 
-	dfree    int64 // # of used data object descr.
-	dtotal   int64 // # of total available data object descr.
-	descroff int64 // bytes into file where descs start
-	descrlen int64 // bytes used by all current descriptors
-	dataoff  int64 // bytes into file where data starts
-	datalen  int64 // bytes used by all data objects
+	Dfree    int64 // # of used data object descr.
+	Dtotal   int64 // # of total available data object descr.
+	Descroff int64 // bytes into file where descs start
+	Descrlen int64 // bytes used by all current descriptors
+	Dataoff  int64 // bytes into file where data starts
+	Datalen  int64 // bytes used by all data objects
 }
 
 // FileImage describes the representation of a SIF file in memory
