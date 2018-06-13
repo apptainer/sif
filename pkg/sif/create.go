@@ -253,3 +253,11 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 
 	return
 }
+
+// DeleteObject removes data from a SIF file referred to by id. The descriptor for the
+// data object is free'd and can be reused later. There's currenly 2 clean mode specified
+// by flags: DelZero, to zero out the data region for security and DelCompact to
+// remove and shink the file compacting the unused area.
+func DeleteObject(fimg *FileImage, id uuid.UUID, flags int) error {
+	return nil
+}

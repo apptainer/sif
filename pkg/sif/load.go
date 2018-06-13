@@ -150,7 +150,7 @@ func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
 }
 
 // UnloadContainer closes the SIF container file and free associated resources if needed
-func UnloadContainer(fimg *FileImage) error {
+func (fimg *FileImage) UnloadContainer() error {
 	if err := fimg.fp.Close(); err != nil {
 		return fmt.Errorf("closing SIF file failed, corrupted: don't use: %s", err)
 	}
