@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"os"
+	"reflect"
+	"syscall"
 )
 
 // Read the global header from the container file
@@ -56,6 +58,63 @@ func readDescriptors(fimg *FileImage) error {
 	return nil
 }
 
+// Look at key fields from the global header to assess SIF validity
+func isValidSif(fimg *FileImage) error {
+	var p uintptr
+	var buf syscall.Utsname
+
+	// get machine name
+	err := syscall.Uname(&buf)
+	if err != nil {
+		return fmt.Errorf("getting system info failed: %s", err)
+	}
+
+	// make a string out of the [65]int8 array
+	b := make([]byte, len(buf.Machine))
+	for i, v := range buf.Machine {
+		b[i] = byte(v)
+	}
+	machine := string(b)
+
+	// get the machine pointer size
+	t := reflect.TypeOf(p)
+	ptrSize := t.Size()
+
+	// check the machine we run on, and if container file arch is compatible
+	var arch string
+	if machine[:6] == "x86_64" {
+		if ptrSize == 8 {
+			arch = HdrArchAMD64
+		} else {
+			arch = HdrArch386
+		}
+	} else if machine[0] == 'i' && machine[2] == '8' && machine[3] == '6' {
+		arch = HdrArch386
+	} else if machine[:3] == "arm" && ptrSize == 4 {
+		arch = HdrArchARM
+	} else if machine[:7] == "aarch64" {
+		arch = HdrArchAARCH64
+	} else {
+		return fmt.Errorf("cannot determine machine architecture")
+	}
+
+	// check various header fields
+	if string(fimg.header.Magic[:HdrMagicLen-1]) != HdrMagic {
+		return fmt.Errorf("invalid SIF file: Magic |%s| want |%s|", fimg.header.Magic, HdrMagic)
+	}
+	if string(fimg.header.Version[:HdrVersionLen-1]) != HdrVersion {
+		return fmt.Errorf("invalid SIF file: Version %s want %s", fimg.header.Version, HdrVersion)
+	}
+	if string(fimg.header.Arch[:HdrArchLen-1]) != arch {
+		return fmt.Errorf("invalid SIF file: Arch %s want %s", fimg.header.Arch, arch)
+	}
+	if fimg.header.Dfree == fimg.header.Dtotal {
+		return fmt.Errorf("invalid SIF file: no descriptor found")
+	}
+
+	return nil
+}
+
 // LoadContainer is responsible for loading a SIF container file. It takes
 // the container file name, and whether the file is opened as read-only
 // as arguments.
@@ -70,10 +129,17 @@ func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
 		}
 	}
 
+	// read global header from SIF file
 	if err = readHeader(&fimg); err != nil {
 		return fimg, fmt.Errorf("reading global header: %s", err)
 	}
 
+	// validate global header
+	if err = isValidSif(&fimg); err != nil {
+		return fimg, err
+	}
+
+	// read descriptor array from SIF file
 	if err = readDescriptors(&fimg); err != nil {
 		return fimg, fmt.Errorf("reading and populating descriptor nodes: %s", err)
 	}
@@ -81,4 +147,12 @@ func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
 	glog.Flush()
 
 	return fimg, nil
+}
+
+// UnloadContainer closes the SIF container file and free associated resources if needed
+func UnloadContainer(fimg *FileImage) error {
+	if err := fimg.fp.Close(); err != nil {
+		return fmt.Errorf("closing SIF file failed, corrupted: don't use: %s", err)
+	}
+	return nil
 }

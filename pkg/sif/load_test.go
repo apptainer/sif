@@ -10,8 +10,12 @@ import (
 )
 
 func TestLoadContainer(t *testing.T) {
-	_, err := LoadContainer("testdata/testcontainer.sif", true)
+	fimg, err := LoadContainer("testdata/testcontainer.sif", true)
 	if err != nil {
 		t.Error("LoadContainer(testdata/testcontainer.sif, true):", err)
+	}
+
+	if err = UnloadContainer(&fimg); err != nil {
+		t.Error("UnloadContainer(fimg):", err)
 	}
 }

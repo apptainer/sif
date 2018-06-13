@@ -88,10 +88,10 @@ import (
 const (
 	HdrLaunch      = "#!/usr/bin/env run-singularity\n"
 	HdrMagic       = "SIF_MAGIC" // SIF identification
-	HdrVersion     = "0"         // SIF SPEC VERSION
-	HdrArch386     = "2"         // 386 arch code
-	HdrArchAMD64   = "4"         // AMD64 arch code
-	HdrArchARM     = "8"         // ARM arch code
+	HdrVersion     = "00"        // SIF SPEC VERSION
+	HdrArch386     = "02"        // 386 arch code
+	HdrArchAMD64   = "04"        // AMD64 arch code
+	HdrArchARM     = "08"        // ARM arch code
 	HdrArchAARCH64 = "16"        // AARCH64 arch code
 
 	HdrLaunchLen  = 32 // len("#!/usr/bin/env... ")
