@@ -193,20 +193,20 @@ type GenericJSON struct {
 
 // Descriptor represents the SIF descriptor type
 type Descriptor struct {
-	datatype Datatype  // informs of descriptor type
-	id       uuid.UUID // a unique id for this data object
-	used     bool      // is the descriptor in use
-	groupid  uint32    // object group this data object is related to
-	link     uint32    // special link or relation to an id or group
-	fileoff  int64     // offset from start of image file
-	filelen  int64     // length of data in file
+	Datatype Datatype  // informs of descriptor type
+	ID       uuid.UUID // a unique id for this data object
+	Used     bool      // is the descriptor in use
+	Groupid  uint32    // object group this data object is related to
+	Link     uint32    // special link or relation to an id or group
+	Fileoff  int64     // offset from start of image file
+	Filelen  int64     // length of data in file
 
-	ctime   int64                 // image creation time
-	mtime   int64                 // last modification time
-	uid     int64                 // system user owning the file
-	gid     int64                 // system group owning the file
-	name    [DescrNameLen]byte    // descriptor name (string identifier)
-	private [DescrMaxPrivLen]byte // big enough for above extra data
+	Ctime   int64                 // image creation time
+	Mtime   int64                 // last modification time
+	UID     int64                 // system user owning the file
+	Gid     int64                 // system group owning the file
+	Name    [DescrNameLen]byte    // descriptor name (string identifier)
+	Private [DescrMaxPrivLen]byte // big enough for above extra data
 }
 
 // Header describes a loaded SIF file
@@ -221,7 +221,7 @@ type Header struct {
 	Ctime int64 // image creation time
 	Mtime int64 // last modification time
 
-	Dfree    int64 // # of used data object descr.
+	Dfree    int64 // # of unused data object descr.
 	Dtotal   int64 // # of total available data object descr.
 	Descroff int64 // bytes into file where descs start
 	Descrlen int64 // bytes used by all current descriptors
@@ -231,12 +231,12 @@ type Header struct {
 
 // FileImage describes the representation of a SIF file in memory
 type FileImage struct {
-	header    Header     // the loaded SIF global header
-	nextid    int        // the next id to use for new descriptors
-	fp        *os.File   // file pointer of opened SIF file
-	filesize  int64      // file size of the opened SIF file
-	filedata  []byte     // the content of the opened file
-	descrlist *list.List // list of loaded descriptors from SIF file
+	header   Header       // the loaded SIF global header
+	nextid   int          // the next id to use for new descriptors
+	fp       *os.File     // file pointer of opened SIF file
+	filesize int64        // file size of the opened SIF file
+	filedata []byte       // the content of the opened file
+	descrArr []Descriptor // slice of loaded descriptors from SIF file
 }
 
 // CreateInfo wraps all SIF file creation info needed

@@ -70,27 +70,26 @@ func getUserIDs() (int64, int64, error) {
 
 // Fill all of the fields of a Descriptor
 func fillDescriptor(fimg *FileImage, descr *Descriptor, input descriptorInput) (err error) {
-	descr.datatype = input.datatype
-	descr.id = uuid.NewV4()
-	descr.used = true
-	descr.groupid = input.groupid
-	descr.link = input.link
-	descr.fileoff, err = setFileOffNA(fimg, os.Getpagesize())
+	descr.Datatype = input.datatype
+	descr.ID = uuid.NewV4()
+	descr.Used = true
+	descr.Groupid = input.groupid
+	descr.Link = input.link
+	descr.Fileoff, err = setFileOffNA(fimg, os.Getpagesize())
 	if err != nil {
 		return
 	}
-	descr.filelen = input.size
-	descr.ctime = time.Now().Unix()
-	descr.mtime = time.Now().Unix()
-	descr.uid, descr.gid, err = getUserIDs()
+	descr.Filelen = input.size
+	descr.Ctime = time.Now().Unix()
+	descr.Mtime = time.Now().Unix()
+	descr.UID, descr.Gid, err = getUserIDs()
 	if err != nil {
 		return fmt.Errorf("filling descriptor: %s", err)
 	}
-	copy(descr.name[:DescrNameLen], path.Base(input.fname))
-	copy(descr.private[:DescrMaxPrivLen], input.extra.Bytes())
+	copy(descr.Name[:DescrNameLen], path.Base(input.fname))
+	copy(descr.Private[:DescrMaxPrivLen], input.extra.Bytes())
 
 	glog.Infoln(descr)
-	glog.Flush()
 
 	return
 }
@@ -118,11 +117,11 @@ func createDescriptor(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor, 
 
 	// look for a free entry in the descriptor table
 	for idx, v = range descrtable {
-		if v.used == false {
+		if v.Used == false {
 			break
 		}
 	}
-	if idx == DescrNumEntries-1 && descrtable[idx].used == true {
+	if idx == DescrNumEntries-1 && descrtable[idx].Used == true {
 		return fmt.Errorf("no descriptor table free entry, warning: header.Dfree was > 0")
 	}
 
@@ -249,6 +248,8 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 	if err = writeHeader(&fimg); err != nil {
 		return
 	}
+
+	glog.Flush()
 
 	return
 }
