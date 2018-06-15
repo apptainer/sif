@@ -6,18 +6,14 @@
 package sif
 
 import (
-	//	"container/list"
-	//	"encoding/binary"
-	//	"github.com/satori/go.uuid"
-	//	"os"
 	"testing"
 )
 
 func TestGetHeader(t *testing.T) {
 	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer.sif", true)
+	fimg, err := LoadContainer("testdata/testcontainer1.sif", true)
 	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer.sif, true):", err)
+		t.Error("LoadContainer(testdata/testcontainer1.sif, true):", err)
 	}
 
 	header := fimg.GetHeader()
@@ -27,6 +23,39 @@ func TestGetHeader(t *testing.T) {
 
 	if string(header.Magic[:9]) != "SIF_MAGIC" {
 		t.Error("fimg.GetHeader(): wrong magic")
+	}
+
+	// unload the test container
+	if err = fimg.UnloadContainer(); err != nil {
+		t.Error("UnloadContainer(fimg):", err)
+	}
+}
+
+func TestGetFromDescrID(t *testing.T) {
+	// load the test container
+	fimg, err := LoadContainer("testdata/testcontainer1.sif", true)
+	if err != nil {
+		t.Error("LoadContainer(testdata/testcontainer1.sif, true):", err)
+	}
+
+	_, err = fimg.GetFromDescrID("da4ef1f5")
+	if err != nil {
+		t.Error("fimg.GetFromDescrID(): should have found descriptor")
+	}
+
+	_, err = fimg.GetFromDescrID("da")
+	if err != nil {
+		t.Error("fimg.GetFromDescrID(): should have found descriptor")
+	}
+
+	_, err = fimg.GetFromDescrID("abc02448-6d9b-4918-b72c-e2fea09fac43")
+	if err != nil {
+		t.Error("fimg.GetFromDescrID(): should have found descriptor")
+	}
+
+	_, err = fimg.GetFromDescrID("bc02448-6d9b-4918-b72c-e2fea09fac43")
+	if err == nil {
+		t.Error("fimg.GetFromDescrID(): should have NOT found descriptor")
 	}
 
 	// unload the test container

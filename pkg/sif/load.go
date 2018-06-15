@@ -22,22 +22,6 @@ func readHeader(fimg *FileImage) error {
 		return fmt.Errorf("reading global header from container file: %s", err)
 	}
 
-	glog.Infoln("<<< read global header start >>>")
-	glog.Infoln("Launch:", string(fimg.header.Launch[:]))
-	glog.Infoln("Magic:", string(fimg.header.Magic[:]))
-	glog.Infoln("Version:", string(fimg.header.Version[:]))
-	glog.Infoln("Arch:", string(fimg.header.Arch[:]))
-	glog.Infoln("ID:", fimg.header.ID)
-	glog.Infoln("Ctime:", fimg.header.Ctime)
-	glog.Infoln("Mtime:", fimg.header.Mtime)
-	glog.Infoln("Dfree:", fimg.header.Dfree)
-	glog.Infoln("Dtotal:", fimg.header.Dtotal)
-	glog.Infoln("Descoff:", fimg.header.Descroff)
-	glog.Infoln("Descrlen:", fimg.header.Descrlen)
-	glog.Infoln("Dataoff:", fimg.header.Dataoff)
-	glog.Infoln("Datalen:", fimg.header.Datalen)
-	glog.Infoln("<<< read global header end >>>")
-
 	return nil
 }
 
