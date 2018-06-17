@@ -86,7 +86,7 @@ func TestCreateContainer(t *testing.T) {
 	if parinput.fp, err = os.Open(parinput.fname); err != nil {
 		t.Error("CreateContainer(cinfo): read data object file:", err)
 	}
-	defer definput.fp.Close()
+	defer parinput.fp.Close()
 
 	// extra data needed for the creation of a partition descriptor
 	pinfo := partInput{
@@ -108,6 +108,55 @@ func TestCreateContainer(t *testing.T) {
 	}
 }
 
+func TestAddObject(t *testing.T) {
+	var err error
+
+	// data we need to create a system partition descriptor
+	parinput := descriptorInput{
+		datatype: DataPartition,
+		groupid:  DescrDefaultGroup,
+		link:     DescrUnusedLink,
+		size:     1003520,
+		fname:    "testdata/busybox.squash",
+		fp:       nil,
+		data:     nil,
+		image:    nil,
+		descr:    nil,
+	}
+	// open up the data object file for this descriptor
+	if parinput.fp, err = os.Open(parinput.fname); err != nil {
+		t.Error("CreateContainer(cinfo): read data object file:", err)
+	}
+	defer parinput.fp.Close()
+
+	// extra data needed for the creation of a partition descriptor
+	pinfo := partInput{
+		Fstype:   FsSquash,
+		Parttype: PartSystem,
+	}
+
+	// serialize the partition data for integration with the base descriptor input
+	if err := binary.Write(&parinput.extra, binary.LittleEndian, pinfo); err != nil {
+		t.Error("CreateContainer(cinfo): serialize pinfo:", err)
+	}
+
+	// load the test container
+	fimg, err := LoadContainer("testdata/testcontainer1.sif", false)
+	if err != nil {
+		t.Error("LoadContainer(testdata/testcontainer1.sif, false):", err)
+	}
+
+	// add new data object and its descriptor
+	if err = fimg.AddObject(parinput); err != nil {
+		t.Error("fimg.AddObject():", err)
+	}
+
+	// unload the test container
+	if err = fimg.UnloadContainer(); err != nil {
+		t.Error("UnloadContainer(fimg):", err)
+	}
+}
+
 func TestDeleteObject(t *testing.T) {
 	// load the test container
 	fimg, err := LoadContainer("testdata/testcontainer1.sif", false)
@@ -116,13 +165,13 @@ func TestDeleteObject(t *testing.T) {
 	}
 
 	// test data object deletation
-	if err := DeleteObject(&fimg, "da4ef1f5", DelZero); err != nil {
-		t.Error(`DeleteObject(fimg, "da4ef1f5", 0):`, err)
+	if err := fimg.DeleteObject("da4ef1f5", DelZero); err != nil {
+		t.Error(`fimg.DeleteObject("da4ef1f5", DelZero):`, err)
 	}
 
 	// test data object deletation
-	if err := DeleteObject(&fimg, "abc02448", DelZero); err != nil {
-		t.Error(`DeleteObject(fimg, "da4ef1f5", 0):`, err)
+	if err := fimg.DeleteObject("abc02448", DelZero); err != nil {
+		t.Error(`fimg.DeleteObject("da4ef1f5", DelZero):`, err)
 	}
 
 	// unload the test container

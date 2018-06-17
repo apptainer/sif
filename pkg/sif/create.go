@@ -8,7 +8,6 @@
 package sif
 
 import (
-	"container/list"
 	"encoding/binary"
 	"fmt"
 	"github.com/golang/glog"
@@ -104,7 +103,7 @@ func writeDataObject(fimg *FileImage, input descriptorInput) error {
 }
 
 // Find a free descriptor and create a memory representation for addition to the SIF file
-func createDescriptor(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor, e *list.Element) (err error) {
+func createDescriptor(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor, input descriptorInput) (err error) {
 	var (
 		idx int
 		v   Descriptor
@@ -122,12 +121,6 @@ func createDescriptor(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor, 
 	}
 	if idx == DescrNumEntries-1 && descrtable[idx].Used == true {
 		return fmt.Errorf("no descriptor table free entry, warning: header.Dfree was > 0")
-	}
-
-	// extract the descriptor input info from the list element
-	input, ok := e.Value.(descriptorInput)
-	if ok == false {
-		return fmt.Errorf("structure is not of expected descriptorInput type")
 	}
 
 	// fill in SIF file descriptor
@@ -215,7 +208,13 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 	}
 
 	for e := cinfo.inputlist.Front(); e != nil; e = e.Next() {
-		if err = createDescriptor(&fimg, &descrtable, e); err != nil {
+		// extract the descriptor input info from the list element
+		input, ok := e.Value.(descriptorInput)
+		if ok == false {
+			return fmt.Errorf("structure is not of expected descriptorInput type")
+		}
+
+		if err = createDescriptor(&fimg, &descrtable, input); err != nil {
 			return
 		}
 	}
@@ -277,11 +276,16 @@ func resetDescriptor(fimg *FileImage, index int) error {
 	return nil
 }
 
+// AddObject add a new data object and its descriptor into the specified SIF file.
+func (fimg *FileImage) AddObject(input descriptorInput) error {
+	return nil
+}
+
 // DeleteObject removes data from a SIF file referred to by id. The descriptor for the
 // data object is free'd and can be reused later. There's currenly 2 clean mode specified
 // by flags: DelZero, to zero out the data region for security and DelCompact to
 // remove and shink the file compacting the unused area.
-func DeleteObject(fimg *FileImage, id string, flags int) error {
+func (fimg *FileImage) DeleteObject(id string, flags int) error {
 	descr, index, err := fimg.GetFromDescrID(id)
 	if err != nil {
 		return err
