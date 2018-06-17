@@ -103,7 +103,7 @@ func writeDataObject(fimg *FileImage, input descriptorInput) error {
 }
 
 // Find a free descriptor and create a memory representation for addition to the SIF file
-func createDescriptor(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor, input descriptorInput) (err error) {
+func createDescriptor(fimg *FileImage, input descriptorInput) (err error) {
 	var (
 		idx int
 		v   Descriptor
@@ -114,17 +114,17 @@ func createDescriptor(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor, 
 	}
 
 	// look for a free entry in the descriptor table
-	for idx, v = range descrtable {
+	for idx, v = range fimg.descrArr {
 		if v.Used == false {
 			break
 		}
 	}
-	if idx == DescrNumEntries-1 && descrtable[idx].Used == true {
+	if int64(idx) == fimg.header.Dtotal-1 && fimg.descrArr[idx].Used == true {
 		return fmt.Errorf("no descriptor table free entry, warning: header.Dfree was > 0")
 	}
 
 	// fill in SIF file descriptor
-	if err = fillDescriptor(fimg, &descrtable[idx], input); err != nil {
+	if err = fillDescriptor(fimg, &fimg.descrArr[idx], input); err != nil {
 		return
 	}
 
@@ -141,18 +141,18 @@ func createDescriptor(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor, 
 }
 
 // Release and write the data object descriptor to backing storage (SIF container file)
-func writeDescriptors(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor) error {
+func writeDescriptors(fimg *FileImage) error {
 	// first, move to descriptor start offset
 	if _, err := fimg.fp.Seek(DescrStartOffset, 0); err != nil {
 		return fmt.Errorf("seeking to descriptor start offset: %s", err)
 	}
 
-	for _, v := range descrtable {
+	for _, v := range fimg.descrArr {
 		if err := binary.Write(fimg.fp, binary.LittleEndian, v); err != nil {
 			return fmt.Errorf("binary writing descrtable to buf: %s", err)
 		}
 	}
-	fimg.header.Descrlen = int64(binary.Size(descrtable))
+	fimg.header.Descrlen = int64(binary.Size(fimg.descrArr))
 
 	return nil
 }
@@ -176,7 +176,7 @@ func writeHeader(fimg *FileImage) error {
 // and produces an output file as specified in the input data.
 func CreateContainer(cinfo CreateInfo) (err error) {
 	var fimg FileImage
-	var descrtable [DescrNumEntries]Descriptor
+	fimg.descrArr = make([]Descriptor, DescrNumEntries)
 
 	if cinfo.inputlist.Len() == 0 {
 		return fmt.Errorf("need at least one input descriptor")
@@ -214,13 +214,13 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 			return fmt.Errorf("structure is not of expected descriptorInput type")
 		}
 
-		if err = createDescriptor(&fimg, &descrtable, input); err != nil {
+		if err = createDescriptor(&fimg, input); err != nil {
 			return
 		}
 	}
 
 	// Write down the descriptor array
-	if err = writeDescriptors(&fimg, &descrtable); err != nil {
+	if err = writeDescriptors(&fimg); err != nil {
 		return
 	}
 
@@ -278,6 +278,27 @@ func resetDescriptor(fimg *FileImage, index int) error {
 
 // AddObject add a new data object and its descriptor into the specified SIF file.
 func (fimg *FileImage) AddObject(input descriptorInput) error {
+	// set file pointer to the end of data section */
+	if _, err := fimg.fp.Seek(fimg.header.Dataoff+fimg.header.Datalen, 0); err != nil {
+		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
+	}
+
+	// create a new descriptor entry from input data
+	if err := createDescriptor(fimg, input); err != nil {
+		return err
+	}
+
+	// write down the descriptor array
+	if err := writeDescriptors(fimg); err != nil {
+		return err
+	}
+
+	fimg.header.Mtime = time.Now().Unix()
+	// write down global header to file
+	if err := writeHeader(fimg); err != nil {
+		return err
+	}
+
 	return nil
 }
 

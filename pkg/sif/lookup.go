@@ -56,7 +56,7 @@ func (fimg *FileImage) GetHeader() *Header {
 	return &fimg.header
 }
 
-// GetFromDescrID search for a descriptor with
+// GetFromDescrID searches for a descriptor with
 func (fimg *FileImage) GetFromDescrID(ID string) (*Descriptor, int, error) {
 	var match = -1
 
@@ -65,6 +65,78 @@ func (fimg *FileImage) GetFromDescrID(ID string) (*Descriptor, int, error) {
 			continue
 		} else {
 			if strings.HasPrefix(v.ID.String(), ID) {
+				if match != -1 {
+					return nil, -1, fmt.Errorf("key collision, be more precise")
+				}
+				match = i
+			}
+		}
+	}
+
+	if match == -1 {
+		return nil, -1, fmt.Errorf("key not found")
+	}
+
+	return &fimg.descrArr[match], match, nil
+}
+
+// GetPartFromGroup searches for a partition descriptor inside a specific group
+func (fimg *FileImage) GetPartFromGroup(groupid uint32) (*Descriptor, int, error) {
+	var match = -1
+
+	for i, v := range fimg.descrArr {
+		if v.Used == false {
+			continue
+		} else {
+			if v.Datatype == DataPartition && v.Groupid == groupid {
+				if match != -1 {
+					return nil, -1, fmt.Errorf("key collision, be more precise")
+				}
+				match = i
+			}
+		}
+	}
+
+	if match == -1 {
+		return nil, -1, fmt.Errorf("key not found")
+	}
+
+	return &fimg.descrArr[match], match, nil
+}
+
+// GetSignFromGroup searches for a signature descriptor inside a specific group
+func (fimg *FileImage) GetSignFromGroup(groupid uint32) (*Descriptor, int, error) {
+	var match = -1
+
+	for i, v := range fimg.descrArr {
+		if v.Used == false {
+			continue
+		} else {
+			if v.Datatype == DataSignature && v.Groupid == groupid {
+				if match != -1 {
+					return nil, -1, fmt.Errorf("key collision, be more precise")
+				}
+				match = i
+			}
+		}
+	}
+
+	if match == -1 {
+		return nil, -1, fmt.Errorf("key not found")
+	}
+
+	return &fimg.descrArr[match], match, nil
+}
+
+// GetFromLinkedDescr searches for a descriptor that points to "id"
+func (fimg *FileImage) GetFromLinkedDescr(ID uint32) (*Descriptor, int, error) {
+	var match = -1
+
+	for i, v := range fimg.descrArr {
+		if v.Used == false {
+			continue
+		} else {
+			if v.Link == ID {
 				if match != -1 {
 					return nil, -1, fmt.Errorf("key collision, be more precise")
 				}
