@@ -11,9 +11,9 @@ import (
 
 func TestGetHeader(t *testing.T) {
 	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer1.sif", true)
+	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
 	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer1.sif, true):", err)
+		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
 	header := fimg.GetHeader()
@@ -33,27 +33,27 @@ func TestGetHeader(t *testing.T) {
 
 func TestGetFromDescrID(t *testing.T) {
 	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer1.sif", true)
+	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
 	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer1.sif, true):", err)
+		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	_, err = fimg.GetFromDescrID("da4ef1f5")
-	if err != nil {
-		t.Error("fimg.GetFromDescrID(): should have found descriptor")
-	}
-
-	_, err = fimg.GetFromDescrID("da")
+	_, _, err = fimg.GetFromDescrID("da4ef1f5")
 	if err != nil {
 		t.Error("fimg.GetFromDescrID(): should have found descriptor")
 	}
 
-	_, err = fimg.GetFromDescrID("abc02448-6d9b-4918-b72c-e2fea09fac43")
+	_, _, err = fimg.GetFromDescrID("da")
 	if err != nil {
 		t.Error("fimg.GetFromDescrID(): should have found descriptor")
 	}
 
-	_, err = fimg.GetFromDescrID("bc02448-6d9b-4918-b72c-e2fea09fac43")
+	_, _, err = fimg.GetFromDescrID("abc02448-6d9b-4918-b72c-e2fea09fac43")
+	if err != nil {
+		t.Error("fimg.GetFromDescrID(): should have found descriptor")
+	}
+
+	_, _, err = fimg.GetFromDescrID("bc02448-6d9b-4918-b72c-e2fea09fac43")
 	if err == nil {
 		t.Error("fimg.GetFromDescrID(): should have NOT found descriptor")
 	}

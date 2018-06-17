@@ -232,7 +232,6 @@ type Header struct {
 // FileImage describes the representation of a SIF file in memory
 type FileImage struct {
 	header   Header       // the loaded SIF global header
-	nextid   int          // the next id to use for new descriptors
 	fp       *os.File     // file pointer of opened SIF file
 	filesize int64        // file size of the opened SIF file
 	filedata []byte       // the content of the opened file

@@ -99,6 +99,42 @@ func isValidSif(fimg *FileImage) error {
 	return nil
 }
 
+// mapFile takes a file pointer and returns a slice of bytes representing the file data
+func (fimg *FileImage) mapFile(rdonly bool) error {
+	prot := syscall.PROT_READ
+	flags := syscall.MAP_PRIVATE
+
+	info, err := fimg.fp.Stat()
+	if err != nil {
+		return fmt.Errorf("while trying to size SIF file to mmap")
+	}
+	fimg.filesize = info.Size()
+
+	size := nextAligned(info.Size(), syscall.Getpagesize())
+	if int64(int(size)) < info.Size() {
+		return fmt.Errorf("file is to big to be mapped")
+	}
+
+	if rdonly == false {
+		prot = syscall.PROT_WRITE
+		flags = syscall.MAP_SHARED
+	}
+
+	fimg.filedata, err = syscall.Mmap(int(fimg.fp.Fd()), 0, int(size), prot, flags)
+	if err != nil {
+		return fmt.Errorf("while trying to call mmap on SIF file")
+	}
+
+	return nil
+}
+
+func (fimg *FileImage) unmapFile() error {
+	if err := syscall.Munmap(fimg.filedata); err != nil {
+		return fmt.Errorf("while calling unmapping SIF file")
+	}
+	return nil
+}
+
 // LoadContainer is responsible for loading a SIF container file. It takes
 // the container file name, and whether the file is opened as read-only
 // as arguments.
@@ -120,12 +156,17 @@ func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
 
 	// validate global header
 	if err = isValidSif(&fimg); err != nil {
-		return fimg, err
+		return
 	}
 
 	// read descriptor array from SIF file
 	if err = readDescriptors(&fimg); err != nil {
 		return fimg, fmt.Errorf("reading and populating descriptor nodes: %s", err)
+	}
+
+	// get a memory map of the SIF file
+	if err = fimg.mapFile(rdonly); err != nil {
+		return
 	}
 
 	glog.Flush()
@@ -134,9 +175,12 @@ func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
 }
 
 // UnloadContainer closes the SIF container file and free associated resources if needed
-func (fimg *FileImage) UnloadContainer() error {
-	if err := fimg.fp.Close(); err != nil {
+func (fimg *FileImage) UnloadContainer() (err error) {
+	if err = fimg.unmapFile(); err != nil {
+		return
+	}
+	if err = fimg.fp.Close(); err != nil {
 		return fmt.Errorf("closing SIF file failed, corrupted: don't use: %s", err)
 	}
-	return nil
+	return
 }

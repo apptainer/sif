@@ -8,7 +8,6 @@
 package sif
 
 import (
-	"bytes"
 	"container/list"
 	"encoding/binary"
 	"fmt"
@@ -150,46 +149,30 @@ func createDescriptor(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor, 
 
 // Release and write the data object descriptor to backing storage (SIF container file)
 func writeDescriptors(fimg *FileImage, descrtable *[DescrNumEntries]Descriptor) error {
-	buf := new(bytes.Buffer)
-	for _, v := range descrtable {
-		if err := binary.Write(buf, binary.LittleEndian, v); err != nil {
-			return fmt.Errorf("binary writing descrtable to buf: %s", err)
-		}
-	}
-	fimg.header.Descrlen = int64(binary.Size(descrtable))
-
 	// first, move to descriptor start offset
 	if _, err := fimg.fp.Seek(DescrStartOffset, 0); err != nil {
 		return fmt.Errorf("seeking to descriptor start offset: %s", err)
 	}
 
-	if n, err := fimg.fp.Write(buf.Bytes()); err != nil || n < buf.Len() {
-		if err != nil {
-			return fmt.Errorf("writing descriptor table failed: %s", err)
+	for _, v := range descrtable {
+		if err := binary.Write(fimg.fp, binary.LittleEndian, v); err != nil {
+			return fmt.Errorf("binary writing descrtable to buf: %s", err)
 		}
-		return fmt.Errorf("writing descriptor table, short write")
 	}
+	fimg.header.Descrlen = int64(binary.Size(descrtable))
 
 	return nil
 }
 
 // Write the global header to file
 func writeHeader(fimg *FileImage) error {
-	buf := new(bytes.Buffer)
-	if err := binary.Write(buf, binary.LittleEndian, fimg.header); err != nil {
-		return fmt.Errorf("binary writing header to buf: %s", err)
-	}
-
 	// first, move to descriptor start offset
 	if _, err := fimg.fp.Seek(0, 0); err != nil {
-		return fmt.Errorf("seeking to descriptor start offset: %s", err)
+		return fmt.Errorf("seeking to beginning of the file: %s", err)
 	}
 
-	if n, err := fimg.fp.Write(buf.Bytes()); err != nil || n < buf.Len() {
-		if err != nil {
-			return fmt.Errorf("writing global header failed: %s", err)
-		}
-		return fmt.Errorf("writing global header, short write")
+	if err := binary.Write(fimg.fp, binary.LittleEndian, fimg.header); err != nil {
+		return fmt.Errorf("binary writing header to buf: %s", err)
 	}
 
 	return nil
@@ -219,8 +202,6 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 	fimg.header.Descroff = DescrStartOffset
 	fimg.header.Dataoff = DataStartOffset
 
-	fimg.nextid = 1
-
 	// Create container file
 	fimg.fp, err = os.OpenFile(cinfo.pathname, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
@@ -244,7 +225,7 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 		return
 	}
 
-	// Write down header file
+	// Write down global header to file
 	if err = writeHeader(&fimg); err != nil {
 		return
 	}
@@ -254,10 +235,81 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 	return
 }
 
+func zeroData(fimg *FileImage, descr *Descriptor) error {
+	// first, move to data object offset
+	if _, err := fimg.fp.Seek(descr.Fileoff, 0); err != nil {
+		return fmt.Errorf("seeking to data object offset: %s", err)
+	}
+
+	var zero [4096]byte
+	n := descr.Filelen
+	upbound := int64(4096)
+	for {
+		if n < 4096 {
+			upbound = n
+		}
+
+		if _, err := fimg.fp.Write(zero[:upbound]); err != nil {
+			return fmt.Errorf("writing 0's to data object")
+		}
+		n -= 4096
+		if n <= 0 {
+			break
+		}
+	}
+
+	return nil
+}
+
+func resetDescriptor(fimg *FileImage, index int) error {
+	offset := fimg.header.Descroff + int64(index)*int64(binary.Size(fimg.descrArr[0]))
+
+	// first, move to descriptor offset
+	if _, err := fimg.fp.Seek(offset, 0); err != nil {
+		return fmt.Errorf("seeking to descriptor: %s", err)
+	}
+
+	var emptyDesc Descriptor
+	if err := binary.Write(fimg.fp, binary.LittleEndian, emptyDesc); err != nil {
+		return fmt.Errorf("binary writing empty descriptor: %s", err)
+	}
+
+	return nil
+}
+
 // DeleteObject removes data from a SIF file referred to by id. The descriptor for the
 // data object is free'd and can be reused later. There's currenly 2 clean mode specified
 // by flags: DelZero, to zero out the data region for security and DelCompact to
 // remove and shink the file compacting the unused area.
-func DeleteObject(fimg *FileImage, id uuid.UUID, flags int) error {
+func DeleteObject(fimg *FileImage, id string, flags int) error {
+	descr, index, err := fimg.GetFromDescrID(id)
+	if err != nil {
+		return err
+	}
+
+	switch flags {
+	case DelZero:
+		if err = zeroData(fimg, descr); err != nil {
+			return err
+		}
+	case DelCompact:
+		return fmt.Errorf("method (DelCompact) not implemented yet")
+	}
+
+	// update some global header fields from deleting this descriptor
+	fimg.header.Dfree++
+	fimg.header.Datalen -= descr.Filelen
+	fimg.header.Mtime = time.Now().Unix()
+
+	// zero out the unused descriptor
+	if err = resetDescriptor(fimg, index); err != nil {
+		return err
+	}
+
+	// update global header
+	if err = writeHeader(fimg); err != nil {
+		return err
+	}
+
 	return nil
 }

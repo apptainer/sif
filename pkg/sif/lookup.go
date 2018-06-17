@@ -57,7 +57,7 @@ func (fimg *FileImage) GetHeader() *Header {
 }
 
 // GetFromDescrID search for a descriptor with
-func (fimg *FileImage) GetFromDescrID(ID string) (*Descriptor, error) {
+func (fimg *FileImage) GetFromDescrID(ID string) (*Descriptor, int, error) {
 	var match = -1
 
 	for i, v := range fimg.descrArr {
@@ -66,7 +66,7 @@ func (fimg *FileImage) GetFromDescrID(ID string) (*Descriptor, error) {
 		} else {
 			if strings.HasPrefix(v.ID.String(), ID) {
 				if match != -1 {
-					return nil, fmt.Errorf("key collision, be more precise")
+					return nil, -1, fmt.Errorf("key collision, be more precise")
 				}
 				match = i
 			}
@@ -74,8 +74,8 @@ func (fimg *FileImage) GetFromDescrID(ID string) (*Descriptor, error) {
 	}
 
 	if match == -1 {
-		return nil, fmt.Errorf("key not found")
+		return nil, -1, fmt.Errorf("key not found")
 	}
 
-	return &fimg.descrArr[match], nil
+	return &fimg.descrArr[match], match, nil
 }

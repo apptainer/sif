@@ -10,9 +10,9 @@ import (
 )
 
 func TestLoadContainer(t *testing.T) {
-	fimg, err := LoadContainer("testdata/testcontainer.sif", true)
+	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
 	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer.sif, true):", err)
+		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
 	if err = fimg.UnloadContainer(); err != nil {

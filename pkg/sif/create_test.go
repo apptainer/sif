@@ -44,7 +44,7 @@ func TestCreateContainer(t *testing.T) {
 		inputlist:  list.New(),
 	}
 
-	// Test container creation without any input descriptors
+	// test container creation without any input descriptors
 	if err := CreateContainer(cinfo); err == nil {
 		t.Error("CreateContainer(cinfo): should not allow empty input descriptor list")
 	}
@@ -102,8 +102,31 @@ func TestCreateContainer(t *testing.T) {
 	// add this descriptor input element to the list
 	cinfo.inputlist.PushBack(parinput)
 
-	// Test container creation with two partition input descriptors
+	// test container creation with two partition input descriptors
 	if err := CreateContainer(cinfo); err != nil {
 		t.Error("CreateContainer(cinfo): CreateContainer():", err)
+	}
+}
+
+func TestDeleteObject(t *testing.T) {
+	// load the test container
+	fimg, err := LoadContainer("testdata/testcontainer1.sif", false)
+	if err != nil {
+		t.Error("LoadContainer(testdata/testcontainer1.sif, false):", err)
+	}
+
+	// test data object deletation
+	if err := DeleteObject(&fimg, "da4ef1f5", DelZero); err != nil {
+		t.Error(`DeleteObject(fimg, "da4ef1f5", 0):`, err)
+	}
+
+	// test data object deletation
+	if err := DeleteObject(&fimg, "abc02448", DelZero); err != nil {
+		t.Error(`DeleteObject(fimg, "da4ef1f5", 0):`, err)
+	}
+
+	// unload the test container
+	if err = fimg.UnloadContainer(); err != nil {
+		t.Error("UnloadContainer(fimg):", err)
 	}
 }
