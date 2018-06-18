@@ -193,13 +193,13 @@ type GenericJSON struct {
 
 // Descriptor represents the SIF descriptor type
 type Descriptor struct {
-	Datatype Datatype  // informs of descriptor type
-	Used     bool      // is the descriptor in use
-	ID       uint32    // a unique id for this data object
-	Groupid  uint32    // object group this data object is related to
-	Link     uint32    // special link or relation to an id or group
-	Fileoff  int64     // offset from start of image file
-	Filelen  int64     // length of data in file
+	Datatype Datatype // informs of descriptor type
+	Used     bool     // is the descriptor in use
+	ID       uint32   // a unique id for this data object
+	Groupid  uint32   // object group this data object is related to
+	Link     uint32   // special link or relation to an id or group
+	Fileoff  int64    // offset from start of image file
+	Filelen  int64    // length of data in file
 
 	Ctime   int64                 // image creation time
 	Mtime   int64                 // last modification time
