@@ -10,10 +10,11 @@ package sif
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/golang/glog"
 	"os"
-	"reflect"
+	"runtime"
 	"syscall"
+
+	"github.com/golang/glog"
 )
 
 // Read the global header from the container file
@@ -44,42 +45,17 @@ func readDescriptors(fimg *FileImage) error {
 
 // Look at key fields from the global header to assess SIF validity
 func isValidSif(fimg *FileImage) error {
-	var p uintptr
-	var buf syscall.Utsname
-
-	// get machine name
-	err := syscall.Uname(&buf)
-	if err != nil {
-		return fmt.Errorf("getting system info failed: %s", err)
+	archMap := map[string]string{
+		"386":   HdrArch386,
+		"amd64": HdrArchAMD64,
+		"arm":   HdrArchARM,
+		"arm64": HdrArchAMD64,
 	}
 
-	// make a string out of the [65]int8 array
-	b := make([]byte, len(buf.Machine))
-	for i, v := range buf.Machine {
-		b[i] = byte(v)
-	}
-	machine := string(b)
-
-	// get the machine pointer size
-	t := reflect.TypeOf(p)
-	ptrSize := t.Size()
-
-	// check the machine we run on, and if container file arch is compatible
-	var arch string
-	if machine[:6] == "x86_64" {
-		if ptrSize == 8 {
-			arch = HdrArchAMD64
-		} else {
-			arch = HdrArch386
-		}
-	} else if machine[0] == 'i' && machine[2] == '8' && machine[3] == '6' {
-		arch = HdrArch386
-	} else if machine[:3] == "arm" && ptrSize == 4 {
-		arch = HdrArchARM
-	} else if machine[:7] == "aarch64" {
-		arch = HdrArchAARCH64
-	} else {
-		return fmt.Errorf("cannot determine machine architecture")
+	// determine HdrArch value based on GOARCH
+	arch, ok := archMap[runtime.GOARCH]
+	if !ok {
+		return fmt.Errorf("GOARCH %v not supported", runtime.GOARCH)
 	}
 
 	// check various header fields
