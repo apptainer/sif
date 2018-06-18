@@ -204,6 +204,7 @@ type Descriptor struct {
 	Link     uint32   // special link or relation to an id or group
 	Fileoff  int64    // offset from start of image file
 	Filelen  int64    // length of data in file
+	Storelen int64    // length of data + alignment to store data in file
 
 	Ctime   int64                 // image creation time
 	Mtime   int64                 // last modification time

@@ -69,6 +69,11 @@ func getUserIDs() (int64, int64, error) {
 func fillDescriptor(fimg *FileImage, index int, input descriptorInput) (err error) {
 	descr := &fimg.descrArr[index]
 
+	curoff, err := fimg.fp.Seek(0, 1)
+	if err != nil {
+		return fmt.Errorf("while file pointer look at: %s", err)
+	}
+
 	descr.Datatype = input.datatype
 	descr.ID = uint32(index) + 1
 	descr.Used = true
@@ -79,6 +84,7 @@ func fillDescriptor(fimg *FileImage, index int, input descriptorInput) (err erro
 		return
 	}
 	descr.Filelen = input.size
+	descr.Storelen = descr.Fileoff + descr.Filelen - curoff
 	descr.Ctime = time.Now().Unix()
 	descr.Mtime = time.Now().Unix()
 	descr.UID, descr.Gid, err = getUserIDs()
@@ -95,11 +101,19 @@ func fillDescriptor(fimg *FileImage, index int, input descriptorInput) (err erro
 
 // Write new data object to the SIF file
 func writeDataObject(fimg *FileImage, input descriptorInput) error {
-	if n, err := io.Copy(fimg.fp, input.fp); err != nil {
-		return fmt.Errorf("copying data object file to SIF file: %s", err)
-	} else if n != input.size {
-		return fmt.Errorf("short write while copying data object file to SIF file")
+	// if we have bytes in input.data use that instead of an input file
+	if input.data != nil {
+		if _, err := fimg.fp.Write(input.data); err != nil {
+			return fmt.Errorf("copying data object data to SIF file: %s", err)
+		}
+	} else {
+		if n, err := io.Copy(fimg.fp, input.fp); err != nil {
+			return fmt.Errorf("copying data object file to SIF file: %s", err)
+		} else if n != input.size {
+			return fmt.Errorf("short write while copying to SIF file")
+		}
 	}
+
 	return nil
 }
 
@@ -136,7 +150,7 @@ func createDescriptor(fimg *FileImage, input descriptorInput) (err error) {
 
 	// update some global header fields from adding this new descriptor
 	fimg.header.Dfree--
-	fimg.header.Datalen += input.size
+	fimg.header.Datalen += fimg.descrArr[idx].Storelen
 
 	return
 }
@@ -300,6 +314,10 @@ func (fimg *FileImage) AddObject(input descriptorInput) error {
 		return err
 	}
 
+	if err := fimg.fp.Sync(); err != nil {
+		return fmt.Errorf("while sync'ing new data object to SIF file: %s", err)
+	}
+
 	return nil
 }
 
@@ -324,7 +342,6 @@ func (fimg *FileImage) DeleteObject(id uint32, flags int) error {
 
 	// update some global header fields from deleting this descriptor
 	fimg.header.Dfree++
-	fimg.header.Datalen -= descr.Filelen
 	fimg.header.Mtime = time.Now().Unix()
 
 	// zero out the unused descriptor
@@ -335,6 +352,10 @@ func (fimg *FileImage) DeleteObject(id uint32, flags int) error {
 	// update global header
 	if err = writeHeader(fimg); err != nil {
 		return err
+	}
+
+	if err := fimg.fp.Sync(); err != nil {
+		return fmt.Errorf("while sync'ing deleted data object to SIF file: %s", err)
 	}
 
 	return nil

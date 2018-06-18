@@ -15,7 +15,7 @@ import (
 
 const (
 	headerLen = 128
-	descrLen  = 577
+	descrLen  = 585
 )
 
 func TestDataStructs(t *testing.T) {
@@ -111,6 +111,20 @@ func TestCreateContainer(t *testing.T) {
 func TestAddObject(t *testing.T) {
 	var err error
 
+	// data we need to create a dummy labels descriptor
+	labinput := descriptorInput{
+		datatype: DataLabels,
+		groupid:  DescrDefaultGroup,
+		link:     DescrUnusedLink,
+		size:     0,
+		fname:    "dummyLabels",
+		fp:       nil,
+		data:     []byte{'L', 'A', 'B', 'E', 'L'},
+		image:    nil,
+		descr:    nil,
+	}
+	labinput.size = int64(binary.Size(labinput.data))
+
 	// data we need to create a system partition descriptor
 	parinput := descriptorInput{
 		datatype: DataPartition,
@@ -146,7 +160,12 @@ func TestAddObject(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer1.sif, false):", err)
 	}
 
-	// add new data object and its descriptor
+	// add new data object 'DataLabels' to SIF file
+	if err = fimg.AddObject(labinput); err != nil {
+		t.Error("fimg.AddObject():", err)
+	}
+
+	// add new data object 'DataPartition' to SIF file
 	if err = fimg.AddObject(parinput); err != nil {
 		t.Error("fimg.AddObject():", err)
 	}
