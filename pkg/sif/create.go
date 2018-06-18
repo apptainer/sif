@@ -11,7 +11,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/satori/go.uuid"
 	"io"
 	"os"
 	"os/user"
@@ -67,9 +66,11 @@ func getUserIDs() (int64, int64, error) {
 }
 
 // Fill all of the fields of a Descriptor
-func fillDescriptor(fimg *FileImage, descr *Descriptor, input descriptorInput) (err error) {
+func fillDescriptor(fimg *FileImage, index int, input descriptorInput) (err error) {
+	descr := &fimg.descrArr[index]
+
 	descr.Datatype = input.datatype
-	descr.ID = uuid.NewV4()
+	descr.ID = uint32(index) + 1
 	descr.Used = true
 	descr.Groupid = input.groupid
 	descr.Link = input.link
@@ -124,7 +125,7 @@ func createDescriptor(fimg *FileImage, input descriptorInput) (err error) {
 	}
 
 	// fill in SIF file descriptor
-	if err = fillDescriptor(fimg, &fimg.descrArr[idx], input); err != nil {
+	if err = fillDescriptor(fimg, idx, input); err != nil {
 		return
 	}
 
@@ -306,7 +307,7 @@ func (fimg *FileImage) AddObject(input descriptorInput) error {
 // data object is free'd and can be reused later. There's currenly 2 clean mode specified
 // by flags: DelZero, to zero out the data region for security and DelCompact to
 // remove and shink the file compacting the unused area.
-func (fimg *FileImage) DeleteObject(id string, flags int) error {
+func (fimg *FileImage) DeleteObject(id uint32, flags int) error {
 	descr, index, err := fimg.GetFromDescrID(id)
 	if err != nil {
 		return err

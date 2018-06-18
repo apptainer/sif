@@ -38,22 +38,17 @@ func TestGetFromDescrID(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	_, _, err = fimg.GetFromDescrID("da4ef1f5")
+	_, _, err = fimg.GetFromDescrID(1)
 	if err != nil {
 		t.Error("fimg.GetFromDescrID(): should have found descriptor")
 	}
 
-	_, _, err = fimg.GetFromDescrID("da")
+	_, _, err = fimg.GetFromDescrID(2)
 	if err != nil {
 		t.Error("fimg.GetFromDescrID(): should have found descriptor")
 	}
 
-	_, _, err = fimg.GetFromDescrID("abc02448-6d9b-4918-b72c-e2fea09fac43")
-	if err != nil {
-		t.Error("fimg.GetFromDescrID(): should have found descriptor")
-	}
-
-	_, _, err = fimg.GetFromDescrID("bc02448-6d9b-4918-b72c-e2fea09fac43")
+	_, _, err = fimg.GetFromDescrID(3)
 	if err == nil {
 		t.Error("fimg.GetFromDescrID(): should have NOT found descriptor")
 	}

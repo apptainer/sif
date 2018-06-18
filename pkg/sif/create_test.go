@@ -15,7 +15,7 @@ import (
 
 const (
 	headerLen = 128
-	descrLen  = 589
+	descrLen  = 577
 )
 
 func TestDataStructs(t *testing.T) {
@@ -165,13 +165,13 @@ func TestDeleteObject(t *testing.T) {
 	}
 
 	// test data object deletation
-	if err := fimg.DeleteObject("da4ef1f5", DelZero); err != nil {
-		t.Error(`fimg.DeleteObject("da4ef1f5", DelZero):`, err)
+	if err := fimg.DeleteObject(1, DelZero); err != nil {
+		t.Error(`fimg.DeleteObject(1, DelZero):`, err)
 	}
 
 	// test data object deletation
-	if err := fimg.DeleteObject("abc02448", DelZero); err != nil {
-		t.Error(`fimg.DeleteObject("da4ef1f5", DelZero):`, err)
+	if err := fimg.DeleteObject(2, DelZero); err != nil {
+		t.Error(`fimg.DeleteObject(2, DelZero):`, err)
 	}
 
 	// unload the test container
