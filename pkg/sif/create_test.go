@@ -50,52 +50,52 @@ func TestCreateContainer(t *testing.T) {
 	}
 
 	// data we need to create a definition file descriptor
-	definput := descriptorInput{
-		datatype: DataDeffile,
-		groupid:  DescrDefaultGroup,
-		link:     DescrUnusedLink,
-		size:     222,
-		fname:    "testdata/busybox.deffile",
-		fp:       nil,
-		data:     nil,
-		image:    nil,
-		descr:    nil,
+	definput := DescriptorInput{
+		Datatype: DataDeffile,
+		Groupid:  DescrDefaultGroup,
+		Link:     DescrUnusedLink,
+		Size:     222,
+		Fname:    "testdata/busybox.deffile",
+		Fp:       nil,
+		Data:     nil,
+		Image:    nil,
+		Descr:    nil,
 	}
 	// open up the data object file for this descriptor
-	if definput.fp, err = os.Open(definput.fname); err != nil {
+	if definput.Fp, err = os.Open(definput.Fname); err != nil {
 		t.Error("CreateContainer(cinfo): read data object file:", err)
 	}
-	defer definput.fp.Close()
+	defer definput.Fp.Close()
 
 	// add this descriptor input element to the list
 	cinfo.inputlist.PushBack(definput)
 
 	// data we need to create a system partition descriptor
-	parinput := descriptorInput{
-		datatype: DataPartition,
-		groupid:  DescrDefaultGroup,
-		link:     DescrUnusedLink,
-		size:     1003520,
-		fname:    "testdata/busybox.squash",
-		fp:       nil,
-		data:     nil,
-		image:    nil,
-		descr:    nil,
+	parinput := DescriptorInput{
+		Datatype: DataPartition,
+		Groupid:  DescrDefaultGroup,
+		Link:     DescrUnusedLink,
+		Size:     1003520,
+		Fname:    "testdata/busybox.squash",
+		Fp:       nil,
+		Data:     nil,
+		Image:    nil,
+		Descr:    nil,
 	}
 	// open up the data object file for this descriptor
-	if parinput.fp, err = os.Open(parinput.fname); err != nil {
+	if parinput.Fp, err = os.Open(parinput.Fname); err != nil {
 		t.Error("CreateContainer(cinfo): read data object file:", err)
 	}
-	defer parinput.fp.Close()
+	defer parinput.Fp.Close()
 
 	// extra data needed for the creation of a partition descriptor
-	pinfo := partInput{
+	pinfo := Partition{
 		Fstype:   FsSquash,
 		Parttype: PartSystem,
 	}
 
 	// serialize the partition data for integration with the base descriptor input
-	if err := binary.Write(&parinput.extra, binary.LittleEndian, pinfo); err != nil {
+	if err := binary.Write(&parinput.Extra, binary.LittleEndian, pinfo); err != nil {
 		t.Error("CreateContainer(cinfo): serialize pinfo:", err)
 	}
 
@@ -112,45 +112,45 @@ func TestAddObject(t *testing.T) {
 	var err error
 
 	// data we need to create a dummy labels descriptor
-	labinput := descriptorInput{
-		datatype: DataLabels,
-		groupid:  DescrDefaultGroup,
-		link:     DescrUnusedLink,
-		size:     0,
-		fname:    "dummyLabels",
-		fp:       nil,
-		data:     []byte{'L', 'A', 'B', 'E', 'L'},
-		image:    nil,
-		descr:    nil,
+	labinput := DescriptorInput{
+		Datatype: DataLabels,
+		Groupid:  DescrDefaultGroup,
+		Link:     DescrUnusedLink,
+		Size:     0,
+		Fname:    "dummyLabels",
+		Fp:       nil,
+		Data:     []byte{'L', 'A', 'B', 'E', 'L'},
+		Image:    nil,
+		Descr:    nil,
 	}
-	labinput.size = int64(binary.Size(labinput.data))
+	labinput.Size = int64(binary.Size(labinput.Data))
 
 	// data we need to create a system partition descriptor
-	parinput := descriptorInput{
-		datatype: DataPartition,
-		groupid:  DescrDefaultGroup,
-		link:     DescrUnusedLink,
-		size:     1003520,
-		fname:    "testdata/busybox.squash",
-		fp:       nil,
-		data:     nil,
-		image:    nil,
-		descr:    nil,
+	parinput := DescriptorInput{
+		Datatype: DataPartition,
+		Groupid:  DescrDefaultGroup,
+		Link:     DescrUnusedLink,
+		Size:     1003520,
+		Fname:    "testdata/busybox.squash",
+		Fp:       nil,
+		Data:     nil,
+		Image:    nil,
+		Descr:    nil,
 	}
 	// open up the data object file for this descriptor
-	if parinput.fp, err = os.Open(parinput.fname); err != nil {
+	if parinput.Fp, err = os.Open(parinput.Fname); err != nil {
 		t.Error("CreateContainer(cinfo): read data object file:", err)
 	}
-	defer parinput.fp.Close()
+	defer parinput.Fp.Close()
 
 	// extra data needed for the creation of a partition descriptor
-	pinfo := partInput{
+	pinfo := Partition{
 		Fstype:   FsSquash,
 		Parttype: PartSystem,
 	}
 
 	// serialize the partition data for integration with the base descriptor input
-	if err := binary.Write(&parinput.extra, binary.LittleEndian, pinfo); err != nil {
+	if err := binary.Write(&parinput.Extra, binary.LittleEndian, pinfo); err != nil {
 		t.Error("CreateContainer(cinfo): serialize pinfo:", err)
 	}
 

@@ -18,7 +18,7 @@ import (
 
 // Read the global header from the container file
 func readHeader(fimg *FileImage) error {
-	if err := binary.Read(fimg.fp, binary.LittleEndian, &fimg.header); err != nil {
+	if err := binary.Read(fimg.Fp, binary.LittleEndian, &fimg.Header); err != nil {
 		return fmt.Errorf("reading global header from container file: %s", err)
 	}
 
@@ -28,14 +28,14 @@ func readHeader(fimg *FileImage) error {
 // Read the used descriptors and populate an in-memory representation of those in node list
 func readDescriptors(fimg *FileImage) error {
 	// start by positioning us to the start of descriptors
-	_, err := fimg.fp.Seek(fimg.header.Descroff, 0)
+	_, err := fimg.Fp.Seek(fimg.Header.Descroff, 0)
 	if err != nil {
 		return fmt.Errorf("seek() setting to descriptors start: %s", err)
 	}
 
 	// Initialize descriptor array (slice) and read them all from file
-	fimg.descrArr = make([]Descriptor, fimg.header.Dtotal)
-	if err := binary.Read(fimg.fp, binary.LittleEndian, &fimg.descrArr); err != nil {
+	fimg.DescrArr = make([]Descriptor, fimg.Header.Dtotal)
+	if err := binary.Read(fimg.Fp, binary.LittleEndian, &fimg.DescrArr); err != nil {
 		return fmt.Errorf("reading global header from container file: %s", err)
 	}
 
@@ -83,16 +83,16 @@ func isValidSif(fimg *FileImage) error {
 	}
 
 	// check various header fields
-	if string(fimg.header.Magic[:HdrMagicLen-1]) != HdrMagic {
-		return fmt.Errorf("invalid SIF file: Magic |%s| want |%s|", fimg.header.Magic, HdrMagic)
+	if string(fimg.Header.Magic[:HdrMagicLen-1]) != HdrMagic {
+		return fmt.Errorf("invalid SIF file: Magic |%s| want |%s|", fimg.Header.Magic, HdrMagic)
 	}
-	if string(fimg.header.Version[:HdrVersionLen-1]) != HdrVersion {
-		return fmt.Errorf("invalid SIF file: Version %s want %s", fimg.header.Version, HdrVersion)
+	if string(fimg.Header.Version[:HdrVersionLen-1]) != HdrVersion {
+		return fmt.Errorf("invalid SIF file: Version %s want %s", fimg.Header.Version, HdrVersion)
 	}
-	if string(fimg.header.Arch[:HdrArchLen-1]) != arch {
-		return fmt.Errorf("invalid SIF file: Arch %s want %s", fimg.header.Arch, arch)
+	if string(fimg.Header.Arch[:HdrArchLen-1]) != arch {
+		return fmt.Errorf("invalid SIF file: Arch %s want %s", fimg.Header.Arch, arch)
 	}
-	if fimg.header.Dfree == fimg.header.Dtotal {
+	if fimg.Header.Dfree == fimg.Header.Dtotal {
 		return fmt.Errorf("invalid SIF file: no descriptor found")
 	}
 
@@ -104,11 +104,11 @@ func (fimg *FileImage) mapFile(rdonly bool) error {
 	prot := syscall.PROT_READ
 	flags := syscall.MAP_PRIVATE
 
-	info, err := fimg.fp.Stat()
+	info, err := fimg.Fp.Stat()
 	if err != nil {
 		return fmt.Errorf("while trying to size SIF file to mmap")
 	}
-	fimg.filesize = info.Size()
+	fimg.Filesize = info.Size()
 
 	size := nextAligned(info.Size(), syscall.Getpagesize())
 	if int64(int(size)) < info.Size() {
@@ -120,7 +120,7 @@ func (fimg *FileImage) mapFile(rdonly bool) error {
 		flags = syscall.MAP_SHARED
 	}
 
-	fimg.filedata, err = syscall.Mmap(int(fimg.fp.Fd()), 0, int(size), prot, flags)
+	fimg.Filedata, err = syscall.Mmap(int(fimg.Fp.Fd()), 0, int(size), prot, flags)
 	if err != nil {
 		return fmt.Errorf("while trying to call mmap on SIF file")
 	}
@@ -129,7 +129,7 @@ func (fimg *FileImage) mapFile(rdonly bool) error {
 }
 
 func (fimg *FileImage) unmapFile() error {
-	if err := syscall.Munmap(fimg.filedata); err != nil {
+	if err := syscall.Munmap(fimg.Filedata); err != nil {
 		return fmt.Errorf("while calling unmapping SIF file")
 	}
 	return nil
@@ -140,11 +140,11 @@ func (fimg *FileImage) unmapFile() error {
 // as arguments.
 func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
 	if rdonly { // open SIF rdonly if mounting immutable partitions or inspecting the image
-		if fimg.fp, err = os.Open(filename); err != nil {
+		if fimg.Fp, err = os.Open(filename); err != nil {
 			return fimg, fmt.Errorf("opening(RDONLY) container file: %s", err)
 		}
 	} else { // open SIF read-write when adding and removing data objects
-		if fimg.fp, err = os.OpenFile(filename, os.O_RDWR, 0644); err != nil {
+		if fimg.Fp, err = os.OpenFile(filename, os.O_RDWR, 0644); err != nil {
 			return fimg, fmt.Errorf("opening(RDWR) container file: %s", err)
 		}
 	}
@@ -179,7 +179,7 @@ func (fimg *FileImage) UnloadContainer() (err error) {
 	if err = fimg.unmapFile(); err != nil {
 		return
 	}
-	if err = fimg.fp.Close(); err != nil {
+	if err = fimg.Fp.Close(); err != nil {
 		return fmt.Errorf("closing SIF file failed, corrupted: don't use: %s", err)
 	}
 	return

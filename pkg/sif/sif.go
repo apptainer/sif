@@ -167,6 +167,25 @@ const (
 	DelCompact            // free the space used by data object
 )
 
+// Descriptor represents the SIF descriptor type
+type Descriptor struct {
+	Datatype Datatype // informs of descriptor type
+	Used     bool     // is the descriptor in use
+	ID       uint32   // a unique id for this data object
+	Groupid  uint32   // object group this data object is related to
+	Link     uint32   // special link or relation to an id or group
+	Fileoff  int64    // offset from start of image file
+	Filelen  int64    // length of data in file
+	Storelen int64    // length of data + alignment to store data in file
+
+	Ctime int64                 // image creation time
+	Mtime int64                 // last modification time
+	UID   int64                 // system user owning the file
+	Gid   int64                 // system group owning the file
+	Name  [DescrNameLen]byte    // descriptor name (string identifier)
+	Extra [DescrMaxPrivLen]byte // big enough for above extra data
+}
+
 // Deffile represets the SIF definition-file data object descriptor
 type Deffile struct {
 }
@@ -181,37 +200,18 @@ type Envvar struct {
 
 // Partition represents the SIF partition data object descriptor
 type Partition struct {
-	fstype   Fstype
-	parttype Parttype
+	Fstype   Fstype
+	Parttype Parttype
 }
 
 // Signature represents the SIF signature data object descriptor
 type Signature struct {
-	hashtype Hashtype
-	entity   [DescrEntityLen]byte
+	Hashtype Hashtype
+	Entity   [DescrEntityLen]byte
 }
 
 // GenericJSON represents the SIF generic JSON meta-data data object descriptor
 type GenericJSON struct {
-}
-
-// Descriptor represents the SIF descriptor type
-type Descriptor struct {
-	Datatype Datatype // informs of descriptor type
-	Used     bool     // is the descriptor in use
-	ID       uint32   // a unique id for this data object
-	Groupid  uint32   // object group this data object is related to
-	Link     uint32   // special link or relation to an id or group
-	Fileoff  int64    // offset from start of image file
-	Filelen  int64    // length of data in file
-	Storelen int64    // length of data + alignment to store data in file
-
-	Ctime   int64                 // image creation time
-	Mtime   int64                 // last modification time
-	UID     int64                 // system user owning the file
-	Gid     int64                 // system group owning the file
-	Name    [DescrNameLen]byte    // descriptor name (string identifier)
-	Private [DescrMaxPrivLen]byte // big enough for above extra data
 }
 
 // Header describes a loaded SIF file
@@ -236,11 +236,11 @@ type Header struct {
 
 // FileImage describes the representation of a SIF file in memory
 type FileImage struct {
-	header   Header       // the loaded SIF global header
-	fp       *os.File     // file pointer of opened SIF file
-	filesize int64        // file size of the opened SIF file
-	filedata []byte       // the content of the opened file
-	descrArr []Descriptor // slice of loaded descriptors from SIF file
+	Header   Header       // the loaded SIF global header
+	Fp       *os.File     // file pointer of opened SIF file
+	Filesize int64        // file size of the opened SIF file
+	Filedata []byte       // the content of the opened file
+	DescrArr []Descriptor // slice of loaded descriptors from SIF file
 }
 
 // CreateInfo wraps all SIF file creation info needed
@@ -259,51 +259,19 @@ type CreateInfo struct {
 // structures are internal.
 //
 
-// descriptorInput describes the common info needed to create a data object descriptor
-type descriptorInput struct {
-	datatype Datatype // datatype being harvested for new descriptor
-	groupid  uint32   // group to be set for new descriptor
-	link     uint32   // link to be set for new descriptor
-	size     int64    // size of the data object for the new descriptor
+// DescriptorInput describes the common info needed to create a data object descriptor
+type DescriptorInput struct {
+	Datatype Datatype // datatype being harvested for new descriptor
+	Groupid  uint32   // group to be set for new descriptor
+	Link     uint32   // link to be set for new descriptor
+	Size     int64    // size of the data object for the new descriptor
 
-	fname string   // file containing data associated with the new descriptor
-	fp    *os.File // file pointer to opened 'fname'
-	data  []byte   // loaded data from file
+	Fname string   // file containing data associated with the new descriptor
+	Fp    *os.File // file pointer to opened 'fname'
+	Data  []byte   // loaded data from file
 
-	image *FileImage  // loaded SIF file in memory
-	descr *Descriptor // created end result descriptor
+	Image *FileImage  // loaded SIF file in memory
+	Descr *Descriptor // created end result descriptor
 
-	extra bytes.Buffer // where specific input type store their data
-}
-
-// defInput describes the info needed to create an definition-file descriptor
-type defInput struct {
-	// nothing specific for definition-file yet
-}
-
-// envInput describes the info needed to create an env. var. descriptor
-type envInput struct {
-	// nothing specific for env. var. yet
-}
-
-// labelInput describes the info needed to create an label descriptor
-type labelInput struct {
-	// nothing specific for label yet
-}
-
-// partInput describes the info needed to create an partition descriptor
-type partInput struct {
-	Fstype   Fstype
-	Parttype Parttype
-}
-
-// sigInput describes the info needed to create an signature descriptor
-type sigInput struct {
-	Hashtype Hashtype
-	Entity   [DescrEntityLen]byte
-}
-
-// genJInput describes the info needed to create an generic JSON meta-data descriptor
-type genJInput struct {
-	// nothing specific for generic JSON meta-data yet
+	Extra bytes.Buffer // where specific input type store their data
 }

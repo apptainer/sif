@@ -33,12 +33,12 @@ func nextAligned(offset int64, align int) int64 {
 
 // Set file pointer offset to next aligned block
 func setFileOffNA(fimg *FileImage, alignment int) (int64, error) {
-	offset, err := fimg.fp.Seek(0, 1) // get current position
+	offset, err := fimg.Fp.Seek(0, 1) // get current position
 	if err != nil {
 		return -1, fmt.Errorf("seek() getting current file position: %s", err)
 	}
 	aligned := nextAligned(offset, alignment)
-	offset, err = fimg.fp.Seek(aligned, 0) // set new position
+	offset, err = fimg.Fp.Seek(aligned, 0) // set new position
 	if err != nil {
 		return -1, fmt.Errorf("seek() getting current file position: %s", err)
 	}
@@ -66,24 +66,24 @@ func getUserIDs() (int64, int64, error) {
 }
 
 // Fill all of the fields of a Descriptor
-func fillDescriptor(fimg *FileImage, index int, input descriptorInput) (err error) {
-	descr := &fimg.descrArr[index]
+func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err error) {
+	descr := &fimg.DescrArr[index]
 
-	curoff, err := fimg.fp.Seek(0, 1)
+	curoff, err := fimg.Fp.Seek(0, 1)
 	if err != nil {
 		return fmt.Errorf("while file pointer look at: %s", err)
 	}
 
-	descr.Datatype = input.datatype
+	descr.Datatype = input.Datatype
 	descr.ID = uint32(index) + 1
 	descr.Used = true
-	descr.Groupid = input.groupid
-	descr.Link = input.link
+	descr.Groupid = input.Groupid
+	descr.Link = input.Link
 	descr.Fileoff, err = setFileOffNA(fimg, os.Getpagesize())
 	if err != nil {
 		return
 	}
-	descr.Filelen = input.size
+	descr.Filelen = input.Size
 	descr.Storelen = descr.Fileoff + descr.Filelen - curoff
 	descr.Ctime = time.Now().Unix()
 	descr.Mtime = time.Now().Unix()
@@ -91,8 +91,8 @@ func fillDescriptor(fimg *FileImage, index int, input descriptorInput) (err erro
 	if err != nil {
 		return fmt.Errorf("filling descriptor: %s", err)
 	}
-	copy(descr.Name[:DescrNameLen], path.Base(input.fname))
-	copy(descr.Private[:DescrMaxPrivLen], input.extra.Bytes())
+	copy(descr.Name[:DescrNameLen], path.Base(input.Fname))
+	copy(descr.Extra[:DescrMaxPrivLen], input.Extra.Bytes())
 
 	glog.Infoln(descr)
 
@@ -100,16 +100,16 @@ func fillDescriptor(fimg *FileImage, index int, input descriptorInput) (err erro
 }
 
 // Write new data object to the SIF file
-func writeDataObject(fimg *FileImage, input descriptorInput) error {
+func writeDataObject(fimg *FileImage, input DescriptorInput) error {
 	// if we have bytes in input.data use that instead of an input file
-	if input.data != nil {
-		if _, err := fimg.fp.Write(input.data); err != nil {
+	if input.Data != nil {
+		if _, err := fimg.Fp.Write(input.Data); err != nil {
 			return fmt.Errorf("copying data object data to SIF file: %s", err)
 		}
 	} else {
-		if n, err := io.Copy(fimg.fp, input.fp); err != nil {
+		if n, err := io.Copy(fimg.Fp, input.Fp); err != nil {
 			return fmt.Errorf("copying data object file to SIF file: %s", err)
-		} else if n != input.size {
+		} else if n != input.Size {
 			return fmt.Errorf("short write while copying to SIF file")
 		}
 	}
@@ -118,23 +118,23 @@ func writeDataObject(fimg *FileImage, input descriptorInput) error {
 }
 
 // Find a free descriptor and create a memory representation for addition to the SIF file
-func createDescriptor(fimg *FileImage, input descriptorInput) (err error) {
+func createDescriptor(fimg *FileImage, input DescriptorInput) (err error) {
 	var (
 		idx int
 		v   Descriptor
 	)
 
-	if fimg.header.Dfree == 0 {
+	if fimg.Header.Dfree == 0 {
 		return fmt.Errorf("no descriptor table free entry")
 	}
 
 	// look for a free entry in the descriptor table
-	for idx, v = range fimg.descrArr {
+	for idx, v = range fimg.DescrArr {
 		if v.Used == false {
 			break
 		}
 	}
-	if int64(idx) == fimg.header.Dtotal-1 && fimg.descrArr[idx].Used == true {
+	if int64(idx) == fimg.Header.Dtotal-1 && fimg.DescrArr[idx].Used == true {
 		return fmt.Errorf("no descriptor table free entry, warning: header.Dfree was > 0")
 	}
 
@@ -149,8 +149,8 @@ func createDescriptor(fimg *FileImage, input descriptorInput) (err error) {
 	}
 
 	// update some global header fields from adding this new descriptor
-	fimg.header.Dfree--
-	fimg.header.Datalen += fimg.descrArr[idx].Storelen
+	fimg.Header.Dfree--
+	fimg.Header.Datalen += fimg.DescrArr[idx].Storelen
 
 	return
 }
@@ -158,16 +158,16 @@ func createDescriptor(fimg *FileImage, input descriptorInput) (err error) {
 // Release and write the data object descriptor to backing storage (SIF container file)
 func writeDescriptors(fimg *FileImage) error {
 	// first, move to descriptor start offset
-	if _, err := fimg.fp.Seek(DescrStartOffset, 0); err != nil {
+	if _, err := fimg.Fp.Seek(DescrStartOffset, 0); err != nil {
 		return fmt.Errorf("seeking to descriptor start offset: %s", err)
 	}
 
-	for _, v := range fimg.descrArr {
-		if err := binary.Write(fimg.fp, binary.LittleEndian, v); err != nil {
+	for _, v := range fimg.DescrArr {
+		if err := binary.Write(fimg.Fp, binary.LittleEndian, v); err != nil {
 			return fmt.Errorf("binary writing descrtable to buf: %s", err)
 		}
 	}
-	fimg.header.Descrlen = int64(binary.Size(fimg.descrArr))
+	fimg.Header.Descrlen = int64(binary.Size(fimg.DescrArr))
 
 	return nil
 }
@@ -175,11 +175,11 @@ func writeDescriptors(fimg *FileImage) error {
 // Write the global header to file
 func writeHeader(fimg *FileImage) error {
 	// first, move to descriptor start offset
-	if _, err := fimg.fp.Seek(0, 0); err != nil {
+	if _, err := fimg.Fp.Seek(0, 0); err != nil {
 		return fmt.Errorf("seeking to beginning of the file: %s", err)
 	}
 
-	if err := binary.Write(fimg.fp, binary.LittleEndian, fimg.header); err != nil {
+	if err := binary.Write(fimg.Fp, binary.LittleEndian, fimg.Header); err != nil {
 		return fmt.Errorf("binary writing header to buf: %s", err)
 	}
 
@@ -191,42 +191,42 @@ func writeHeader(fimg *FileImage) error {
 // and produces an output file as specified in the input data.
 func CreateContainer(cinfo CreateInfo) (err error) {
 	var fimg FileImage
-	fimg.descrArr = make([]Descriptor, DescrNumEntries)
+	fimg.DescrArr = make([]Descriptor, DescrNumEntries)
 
 	if cinfo.inputlist.Len() == 0 {
 		return fmt.Errorf("need at least one input descriptor")
 	}
 
 	// Prepare a fresh global header
-	copy(fimg.header.Launch[:], cinfo.launchstr)
-	copy(fimg.header.Magic[:], HdrMagic)
-	copy(fimg.header.Version[:], cinfo.sifversion)
-	copy(fimg.header.Arch[:], cinfo.arch)
-	copy(fimg.header.ID[:], cinfo.id[:])
-	fimg.header.Ctime = time.Now().Unix()
-	fimg.header.Mtime = time.Now().Unix()
-	fimg.header.Dfree = DescrNumEntries
-	fimg.header.Dtotal = DescrNumEntries
-	fimg.header.Descroff = DescrStartOffset
-	fimg.header.Dataoff = DataStartOffset
+	copy(fimg.Header.Launch[:], cinfo.launchstr)
+	copy(fimg.Header.Magic[:], HdrMagic)
+	copy(fimg.Header.Version[:], cinfo.sifversion)
+	copy(fimg.Header.Arch[:], cinfo.arch)
+	copy(fimg.Header.ID[:], cinfo.id[:])
+	fimg.Header.Ctime = time.Now().Unix()
+	fimg.Header.Mtime = time.Now().Unix()
+	fimg.Header.Dfree = DescrNumEntries
+	fimg.Header.Dtotal = DescrNumEntries
+	fimg.Header.Descroff = DescrStartOffset
+	fimg.Header.Dataoff = DataStartOffset
 
 	// Create container file
-	fimg.fp, err = os.OpenFile(cinfo.pathname, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	fimg.Fp, err = os.OpenFile(cinfo.pathname, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
 		return fmt.Errorf("container file creation failed: %s", err)
 	}
-	defer fimg.fp.Close()
+	defer fimg.Fp.Close()
 
 	// set file pointer to start of data section */
-	if _, err = fimg.fp.Seek(DataStartOffset, 0); err != nil {
+	if _, err = fimg.Fp.Seek(DataStartOffset, 0); err != nil {
 		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}
 
 	for e := cinfo.inputlist.Front(); e != nil; e = e.Next() {
 		// extract the descriptor input info from the list element
-		input, ok := e.Value.(descriptorInput)
+		input, ok := e.Value.(DescriptorInput)
 		if ok == false {
-			return fmt.Errorf("structure is not of expected descriptorInput type")
+			return fmt.Errorf("structure is not of expected DescriptorInput type")
 		}
 
 		if err = createDescriptor(&fimg, input); err != nil {
@@ -251,7 +251,7 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 
 func zeroData(fimg *FileImage, descr *Descriptor) error {
 	// first, move to data object offset
-	if _, err := fimg.fp.Seek(descr.Fileoff, 0); err != nil {
+	if _, err := fimg.Fp.Seek(descr.Fileoff, 0); err != nil {
 		return fmt.Errorf("seeking to data object offset: %s", err)
 	}
 
@@ -263,7 +263,7 @@ func zeroData(fimg *FileImage, descr *Descriptor) error {
 			upbound = n
 		}
 
-		if _, err := fimg.fp.Write(zero[:upbound]); err != nil {
+		if _, err := fimg.Fp.Write(zero[:upbound]); err != nil {
 			return fmt.Errorf("writing 0's to data object")
 		}
 		n -= 4096
@@ -276,15 +276,15 @@ func zeroData(fimg *FileImage, descr *Descriptor) error {
 }
 
 func resetDescriptor(fimg *FileImage, index int) error {
-	offset := fimg.header.Descroff + int64(index)*int64(binary.Size(fimg.descrArr[0]))
+	offset := fimg.Header.Descroff + int64(index)*int64(binary.Size(fimg.DescrArr[0]))
 
 	// first, move to descriptor offset
-	if _, err := fimg.fp.Seek(offset, 0); err != nil {
+	if _, err := fimg.Fp.Seek(offset, 0); err != nil {
 		return fmt.Errorf("seeking to descriptor: %s", err)
 	}
 
 	var emptyDesc Descriptor
-	if err := binary.Write(fimg.fp, binary.LittleEndian, emptyDesc); err != nil {
+	if err := binary.Write(fimg.Fp, binary.LittleEndian, emptyDesc); err != nil {
 		return fmt.Errorf("binary writing empty descriptor: %s", err)
 	}
 
@@ -292,9 +292,9 @@ func resetDescriptor(fimg *FileImage, index int) error {
 }
 
 // AddObject add a new data object and its descriptor into the specified SIF file.
-func (fimg *FileImage) AddObject(input descriptorInput) error {
+func (fimg *FileImage) AddObject(input DescriptorInput) error {
 	// set file pointer to the end of data section */
-	if _, err := fimg.fp.Seek(fimg.header.Dataoff+fimg.header.Datalen, 0); err != nil {
+	if _, err := fimg.Fp.Seek(fimg.Header.Dataoff+fimg.Header.Datalen, 0); err != nil {
 		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}
 
@@ -308,13 +308,13 @@ func (fimg *FileImage) AddObject(input descriptorInput) error {
 		return err
 	}
 
-	fimg.header.Mtime = time.Now().Unix()
+	fimg.Header.Mtime = time.Now().Unix()
 	// write down global header to file
 	if err := writeHeader(fimg); err != nil {
 		return err
 	}
 
-	if err := fimg.fp.Sync(); err != nil {
+	if err := fimg.Fp.Sync(); err != nil {
 		return fmt.Errorf("while sync'ing new data object to SIF file: %s", err)
 	}
 
@@ -341,8 +341,8 @@ func (fimg *FileImage) DeleteObject(id uint32, flags int) error {
 	}
 
 	// update some global header fields from deleting this descriptor
-	fimg.header.Dfree++
-	fimg.header.Mtime = time.Now().Unix()
+	fimg.Header.Dfree++
+	fimg.Header.Mtime = time.Now().Unix()
 
 	// zero out the unused descriptor
 	if err = resetDescriptor(fimg, index); err != nil {
@@ -354,7 +354,7 @@ func (fimg *FileImage) DeleteObject(id uint32, flags int) error {
 		return err
 	}
 
-	if err := fimg.fp.Sync(); err != nil {
+	if err := fimg.Fp.Sync(); err != nil {
 		return fmt.Errorf("while sync'ing deleted data object to SIF file: %s", err)
 	}
 
