@@ -10,7 +10,6 @@ package sif
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/golang/glog"
 	"io"
 	"os"
 	"os/user"
@@ -93,8 +92,6 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 	}
 	copy(descr.Name[:DescrNameLen], path.Base(input.Fname))
 	copy(descr.Extra[:DescrMaxPrivLen], input.Extra.Bytes())
-
-	glog.Infoln(descr)
 
 	return
 }
@@ -243,8 +240,6 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 	if err = writeHeader(&fimg); err != nil {
 		return
 	}
-
-	glog.Flush()
 
 	return
 }

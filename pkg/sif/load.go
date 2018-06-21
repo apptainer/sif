@@ -10,7 +10,6 @@ package sif
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/golang/glog"
 	"os"
 	"reflect"
 	"syscall"
@@ -168,8 +167,6 @@ func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
 	if err = fimg.mapFile(rdonly); err != nil {
 		return
 	}
-
-	glog.Flush()
 
 	return fimg, nil
 }

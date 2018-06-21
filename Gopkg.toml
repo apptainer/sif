@@ -25,10 +25,6 @@
 #   unused-packages = true
 
 
-[[constraint]]
-  branch = "master"
-  name = "github.com/golang/glog"
-
 [[constraint]]                                                                                                               
   name = "github.com/satori/go.uuid"                                                                                         
   version = "v1.2.0"  
