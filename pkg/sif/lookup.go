@@ -226,3 +226,13 @@ func (descr *Descriptor) GetEntity() ([]byte, error) {
 
 	return sinfo.Entity[:], nil
 }
+
+// GetEntityString returns the string version of the stored entity
+func (descr *Descriptor) GetEntityString() (string, error) {
+	fingerprint, err := descr.GetEntity()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%0X", fingerprint[:20]), nil
+}
