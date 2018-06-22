@@ -6,6 +6,7 @@
 package sif
 
 import (
+	"bytes"
 	"testing"
 )
 
@@ -49,6 +50,11 @@ func TestGetFromDescrID(t *testing.T) {
 	}
 
 	_, _, err = fimg.GetFromDescrID(3)
+	if err != nil {
+		t.Error("fimg.GetFromDescrID(): should have found descriptor")
+	}
+
+	_, _, err = fimg.GetFromDescrID(4)
 	if err == nil {
 		t.Error("fimg.GetFromDescrID(): should have NOT found descriptor")
 	}
@@ -77,7 +83,7 @@ func TestGetPartFromGroup(t *testing.T) {
 	}
 }
 
-func SkipTestGetSignFromGroup(t *testing.T) {
+func TestGetSignFromGroup(t *testing.T) {
 	// load the test container
 	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
 	if err != nil {
@@ -95,7 +101,7 @@ func SkipTestGetSignFromGroup(t *testing.T) {
 	}
 }
 
-func SkipTestGetFromLinkedDescr(t *testing.T) {
+func TestGetFromLinkedDescr(t *testing.T) {
 	// load the test container
 	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
 	if err != nil {
@@ -194,7 +200,7 @@ func TestGetPartType(t *testing.T) {
 	}
 }
 
-func SkipTestGetHashType(t *testing.T) {
+func TestGetHashType(t *testing.T) {
 	// load the test container
 	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
 	if err != nil {
@@ -213,6 +219,35 @@ func SkipTestGetHashType(t *testing.T) {
 
 	if hashtype != HashSHA384 {
 		t.Error("sig.GetHashType() should have returned 'HashSHA384'")
+	}
+
+	// unload the test container
+	if err = fimg.UnloadContainer(); err != nil {
+		t.Error("UnloadContainer(fimg):", err)
+	}
+}
+
+func TestGetEntity(t *testing.T) {
+	expected := []byte{13, 78, 200, 18, 112, 223, 238, 133, 20, 150, 77, 33, 102, 140, 254, 42, 203, 214, 136, 228}
+
+	// load the test container
+	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
+	if err != nil {
+		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
+	}
+
+	sig, _, err := fimg.GetSignFromGroup(DescrDefaultGroup)
+	if err != nil {
+		t.Error("fimg.GetSignFromGroup(DescrDefaultGroup): should have found descriptor:", err)
+	}
+
+	entity, err := sig.GetEntity()
+	if err != nil {
+		t.Error("sig.GetEntity()", err)
+	}
+
+	if bytes.Equal(expected, entity[:len(expected)]) == false {
+		t.Error("sig.GetEntity(): didn't get the expected entity")
 	}
 
 	// unload the test container
