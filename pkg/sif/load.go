@@ -171,6 +171,39 @@ func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
 	return fimg, nil
 }
 
+// LoadContainerFp is responsible for loading a SIF container file. It takes
+// a *os.File pointing to an opened file, and whether the file is opened as
+// read-only for arguments.
+func LoadContainerFp(fp *os.File, rdonly bool) (fimg FileImage, err error) {
+	if fp == nil {
+		return fimg, fmt.Errorf("provided fp for file is invalid")
+	}
+
+	fimg.Fp = fp
+
+	// read global header from SIF file
+	if err = readHeader(&fimg); err != nil {
+		return fimg, fmt.Errorf("reading global header: %s", err)
+	}
+
+	// validate global header
+	if err = isValidSif(&fimg); err != nil {
+		return
+	}
+
+	// read descriptor array from SIF file
+	if err = readDescriptors(&fimg); err != nil {
+		return fimg, fmt.Errorf("reading and populating descriptor nodes: %s", err)
+	}
+
+	// get a memory map of the SIF file
+	if err = fimg.mapFile(rdonly); err != nil {
+		return
+	}
+
+	return fimg, nil
+}
+
 // UnloadContainer closes the SIF container file and free associated resources if needed
 func (fimg *FileImage) UnloadContainer() (err error) {
 	if err = fimg.unmapFile(); err != nil {

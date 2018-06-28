@@ -6,6 +6,7 @@
 package sif
 
 import (
+	"os"
 	"testing"
 )
 
@@ -16,6 +17,22 @@ func TestLoadContainer(t *testing.T) {
 	}
 
 	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
+		t.Error("fimg.UnloadContainer():", err)
+	}
+}
+
+func TestLoadContainerFp(t *testing.T) {
+	fp, err := os.Open("testdata/testcontainer2.sif")
+	if err != nil {
+		t.Error("error opening testdata/testcontainer2.sif:", err)
+	}
+
+	fimg, err := LoadContainerFp(fp, true)
+	if err != nil {
+		t.Error("LoadContainerFp(fp, true):", err)
+	}
+
+	if err = fimg.UnloadContainer(); err != nil {
+		t.Error("fimg.UnloadContainer():", err)
 	}
 }
