@@ -190,16 +190,16 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 	var fimg FileImage
 	fimg.DescrArr = make([]Descriptor, DescrNumEntries)
 
-	if cinfo.inputlist.Len() == 0 {
+	if cinfo.Inputlist.Len() == 0 {
 		return fmt.Errorf("need at least one input descriptor")
 	}
 
 	// Prepare a fresh global header
-	copy(fimg.Header.Launch[:], cinfo.launchstr)
+	copy(fimg.Header.Launch[:], cinfo.Launchstr)
 	copy(fimg.Header.Magic[:], HdrMagic)
-	copy(fimg.Header.Version[:], cinfo.sifversion)
-	copy(fimg.Header.Arch[:], cinfo.arch)
-	copy(fimg.Header.ID[:], cinfo.id[:])
+	copy(fimg.Header.Version[:], cinfo.Sifversion)
+	copy(fimg.Header.Arch[:], cinfo.Arch)
+	copy(fimg.Header.ID[:], cinfo.ID[:])
 	fimg.Header.Ctime = time.Now().Unix()
 	fimg.Header.Mtime = time.Now().Unix()
 	fimg.Header.Dfree = DescrNumEntries
@@ -208,7 +208,7 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 	fimg.Header.Dataoff = DataStartOffset
 
 	// Create container file
-	fimg.Fp, err = os.OpenFile(cinfo.pathname, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	fimg.Fp, err = os.OpenFile(cinfo.Pathname, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
 		return fmt.Errorf("container file creation failed: %s", err)
 	}
@@ -219,7 +219,7 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}
 
-	for e := cinfo.inputlist.Front(); e != nil; e = e.Next() {
+	for e := cinfo.Inputlist.Front(); e != nil; e = e.Next() {
 		// extract the descriptor input info from the list element
 		input, ok := e.Value.(DescriptorInput)
 		if ok == false {

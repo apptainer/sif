@@ -245,12 +245,12 @@ type FileImage struct {
 
 // CreateInfo wraps all SIF file creation info needed
 type CreateInfo struct {
-	pathname   string     // the end result output filename
-	launchstr  string     // the shell run command
-	sifversion string     // the SIF specification version used
-	arch       string     // the architecture targetted
-	id         uuid.UUID  // image unique identifier
-	inputlist  *list.List // list head of input info for descriptor creation
+	Pathname   string     // the end result output filename
+	Launchstr  string     // the shell run command
+	Sifversion string     // the SIF specification version used
+	Arch       string     // the architecture targetted
+	ID         uuid.UUID  // image unique identifier
+	Inputlist  *list.List // list head of input info for descriptor creation
 }
 
 //

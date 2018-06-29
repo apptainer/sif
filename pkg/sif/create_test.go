@@ -36,12 +36,12 @@ func TestCreateContainer(t *testing.T) {
 
 	// general info for the new SIF file creation
 	cinfo := CreateInfo{
-		pathname:   "testdata/testcontainer.sif",
-		launchstr:  HdrLaunch,
-		sifversion: HdrVersion,
-		arch:       HdrArchAMD64,
-		id:         uuid.NewV4(),
-		inputlist:  list.New(),
+		Pathname:   "testdata/testcontainer.sif",
+		Launchstr:  HdrLaunch,
+		Sifversion: HdrVersion,
+		Arch:       HdrArchAMD64,
+		ID:         uuid.NewV4(),
+		Inputlist:  list.New(),
 	}
 
 	// test container creation without any input descriptors
@@ -68,7 +68,7 @@ func TestCreateContainer(t *testing.T) {
 	defer definput.Fp.Close()
 
 	// add this descriptor input element to the list
-	cinfo.inputlist.PushBack(definput)
+	cinfo.Inputlist.PushBack(definput)
 
 	// data we need to create a system partition descriptor
 	parinput := DescriptorInput{
@@ -100,7 +100,7 @@ func TestCreateContainer(t *testing.T) {
 	}
 
 	// add this descriptor input element to the list
-	cinfo.inputlist.PushBack(parinput)
+	cinfo.Inputlist.PushBack(parinput)
 
 	// test container creation with two partition input descriptors
 	if err := CreateContainer(cinfo); err != nil {
