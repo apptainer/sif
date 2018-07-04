@@ -13,8 +13,6 @@ import (
 	"os"
 	"runtime"
 	"syscall"
-
-	"github.com/golang/glog"
 )
 
 // Read the global header from the container file
@@ -46,10 +44,17 @@ func readDescriptors(fimg *FileImage) error {
 // Look at key fields from the global header to assess SIF validity
 func isValidSif(fimg *FileImage) error {
 	archMap := map[string]string{
-		"386":   HdrArch386,
-		"amd64": HdrArchAMD64,
-		"arm":   HdrArchARM,
-		"arm64": HdrArchAMD64,
+		"386":      HdrArch386,
+		"amd64":    HdrArchAMD64,
+		"arm":      HdrArchARM,
+		"arm64":    HdrArchARM64,
+		"ppc64":    HdrArchPPC64,
+		"ppc64le":  HdrArchPPC64le,
+		"mips":     HdrArchMIPS,
+		"mipsle":   HdrArchMIPSle,
+		"mips64":   HdrArchMIPS64,
+		"mips64le": HdrArchMIPS64le,
+		"s390x":    HdrArchS390x,
 	}
 
 	// determine HdrArch value based on GOARCH

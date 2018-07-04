@@ -54,18 +54,19 @@ func TestCreateContainer(t *testing.T) {
 		Datatype: DataDeffile,
 		Groupid:  DescrDefaultGroup,
 		Link:     DescrUnusedLink,
-		Size:     222,
 		Fname:    "testdata/busybox.deffile",
-		Fp:       nil,
-		Data:     nil,
-		Image:    nil,
-		Descr:    nil,
 	}
 	// open up the data object file for this descriptor
 	if definput.Fp, err = os.Open(definput.Fname); err != nil {
 		t.Error("CreateContainer(cinfo): read data object file:", err)
 	}
 	defer definput.Fp.Close()
+
+	fi, err := definput.Fp.Stat()
+	if err != nil {
+		t.Error("CreateContainer(cinfo): can't stat definition file", err)
+	}
+	definput.Size = fi.Size()
 
 	// add this descriptor input element to the list
 	cinfo.Inputlist.PushBack(definput)
@@ -75,18 +76,19 @@ func TestCreateContainer(t *testing.T) {
 		Datatype: DataPartition,
 		Groupid:  DescrDefaultGroup,
 		Link:     DescrUnusedLink,
-		Size:     1003520,
 		Fname:    "testdata/busybox.squash",
-		Fp:       nil,
-		Data:     nil,
-		Image:    nil,
-		Descr:    nil,
 	}
 	// open up the data object file for this descriptor
 	if parinput.Fp, err = os.Open(parinput.Fname); err != nil {
 		t.Error("CreateContainer(cinfo): read data object file:", err)
 	}
 	defer parinput.Fp.Close()
+
+	fi, err = parinput.Fp.Stat()
+	if err != nil {
+		t.Error("CreateContainer(cinfo): can't stat partition file", err)
+	}
+	parinput.Size = fi.Size()
 
 	// extra data needed for the creation of a partition descriptor
 	pinfo := Partition{
@@ -116,12 +118,8 @@ func TestAddObject(t *testing.T) {
 		Datatype: DataLabels,
 		Groupid:  DescrDefaultGroup,
 		Link:     DescrUnusedLink,
-		Size:     0,
 		Fname:    "dummyLabels",
-		Fp:       nil,
 		Data:     []byte{'L', 'A', 'B', 'E', 'L'},
-		Image:    nil,
-		Descr:    nil,
 	}
 	labinput.Size = int64(binary.Size(labinput.Data))
 
@@ -130,18 +128,19 @@ func TestAddObject(t *testing.T) {
 		Datatype: DataPartition,
 		Groupid:  DescrDefaultGroup,
 		Link:     DescrUnusedLink,
-		Size:     1003520,
 		Fname:    "testdata/busybox.squash",
-		Fp:       nil,
-		Data:     nil,
-		Image:    nil,
-		Descr:    nil,
 	}
 	// open up the data object file for this descriptor
 	if parinput.Fp, err = os.Open(parinput.Fname); err != nil {
 		t.Error("CreateContainer(cinfo): read data object file:", err)
 	}
 	defer parinput.Fp.Close()
+
+	fi, err := parinput.Fp.Stat()
+	if err != nil {
+		t.Error("CreateContainer(cinfo): can't stat partition file", err)
+	}
+	parinput.Size = fi.Size()
 
 	// extra data needed for the creation of a partition descriptor
 	pinfo := Partition{

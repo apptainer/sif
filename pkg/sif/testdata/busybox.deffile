@@ -1,9 +1,5 @@
-BootStrap: busybox
-MirrorURL: https://www.busybox.net/downloads/binaries/1.26.1-defconfig-multiarch/busybox-x86_64
-
-%post
-    echo "Hello from inside the container"
+Bootstrap: docker
+From: busybox:latest
 
 %runscript
-    echo "Running command: $*"
-    exec "$@"
+	echo "Hi"

@@ -228,7 +228,7 @@ func TestGetHashType(t *testing.T) {
 }
 
 func TestGetEntity(t *testing.T) {
-	expected := []byte{13, 78, 200, 18, 112, 223, 238, 133, 20, 150, 77, 33, 102, 140, 254, 42, 203, 214, 136, 228}
+	expected := []byte{53, 107, 44, 157, 157, 145, 103, 234, 88, 248, 41, 114, 91, 213, 134, 113, 205, 93, 79, 117}
 
 	// load the test container
 	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
@@ -257,7 +257,7 @@ func TestGetEntity(t *testing.T) {
 }
 
 func TestGetEntityString(t *testing.T) {
-	expected := "0D4EC81270DFEE8514964D21668CFE2ACBD688E4"
+	expected := "356B2C9D9D9167EA58F829725BD58671CD5D4F75"
 
 	// load the test container
 	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)

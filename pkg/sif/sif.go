@@ -90,13 +90,20 @@ import (
 
 // SIF header constants and quantities
 const (
-	HdrLaunch      = "#!/usr/bin/env run-singularity\n"
-	HdrMagic       = "SIF_MAGIC" // SIF identification
-	HdrVersion     = "00"        // SIF SPEC VERSION
-	HdrArch386     = "02"        // 386 arch code
-	HdrArchAMD64   = "04"        // AMD64 arch code
-	HdrArchARM     = "08"        // ARM arch code
-	HdrArchAARCH64 = "16"        // AARCH64 arch code
+	HdrLaunch       = "#!/usr/bin/env run-singularity\n"
+	HdrMagic        = "SIF_MAGIC" // SIF identification
+	HdrVersion      = "00"        // SIF SPEC VERSION
+	HdrArch386      = "01"        // 386 (i[3-6]86) arch code
+	HdrArchAMD64    = "02"        // AMD64 arch code
+	HdrArchARM      = "03"        // ARM arch code
+	HdrArchARM64    = "04"        // AARCH64 arch code
+	HdrArchPPC64    = "05"        // PowerPC 64 arch code
+	HdrArchPPC64le  = "06"        // PowerPC 64 little-endian arch code
+	HdrArchMIPS     = "07"        // MIPS arch code
+	HdrArchMIPSle   = "08"        // MIPS little-endian arch code
+	HdrArchMIPS64   = "09"        // MIPS64 arch code
+	HdrArchMIPS64le = "10"        // MIPS64 little-endian arch code
+	HdrArchS390x    = "11"        // IBM s390x arch code
 
 	HdrLaunchLen  = 32 // len("#!/usr/bin/env... ")
 	HdrMagicLen   = 10 // len("SIF_MAGIC")
