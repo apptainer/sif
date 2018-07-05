@@ -38,27 +38,27 @@ func main() {
 
 	switch args[0] {
 	case "header":
-		err := cmdHeader(args[:1])
+		err := cmdHeader(args[1:])
 		if err != nil {
 			log.Fatal("error running `header' command:", err)
 		}
 	case "list":
-		err := cmdList(args[:1])
+		err := cmdList(args[1:])
 		if err != nil {
 			log.Fatal("error running `list' command:", err)
 		}
 	case "info":
-		err := cmdInfo(args[:1])
+		err := cmdInfo(args[1:])
 		if err != nil {
 			log.Fatal("error running `info' command:", err)
 		}
 	case "dump":
-		err := cmdDump(args[:1])
+		err := cmdDump(args[1:])
 		if err != nil {
 			log.Fatal("error running `dump' command:", err)
 		}
 	case "del":
-		err := cmdDel(args[:1])
+		err := cmdDel(args[1:])
 		if err != nil {
 			log.Fatal("error running `del' command:", err)
 		}
