@@ -5,22 +5,37 @@
 
 package main
 
-// cmdHeader displays the SIF file global header
+import (
+	"fmt"
+	"github.com/sylabs/sif/pkg/sif"
+)
+
+// cmdHeader displays a SIF file global header to stdout
 func cmdHeader(args []string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("usage")
+	}
+
+	fimg, err := sif.LoadContainer(args[0], true)
+	if err != nil {
+		return fmt.Errorf("while loading SIF file: %s", err)
+	}
+	defer fimg.UnloadContainer()
+
 	return nil
 }
 
-// cmdList lists basic information of all currently used descriptors
+// cmdList displays a list of all active descriptors from a SIF file to stdout
 func cmdList(args []string) error {
 	return nil
 }
 
-// cmdInfo give detailed information about a specific descriptor
+// cmdInfo displays detailed info about a descriptor from a SIF file to stdout
 func cmdInfo(args []string) error {
 	return nil
 }
 
-// cmdDump extracts a data object from a SIF file and outputs it to stdout
+// cmdDump extracts and output a data object from a SIF file to stdout
 func cmdDump(args []string) error {
 	return nil
 }
