@@ -8,6 +8,8 @@ package main
 import (
 	"fmt"
 	"github.com/sylabs/sif/pkg/sif"
+	"io"
+	"os"
 	"strconv"
 	"time"
 )
@@ -280,11 +282,31 @@ func cmdDump(args []string) error {
 		return fmt.Errorf("usage")
 	}
 
-	fimg, err := sif.LoadContainer(args[0], true)
+	id, err := strconv.ParseUint(args[0], 10, 32)
+	if err != nil {
+		return fmt.Errorf("while converting input descriptor id: %s", err)
+	}
+
+	fimg, err := sif.LoadContainer(args[1], true)
 	if err != nil {
 		return fmt.Errorf("while loading SIF file: %s", err)
 	}
 	defer fimg.UnloadContainer()
 
-	return nil
+	for _, v := range fimg.DescrArr {
+		if v.Used == false {
+			continue
+		} else if v.ID == uint32(id) {
+			if _, err := fimg.Fp.Seek(v.Fileoff, 0); err != nil {
+				return fmt.Errorf("while seeking to data object: %s", err)
+			}
+			if _, err := io.CopyN(os.Stdout, fimg.Fp, v.Filelen); err != nil {
+				return fmt.Errorf("while copying data object to stdout: %s", err)
+			}
+
+			return nil
+		}
+	}
+
+	return fmt.Errorf("descriptor not in range or currently unused")
 }
