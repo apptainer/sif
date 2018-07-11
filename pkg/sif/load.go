@@ -8,6 +8,7 @@
 package sif
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"os"
@@ -17,7 +18,7 @@ import (
 
 // Read the global header from the container file
 func readHeader(fimg *FileImage) error {
-	if err := binary.Read(fimg.Fp, binary.LittleEndian, &fimg.Header); err != nil {
+	if err := binary.Read(fimg.Reader, binary.LittleEndian, &fimg.Header); err != nil {
 		return fmt.Errorf("reading global header from container file: %s", err)
 	}
 
@@ -27,22 +28,24 @@ func readHeader(fimg *FileImage) error {
 // Read the used descriptors and populate an in-memory representation of those in node list
 func readDescriptors(fimg *FileImage) error {
 	// start by positioning us to the start of descriptors
-	_, err := fimg.Fp.Seek(fimg.Header.Descroff, 0)
+	_, err := fimg.Reader.Seek(fimg.Header.Descroff, 0)
 	if err != nil {
 		return fmt.Errorf("seek() setting to descriptors start: %s", err)
 	}
 
 	// Initialize descriptor array (slice) and read them all from file
 	fimg.DescrArr = make([]Descriptor, fimg.Header.Dtotal)
-	if err := binary.Read(fimg.Fp, binary.LittleEndian, &fimg.DescrArr); err != nil {
-		return fmt.Errorf("reading global header from container file: %s", err)
+	if err := binary.Read(fimg.Reader, binary.LittleEndian, &fimg.DescrArr); err != nil {
+		fimg.DescrArr = nil
+		return fmt.Errorf("reading descriptor array from container file: %s", err)
 	}
 
 	return nil
 }
 
-// Look at key fields from the global header to assess SIF validity
-func isValidSif(fimg *FileImage) error {
+// Look at key fields from the global header to assess SIF validity.
+// `runnable' checks is current container can run on host.
+func isValidSif(fimg *FileImage, runnable bool) error {
 	archMap := map[string]string{
 		"386":      HdrArch386,
 		"amd64":    HdrArchAMD64,
@@ -70,8 +73,10 @@ func isValidSif(fimg *FileImage) error {
 	if string(fimg.Header.Version[:HdrVersionLen-1]) != HdrVersion {
 		return fmt.Errorf("invalid SIF file: Version %s want %s", fimg.Header.Version, HdrVersion)
 	}
-	if string(fimg.Header.Arch[:HdrArchLen-1]) != arch {
-		return fmt.Errorf("invalid SIF file: Arch %s want %s", fimg.Header.Arch, arch)
+	if runnable {
+		if string(fimg.Header.Arch[:HdrArchLen-1]) != arch {
+			return fmt.Errorf("invalid SIF file: Arch %s want %s", fimg.Header.Arch, arch)
+		}
 	}
 	if fimg.Header.Dfree == fimg.Header.Dtotal {
 		return fmt.Errorf("invalid SIF file: no descriptor found")
@@ -106,6 +111,9 @@ func (fimg *FileImage) mapFile(rdonly bool) error {
 		return fmt.Errorf("while trying to call mmap on SIF file")
 	}
 
+	// create and associate a new bytes.Reader on top of mmap'ed data from file
+	fimg.Reader = bytes.NewReader(fimg.Filedata)
+
 	return nil
 }
 
@@ -130,27 +138,27 @@ func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
 		}
 	}
 
-	// read global header from SIF file
-	if err = readHeader(&fimg); err != nil {
-		return fimg, fmt.Errorf("reading global header: %s", err)
-	}
-
-	// validate global header
-	if err = isValidSif(&fimg); err != nil {
-		return
-	}
-
-	// read descriptor array from SIF file
-	if err = readDescriptors(&fimg); err != nil {
-		return fimg, fmt.Errorf("reading and populating descriptor nodes: %s", err)
-	}
-
 	// get a memory map of the SIF file
 	if err = fimg.mapFile(rdonly); err != nil {
 		return
 	}
 
-	return fimg, nil
+	// read global header from SIF file
+	if err = readHeader(&fimg); err != nil {
+		return
+	}
+
+	// validate global header
+	if err = isValidSif(&fimg, true); err != nil {
+		return
+	}
+
+	// read descriptor array from SIF file
+	if err = readDescriptors(&fimg); err != nil {
+		return
+	}
+
+	return
 }
 
 // LoadContainerFp is responsible for loading a SIF container file. It takes
@@ -163,36 +171,62 @@ func LoadContainerFp(fp *os.File, rdonly bool) (fimg FileImage, err error) {
 
 	fimg.Fp = fp
 
+	// get a memory map of the SIF file
+	if err = fimg.mapFile(rdonly); err != nil {
+		return
+	}
+
 	// read global header from SIF file
 	if err = readHeader(&fimg); err != nil {
-		return fimg, fmt.Errorf("reading global header: %s", err)
+		return
 	}
 
 	// validate global header
-	if err = isValidSif(&fimg); err != nil {
+	if err = isValidSif(&fimg, true); err != nil {
 		return
 	}
 
 	// read descriptor array from SIF file
 	if err = readDescriptors(&fimg); err != nil {
-		return fimg, fmt.Errorf("reading and populating descriptor nodes: %s", err)
-	}
-
-	// get a memory map of the SIF file
-	if err = fimg.mapFile(rdonly); err != nil {
 		return
 	}
 
 	return fimg, nil
 }
 
-// UnloadContainer closes the SIF container file and free associated resources if needed
-func (fimg *FileImage) UnloadContainer() (err error) {
-	if err = fimg.unmapFile(); err != nil {
+// LoadContainerReader is responsible for processing SIF data from a byte stream
+// and extract various components like the global header, descriptors and even
+// perhaps data, depending on how much is read from the source.
+func LoadContainerReader(b *bytes.Reader) (fimg FileImage, err error) {
+	fimg.Reader = b
+
+	// read global header from SIF file
+	if err = readHeader(&fimg); err != nil {
 		return
 	}
-	if err = fimg.Fp.Close(); err != nil {
-		return fmt.Errorf("closing SIF file failed, corrupted: don't use: %s", err)
+
+	// validate global header
+	if err = isValidSif(&fimg, false); err != nil {
+		return
+	}
+
+	// in the case where the reader buffer doesn't include descriptor data, we
+	// don't return an error and DescrArr will be set to nil
+	readDescriptors(&fimg)
+
+	return fimg, nil
+}
+
+// UnloadContainer closes the SIF container file and free associated resources if needed
+func (fimg *FileImage) UnloadContainer() (err error) {
+	// if SIF data comes from file, not a slice buffer (see LoadContainer() variants)
+	if fimg.Fp != nil {
+		if err = fimg.unmapFile(); err != nil {
+			return
+		}
+		if err = fimg.Fp.Close(); err != nil {
+			return fmt.Errorf("closing SIF file failed, corrupted: don't use: %s", err)
+		}
 	}
 	return
 }

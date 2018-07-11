@@ -6,6 +6,8 @@
 package sif
 
 import (
+	"bytes"
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -34,5 +36,35 @@ func TestLoadContainerFp(t *testing.T) {
 
 	if err = fimg.UnloadContainer(); err != nil {
 		t.Error("fimg.UnloadContainer():", err)
+	}
+}
+
+func TestLoadContainerReader(t *testing.T) {
+	content, err := ioutil.ReadFile("testdata/testcontainer2.sif")
+	if err != nil {
+		t.Error(`ioutil.ReadFile("testdata/testcontainer2.sif"):`, err)
+	}
+
+	// short read on the descriptor list, make sure it still work
+	// and that DescrArr is set to nil (since not complete)
+	r := bytes.NewReader(content[:31768])
+	fimg, err := LoadContainerReader(r)
+	if err != nil || fimg.DescrArr != nil {
+		t.Error(`LoadContainerBuffer(buf):`, err)
+	}
+
+	if err = fimg.UnloadContainer(); err != nil {
+		t.Error(`fimg.UnloadContainer():`, err)
+	}
+
+	// this buffer is big enough to include header + complete DescrArr
+	r = bytes.NewReader(content[:32768])
+	fimg, err = LoadContainerReader(r)
+	if err != nil {
+		t.Error(`LoadContainerBuffer(buf):`, err)
+	}
+
+	if err = fimg.UnloadContainer(); err != nil {
+		t.Error(`fimg.UnloadContainer():`, err)
 	}
 }

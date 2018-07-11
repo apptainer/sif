@@ -243,11 +243,12 @@ type Header struct {
 
 // FileImage describes the representation of a SIF file in memory
 type FileImage struct {
-	Header   Header       // the loaded SIF global header
-	Fp       *os.File     // file pointer of opened SIF file
-	Filesize int64        // file size of the opened SIF file
-	Filedata []byte       // the content of the opened file
-	DescrArr []Descriptor // slice of loaded descriptors from SIF file
+	Header   Header        // the loaded SIF global header
+	Fp       *os.File      // file pointer of opened SIF file
+	Filesize int64         // file size of the opened SIF file
+	Filedata []byte        // the content of the opened file
+	Reader   *bytes.Reader // reader on top of Mapdata
+	DescrArr []Descriptor  // slice of loaded descriptors from SIF file
 }
 
 // CreateInfo wraps all SIF file creation info needed
