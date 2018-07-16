@@ -139,6 +139,65 @@ func (fimg *FileImage) GetFromLinkedDescr(ID uint32) (*Descriptor, int, error) {
 	return &fimg.DescrArr[match], match, nil
 }
 
+// GetFromDescr searches for a descriptor comparing all non-nil fields of a provided descriptor
+func (fimg *FileImage) GetFromDescr(descr Descriptor) (*Descriptor, int, error) {
+	var match = -1
+
+	for i, v := range fimg.DescrArr {
+		if v.Used == false {
+			continue
+		} else {
+			if descr.Datatype != 0 && descr.Datatype != v.Datatype {
+				continue
+			}
+			if descr.ID != 0 && descr.ID != v.ID {
+				continue
+			}
+			if descr.Groupid != 0 && descr.Groupid != v.Groupid {
+				continue
+			}
+			if descr.Link != 0 && descr.Link != v.Link {
+				continue
+			}
+			if descr.Fileoff != 0 && descr.Fileoff != v.Fileoff {
+				continue
+			}
+			if descr.Filelen != 0 && descr.Filelen != v.Filelen {
+				continue
+			}
+			if descr.Storelen != 0 && descr.Storelen != v.Storelen {
+				continue
+			}
+			if descr.Ctime != 0 && descr.Ctime != v.Ctime {
+				continue
+			}
+			if descr.Mtime != 0 && descr.Mtime != v.Mtime {
+				continue
+			}
+			if descr.UID != 0 && descr.UID != v.UID {
+				continue
+			}
+			if descr.Gid != 0 && descr.Gid != v.Gid {
+				continue
+			}
+			if descr.Name[0] != 0 && !bytes.Equal(descr.Name[:], v.Name[:]) {
+				continue
+			}
+
+			if match != -1 {
+				return nil, -1, fmt.Errorf("key collision, be more precise")
+			}
+			match = i
+		}
+	}
+
+	if match == -1 {
+		return nil, -1, fmt.Errorf("key not found")
+	}
+
+	return &fimg.DescrArr[match], match, nil
+}
+
 //
 // Methods on (descr *Descriptor)
 //
