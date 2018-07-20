@@ -18,7 +18,6 @@ package sif
 
 import (
 	"bytes"
-	"container/list"
 	"github.com/satori/go.uuid"
 	"os"
 )
@@ -253,12 +252,12 @@ type FileImage struct {
 
 // CreateInfo wraps all SIF file creation info needed
 type CreateInfo struct {
-	Pathname   string     // the end result output filename
-	Launchstr  string     // the shell run command
-	Sifversion string     // the SIF specification version used
-	Arch       string     // the architecture targetted
-	ID         uuid.UUID  // image unique identifier
-	Inputlist  *list.List // list head of input info for descriptor creation
+	Pathname   string            // the end result output filename
+	Launchstr  string            // the shell run command
+	Sifversion string            // the SIF specification version used
+	Arch       string            // the architecture targetted
+	ID         uuid.UUID         // image unique identifier
+	InputDescr []DescriptorInput // slice of input info for descriptor creation
 }
 
 //

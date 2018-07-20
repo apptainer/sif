@@ -6,7 +6,6 @@
 package sif
 
 import (
-	"container/list"
 	"encoding/binary"
 	"github.com/satori/go.uuid"
 	"os"
@@ -41,7 +40,6 @@ func TestCreateContainer(t *testing.T) {
 		Sifversion: HdrVersion,
 		Arch:       HdrArchAMD64,
 		ID:         uuid.NewV4(),
-		Inputlist:  list.New(),
 	}
 
 	// test container creation without any input descriptors
@@ -68,8 +66,8 @@ func TestCreateContainer(t *testing.T) {
 	}
 	definput.Size = fi.Size()
 
-	// add this descriptor input element to the list
-	cinfo.Inputlist.PushBack(definput)
+	// add this descriptor input element to creation descriptor slice
+	cinfo.InputDescr = append(cinfo.InputDescr, definput)
 
 	// data we need to create a system partition descriptor
 	parinput := DescriptorInput{
@@ -102,8 +100,8 @@ func TestCreateContainer(t *testing.T) {
 		t.Error("CreateContainer(cinfo): serialize pinfo:", err)
 	}
 
-	// add this descriptor input element to the list
-	cinfo.Inputlist.PushBack(parinput)
+	// add this descriptor input element to creation descriptor slice
+	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
 
 	// test container creation with two partition input descriptors
 	if err := CreateContainer(cinfo); err != nil {

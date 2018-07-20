@@ -194,7 +194,7 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 	var fimg FileImage
 	fimg.DescrArr = make([]Descriptor, DescrNumEntries)
 
-	if cinfo.Inputlist.Len() == 0 {
+	if len(cinfo.InputDescr) == 0 {
 		return fmt.Errorf("need at least one input descriptor")
 	}
 
@@ -223,14 +223,8 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}
 
-	for e := cinfo.Inputlist.Front(); e != nil; e = e.Next() {
-		// extract the descriptor input info from the list element
-		input, ok := e.Value.(DescriptorInput)
-		if ok == false {
-			return fmt.Errorf("structure is not of expected DescriptorInput type")
-		}
-
-		if err = createDescriptor(&fimg, input); err != nil {
+	for _, v := range cinfo.InputDescr {
+		if err = createDescriptor(&fimg, v); err != nil {
 			return
 		}
 	}
