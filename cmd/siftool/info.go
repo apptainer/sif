@@ -7,11 +7,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/sylabs/sif/pkg/sif"
 	"io"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/sylabs/sif/pkg/sif"
 )
 
 // readableSize returns the size in human readable format
