@@ -19,8 +19,9 @@ package sif
 import (
 	"bytes"
 	"container/list"
-	"github.com/satori/go.uuid"
 	"os"
+
+	"github.com/satori/go.uuid"
 )
 
 // Layout of a SIF file (example)

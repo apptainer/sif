@@ -8,9 +8,10 @@ package sif
 import (
 	"container/list"
 	"encoding/binary"
-	"github.com/satori/go.uuid"
 	"os"
 	"testing"
+
+	"github.com/satori/go.uuid"
 )
 
 const (
