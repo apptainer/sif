@@ -78,7 +78,11 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 	descr.Used = true
 	descr.Groupid = input.Groupid
 	descr.Link = input.Link
-	descr.Fileoff, err = setFileOffNA(fimg, os.Getpagesize())
+	align := os.Getpagesize()
+	if input.Alignment != 0 {
+		align = input.Alignment
+	}
+	descr.Fileoff, err = setFileOffNA(fimg, align)
 	if err != nil {
 		return
 	}

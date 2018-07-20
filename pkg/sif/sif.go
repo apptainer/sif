@@ -269,10 +269,11 @@ type CreateInfo struct {
 
 // DescriptorInput describes the common info needed to create a data object descriptor
 type DescriptorInput struct {
-	Datatype Datatype // datatype being harvested for new descriptor
-	Groupid  uint32   // group to be set for new descriptor
-	Link     uint32   // link to be set for new descriptor
-	Size     int64    // size of the data object for the new descriptor
+	Datatype  Datatype // datatype being harvested for new descriptor
+	Groupid   uint32   // group to be set for new descriptor
+	Link      uint32   // link to be set for new descriptor
+	Size      int64    // size of the data object for the new descriptor
+	Alignment int      // Align requirement for data object
 
 	Fname string   // file containing data associated with the new descriptor
 	Fp    *os.File // file pointer to opened 'fname'

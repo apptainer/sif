@@ -73,10 +73,11 @@ func TestCreateContainer(t *testing.T) {
 
 	// data we need to create a system partition descriptor
 	parinput := DescriptorInput{
-		Datatype: DataPartition,
-		Groupid:  DescrDefaultGroup,
-		Link:     DescrUnusedLink,
-		Fname:    "testdata/busybox.squash",
+		Datatype:  DataPartition,
+		Groupid:   DescrDefaultGroup,
+		Link:      DescrUnusedLink,
+		Fname:     "testdata/busybox.squash",
+		Alignment: 1048576, // Test an aggresive alignment requirement
 	}
 	// open up the data object file for this descriptor
 	if parinput.Fp, err = os.Open(parinput.Fname); err != nil {
