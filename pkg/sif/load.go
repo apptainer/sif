@@ -78,9 +78,6 @@ func isValidSif(fimg *FileImage, runnable bool) error {
 			return fmt.Errorf("invalid SIF file: Arch %s want %s", fimg.Header.Arch, arch)
 		}
 	}
-	if fimg.Header.Dfree == fimg.Header.Dtotal {
-		return fmt.Errorf("invalid SIF file: no descriptor found")
-	}
 
 	return nil
 }

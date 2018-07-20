@@ -187,7 +187,7 @@ func TestDeleteObject(t *testing.T) {
 	}
 
 	// test data object deletation
-	if err := fimg.DeleteObject(2, DelZero); err != nil {
+	if err := fimg.DeleteObject(2, DelCompact); err != nil {
 		t.Error(`fimg.DeleteObject(2, DelZero):`, err)
 	}
 

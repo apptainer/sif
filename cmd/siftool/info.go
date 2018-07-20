@@ -193,7 +193,7 @@ func cmdList(args []string) error {
 				fmt.Printf("|%-7d ", v.Link)
 			}
 
-			fposbuf := fmt.Sprintf("|%d-%d ", v.Fileoff, v.Fileoff+v.Filelen-1)
+			fposbuf := fmt.Sprintf("|%d-%d ", v.Fileoff, v.Fileoff+v.Filelen)
 			fmt.Printf("%-26s ", fposbuf)
 
 			switch v.Datatype {

@@ -314,6 +314,43 @@ func (fimg *FileImage) AddObject(input DescriptorInput) error {
 	return nil
 }
 
+// descrIsLast return true if passed descriptor's object is the last in a SIF file
+func objectIsLast(fimg *FileImage, descr *Descriptor) bool {
+	if fimg.Filesize == descr.Fileoff+descr.Filelen {
+		return true
+	}
+
+	return false
+}
+
+// compactAtDescr joins data objects leading and following "descr" by compacting a SIF file
+func compactAtDescr(fimg *FileImage, descr *Descriptor) error {
+	var prev Descriptor
+
+	for _, v := range fimg.DescrArr {
+		if v.Used == false || v.ID == descr.ID {
+			continue
+		} else {
+			if v.Fileoff > prev.Fileoff {
+				prev = v
+				fmt.Println(prev)
+			}
+		}
+	}
+	// make sure it's not the only used descriptor first
+	if prev.Used == true {
+		if err := fimg.Fp.Truncate(prev.Fileoff + prev.Filelen); err != nil {
+			return err
+		}
+	} else {
+		if err := fimg.Fp.Truncate(descr.Fileoff); err != nil {
+			return err
+		}
+	}
+	fimg.Header.Datalen -= descr.Storelen
+	return nil
+}
+
 // DeleteObject removes data from a SIF file referred to by id. The descriptor for the
 // data object is free'd and can be reused later. There's currenly 2 clean mode specified
 // by flags: DelZero, to zero out the data region for security and DelCompact to
@@ -330,7 +367,19 @@ func (fimg *FileImage) DeleteObject(id uint32, flags int) error {
 			return err
 		}
 	case DelCompact:
-		return fmt.Errorf("method (DelCompact) not implemented yet")
+		if objectIsLast(fimg, descr) {
+			if err = compactAtDescr(fimg, descr); err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("method (DelCompact) not implemented yet")
+		}
+	default:
+		if objectIsLast(fimg, descr) {
+			if err = compactAtDescr(fimg, descr); err != nil {
+				return err
+			}
+		}
 	}
 
 	// update some global header fields from deleting this descriptor
