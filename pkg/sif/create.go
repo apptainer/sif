@@ -333,7 +333,6 @@ func compactAtDescr(fimg *FileImage, descr *Descriptor) error {
 		} else {
 			if v.Fileoff > prev.Fileoff {
 				prev = v
-				fmt.Println(prev)
 			}
 		}
 	}
