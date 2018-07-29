@@ -67,28 +67,29 @@ func (fimg *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
 	return &fimg.DescrArr[match], match, nil
 }
 
-// GetPartFromGroup searches for a partition descriptor inside a specific group
-func (fimg *FileImage) GetPartFromGroup(groupid uint32) (*Descriptor, int, error) {
-	var match = -1
+// GetPartFromGroup searches for partition descriptors inside a specific group
+func (fimg *FileImage) GetPartFromGroup(groupid uint32) ([]*Descriptor, []int, error) {
+	var descrs []*Descriptor
+	var indexes []int
+	var count int
 
 	for i, v := range fimg.DescrArr {
 		if v.Used == false {
 			continue
 		} else {
 			if v.Datatype == DataPartition && v.Groupid == groupid {
-				if match != -1 {
-					return nil, -1, fmt.Errorf("key collision, be more precise")
-				}
-				match = i
+				indexes = append(indexes, i)
+				descrs = append(descrs, &fimg.DescrArr[i])
+				count++
 			}
 		}
 	}
 
-	if match == -1 {
-		return nil, -1, fmt.Errorf("key not found")
+	if count == 0 {
+		return nil, nil, fmt.Errorf("key not found")
 	}
 
-	return &fimg.DescrArr[match], match, nil
+	return descrs, indexes, nil
 }
 
 // GetSignFromGroup searches for a signature descriptor inside a specific group

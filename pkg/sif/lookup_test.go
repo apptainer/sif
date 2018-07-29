@@ -108,14 +108,18 @@ func TestGetFromLinkedDescr(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	part, _, err := fimg.GetPartFromGroup(DescrDefaultGroup)
+	parts, _, err := fimg.GetPartFromGroup(DescrDefaultGroup)
 	if err != nil {
 		t.Error("fimg.GetPartFromGroup(DescrDefaultGroup): should have found descriptor:", err)
 	}
 
-	_, _, err = fimg.GetFromLinkedDescr(part.ID)
+	if len(parts) != 1 {
+		t.Error("multiple partitions where expecting 1")
+	}
+
+	_, _, err = fimg.GetFromLinkedDescr(parts[0].ID)
 	if err != nil {
-		t.Error("fimg.GetFromLinkedDescr(part.ID): should have found descriptor:", err)
+		t.Error("fimg.GetFromLinkedDescr(parts[0].ID): should have found descriptor:", err)
 	}
 
 	// unload the test container
@@ -192,13 +196,17 @@ func TestGetName(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	part, _, err := fimg.GetPartFromGroup(DescrDefaultGroup)
+	parts, _, err := fimg.GetPartFromGroup(DescrDefaultGroup)
 	if err != nil {
 		t.Error("fimg.GetPartFromGroup(DescrDefaultGroup): should have found descriptor:", err)
 	}
 
-	if part.GetName() != "busybox.squash" {
-		t.Error(`part.GetName() != "busybox.squash"`)
+	if len(parts) != 1 {
+		t.Error("multiple partitions where expecting 1")
+	}
+
+	if parts[0].GetName() != "busybox.squash" {
+		t.Error(`parts[0].GetName() != "busybox.squash"`)
 	}
 
 	// unload the test container
@@ -214,14 +222,18 @@ func TestGetFsType(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	part, _, err := fimg.GetPartFromGroup(DescrDefaultGroup)
+	parts, _, err := fimg.GetPartFromGroup(DescrDefaultGroup)
 	if err != nil {
 		t.Error("fimg.GetPartFromGroup(DescrDefaultGroup): should have found descriptor:", err)
 	}
 
-	fstype, err := part.GetFsType()
+	if len(parts) != 1 {
+		t.Error("multiple partitions where expecting 1")
+	}
+
+	fstype, err := parts[0].GetFsType()
 	if err != nil {
-		t.Error("part.GetFsType()", err)
+		t.Error("parts[0].GetFsType()", err)
 	}
 
 	if fstype != FsSquash {
@@ -241,14 +253,18 @@ func TestGetPartType(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	part, _, err := fimg.GetPartFromGroup(DescrDefaultGroup)
+	parts, _, err := fimg.GetPartFromGroup(DescrDefaultGroup)
 	if err != nil {
 		t.Error("fimg.GetPartFromGroup(DescrDefaultGroup): should have found descriptor:", err)
 	}
 
-	parttype, err := part.GetPartType()
+	if len(parts) != 1 {
+		t.Error("multiple partitions where expecting 1")
+	}
+
+	parttype, err := parts[0].GetPartType()
 	if err != nil {
-		t.Error("part.GetPartType()", err)
+		t.Error("parts[0].GetPartType()", err)
 	}
 
 	if parttype != PartSystem {
