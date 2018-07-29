@@ -114,7 +114,7 @@ func TestGetFromLinkedDescr(t *testing.T) {
 	}
 
 	if len(parts) != 1 {
-		t.Error("multiple partitions where expecting 1")
+		t.Error("multiple partitions found where expecting 1")
 	}
 
 	_, _, err = fimg.GetFromLinkedDescr(parts[0].ID)
@@ -202,7 +202,7 @@ func TestGetName(t *testing.T) {
 	}
 
 	if len(parts) != 1 {
-		t.Error("multiple partitions where expecting 1")
+		t.Error("multiple partitions found where expecting 1")
 	}
 
 	if parts[0].GetName() != "busybox.squash" {
@@ -228,7 +228,7 @@ func TestGetFsType(t *testing.T) {
 	}
 
 	if len(parts) != 1 {
-		t.Error("multiple partitions where expecting 1")
+		t.Error("multiple partitions found where expecting 1")
 	}
 
 	fstype, err := parts[0].GetFsType()
@@ -259,7 +259,7 @@ func TestGetPartType(t *testing.T) {
 	}
 
 	if len(parts) != 1 {
-		t.Error("multiple partitions where expecting 1")
+		t.Error("multiple partitions found where expecting 1")
 	}
 
 	parttype, err := parts[0].GetPartType()
@@ -284,14 +284,18 @@ func TestGetHashType(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	sig, _, err := fimg.GetSignFromGroup(DescrDefaultGroup)
+	sigs, _, err := fimg.GetSignFromGroup(DescrDefaultGroup)
 	if err != nil {
 		t.Error("fimg.GetSignFromGroup(DescrDefaultGroup): should have found descriptor:", err)
 	}
 
-	hashtype, err := sig.GetHashType()
+	if len(sigs) != 1 {
+		t.Error("multiple signatures found where expecting 1")
+	}
+
+	hashtype, err := sigs[0].GetHashType()
 	if err != nil {
-		t.Error("sig.GetHashType()", err)
+		t.Error("sigs[0].GetHashType()", err)
 	}
 
 	if hashtype != HashSHA384 {
@@ -313,14 +317,18 @@ func TestGetEntity(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	sig, _, err := fimg.GetSignFromGroup(DescrDefaultGroup)
+	sigs, _, err := fimg.GetSignFromGroup(DescrDefaultGroup)
 	if err != nil {
 		t.Error("fimg.GetSignFromGroup(DescrDefaultGroup): should have found descriptor:", err)
 	}
 
-	entity, err := sig.GetEntity()
+	if len(sigs) != 1 {
+		t.Error("multiple signatures found where expecting 1")
+	}
+
+	entity, err := sigs[0].GetEntity()
 	if err != nil {
-		t.Error("sig.GetEntity()", err)
+		t.Error("sigs[0].GetEntity()", err)
 	}
 
 	if bytes.Equal(expected, entity[:len(expected)]) == false {
@@ -342,14 +350,18 @@ func TestGetEntityString(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	sig, _, err := fimg.GetSignFromGroup(DescrDefaultGroup)
+	sigs, _, err := fimg.GetSignFromGroup(DescrDefaultGroup)
 	if err != nil {
 		t.Error("fimg.GetSignFromGroup(DescrDefaultGroup): should have found descriptor:", err)
 	}
 
-	entity, err := sig.GetEntityString()
+	if len(sigs) != 1 {
+		t.Error("multiple signatures found where expecting 1")
+	}
+
+	entity, err := sigs[0].GetEntityString()
 	if err != nil {
-		t.Error("sig.GetEntityString()", err)
+		t.Error("sigs[0].GetEntityString()", err)
 	}
 
 	if expected != entity {
