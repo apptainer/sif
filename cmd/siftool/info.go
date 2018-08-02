@@ -70,7 +70,7 @@ func cmdHeader(args []string) error {
 
 	fimg, err := sif.LoadContainer(args[0], true)
 	if err != nil {
-		return fmt.Errorf("while loading SIF file: %s", err)
+		return err
 	}
 	defer fimg.UnloadContainer()
 
@@ -163,7 +163,7 @@ func cmdList(args []string) error {
 
 	fimg, err := sif.LoadContainer(args[0], true)
 	if err != nil {
-		return fmt.Errorf("while loading SIF file: %s", err)
+		return err
 	}
 	defer fimg.UnloadContainer()
 
@@ -227,7 +227,7 @@ func cmdInfo(args []string) error {
 
 	fimg, err := sif.LoadContainer(args[1], true)
 	if err != nil {
-		return fmt.Errorf("while loading SIF file: %s", err)
+		return err
 	}
 	defer fimg.UnloadContainer()
 
@@ -289,7 +289,7 @@ func cmdDump(args []string) error {
 
 	fimg, err := sif.LoadContainer(args[1], true)
 	if err != nil {
-		return fmt.Errorf("while loading SIF file: %s", err)
+		return err
 	}
 	defer fimg.UnloadContainer()
 

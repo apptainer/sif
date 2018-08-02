@@ -26,27 +26,9 @@ The commands are:
 	list     list object descriptors from SIF files
 	info     display detailed information of object descriptors
 	dump     extract and output (stdout) data objects from SIF files
+	new      create a new empty SIF image file
+	add      add a data object to a SIF file
 	del      delete a specified object descriptor and data from SIF file
-`
-
-const usageHeader = "" +
-	`usage: header containerfile
-`
-
-const usageList = "" +
-	`usage: list containerfile
-`
-
-const usageInfo = "" +
-	`usage: info descriptorid containerfile
-`
-
-const usageDump = "" +
-	`usage: dump descriptorid containerfile
-`
-
-const usageDel = "" +
-	`usage: del descriptorid containerfile
 `
 
 func usage() {
@@ -55,9 +37,41 @@ func usage() {
 	os.Exit(2)
 }
 
+type action func([]string) error
+
+type subcmd struct {
+	name  string
+	fn    action
+	usage string
+}
+
 func main() {
 	flag.Usage = usage
 	flag.Parse()
+
+	subcmds := map[string]subcmd{
+		"header": {"header", cmdHeader, "" +
+			`usage: header containerfile
+`},
+		"list": {"list", cmdList, "" +
+			`usage: list containerfile
+`},
+		"info": {"info", cmdInfo, "" +
+			`usage: info descriptorid containerfile
+`},
+		"dump": {"dump", cmdDump, "" +
+			`usage: dump descriptorid containerfile
+`},
+		"new": {"new", cmdNew, "" +
+			`usage: new containerfile
+`},
+		"add": {"add", cmdAdd, "" +
+			`usage: add dataobjectfile containerfile
+`},
+		"del": {"del", cmdDel, "" +
+			`usage: del descriptorid containerfile
+`},
+	}
 
 	log.SetFlags(0)
 
@@ -66,53 +80,16 @@ func main() {
 		flag.Usage()
 	}
 
-	switch args[0] {
-	case "header":
-		err := cmdHeader(args[1:])
-		if err != nil {
-			if err.Error() == "usage" {
-				log.Fatal(usageHeader)
-			} else {
-				log.Fatal("error running `header' command:", err)
-			}
-		}
-	case "list":
-		err := cmdList(args[1:])
-		if err != nil {
-			if err.Error() == "usage" {
-				log.Fatal(usageList)
-			} else {
-				log.Fatal("error running `list' command:", err)
-			}
-		}
-	case "info":
-		err := cmdInfo(args[1:])
-		if err != nil {
-			if err.Error() == "usage" {
-				log.Fatal(usageInfo)
-			} else {
-				log.Fatal("error running `info' command:", err)
-			}
-		}
-	case "dump":
-		err := cmdDump(args[1:])
-		if err != nil {
-			if err.Error() == "usage" {
-				log.Fatal(usageDump)
-			} else {
-				log.Fatal("error running `dump' command:", err)
-			}
-		}
-	case "del":
-		err := cmdDel(args[1:])
-		if err != nil {
-			if err.Error() == "usage" {
-				log.Fatal(usageDel)
-			} else {
-				log.Fatal("error running `del' command:", err)
-			}
-		}
-	default:
+	cmd, ok := subcmds[args[0]]
+	if !ok {
 		log.Fatal("Unknown command:", args[0])
+	}
+
+	if err := cmd.fn(args[1:]); err != nil {
+		if err.Error() == "usage" {
+			log.Fatal(cmd.usage)
+		} else {
+			log.Fatalf("error running %s command :%s\n", cmd.name, err)
+		}
 	}
 }

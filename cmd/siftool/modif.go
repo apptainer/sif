@@ -7,9 +7,59 @@ package main
 
 import (
 	"fmt"
+	"github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
+	"runtime"
 	"strconv"
 )
+
+func cmdNew(args []string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("usage")
+	}
+
+	archMap := map[string]string{
+		"386":      sif.HdrArch386,
+		"amd64":    sif.HdrArchAMD64,
+		"arm":      sif.HdrArchARM,
+		"arm64":    sif.HdrArchARM64,
+		"ppc64":    sif.HdrArchPPC64,
+		"ppc64le":  sif.HdrArchPPC64le,
+		"mips":     sif.HdrArchMIPS,
+		"mipsle":   sif.HdrArchMIPSle,
+		"mips64":   sif.HdrArchMIPS64,
+		"mips64le": sif.HdrArchMIPS64le,
+		"s390x":    sif.HdrArchS390x,
+	}
+
+	// determine HdrArch value based on GOARCH
+	arch, ok := archMap[runtime.GOARCH]
+	if !ok {
+		return fmt.Errorf("GOARCH %v not supported", runtime.GOARCH)
+	}
+
+	cinfo := sif.CreateInfo{
+		Pathname:   args[0],
+		Launchstr:  sif.HdrLaunch,
+		Sifversion: sif.HdrVersion,
+		Arch:       arch,
+		ID:         uuid.NewV4(),
+	}
+
+	err := sif.CreateContainer(cinfo)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func cmdAdd(args []string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("usage")
+	}
+	return nil
+}
 
 func cmdDel(args []string) error {
 	if len(args) != 2 {
@@ -23,7 +73,7 @@ func cmdDel(args []string) error {
 
 	fimg, err := sif.LoadContainer(args[1], false)
 	if err != nil {
-		return fmt.Errorf("while loading SIF file: %s", err)
+		return err
 	}
 	defer fimg.UnloadContainer()
 
@@ -32,7 +82,7 @@ func cmdDel(args []string) error {
 			continue
 		} else if v.ID == uint32(id) {
 			if err := fimg.DeleteObject(uint32(id), 0); err != nil {
-				return fmt.Errorf("while deleting object: %s", err)
+				return err
 			}
 
 			return nil
