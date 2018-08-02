@@ -194,10 +194,6 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 	var fimg FileImage
 	fimg.DescrArr = make([]Descriptor, DescrNumEntries)
 
-	if len(cinfo.InputDescr) == 0 {
-		return fmt.Errorf("need at least one input descriptor")
-	}
-
 	// Prepare a fresh global header
 	copy(fimg.Header.Launch[:], cinfo.Launchstr)
 	copy(fimg.Header.Magic[:], HdrMagic)
