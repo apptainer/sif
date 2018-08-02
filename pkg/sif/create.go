@@ -101,7 +101,7 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 }
 
 // Write new data object to the SIF file
-func writeDataObject(fimg *FileImage, input DescriptorInput) error {
+func writeDataObject(fimg *FileImage, index int, input DescriptorInput) error {
 	// if we have bytes in input.data use that instead of an input file
 	if input.Data != nil {
 		if _, err := fimg.Fp.Write(input.Data); err != nil {
@@ -110,8 +110,13 @@ func writeDataObject(fimg *FileImage, input DescriptorInput) error {
 	} else {
 		if n, err := io.Copy(fimg.Fp, input.Fp); err != nil {
 			return fmt.Errorf("copying data object file to SIF file: %s", err)
-		} else if n != input.Size {
+		} else if n != input.Size && input.Size != 0 {
 			return fmt.Errorf("short write while copying to SIF file")
+		} else if input.Size == 0 {
+			// coming in from os.Stdin (pipe)
+			descr := &fimg.DescrArr[index]
+			descr.Filelen = n
+			copy(descr.Name[:DescrNameLen], "pipe"+fmt.Sprint(index+1))
 		}
 	}
 
@@ -145,7 +150,7 @@ func createDescriptor(fimg *FileImage, input DescriptorInput) (err error) {
 	}
 
 	// write data object associated to the descriptor in SIF file
-	if err = writeDataObject(fimg, input); err != nil {
+	if err = writeDataObject(fimg, idx, input); err != nil {
 		return fmt.Errorf("writing data object for SIF file: %s", err)
 	}
 

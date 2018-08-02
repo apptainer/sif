@@ -43,8 +43,8 @@ func TestCreateContainer(t *testing.T) {
 	}
 
 	// test container creation without any input descriptors
-	if err := CreateContainer(cinfo); err == nil {
-		t.Error("CreateContainer(cinfo): should not allow empty input descriptor list")
+	if err := CreateContainer(cinfo); err != nil {
+		t.Error("CreateContainer(cinfo): should allow empty input descriptor list")
 	}
 
 	// data we need to create a definition file descriptor
