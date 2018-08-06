@@ -33,7 +33,6 @@ The commands are:
 
 func usage() {
 	fmt.Fprintln(os.Stderr, usageMessage)
-	flag.PrintDefaults()
 	os.Exit(2)
 }
 
@@ -46,9 +45,6 @@ type subcmd struct {
 }
 
 func main() {
-	flag.Usage = usage
-	flag.Parse()
-
 	subcmds := map[string]subcmd{
 		"header": {"header", cmdHeader, "" +
 			`usage: header containerfile
@@ -66,7 +62,14 @@ func main() {
 			`usage: new containerfile
 `},
 		"add": {"add", cmdAdd, "" +
-			`usage: add dataobjectfile containerfile
+			`usage: add containerfile dataobjectfile|-
+	-datatype     the type of data to add (NEEDED no default):
+	                0-Deffile,   1-EnvVar,    2-Labels,
+	                3-Partition, 4-Signature, 5-GenericJSON
+	-groupid      set groupid (default: DescrUnusedGroup)
+	-link         set link pointer (default: DescrUnusedLink)
+	-alignment    set alignment constraint (default: aligned on page size)
+	-filename     set logical filename/handle (default: input filename)
 `},
 		"del": {"del", cmdDel, "" +
 			`usage: del descriptorid containerfile
@@ -75,21 +78,27 @@ func main() {
 
 	log.SetFlags(0)
 
-	args := flag.Args()
-	if len(args) < 1 {
+	flag.Usage = usage
+	if len(os.Args) < 2 {
 		flag.Usage()
 	}
 
-	cmd, ok := subcmds[args[0]]
+	os.Args = os.Args[1:]
+	subcommand := os.Args[0]
+
+	flag.Parse()
+	args := flag.Args()
+
+	cmd, ok := subcmds[subcommand]
 	if !ok {
-		log.Fatal("Unknown command:", args[0])
+		log.Fatal("Unknown command:", subcommand)
 	}
 
-	if err := cmd.fn(args[1:]); err != nil {
+	if err := cmd.fn(args); err != nil {
 		if err.Error() == "usage" {
 			log.Fatal(cmd.usage)
 		} else {
-			log.Fatalf("error running %s command :%s\n", cmd.name, err)
+			log.Fatalf("error running %s command: %s\n", cmd.name, err)
 		}
 	}
 }

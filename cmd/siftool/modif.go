@@ -6,12 +6,21 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
+	"log"
+	"os"
 	"runtime"
 	"strconv"
 )
+
+var datatype = flag.Int64("datatype", -1, "")
+var groupid = flag.Int64("groupid", sif.DescrUnusedGroup, "")
+var link = flag.Int64("link", sif.DescrUnusedLink, "")
+var alignment = flag.Int("alignment", 0, "")
+var filename = flag.String("filename", "", "")
 
 func cmdNew(args []string) error {
 	if len(args) != 1 {
@@ -55,9 +64,72 @@ func cmdNew(args []string) error {
 }
 
 func cmdAdd(args []string) error {
+	var err error
+	var d sif.Datatype
+
 	if len(args) != 2 {
 		return fmt.Errorf("usage")
 	}
+
+	switch *datatype {
+	case 0:
+		d = sif.DataDeffile
+	case 1:
+		d = sif.DataEnvVar
+	case 2:
+		d = sif.DataLabels
+	case 3:
+		d = sif.DataPartition
+	case 4:
+		d = sif.DataSignature
+	case 5:
+		d = sif.DataGenericJSON
+	default:
+		log.Printf("error: -datatype flag is required with a valid range\n\n")
+		return fmt.Errorf("usage")
+	}
+
+	if *filename == "" {
+		*filename = args[1]
+	}
+
+	// data we need to create a new descriptor
+	input := sif.DescriptorInput{
+		Datatype:  d,
+		Groupid:   sif.DescrGroupMask | uint32(*groupid),
+		Link:      uint32(*link),
+		Alignment: *alignment,
+		Fname:     *filename,
+	}
+
+	if args[1] == "-" {
+		input.Fp = os.Stdin
+	} else {
+		// open up the data object file for this descriptor
+		if input.Fp, err = os.Open(args[1]); err != nil {
+			return err
+		}
+		defer input.Fp.Close()
+
+		fi, err := input.Fp.Stat()
+		if err != nil {
+			return err
+		}
+		input.Size = fi.Size()
+	}
+
+	// load SIF image file
+	fimg, err := sif.LoadContainer(args[0], false)
+	if err != nil {
+		return err
+	}
+	defer fimg.UnloadContainer()
+
+	// add new data object to SIF file
+	if err = fimg.AddObject(input); err != nil {
+		return err
+	}
+
 	return nil
 }
 
