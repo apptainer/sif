@@ -6,6 +6,8 @@
 package main
 
 import (
+	"encoding/binary"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"github.com/satori/go.uuid"
@@ -17,6 +19,10 @@ import (
 )
 
 var datatype = flag.Int64("datatype", -1, "")
+var parttype = flag.Int64("parttype", -1, "")
+var partfs = flag.Int64("partfs", -1, "")
+var signhash = flag.Int64("signhash", -1, "")
+var signentity = flag.String("signentity", "", "")
 var groupid = flag.Int64("groupid", sif.DescrUnusedGroup, "")
 var link = flag.Int64("link", sif.DescrUnusedLink, "")
 var alignment = flag.Int("alignment", 0, "")
@@ -72,17 +78,17 @@ func cmdAdd(args []string) error {
 	}
 
 	switch *datatype {
-	case 0:
-		d = sif.DataDeffile
 	case 1:
-		d = sif.DataEnvVar
+		d = sif.DataDeffile
 	case 2:
-		d = sif.DataLabels
+		d = sif.DataEnvVar
 	case 3:
-		d = sif.DataPartition
+		d = sif.DataLabels
 	case 4:
-		d = sif.DataSignature
+		d = sif.DataPartition
 	case 5:
+		d = sif.DataSignature
+	case 6:
 		d = sif.DataGenericJSON
 	default:
 		log.Printf("error: -datatype flag is required with a valid range\n\n")
@@ -116,6 +122,42 @@ func cmdAdd(args []string) error {
 			return err
 		}
 		input.Size = fi.Size()
+	}
+
+	if d == sif.DataPartition {
+		if int32(*partfs) == -1 || int32(*parttype) == -1 {
+			return fmt.Errorf("with partition datatype, -partfs and -parttype must be passed")
+		}
+
+		// extra data needed for the creation of a partition descriptor
+		extra := sif.Partition{
+			Fstype:   sif.Fstype(*partfs),
+			Parttype: sif.Parttype(*parttype),
+		}
+
+		// serialize the partition data for integration with the base descriptor input
+		if err := binary.Write(&input.Extra, binary.LittleEndian, extra); err != nil {
+			return err
+		}
+	} else if d == sif.DataSignature {
+		if int32(*signhash) == -1 || *signentity == "" {
+			return fmt.Errorf("with signature datatype, -signhash and -signentity must be passed")
+		}
+
+		// extra data needed for the creation of a signature descriptor
+		extra := sif.Signature{
+			Hashtype: sif.Hashtype(*signhash),
+		}
+		h, err := hex.DecodeString(*signentity)
+		if err != nil {
+			return err
+		}
+		copy(extra.Entity[:], h)
+
+		// serialize the partition data for integration with the base descriptor input
+		if err := binary.Write(&input.Extra, binary.LittleEndian, extra); err != nil {
+			return err
+		}
 	}
 
 	// load SIF image file

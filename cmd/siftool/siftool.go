@@ -64,8 +64,18 @@ func main() {
 		"add": {"add", cmdAdd, "" +
 			`usage: add containerfile dataobjectfile|-
 	-datatype     the type of data to add (NEEDED no default):
-	                0-Deffile,   1-EnvVar,    2-Labels,
-	                3-Partition, 4-Signature, 5-GenericJSON
+	                1-Deffile,   2-EnvVar,    3-Labels,
+	                4-Partition, 5-Signature, 6-GenericJSON
+	-parttype     the type of parition used when using -datatype 3-Partition
+	                1-System,    2-Data,      3-Overlay
+	-partfs       the filesystem in used inside partition (3-Partition)
+	                1-Squash,    2-Ext3,      3-ImmuObj,
+	                4-Raw
+	-signhash     the signature hash in use when using -datatype 4-Signature
+	                1-SHA256,    2-SHA384,    3-SHA512,
+	                4-BLAKE2S,   5-BLAKE2B
+	-signentity   the entity signing data when using -datatype 4-Signature
+	                finger: (e.g., 433FE984155206BD962725E20E8713472A879943)
 	-groupid      set groupid (default: DescrUnusedGroup)
 	-link         set link pointer (default: DescrUnusedLink)
 	-alignment    set alignment constraint (default: aligned on page size)
