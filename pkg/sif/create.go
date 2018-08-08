@@ -9,6 +9,7 @@ package sif
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -400,5 +401,38 @@ func (fimg *FileImage) DeleteObject(id uint32, flags int) error {
 		return fmt.Errorf("while sync'ing deleted data object to SIF file: %s", err)
 	}
 
+	return nil
+}
+
+// SetPartExtra serializes the partition and fs type info into a binary buffer
+func (di *DescriptorInput) SetPartExtra(fs Fstype, part Parttype) error {
+	extra := Partition{
+		Fstype:   fs,
+		Parttype: part,
+	}
+
+	// serialize the partition data for integration with the base descriptor input
+	if err := binary.Write(&di.Extra, binary.LittleEndian, extra); err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetSignExtra serializes the hash type and the entity info into a binary buffer
+func (di *DescriptorInput) SetSignExtra(hash Hashtype, entity string) error {
+	extra := Signature{
+		Hashtype: hash,
+	}
+
+	h, err := hex.DecodeString(entity)
+	if err != nil {
+		return err
+	}
+	copy(extra.Entity[:], h)
+
+	// serialize the signature data for integration with the base descriptor input
+	if err := binary.Write(&di.Extra, binary.LittleEndian, extra); err != nil {
+		return err
+	}
 	return nil
 }

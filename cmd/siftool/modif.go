@@ -6,8 +6,6 @@
 package main
 
 import (
-	"encoding/binary"
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"github.com/satori/go.uuid"
@@ -125,37 +123,19 @@ func cmdAdd(args []string) error {
 	}
 
 	if d == sif.DataPartition {
-		if int32(*partfs) == -1 || int32(*parttype) == -1 {
+		if sif.Fstype(*partfs) == -1 || sif.Parttype(*parttype) == -1 {
 			return fmt.Errorf("with partition datatype, -partfs and -parttype must be passed")
 		}
 
-		// extra data needed for the creation of a partition descriptor
-		extra := sif.Partition{
-			Fstype:   sif.Fstype(*partfs),
-			Parttype: sif.Parttype(*parttype),
-		}
-
-		// serialize the partition data for integration with the base descriptor input
-		if err := binary.Write(&input.Extra, binary.LittleEndian, extra); err != nil {
+		if err := input.SetPartExtra(sif.Fstype(*partfs), sif.Parttype(*parttype)); err != nil {
 			return err
 		}
 	} else if d == sif.DataSignature {
-		if int32(*signhash) == -1 || *signentity == "" {
+		if sif.Hashtype(*signhash) == -1 || *signentity == "" {
 			return fmt.Errorf("with signature datatype, -signhash and -signentity must be passed")
 		}
 
-		// extra data needed for the creation of a signature descriptor
-		extra := sif.Signature{
-			Hashtype: sif.Hashtype(*signhash),
-		}
-		h, err := hex.DecodeString(*signentity)
-		if err != nil {
-			return err
-		}
-		copy(extra.Entity[:], h)
-
-		// serialize the partition data for integration with the base descriptor input
-		if err := binary.Write(&input.Extra, binary.LittleEndian, extra); err != nil {
+		if err := input.SetSignExtra(sif.Hashtype(*signhash), *signentity); err != nil {
 			return err
 		}
 	}

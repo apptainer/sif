@@ -89,15 +89,8 @@ func TestCreateContainer(t *testing.T) {
 	}
 	parinput.Size = fi.Size()
 
-	// extra data needed for the creation of a partition descriptor
-	pinfo := Partition{
-		Fstype:   FsSquash,
-		Parttype: PartSystem,
-	}
-
-	// serialize the partition data for integration with the base descriptor input
-	if err := binary.Write(&parinput.Extra, binary.LittleEndian, pinfo); err != nil {
-		t.Error("CreateContainer(cinfo): serialize pinfo:", err)
+	if err := parinput.SetPartExtra(FsSquash, PartSystem); err != nil {
+		t.Error("CreateContainer(cinfo): can't set extra info", err)
 	}
 
 	// add this descriptor input element to creation descriptor slice
@@ -141,15 +134,8 @@ func TestAddObject(t *testing.T) {
 	}
 	parinput.Size = fi.Size()
 
-	// extra data needed for the creation of a partition descriptor
-	pinfo := Partition{
-		Fstype:   FsSquash,
-		Parttype: PartSystem,
-	}
-
-	// serialize the partition data for integration with the base descriptor input
-	if err := binary.Write(&parinput.Extra, binary.LittleEndian, pinfo); err != nil {
-		t.Error("CreateContainer(cinfo): serialize pinfo:", err)
+	if err := parinput.SetPartExtra(FsSquash, PartSystem); err != nil {
+		t.Error("CreateContainer(cinfo): can't stat partition file", err)
 	}
 
 	// load the test container
