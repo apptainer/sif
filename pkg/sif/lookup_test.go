@@ -373,3 +373,15 @@ func TestGetEntityString(t *testing.T) {
 		t.Error("UnloadContainer(fimg):", err)
 	}
 }
+
+func TestGetSIFArch(t *testing.T) {
+	if GetSIFArch("386") != HdrArch386 {
+		t.Error(GetSIFArch("386") != HdrArch386)
+	}
+	if GetSIFArch("arm64") != HdrArchARM64 {
+		t.Error(GetSIFArch("arm64") != HdrArchARM64)
+	}
+	if GetSIFArch("cray") != HdrArchUnknown {
+		t.Error(GetSIFArch("cray") != HdrArchUnknown)
+	}
+}
