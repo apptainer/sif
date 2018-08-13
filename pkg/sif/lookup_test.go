@@ -385,3 +385,15 @@ func TestGetSIFArch(t *testing.T) {
 		t.Error(GetSIFArch("cray") != HdrArchUnknown)
 	}
 }
+
+func TestGetGoArch(t *testing.T) {
+	if GetGoArch(HdrArch386) != "386" {
+		t.Error(GetGoArch(HdrArch386) != "386")
+	}
+	if GetGoArch(HdrArchARM64) != "arm64" {
+		t.Error(GetGoArch(HdrArchARM64) != "arm64")
+	}
+	if GetGoArch(HdrArchUnknown) != "unknown" {
+		t.Error(GetGoArch(HdrArchUnknown) != "unknown")
+	}
+}

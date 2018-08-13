@@ -62,6 +62,30 @@ func GetSIFArch(goarch string) (sifarch string) {
 	return sifarch
 }
 
+// GetGoArch returns the go runtime arch code from the SIF arch code
+func GetGoArch(sifarch string) (goarch string) {
+	var ok bool
+
+	archMap := map[string]string{
+		HdrArch386:      "386",
+		HdrArchAMD64:    "amd64",
+		HdrArchARM:      "arm",
+		HdrArchARM64:    "arm64",
+		HdrArchPPC64:    "ppc64",
+		HdrArchPPC64le:  "ppc64le",
+		HdrArchMIPS:     "mips",
+		HdrArchMIPSle:   "mipsle",
+		HdrArchMIPS64:   "mips64",
+		HdrArchMIPS64le: "mips64le",
+		HdrArchS390x:    "s390x",
+	}
+
+	if goarch, ok = archMap[sifarch]; !ok {
+		goarch = "unknown"
+	}
+	return goarch
+}
+
 // GetHeader returns the loaded SIF global header
 func (fimg *FileImage) GetHeader() *Header {
 	return &fimg.Header
