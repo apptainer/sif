@@ -41,27 +41,6 @@ func readableSize(size uint64) string {
 	return conversion
 }
 
-// archStr returns a human readable version of SIF mach architecture
-func archStr(arch string) string {
-	archMap := map[string]string{
-		sif.HdrArch386:      "386",
-		sif.HdrArchAMD64:    "amd64",
-		sif.HdrArchARM:      "arm",
-		sif.HdrArchARM64:    "arm64",
-		sif.HdrArchPPC64:    "ppc64",
-		sif.HdrArchPPC64le:  "ppc64le",
-		sif.HdrArchMIPS:     "mips",
-		sif.HdrArchMIPSle:   "mipsle",
-		sif.HdrArchMIPS64:   "mips64",
-		sif.HdrArchMIPS64le: "mips64le",
-		sif.HdrArchS390x:    "s390x",
-	}
-	if archMap[arch[:2]] == "" {
-		return "unknown arch"
-	}
-	return archMap[arch[:2]]
-}
-
 // cmdHeader displays a SIF file global header to stdout
 func cmdHeader(args []string) error {
 	if len(args) != 1 {
@@ -77,7 +56,7 @@ func cmdHeader(args []string) error {
 	fmt.Println("Launch:  ", string(fimg.Header.Launch[:]))
 	fmt.Println("Magic:   ", string(fimg.Header.Magic[:]))
 	fmt.Println("Version: ", string(fimg.Header.Version[:]))
-	fmt.Println("Arch:    ", archStr(string(fimg.Header.Arch[:])))
+	fmt.Println("Arch:    ", sif.GetGoArch(string(fimg.Header.Arch[:])))
 	fmt.Println("ID:      ", fimg.Header.ID)
 	fmt.Println("Ctime:   ", time.Unix(fimg.Header.Ctime, 0))
 	fmt.Println("Mtime:   ", time.Unix(fimg.Header.Mtime, 0))

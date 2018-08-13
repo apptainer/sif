@@ -46,23 +46,10 @@ func readDescriptors(fimg *FileImage) error {
 // Look at key fields from the global header to assess SIF validity.
 // `runnable' checks is current container can run on host.
 func isValidSif(fimg *FileImage, runnable bool) error {
-	archMap := map[string]string{
-		"386":      HdrArch386,
-		"amd64":    HdrArchAMD64,
-		"arm":      HdrArchARM,
-		"arm64":    HdrArchARM64,
-		"ppc64":    HdrArchPPC64,
-		"ppc64le":  HdrArchPPC64le,
-		"mips":     HdrArchMIPS,
-		"mipsle":   HdrArchMIPSle,
-		"mips64":   HdrArchMIPS64,
-		"mips64le": HdrArchMIPS64le,
-		"s390x":    HdrArchS390x,
-	}
+	var arch string
 
 	// determine HdrArch value based on GOARCH
-	arch, ok := archMap[runtime.GOARCH]
-	if !ok {
+	if arch = GetSIFArch(runtime.GOARCH); arch == HdrArchUnknown {
 		return fmt.Errorf("GOARCH %v not supported", runtime.GOARCH)
 	}
 
@@ -74,6 +61,10 @@ func isValidSif(fimg *FileImage, runnable bool) error {
 		return fmt.Errorf("invalid SIF file: Version %s want %s", fimg.Header.Version, HdrVersion)
 	}
 	if runnable {
+		// Assume amd64 runs i386 code
+		if (string(fimg.Header.Arch[:HdrArchLen-1]) == HdrArchAMD64) && (arch != HdrArch386 && arch != HdrArchAMD64) {
+			return fmt.Errorf("invalid SIF file: Arch %s want %s", fimg.Header.Arch, arch)
+		}
 		if string(fimg.Header.Arch[:HdrArchLen-1]) != arch {
 			return fmt.Errorf("invalid SIF file: Arch %s want %s", fimg.Header.Arch, arch)
 		}

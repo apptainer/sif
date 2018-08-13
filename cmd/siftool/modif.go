@@ -31,23 +31,9 @@ func cmdNew(args []string) error {
 		return fmt.Errorf("usage")
 	}
 
-	archMap := map[string]string{
-		"386":      sif.HdrArch386,
-		"amd64":    sif.HdrArchAMD64,
-		"arm":      sif.HdrArchARM,
-		"arm64":    sif.HdrArchARM64,
-		"ppc64":    sif.HdrArchPPC64,
-		"ppc64le":  sif.HdrArchPPC64le,
-		"mips":     sif.HdrArchMIPS,
-		"mipsle":   sif.HdrArchMIPSle,
-		"mips64":   sif.HdrArchMIPS64,
-		"mips64le": sif.HdrArchMIPS64le,
-		"s390x":    sif.HdrArchS390x,
-	}
-
 	// determine HdrArch value based on GOARCH
-	arch, ok := archMap[runtime.GOARCH]
-	if !ok {
+	arch := sif.GetSIFArch(runtime.GOARCH)
+	if arch == sif.HdrArchUnknown {
 		return fmt.Errorf("GOARCH %v not supported", runtime.GOARCH)
 	}
 
