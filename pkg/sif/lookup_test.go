@@ -162,7 +162,7 @@ func TestFromDescr(t *testing.T) {
 		UID:      1002,
 		Gid:      1002,
 	}
-	copy(descr.Name[:], []byte("busybox.squash"))
+	descr.SetName("busybox.squash")
 	_, _, err = fimg.GetFromDescr(descr)
 	if err != nil {
 		t.Error("fimg.GetFromDescr(descr): should have found descriptor:", err)
@@ -177,7 +177,7 @@ func TestFromDescr(t *testing.T) {
 		UID:      1002,
 		Gid:      1002,
 	}
-	copy(descr.Name[:], []byte("busyb0x.squash"))
+	descr.SetName("busyb0x.squash")
 	_, _, err = fimg.GetFromDescr(descr)
 	if err == nil {
 		t.Error("fimg.GetFromDescr(descr): should have not found descriptor:", err)

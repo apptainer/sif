@@ -95,8 +95,8 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 	if err != nil {
 		return fmt.Errorf("filling descriptor: %s", err)
 	}
-	copy(descr.Name[:DescrNameLen], path.Base(input.Fname))
-	copy(descr.Extra[:DescrMaxPrivLen], input.Extra.Bytes())
+	descr.SetName(path.Base(input.Fname))
+	descr.SetExtra(input.Extra.Bytes())
 
 	return
 }
@@ -117,7 +117,7 @@ func writeDataObject(fimg *FileImage, index int, input DescriptorInput) error {
 			// coming in from os.Stdin (pipe)
 			descr := &fimg.DescrArr[index]
 			descr.Filelen = n
-			copy(descr.Name[:DescrNameLen], "pipe"+fmt.Sprint(index+1))
+			descr.SetName("pipe" + fmt.Sprint(index+1))
 		}
 	}
 
@@ -439,4 +439,14 @@ func (di *DescriptorInput) SetSignExtra(hash Hashtype, entity string) error {
 		return err
 	}
 	return nil
+}
+
+// SetName sets the byte array field "Name" to the value of string "name"
+func (d *Descriptor) SetName(name string) {
+	copy(d.Name[:], []byte(name))
+}
+
+// SetExtra sets the extra byte array to a provided byte array
+func (d *Descriptor) SetExtra(extra []byte) {
+	copy(d.Extra[:], extra)
 }
