@@ -29,11 +29,17 @@ The commands are:
 	new      create a new empty SIF image file
 	add      add a data object to a SIF file
 	del      delete a specified object descriptor and data from SIF file
+	help     this help
 `
 
 func usage() {
 	fmt.Fprintln(os.Stderr, usageMessage)
 	os.Exit(2)
+}
+
+func cmdHelp(args []string) error {
+	usage()
+	return nil
 }
 
 type action func([]string) error
@@ -63,26 +69,40 @@ func main() {
 `},
 		"add": {"add", cmdAdd, "" +
 			`usage: add containerfile dataobjectfile|-
-	-datatype     the type of data to add (NEEDED no default):
+	-datatype     the type of data to add
+	              [NEEDED, no default]:
 	                1-Deffile,   2-EnvVar,    3-Labels,
 	                4-Partition, 5-Signature, 6-GenericJSON
-	-parttype     the type of parition used when using -datatype 3-Partition
+	-parttype     the type of parition (with -datatype 3-Partition)
+	              [NEEDED, no default]:
 	                1-System,    2-Data,      3-Overlay
-	-partfs       the filesystem in used inside partition (3-Partition)
+	-partfs       the filesystem in used (with -datatype 3-Partition)
+	              [NEEDED, no default]:
 	                1-Squash,    2-Ext3,      3-ImmuObj,
 	                4-Raw
-	-signhash     the signature hash in use when using -datatype 4-Signature
+	-partarch     the main architecture used (with -datatype 3-Partition)
+	              [NEEDED, no default]:
+	                1-386,       2-amd64,     3-arm,
+	                4-arm64,     5-ppc64,     6-ppc64le,
+	                7-mips,      8-mipsle,    9-mips64,
+	                10-mips64le  11-s390x
+	-signhash     the signature hash used (with -datatype 4-Signature)
+	              [NEEDED, no default]:
 	                1-SHA256,    2-SHA384,    3-SHA512,
 	                4-BLAKE2S,   5-BLAKE2B
-	-signentity   the entity signing data when using -datatype 4-Signature
-	                finger: (e.g., 433FE984155206BD962725E20E8713472A879943)
-	-groupid      set groupid (default: DescrUnusedGroup)
-	-link         set link pointer (default: DescrUnusedLink)
-	-alignment    set alignment constraint (default: aligned on page size)
-	-filename     set logical filename/handle (default: input filename)
+	-signentity   the entity that signs (with -datatype 4-Signature)
+	              [NEEDED, no default]:
+	                example: 433FE984155206BD962725E20E8713472A879943
+	-groupid      set groupid [default: DescrUnusedGroup]
+	-link         set link pointer [default: DescrUnusedLink]
+	-alignment    set alignment constraint [default: aligned on page size]
+	-filename     set logical filename/handle [default: input filename]
 `},
 		"del": {"del", cmdDel, "" +
 			`usage: del descriptorid containerfile
+`},
+		"help": {"help", cmdHelp, "" +
+			`usage: this help
 `},
 	}
 

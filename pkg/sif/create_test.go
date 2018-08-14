@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"github.com/satori/go.uuid"
 	"os"
+	"runtime"
 	"testing"
 )
 
@@ -89,7 +90,8 @@ func TestCreateContainer(t *testing.T) {
 	}
 	parinput.Size = fi.Size()
 
-	if err := parinput.SetPartExtra(FsSquash, PartSystem); err != nil {
+	err = parinput.SetPartExtra(FsSquash, PartSystem, GetSIFArch(runtime.GOARCH))
+	if err != nil {
 		t.Error("CreateContainer(cinfo): can't set extra info", err)
 	}
 
@@ -134,7 +136,8 @@ func TestAddObject(t *testing.T) {
 	}
 	parinput.Size = fi.Size()
 
-	if err := parinput.SetPartExtra(FsSquash, PartSystem); err != nil {
+	err = parinput.SetPartExtra(FsSquash, PartSystem, GetSIFArch(runtime.GOARCH))
+	if err != nil {
 		t.Error("CreateContainer(cinfo): can't stat partition file", err)
 	}
 

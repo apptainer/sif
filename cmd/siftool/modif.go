@@ -19,6 +19,7 @@ import (
 var datatype = flag.Int64("datatype", -1, "")
 var parttype = flag.Int64("parttype", -1, "")
 var partfs = flag.Int64("partfs", -1, "")
+var partarch = flag.Int64("partarch", -1, "")
 var signhash = flag.Int64("signhash", -1, "")
 var signentity = flag.String("signentity", "", "")
 var groupid = flag.Int64("groupid", sif.DescrUnusedGroup, "")
@@ -56,6 +57,7 @@ func cmdNew(args []string) error {
 func cmdAdd(args []string) error {
 	var err error
 	var d sif.Datatype
+	var a string
 
 	if len(args) != 2 {
 		return fmt.Errorf("usage")
@@ -76,6 +78,34 @@ func cmdAdd(args []string) error {
 		d = sif.DataGenericJSON
 	default:
 		log.Printf("error: -datatype flag is required with a valid range\n\n")
+		return fmt.Errorf("usage")
+	}
+
+	switch *partarch {
+	case 1:
+		a = sif.HdrArch386
+	case 2:
+		a = sif.HdrArchAMD64
+	case 3:
+		a = sif.HdrArchARM
+	case 4:
+		a = sif.HdrArchARM64
+	case 5:
+		a = sif.HdrArchPPC64
+	case 6:
+		a = sif.HdrArchPPC64le
+	case 7:
+		a = sif.HdrArchMIPS
+	case 8:
+		a = sif.HdrArchMIPSle
+	case 9:
+		a = sif.HdrArchMIPS64
+	case 10:
+		a = sif.HdrArchMIPS64le
+	case 11:
+		a = sif.HdrArchS390x
+	default:
+		log.Printf("error: -partarch flag is required with a valid range\n\n")
 		return fmt.Errorf("usage")
 	}
 
@@ -109,11 +139,12 @@ func cmdAdd(args []string) error {
 	}
 
 	if d == sif.DataPartition {
-		if sif.Fstype(*partfs) == -1 || sif.Parttype(*parttype) == -1 {
-			return fmt.Errorf("with partition datatype, -partfs and -parttype must be passed")
+		if sif.Fstype(*partfs) == -1 || sif.Parttype(*parttype) == -1 || *partarch == -1 {
+			return fmt.Errorf("with partition datatype, -partfs, -parttype and -partarch must be passed")
 		}
 
-		if err := input.SetPartExtra(sif.Fstype(*partfs), sif.Parttype(*parttype)); err != nil {
+		err := input.SetPartExtra(sif.Fstype(*partfs), sif.Parttype(*parttype), a)
+		if err != nil {
 			return err
 		}
 	} else if d == sif.DataSignature {

@@ -56,7 +56,7 @@ func cmdHeader(args []string) error {
 	fmt.Println("Launch:  ", string(fimg.Header.Launch[:]))
 	fmt.Println("Magic:   ", string(fimg.Header.Magic[:]))
 	fmt.Println("Version: ", string(fimg.Header.Version[:]))
-	fmt.Println("Arch:    ", sif.GetGoArch(string(fimg.Header.Arch[:])))
+	fmt.Println("Arch:    ", sif.GetGoArch(string(fimg.Header.Arch[:sif.HdrArchLen-1])))
 	fmt.Println("ID:      ", fimg.Header.ID)
 	fmt.Println("Ctime:   ", time.Unix(fimg.Header.Ctime, 0))
 	fmt.Println("Mtime:   ", time.Unix(fimg.Header.Mtime, 0))
@@ -80,7 +80,7 @@ func datatypeStr(dtype sif.Datatype) string {
 	case sif.DataLabels:
 		return "JSON.Labels"
 	case sif.DataPartition:
-		return "FS.Img"
+		return "FS"
 	case sif.DataSignature:
 		return "Signature"
 	case sif.DataGenericJSON:
@@ -97,9 +97,9 @@ func fstypeStr(ftype sif.Fstype) string {
 	case sif.FsExt3:
 		return "Ext3"
 	case sif.FsImmuObj:
-		return "Data.Archive"
+		return "Archive"
 	case sif.FsRaw:
-		return "Data.Raw"
+		return "Raw"
 	}
 	return "Unknown fs-type"
 }
@@ -179,7 +179,8 @@ func cmdList(args []string) error {
 			case sif.DataPartition:
 				f, _ := v.GetFsType()
 				p, _ := v.GetPartType()
-				fmt.Printf("|%s (%s/%s)", datatypeStr(v.Datatype), fstypeStr(f), parttypeStr(p))
+				a, _ := v.GetArch()
+				fmt.Printf("|%s (%s/%s/%s)", datatypeStr(v.Datatype), fstypeStr(f), parttypeStr(p), sif.GetGoArch(string(a[:sif.HdrArchLen-1])))
 			case sif.DataSignature:
 				h, _ := v.GetHashType()
 				fmt.Printf("|%s (%s)", datatypeStr(v.Datatype), hashtypeStr(h))

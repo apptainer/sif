@@ -277,6 +277,38 @@ func TestGetPartType(t *testing.T) {
 	}
 }
 
+func TestGetArch(t *testing.T) {
+	// load the test container
+	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
+	if err != nil {
+		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
+	}
+
+	parts, _, err := fimg.GetPartFromGroup(DescrDefaultGroup)
+	if err != nil {
+		t.Error("fimg.GetPartFromGroup(DescrDefaultGroup): should have found descriptor:", err)
+	}
+
+	if len(parts) != 1 {
+		t.Error("multiple partitions found where expecting 1")
+	}
+
+	arch, err := parts[0].GetArch()
+	if err != nil {
+		t.Error("parts[0].GetArch()", err)
+	}
+
+	if string(arch[:HdrArchLen-1]) != HdrArchAMD64 {
+		t.Logf("|%s|%s|\n", arch[:HdrArchLen-1], HdrArchAMD64)
+		t.Error("part.GetArch() should have returned 'HdrArchAMD64':", err)
+	}
+
+	// unload the test container
+	if err = fimg.UnloadContainer(); err != nil {
+		t.Error("UnloadContainer(fimg):", err)
+	}
+}
+
 func TestGetHashType(t *testing.T) {
 	// load the test container
 	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
@@ -309,7 +341,7 @@ func TestGetHashType(t *testing.T) {
 }
 
 func TestGetEntity(t *testing.T) {
-	expected := []byte{53, 107, 44, 157, 157, 145, 103, 234, 88, 248, 41, 114, 91, 213, 134, 113, 205, 93, 79, 117}
+	expected := []byte{159, 43, 108, 54, 217, 153, 163, 233, 28, 179, 16, 71, 32, 103, 21, 144, 193, 45, 66, 34}
 
 	// load the test container
 	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
@@ -332,7 +364,7 @@ func TestGetEntity(t *testing.T) {
 	}
 
 	if bytes.Equal(expected, entity[:len(expected)]) == false {
-		t.Error("sig.GetEntity(): didn't get the expected entity")
+		t.Error("sig.GetEntity(): didn't get the expected entity, got:", entity[:len(expected)])
 	}
 
 	// unload the test container
@@ -342,7 +374,7 @@ func TestGetEntity(t *testing.T) {
 }
 
 func TestGetEntityString(t *testing.T) {
-	expected := "356B2C9D9D9167EA58F829725BD58671CD5D4F75"
+	expected := "9F2B6C36D999A3E91CB3104720671590C12D4222"
 
 	// load the test container
 	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)

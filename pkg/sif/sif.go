@@ -209,6 +209,7 @@ type Envvar struct {
 type Partition struct {
 	Fstype   Fstype
 	Parttype Parttype
+	Arch     [HdrArchLen]byte // arch the image is built for
 }
 
 // Signature represents the SIF signature data object descriptor
@@ -227,7 +228,7 @@ type Header struct {
 
 	Magic   [HdrMagicLen]byte   // look for "SIF_MAGIC"
 	Version [HdrVersionLen]byte // SIF version
-	Arch    [HdrArchLen]byte    // arch the image is built for
+	Arch    [HdrArchLen]byte    // arch the primary partition is built for
 	ID      uuid.UUID           // image unique identifier
 
 	Ctime int64 // image creation time

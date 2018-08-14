@@ -308,6 +308,21 @@ func (descr *Descriptor) GetPartType() (Parttype, error) {
 	return pinfo.Parttype, nil
 }
 
+// GetArch extracts the Arch field from the Extra field of a Partition Descriptor
+func (descr *Descriptor) GetArch() ([HdrArchLen]byte, error) {
+	if descr.Datatype != DataPartition {
+		return [HdrArchLen]byte{}, fmt.Errorf("expected DataPartition, got %v", descr.Datatype)
+	}
+
+	var pinfo Partition
+	b := bytes.NewReader(descr.Extra[:])
+	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
+		return [HdrArchLen]byte{}, fmt.Errorf("while extracting Partition extra info: %s", err)
+	}
+
+	return pinfo.Arch, nil
+}
+
 // GetHashType extracts the Hashtype field from the Extra field of a Signature Descriptor
 func (descr *Descriptor) GetHashType() (Hashtype, error) {
 	if descr.Datatype != DataSignature {

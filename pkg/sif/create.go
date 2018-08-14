@@ -405,11 +405,15 @@ func (fimg *FileImage) DeleteObject(id uint32, flags int) error {
 }
 
 // SetPartExtra serializes the partition and fs type info into a binary buffer
-func (di *DescriptorInput) SetPartExtra(fs Fstype, part Parttype) error {
+func (di *DescriptorInput) SetPartExtra(fs Fstype, part Parttype, arch string) error {
 	extra := Partition{
 		Fstype:   fs,
 		Parttype: part,
 	}
+	if arch == HdrArchUnknown {
+		return fmt.Errorf("architecture not supported: %v", arch)
+	}
+	copy(extra.Arch[:], arch[:])
 
 	// serialize the partition data for integration with the base descriptor input
 	if err := binary.Write(&di.Extra, binary.LittleEndian, extra); err != nil {
