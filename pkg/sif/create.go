@@ -98,6 +98,25 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 	descr.SetName(path.Base(input.Fname))
 	descr.SetExtra(input.Extra.Bytes())
 
+	// Check that none or only 1 primary partition is ever set
+	if descr.Datatype == DataPartition {
+		ptype, err := descr.GetPartType()
+		if err != nil {
+			return err
+		}
+		if ptype == PartPrimSys {
+			if fimg.PrimPartID != 0 {
+				return fmt.Errorf("only 1 FS data object may be a primary partition")
+			}
+			fimg.PrimPartID = descr.ID
+			arch, err := descr.GetArch()
+			if err != nil {
+				return err
+			}
+			copy(fimg.Header.Arch[:], arch[:])
+		}
+	}
+
 	return
 }
 
@@ -196,15 +215,15 @@ func writeHeader(fimg *FileImage) error {
 // CreateContainer is responsible for the creation of a new SIF container
 // file. It takes the creation information specification as input
 // and produces an output file as specified in the input data.
-func CreateContainer(cinfo CreateInfo) (err error) {
-	var fimg FileImage
+func CreateContainer(cinfo CreateInfo) (fimg *FileImage, err error) {
+	fimg = &FileImage{}
 	fimg.DescrArr = make([]Descriptor, DescrNumEntries)
 
 	// Prepare a fresh global header
 	copy(fimg.Header.Launch[:], cinfo.Launchstr)
 	copy(fimg.Header.Magic[:], HdrMagic)
 	copy(fimg.Header.Version[:], cinfo.Sifversion)
-	copy(fimg.Header.Arch[:], cinfo.Arch)
+	copy(fimg.Header.Arch[:], HdrArchUnknown)
 	copy(fimg.Header.ID[:], cinfo.ID[:])
 	fimg.Header.Ctime = time.Now().Unix()
 	fimg.Header.Mtime = time.Now().Unix()
@@ -216,28 +235,28 @@ func CreateContainer(cinfo CreateInfo) (err error) {
 	// Create container file
 	fimg.Fp, err = os.OpenFile(cinfo.Pathname, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
-		return fmt.Errorf("container file creation failed: %s", err)
+		return nil, fmt.Errorf("container file creation failed: %s", err)
 	}
 	defer fimg.Fp.Close()
 
 	// set file pointer to start of data section */
 	if _, err = fimg.Fp.Seek(DataStartOffset, 0); err != nil {
-		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
+		return nil, fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}
 
 	for _, v := range cinfo.InputDescr {
-		if err = createDescriptor(&fimg, v); err != nil {
+		if err = createDescriptor(fimg, v); err != nil {
 			return
 		}
 	}
 
 	// Write down the descriptor array
-	if err = writeDescriptors(&fimg); err != nil {
+	if err = writeDescriptors(fimg); err != nil {
 		return
 	}
 
 	// Write down global header to file
-	if err = writeHeader(&fimg); err != nil {
+	if err = writeHeader(fimg); err != nil {
 		return
 	}
 

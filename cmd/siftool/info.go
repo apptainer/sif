@@ -109,6 +109,8 @@ func parttypeStr(ptype sif.Parttype) string {
 	switch ptype {
 	case sif.PartSystem:
 		return "System"
+	case sif.PartPrimSys:
+		return "*System"
 	case sif.PartData:
 		return "Data"
 	case sif.PartOverlay:

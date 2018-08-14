@@ -267,8 +267,8 @@ func TestGetPartType(t *testing.T) {
 		t.Error("parts[0].GetPartType()", err)
 	}
 
-	if parttype != PartSystem {
-		t.Error("part.GetPartType() should have returned 'PartSystem'")
+	if parttype != PartPrimSys {
+		t.Error("part.GetPartType() should have returned 'PartPrimSys'")
 	}
 
 	// unload the test container

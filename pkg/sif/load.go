@@ -12,7 +12,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
-	"runtime"
 	"syscall"
 )
 
@@ -40,34 +39,23 @@ func readDescriptors(fimg *FileImage) error {
 		return fmt.Errorf("reading descriptor array from container file: %s", err)
 	}
 
+	descr, _, err := fimg.GetPartPrimSys()
+	if err == nil {
+		fimg.PrimPartID = descr.ID
+	}
+
 	return nil
 }
 
 // Look at key fields from the global header to assess SIF validity.
 // `runnable' checks is current container can run on host.
-func isValidSif(fimg *FileImage, runnable bool) error {
-	var arch string
-
-	// determine HdrArch value based on GOARCH
-	if arch = GetSIFArch(runtime.GOARCH); arch == HdrArchUnknown {
-		return fmt.Errorf("GOARCH %v not supported", runtime.GOARCH)
-	}
-
+func isValidSif(fimg *FileImage) error {
 	// check various header fields
 	if string(fimg.Header.Magic[:HdrMagicLen-1]) != HdrMagic {
 		return fmt.Errorf("invalid SIF file: Magic |%s| want |%s|", fimg.Header.Magic, HdrMagic)
 	}
 	if string(fimg.Header.Version[:HdrVersionLen-1]) != HdrVersion {
 		return fmt.Errorf("invalid SIF file: Version %s want %s", fimg.Header.Version, HdrVersion)
-	}
-	if runnable {
-		// Assume amd64 runs i386 code
-		if (string(fimg.Header.Arch[:HdrArchLen-1]) == HdrArchAMD64) && (arch != HdrArch386 && arch != HdrArchAMD64) {
-			return fmt.Errorf("invalid SIF file: Arch %s want %s", fimg.Header.Arch, arch)
-		}
-		if string(fimg.Header.Arch[:HdrArchLen-1]) != arch {
-			return fmt.Errorf("invalid SIF file: Arch %s want %s", fimg.Header.Arch, arch)
-		}
 	}
 
 	return nil
@@ -137,7 +125,7 @@ func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
 	}
 
 	// validate global header
-	if err = isValidSif(&fimg, true); err != nil {
+	if err = isValidSif(&fimg); err != nil {
 		return
 	}
 
@@ -170,7 +158,7 @@ func LoadContainerFp(fp *os.File, rdonly bool) (fimg FileImage, err error) {
 	}
 
 	// validate global header
-	if err = isValidSif(&fimg, true); err != nil {
+	if err = isValidSif(&fimg); err != nil {
 		return
 	}
 
@@ -194,7 +182,7 @@ func LoadContainerReader(b *bytes.Reader) (fimg FileImage, err error) {
 	}
 
 	// validate global header
-	if err = isValidSif(&fimg, false); err != nil {
+	if err = isValidSif(&fimg); err != nil {
 		return
 	}
 

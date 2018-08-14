@@ -152,6 +152,7 @@ type Parttype int32
 // List of supported partition types
 const (
 	PartSystem  Parttype = iota + 1 // partition hosts an operating system
+	PartPrimSys                     // partition hosts the primary operating system
 	PartData                        // partition hosts data only
 	PartOverlay                     // partition hosts an overlay
 )
@@ -244,12 +245,13 @@ type Header struct {
 
 // FileImage describes the representation of a SIF file in memory
 type FileImage struct {
-	Header   Header        // the loaded SIF global header
-	Fp       *os.File      // file pointer of opened SIF file
-	Filesize int64         // file size of the opened SIF file
-	Filedata []byte        // the content of the opened file
-	Reader   *bytes.Reader // reader on top of Mapdata
-	DescrArr []Descriptor  // slice of loaded descriptors from SIF file
+	Header     Header        // the loaded SIF global header
+	Fp         *os.File      // file pointer of opened SIF file
+	Filesize   int64         // file size of the opened SIF file
+	Filedata   []byte        // the content of the opened file
+	Reader     *bytes.Reader // reader on top of Mapdata
+	DescrArr   []Descriptor  // slice of loaded descriptors from SIF file
+	PrimPartID uint32        // ID of primary system partition if present
 }
 
 // CreateInfo wraps all SIF file creation info needed
@@ -257,7 +259,6 @@ type CreateInfo struct {
 	Pathname   string            // the end result output filename
 	Launchstr  string            // the shell run command
 	Sifversion string            // the SIF specification version used
-	Arch       string            // the architecture targetted
 	ID         uuid.UUID         // image unique identifier
 	InputDescr []DescriptorInput // slice of input info for descriptor creation
 }

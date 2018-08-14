@@ -39,12 +39,11 @@ func TestCreateContainer(t *testing.T) {
 		Pathname:   "testdata/testcontainer.sif",
 		Launchstr:  HdrLaunch,
 		Sifversion: HdrVersion,
-		Arch:       HdrArchAMD64,
 		ID:         uuid.NewV4(),
 	}
 
 	// test container creation without any input descriptors
-	if err := CreateContainer(cinfo); err != nil {
+	if _, err := CreateContainer(cinfo); err != nil {
 		t.Error("CreateContainer(cinfo): should allow empty input descriptor list")
 	}
 
@@ -90,7 +89,7 @@ func TestCreateContainer(t *testing.T) {
 	}
 	parinput.Size = fi.Size()
 
-	err = parinput.SetPartExtra(FsSquash, PartSystem, GetSIFArch(runtime.GOARCH))
+	err = parinput.SetPartExtra(FsSquash, PartPrimSys, GetSIFArch(runtime.GOARCH))
 	if err != nil {
 		t.Error("CreateContainer(cinfo): can't set extra info", err)
 	}
@@ -99,7 +98,7 @@ func TestCreateContainer(t *testing.T) {
 	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
 
 	// test container creation with two partition input descriptors
-	if err := CreateContainer(cinfo); err != nil {
+	if _, err := CreateContainer(cinfo); err != nil {
 		t.Error("CreateContainer(cinfo): CreateContainer():", err)
 	}
 }
@@ -136,7 +135,7 @@ func TestAddObject(t *testing.T) {
 	}
 	parinput.Size = fi.Size()
 
-	err = parinput.SetPartExtra(FsSquash, PartSystem, GetSIFArch(runtime.GOARCH))
+	err = parinput.SetPartExtra(FsSquash, PartPrimSys, GetSIFArch(runtime.GOARCH))
 	if err != nil {
 		t.Error("CreateContainer(cinfo): can't stat partition file", err)
 	}

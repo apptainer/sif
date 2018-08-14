@@ -75,7 +75,8 @@ func main() {
 	                4-Partition, 5-Signature, 6-GenericJSON
 	-parttype     the type of parition (with -datatype 3-Partition)
 	              [NEEDED, no default]:
-	                1-System,    2-Data,      3-Overlay
+	                1-System,    2-PrimSys,   3-Data,
+	                4-Overlay
 	-partfs       the filesystem in used (with -datatype 3-Partition)
 	              [NEEDED, no default]:
 	                1-Squash,    2-Ext3,      3-ImmuObj,

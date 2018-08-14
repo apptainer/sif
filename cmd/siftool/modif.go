@@ -12,7 +12,6 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 	"log"
 	"os"
-	"runtime"
 	"strconv"
 )
 
@@ -32,21 +31,14 @@ func cmdNew(args []string) error {
 		return fmt.Errorf("usage")
 	}
 
-	// determine HdrArch value based on GOARCH
-	arch := sif.GetSIFArch(runtime.GOARCH)
-	if arch == sif.HdrArchUnknown {
-		return fmt.Errorf("GOARCH %v not supported", runtime.GOARCH)
-	}
-
 	cinfo := sif.CreateInfo{
 		Pathname:   args[0],
 		Launchstr:  sif.HdrLaunch,
 		Sifversion: sif.HdrVersion,
-		Arch:       arch,
 		ID:         uuid.NewV4(),
 	}
 
-	err := sif.CreateContainer(cinfo)
+	_, err := sif.CreateContainer(cinfo)
 	if err != nil {
 		return err
 	}

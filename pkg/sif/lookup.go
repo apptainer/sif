@@ -362,3 +362,36 @@ func (descr *Descriptor) GetEntityString() (string, error) {
 
 	return fmt.Sprintf("%0X", fingerprint[:20]), nil
 }
+
+// GetPartPrimSys returns the primary system partition if present. There should
+// be only one primary system partition in a SIF file.
+func (fimg *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
+	var descr *Descriptor
+	index := -1
+
+	for i, v := range fimg.DescrArr {
+		if v.Used == false {
+			continue
+		} else {
+			if v.Datatype == DataPartition {
+				ptype, err := v.GetPartType()
+				if err != nil {
+					return nil, -1, err
+				}
+				if ptype == PartPrimSys {
+					if index != -1 {
+						return nil, -1, fmt.Errorf("more than one primary system partition")
+					}
+					index = i
+					descr = &fimg.DescrArr[i]
+				}
+			}
+		}
+	}
+
+	if index == -1 {
+		return nil, -1, fmt.Errorf("key not found")
+	}
+
+	return descr, index, nil
+}
