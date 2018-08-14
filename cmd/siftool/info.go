@@ -240,8 +240,10 @@ func cmdInfo(args []string) error {
 			case sif.DataPartition:
 				f, _ := v.GetFsType()
 				p, _ := v.GetPartType()
+				a, _ := v.GetArch()
 				fmt.Println("  Fstype:   ", fstypeStr(f))
 				fmt.Println("  Parttype: ", parttypeStr(p))
+				fmt.Println("  Arch:     ", sif.GetGoArch(string(a[:sif.HdrArchLen-1])))
 			case sif.DataSignature:
 				h, _ := v.GetHashType()
 				e, _ := v.GetEntityString()
