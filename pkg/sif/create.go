@@ -290,6 +290,15 @@ func zeroData(fimg *FileImage, descr *Descriptor) error {
 }
 
 func resetDescriptor(fimg *FileImage, index int) error {
+	// If we remove the primary partition, set the global header Arch field to HdrArchUnknown
+	// to indicate that the SIF file doesn't include a primary partition and no dependency
+	// on any architecture exists.
+	_, idx, _ := fimg.GetPartPrimSys()
+	if idx == index {
+		fimg.PrimPartID = 0
+		copy(fimg.Header.Arch[:], HdrArchUnknown)
+	}
+
 	offset := fimg.Header.Descroff + int64(index)*int64(binary.Size(fimg.DescrArr[0]))
 
 	// first, move to descriptor offset
@@ -307,7 +316,7 @@ func resetDescriptor(fimg *FileImage, index int) error {
 
 // AddObject add a new data object and its descriptor into the specified SIF file.
 func (fimg *FileImage) AddObject(input DescriptorInput) error {
-	// set file pointer to the end of data section */
+	// set file pointer to the end of data section
 	if _, err := fimg.Fp.Seek(fimg.Header.Dataoff+fimg.Header.Datalen, 0); err != nil {
 		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}

@@ -86,7 +86,7 @@ func main() {
 	                1-386,       2-amd64,     3-arm,
 	                4-arm64,     5-ppc64,     6-ppc64le,
 	                7-mips,      8-mipsle,    9-mips64,
-	                10-mips64le  11-s390x
+	                10-mips64le, 11-s390x
 	-signhash     the signature hash used (with -datatype 4-Signature)
 	              [NEEDED, no default]:
 	                1-SHA256,    2-SHA384,    3-SHA512,
