@@ -429,3 +429,17 @@ func TestGetGoArch(t *testing.T) {
 		t.Error(GetGoArch(HdrArchUnknown) != "unknown")
 	}
 }
+
+func TestGetPartPrimSys(t *testing.T) {
+	// load the test container
+	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
+	if err != nil {
+		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
+	}
+	fimg.UnloadContainer()
+
+	_, _, err = fimg.GetPartPrimSys()
+	if err != nil {
+		t.Error("fimg.GetPartPrimSys():", err)
+	}
+}
