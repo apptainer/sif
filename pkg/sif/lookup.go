@@ -19,25 +19,6 @@ import (
 // Methods on (fimg *FIleImage)
 //
 
-// OutputHeader generates a string which displays each fields of the global Header
-func (fimg *FileImage) OutputHeader() string {
-	str := fmt.Sprintf("%s %s\n%s %s\n%s %s\n%s %s\n%s %v\n%s %s\n%s %s\n%s %d\n%s %d\n%s %d\n%s %d\n%s %d\n%s %d",
-		"Launch:  ", string(fimg.Header.Launch[:]),
-		"Magic:   ", string(fimg.Header.Magic[:]),
-		"Version: ", string(fimg.Header.Version[:]),
-		"Arch:    ", string(fimg.Header.Arch[:]),
-		"ID:      ", fimg.Header.ID,
-		"Ctime:   ", time.Unix(fimg.Header.Ctime, 0),
-		"Mtime:   ", time.Unix(fimg.Header.Mtime, 0),
-		"Dfree:   ", fimg.Header.Dfree,
-		"Dtotal:  ", fimg.Header.Dtotal,
-		"Descoff: ", fimg.Header.Descroff,
-		"Descrlen:", fimg.Header.Descrlen,
-		"Dataoff: ", fimg.Header.Dataoff,
-		"Datalen: ", fimg.Header.Datalen)
-	return str
-}
-
 // GetSIFArch returns the SIF arch code from go runtime arch code
 func GetSIFArch(goarch string) (sifarch string) {
 	var ok bool
@@ -253,25 +234,6 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 //
 // Methods on (descr *Descriptor)
 //
-
-// OutputDescriptor generates a string which displays each fields of a descriptor
-func (descr *Descriptor) OutputDescriptor() string {
-	str := fmt.Sprintf("%s 0x%x\n%s %v\n%s %v\n%s 0x%x\n%s %d\n%s %d\n%s %d\n%s %s\n%s %s\n%s %d\n%s %d\n%s %s\n%s %v",
-		"Datatype:", descr.Datatype,
-		"ID:      ", descr.ID,
-		"Used:    ", descr.Used,
-		"Groupid: ", descr.Groupid,
-		"Link:    ", descr.Link,
-		"Fileoff: ", descr.Fileoff,
-		"Filelen: ", descr.Filelen,
-		"Ctime:   ", time.Unix(descr.Ctime, 0),
-		"Mtime:   ", time.Unix(descr.Mtime, 0),
-		"UID:     ", descr.UID,
-		"Gid:     ", descr.Gid,
-		"Name:    ", string(descr.Name[:]),
-		"Extra: ", descr.Extra)
-	return str
-}
 
 // GetName returns the name tag associated with the descriptor. Analogous to file name.
 func (descr *Descriptor) GetName() string {
