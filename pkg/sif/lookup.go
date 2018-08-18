@@ -12,7 +12,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"strings"
-	"time"
 )
 
 //
