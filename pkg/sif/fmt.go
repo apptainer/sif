@@ -205,7 +205,7 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 				h, _ := v.GetHashType()
 				e, _ := v.GetEntityString()
 				s += fmt.Sprintln("  Hashtype: ", hashtypeStr(h))
-				s += fmt.Sprint("  Entity:   ", e)
+				s += fmt.Sprintln("  Entity:   ", e)
 			}
 
 			return s

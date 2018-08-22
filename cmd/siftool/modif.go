@@ -73,34 +73,6 @@ func cmdAdd(args []string) error {
 		return fmt.Errorf("usage")
 	}
 
-	switch *partarch {
-	case 1:
-		a = sif.HdrArch386
-	case 2:
-		a = sif.HdrArchAMD64
-	case 3:
-		a = sif.HdrArchARM
-	case 4:
-		a = sif.HdrArchARM64
-	case 5:
-		a = sif.HdrArchPPC64
-	case 6:
-		a = sif.HdrArchPPC64le
-	case 7:
-		a = sif.HdrArchMIPS
-	case 8:
-		a = sif.HdrArchMIPSle
-	case 9:
-		a = sif.HdrArchMIPS64
-	case 10:
-		a = sif.HdrArchMIPS64le
-	case 11:
-		a = sif.HdrArchS390x
-	default:
-		log.Printf("error: -partarch flag is required with a valid range\n\n")
-		return fmt.Errorf("usage")
-	}
-
 	if *filename == "" {
 		*filename = args[1]
 	}
@@ -133,6 +105,34 @@ func cmdAdd(args []string) error {
 	if d == sif.DataPartition {
 		if sif.Fstype(*partfs) == -1 || sif.Parttype(*parttype) == -1 || *partarch == -1 {
 			return fmt.Errorf("with partition datatype, -partfs, -parttype and -partarch must be passed")
+		}
+
+		switch *partarch {
+		case 1:
+			a = sif.HdrArch386
+		case 2:
+			a = sif.HdrArchAMD64
+		case 3:
+			a = sif.HdrArchARM
+		case 4:
+			a = sif.HdrArchARM64
+		case 5:
+			a = sif.HdrArchPPC64
+		case 6:
+			a = sif.HdrArchPPC64le
+		case 7:
+			a = sif.HdrArchMIPS
+		case 8:
+			a = sif.HdrArchMIPSle
+		case 9:
+			a = sif.HdrArchMIPS64
+		case 10:
+			a = sif.HdrArchMIPS64le
+		case 11:
+			a = sif.HdrArchS390x
+		default:
+			log.Printf("error: -partarch flag is required with a valid range\n\n")
+			return fmt.Errorf("usage")
 		}
 
 		err := input.SetPartExtra(sif.Fstype(*partfs), sif.Parttype(*parttype), a)
