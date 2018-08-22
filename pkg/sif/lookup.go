@@ -234,6 +234,11 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 // Methods on (descr *Descriptor)
 //
 
+// GetData return a memory mapped byte slice mirroring the data object in a SIF file.
+func (descr *Descriptor) GetData(fimg *FileImage) []byte {
+	return fimg.Filedata[descr.Fileoff : descr.Fileoff+descr.Filelen]
+}
+
 // GetName returns the name tag associated with the descriptor. Analogous to file name.
 func (descr *Descriptor) GetName() string {
 	return strings.TrimRight(string(descr.Name[:]), "\000")

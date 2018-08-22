@@ -189,6 +189,27 @@ func TestFromDescr(t *testing.T) {
 	}
 }
 
+func TestGetData(t *testing.T) {
+	// load the test container
+	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
+	if err != nil {
+		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
+	}
+	defer fimg.UnloadContainer()
+
+	// Get the signature block
+	descr, _, err := fimg.GetFromDescrID(3)
+	if err != nil {
+		t.Error("fimg.GetFromDescrID(): should have found descriptor")
+	}
+
+	data := descr.GetData(&fimg)
+
+	if string(data[5:10]) != "BEGIN" {
+		t.Errorf("expected `BEGIN' at data[5:9], got `%s'", data[5:10])
+	}
+}
+
 func TestGetName(t *testing.T) {
 	// load the test container
 	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
