@@ -14,7 +14,7 @@ license found in the LICENSE.md file.
 
 ### Download and Install From Source
 
-To get the sif package to include to your program:
+To get the sif package to use directly from your programs:
 
 ```Shell Session
 $ go get -u github.com/sylabs/sif/pkg/sif
@@ -26,7 +26,7 @@ To get the siftool CLI program to manipulate SIF container files:
 $ go get -u github.com/sylabs/sif/cmd/siftool
 ```
 
-To build the SIF components type the followin from the projet root directory:
+To build the SIF components type the following from the projet root directory:
 
 ```Shell Session
 $ go build ./...
