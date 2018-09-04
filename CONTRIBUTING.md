@@ -34,7 +34,7 @@ all your interactions with the project members and users.
 4. Ensure any install or build dependencies are removed before doing a build
    to test your PR locally.
 5. For any new functionality, please write appropriate go tests that will run
-   as part of the Continuous Integration (Travis) system.
+   as part of the Continuous Integration (Circle CI) system.
 6. The project's default copyright and header have been included in any new
    source files.
 7. Make sure you have implemented a local `make test` and all tests succeed
