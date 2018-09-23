@@ -54,8 +54,8 @@ func isValidSif(fimg *FileImage) error {
 	if string(fimg.Header.Magic[:HdrMagicLen-1]) != HdrMagic {
 		return fmt.Errorf("invalid SIF file: Magic |%s| want |%s|", fimg.Header.Magic, HdrMagic)
 	}
-	if string(fimg.Header.Version[:HdrVersionLen-1]) != HdrVersion {
-		return fmt.Errorf("invalid SIF file: Version %s want %s", fimg.Header.Version, HdrVersion)
+	if string(fimg.Header.Version[:HdrVersionLen-1]) > HdrVersion {
+		return fmt.Errorf("invalid SIF file: Version %s want <= %s", fimg.Header.Version, HdrVersion)
 	}
 
 	return nil
