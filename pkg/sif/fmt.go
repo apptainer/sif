@@ -140,7 +140,11 @@ func (fimg *FileImage) FmtDescrList() string {
 			if v.Link == DescrUnusedLink {
 				s += fmt.Sprintf("|%-7s ", "NONE")
 			} else {
-				s += fmt.Sprintf("|%-7d ", v.Link)
+				if v.Link&DescrGroupMask == DescrGroupMask {
+					s += fmt.Sprintf("|%-3d (G) ", v.Link&^DescrGroupMask)
+				} else {
+					s += fmt.Sprintf("|%-7d ", v.Link)
+				}
 			}
 
 			fposbuf := fmt.Sprintf("|%d-%d ", v.Fileoff, v.Fileoff+v.Filelen)
@@ -184,7 +188,11 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 			if v.Link == DescrUnusedLink {
 				s += fmt.Sprintln("  Link:     ", "NONE")
 			} else {
-				s += fmt.Sprintln("  Link:     ", v.Link)
+				if v.Link&DescrGroupMask == DescrGroupMask {
+					s += fmt.Sprintln("  Link:     ", v.Link&^DescrGroupMask, "(G)")
+				} else {
+					s += fmt.Sprintln("  Link:     ", v.Link)
+				}
 			}
 			s += fmt.Sprintln("  Fileoff:  ", v.Fileoff)
 			s += fmt.Sprintln("  Filelen:  ", v.Filelen)
