@@ -7,10 +7,11 @@ package sif
 
 import (
 	"encoding/binary"
-	"github.com/satori/go.uuid"
 	"os"
 	"runtime"
 	"testing"
+
+	"github.com/satori/go.uuid"
 )
 
 const (
@@ -75,7 +76,7 @@ func TestCreateContainer(t *testing.T) {
 		Groupid:   DescrDefaultGroup,
 		Link:      DescrUnusedLink,
 		Fname:     "testdata/busybox.squash",
-		Alignment: 1048576, // Test an aggresive alignment requirement
+		Alignment: 1048576, // Test an aggressive alignment requirement
 	}
 	// open up the data object file for this descriptor
 	if parinput.Fp, err = os.Open(parinput.Fname); err != nil {
