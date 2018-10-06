@@ -9,7 +9,7 @@ stored in a single file.
 
 ![SIF Image](doc/sif.png)
 
-Unless otherwise noted, the Go source files are distributed under the BSD-style
+Unless otherwise noted, the SIF source files are distributed under the BSD-style
 license found in the LICENSE.md file.
 
 ### Download and Install From Source
