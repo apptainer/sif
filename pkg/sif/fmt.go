@@ -71,6 +71,8 @@ func datatypeStr(dtype Datatype) string {
 		return "Signature"
 	case DataGenericJSON:
 		return "JSON.Generic"
+	case DataGeneric:
+		return "Generic/Raw"
 	}
 	return "Unknown data-type"
 }

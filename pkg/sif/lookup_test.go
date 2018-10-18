@@ -153,6 +153,16 @@ func TestFromDescr(t *testing.T) {
 		t.Error("fimg.GetFromDescr(descr): should not have found descriptor:", err)
 	}
 
+	// Simple lookup of a descriptor of type Generic (non-existant)
+	descr = Descriptor{
+		Datatype: DataGeneric,
+	}
+	_, _, err = fimg.GetFromDescr(descr)
+	if err == nil {
+		t.Error("fimg.GetFromDescr(descr): should not have found descriptor:", err)
+	}
+
+
 	// Example with very pinpointed descriptor lookup
 	descr = Descriptor{
 		Datatype: DataPartition,

@@ -68,6 +68,8 @@ func cmdAdd(args []string) error {
 		d = sif.DataSignature
 	case 6:
 		d = sif.DataGenericJSON
+	case 7:
+		d = sif.DataGeneric
 	default:
 		log.Printf("error: -datatype flag is required with a valid range\n\n")
 		return fmt.Errorf("usage")
