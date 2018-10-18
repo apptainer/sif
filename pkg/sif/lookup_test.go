@@ -162,7 +162,6 @@ func TestFromDescr(t *testing.T) {
 		t.Error("fimg.GetFromDescr(descr): should not have found descriptor:", err)
 	}
 
-
 	// Example with very pinpointed descriptor lookup
 	descr = Descriptor{
 		Datatype: DataPartition,
