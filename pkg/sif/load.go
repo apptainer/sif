@@ -87,6 +87,13 @@ func (fimg *FileImage) mapFile(rdonly bool) error {
 		// mmap failed, use sequential read() instead for top of file
 		siflog.Printf("mmap on %s failed, reading buffer sequentially...", fimg.Fp.Name())
 		fimg.Filedata = make([]byte, DataStartOffset)
+
+		// start by positioning us to the start of the file
+		_, err := fimg.Fp.Seek(0, 0)
+		if err != nil {
+			return fmt.Errorf("seek() setting to start of file: %s", err)
+		}
+
 		if n, err := fimg.Fp.Read(fimg.Filedata); n != DataStartOffset {
 			return fmt.Errorf("short read while reading top of file: %v", err)
 
