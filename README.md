@@ -20,22 +20,14 @@ To get the sif package to use directly from your programs:
 $ go get -u github.com/sylabs/sif/pkg/sif
 ```
 
-To get the siftool CLI program to manipulate SIF container files:
+To get the siftool CLI program installed to $GOPATH/bin to manipulate SIF container files:
 
 ```Shell Session
-$ go get -u github.com/sylabs/sif/cmd/siftool
-```
-
-To build the SIF components type the following from the projet root directory:
-
-```Shell Session
-$ go build ./...
-```
-
-or:
-
-```Shell Session
-$ go install ./...
+$ mkdir -p $GOPATH/src/github.com/sylabs
+$ cd $GOPATH/src/github.com/sylabs
+$ git clone https://github.com/sylabs/sif  (somewhere in your $GOPATH)
+$ cd sif
+$ ./build.sh
 ```
 
 ### Contributing

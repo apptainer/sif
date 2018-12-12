@@ -12,7 +12,7 @@ jobs:
       - checkout
       - run:
           name: Build Source
-          command: go build ./...
+          command: ./build.sh
       - run:
           name: Check Formatting
           command: test -z $(go fmt ./...)
@@ -59,7 +59,7 @@ jobs:
           at: /go
       - run:
           name: Build Source
-          command: go build ./...
+          command: ./build.sh
 
   check_formatting:
     <<: *defaults
