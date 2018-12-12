@@ -10,8 +10,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/sylabs/sif/pkg/sif"
 	"log"
 	"os"
+	"runtime"
 )
 
 var usageMessage = `siftool is a utility program for manipulating SIF files.
@@ -29,6 +31,7 @@ The commands are:
 	new      create a new empty SIF image file
 	add      add a data object to a SIF file
 	del      delete a specified object descriptor and data from SIF file
+	version  package version
 	help     this help
 `
 
@@ -39,6 +42,14 @@ func usage() {
 
 func cmdHelp(args []string) error {
 	usage()
+	return nil
+}
+
+var version = "unknown"
+
+func cmdVersion(args []string) error {
+	fmt.Printf("siftool version %s %s/%s\n", version, runtime.GOOS, runtime.GOARCH)
+	fmt.Printf("SIF spec versions supported: <= %s\n", sif.HdrVersion)
 	return nil
 }
 
@@ -103,7 +114,10 @@ func main() {
 			`usage: del descriptorid containerfile
 `},
 		"help": {"help", cmdHelp, "" +
-			`usage: this help
+			`usage: help
+`},
+		"version": {"version", cmdVersion, "" +
+			`usage: version
 `},
 	}
 
