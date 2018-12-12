@@ -25,7 +25,7 @@ To get the siftool CLI program installed to $GOPATH/bin to manipulate SIF contai
 ```Shell Session
 $ mkdir -p $GOPATH/src/github.com/sylabs
 $ cd $GOPATH/src/github.com/sylabs
-$ git clone https://github.com/sylabs/sif  (somewhere in your $GOPATH)
+$ git clone https://github.com/sylabs/sif
 $ cd sif
 $ ./build.sh
 ```
