@@ -196,3 +196,34 @@ func cmdDel(args []string) error {
 
 	return fmt.Errorf("descriptor not in range or currently unused")
 }
+
+func cmdSetPrim(args []string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("usage")
+	}
+
+	id, err := strconv.ParseUint(args[0], 10, 32)
+	if err != nil {
+		return fmt.Errorf("while converting input descriptor id: %s", err)
+	}
+
+	fimg, err := sif.LoadContainer(args[1], false)
+	if err != nil {
+		return err
+	}
+	defer fimg.UnloadContainer()
+
+	for _, v := range fimg.DescrArr {
+		if v.Used == false {
+			continue
+		} else if v.ID == uint32(id) {
+			if err := fimg.SetPrimPart(uint32(id)); err != nil {
+				return err
+			}
+
+			return nil
+		}
+	}
+
+	return fmt.Errorf("descriptor not in range or currently unused")
+}

@@ -8,6 +8,7 @@
 package sif
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -477,4 +478,100 @@ func (d *Descriptor) SetName(name string) {
 // SetExtra sets the extra byte array to a provided byte array
 func (d *Descriptor) SetExtra(extra []byte) {
 	copy(d.Extra[:], extra)
+}
+
+// SetPrimPart sets the specified system partition to be the primary one
+func (fimg *FileImage) SetPrimPart(id uint32) error {
+	descr, _, err := fimg.GetFromDescrID(id)
+	if err != nil {
+		return err
+	}
+
+	if descr.Datatype != DataPartition {
+		return fmt.Errorf("not a volume partition")
+	}
+
+	ptype, err := descr.GetPartType()
+	if err != nil {
+		return err
+	}
+
+	// if already primary system partition, nothing to do
+	if ptype == PartPrimSys {
+		return nil
+	}
+
+	if ptype != PartSystem {
+		return fmt.Errorf("partition must be of system type")
+	}
+
+	olddescr, _, err := fimg.GetPartPrimSys()
+	if err != nil && err != ErrNotFound {
+		return err
+	}
+
+	fs, err := descr.GetFsType()
+	if err != nil {
+		return nil
+	}
+
+	arch, err := descr.GetArch()
+	if err != nil {
+		return err
+	}
+
+	copy(fimg.Header.Arch[:], arch[:])
+	fimg.PrimPartID = descr.ID
+
+	extra := Partition{
+		Fstype:   fs,
+		Parttype: PartPrimSys,
+	}
+	copy(extra.Arch[:], arch[:])
+
+	var extrabuf bytes.Buffer
+	if err := binary.Write(&extrabuf, binary.LittleEndian, extra); err != nil {
+		return err
+	}
+	descr.SetExtra(extrabuf.Bytes())
+
+	if olddescr != nil {
+		oldfs, err := olddescr.GetFsType()
+		if err != nil {
+			return nil
+		}
+		oldarch, err := olddescr.GetArch()
+		if err != nil {
+			return nil
+		}
+
+		oldextra := Partition{
+			Fstype:   oldfs,
+			Parttype: PartSystem,
+		}
+		copy(oldextra.Arch[:], oldarch[:])
+
+		var oldextrabuf bytes.Buffer
+		if err := binary.Write(&oldextrabuf, binary.LittleEndian, oldextra); err != nil {
+			return err
+		}
+		olddescr.SetExtra(oldextrabuf.Bytes())
+	}
+
+	// write down the descriptor array
+	if err := writeDescriptors(fimg); err != nil {
+		return err
+	}
+
+	fimg.Header.Mtime = time.Now().Unix()
+	// write down global header to file
+	if err := writeHeader(fimg); err != nil {
+		return err
+	}
+
+	if err := fimg.Fp.Sync(); err != nil {
+		return fmt.Errorf("while sync'ing new data object to SIF file: %s", err)
+	}
+
+	return nil
 }

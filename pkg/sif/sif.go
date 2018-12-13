@@ -192,10 +192,10 @@ type Descriptor struct {
 	UID   int64                 // system user owning the file
 	Gid   int64                 // system group owning the file
 	Name  [DescrNameLen]byte    // descriptor name (string identifier)
-	Extra [DescrMaxPrivLen]byte // big enough for above extra data
+	Extra [DescrMaxPrivLen]byte // big enough for extra data below
 }
 
-// Deffile represets the SIF definition-file data object descriptor
+// Deffile represents the SIF definition-file data object descriptor
 type Deffile struct {
 }
 
@@ -224,6 +224,10 @@ type Signature struct {
 type GenericJSON struct {
 }
 
+// Generic represents the SIF generic data object descriptor
+type Generic struct {
+}
+
 // Header describes a loaded SIF file
 type Header struct {
 	Launch [HdrLaunchLen]byte // #! shell execution line
@@ -243,6 +247,12 @@ type Header struct {
 	Dataoff  int64 // bytes into file where data starts
 	Datalen  int64 // bytes used by all data objects
 }
+
+//
+// This section describes SIF creation/loading data structures used when
+// building or opening a SIF file. Transient data not found in the final
+// SIF file. Those data structures are internal.
+//
 
 // FileImage describes the representation of a SIF file in memory
 type FileImage struct {
@@ -264,12 +274,6 @@ type CreateInfo struct {
 	ID         uuid.UUID         // image unique identifier
 	InputDescr []DescriptorInput // slice of input info for descriptor creation
 }
-
-//
-// This section describes SIF creation data structures used when building
-// a new SIF file. Transient data not found in the final SIF file. Those data
-// structures are internal.
-//
 
 // DescriptorInput describes the common info needed to create a data object descriptor
 type DescriptorInput struct {

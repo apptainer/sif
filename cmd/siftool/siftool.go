@@ -31,6 +31,7 @@ The commands are:
 	new      create a new empty SIF image file
 	add      add a data object to a SIF file
 	del      delete a specified object descriptor and data from SIF file
+	setprim  set primary system partition
 	version  package version
 	help     this help
 `
@@ -79,30 +80,30 @@ func main() {
 			`usage: new containerfile
 `},
 		"add": {"add", cmdAdd, "" +
-			`usage: add containerfile dataobjectfile|-
+			`usage: add [OPTIONS] containerfile dataobjectfile|-
 	-datatype     the type of data to add
 	              [NEEDED, no default]:
 	                1-Deffile,   2-EnvVar,    3-Labels,
 	                4-Partition, 5-Signature, 6-GenericJSON
-	-parttype     the type of parition (with -datatype 3-Partition)
+	-parttype     the type of parition (with -datatype 4-Partition)
 	              [NEEDED, no default]:
 	                1-System,    2-PrimSys,   3-Data,
 	                4-Overlay
-	-partfs       the filesystem in used (with -datatype 3-Partition)
+	-partfs       the filesystem in used (with -datatype 4-Partition)
 	              [NEEDED, no default]:
 	                1-Squash,    2-Ext3,      3-ImmuObj,
 	                4-Raw
-	-partarch     the main architecture used (with -datatype 3-Partition)
+	-partarch     the main architecture used (with -datatype 4-Partition)
 	              [NEEDED, no default]:
 	                1-386,       2-amd64,     3-arm,
 	                4-arm64,     5-ppc64,     6-ppc64le,
 	                7-mips,      8-mipsle,    9-mips64,
 	                10-mips64le, 11-s390x
-	-signhash     the signature hash used (with -datatype 4-Signature)
+	-signhash     the signature hash used (with -datatype 5-Signature)
 	              [NEEDED, no default]:
 	                1-SHA256,    2-SHA384,    3-SHA512,
 	                4-BLAKE2S,   5-BLAKE2B
-	-signentity   the entity that signs (with -datatype 4-Signature)
+	-signentity   the entity that signs (with -datatype 5-Signature)
 	              [NEEDED, no default]:
 	                example: 433FE984155206BD962725E20E8713472A879943
 	-groupid      set groupid [default: DescrUnusedGroup]
@@ -112,6 +113,9 @@ func main() {
 `},
 		"del": {"del", cmdDel, "" +
 			`usage: del descriptorid containerfile
+`},
+		"setprim": {"setprim", cmdSetPrim, "" +
+			`usage: setprim descriptorid containerfile
 `},
 		"help": {"help", cmdHelp, "" +
 			`usage: help
