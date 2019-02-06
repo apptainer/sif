@@ -473,3 +473,80 @@ func TestGetPartPrimSys(t *testing.T) {
 		t.Error("fimg.GetPartPrimSys():", err)
 	}
 }
+
+func TestIsSigned(t *testing.T) {
+
+	testTable := []struct {
+		containerFile string
+		expectErr     bool
+		expectSigned  bool
+	}{
+		{"testdata/testcontainer1.sif", true, false},
+		{"testdata/testcontainer2.sif", false, true},
+	}
+
+	for _, tt := range testTable {
+		t.Run(tt.containerFile, func(t *testing.T) {
+			// load the test container
+			fimg, err := LoadContainer(tt.containerFile, true)
+			if err != nil {
+				t.Errorf("LoadContainer(%s, true): %v", tt.containerFile, err)
+			}
+			fimg.UnloadContainer()
+
+			isSigned, err := fimg.IsSigned()
+			if tt.expectErr && err == nil {
+				t.Error("got no error, but one was expected")
+			}
+			if !tt.expectErr && err != nil {
+				t.Errorf("got err, but none expected: %v", err)
+			}
+			if err == nil {
+				if isSigned != tt.expectSigned {
+					t.Errorf("got %t, expected %t", isSigned, tt.expectSigned)
+				}
+			}
+		})
+	}
+}
+
+func TestGetSignatureFingerprints(t *testing.T) {
+
+	testTable := []struct {
+		containerFile        string
+		expectErr            bool
+		expectedFingerprints []string
+	}{
+		{"testdata/testcontainer1.sif", true, []string{}},
+		{"testdata/testcontainer2.sif", false, []string{"9F2B6C36D999A3E91CB3104720671590C12D4222"}},
+	}
+
+	for _, tt := range testTable {
+		t.Run(tt.containerFile, func(t *testing.T) {
+			// load the test container
+			fimg, err := LoadContainer(tt.containerFile, true)
+			if err != nil {
+				t.Errorf("LoadContainer(%s, true): %v", tt.containerFile, err)
+			}
+			defer fimg.UnloadContainer()
+
+			fingerprints, err := fimg.GetSignatureFingerprints()
+			if tt.expectErr && err == nil {
+				t.Error("got no error, but one was expected")
+			}
+			if !tt.expectErr && err != nil {
+				t.Errorf("got err, but none expected: %v", err)
+			}
+			if err == nil {
+				if len(fingerprints) != len(tt.expectedFingerprints) {
+					t.Errorf("got %d fingerprints, expected %d fingerprints", len(fingerprints), len(tt.expectedFingerprints))
+				}
+				for i, fp := range fingerprints {
+					if fp != tt.expectedFingerprints[i] {
+						t.Errorf("got fingerprint %s, expected fingerprint %s", fp, tt.expectedFingerprints[i])
+					}
+				}
+			}
+		})
+	}
+}

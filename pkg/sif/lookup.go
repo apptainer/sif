@@ -13,6 +13,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"golang.org/x/crypto/openpgp/clearsign"
 )
 
 // ErrNotFound is the code for when no search key is not found
@@ -376,4 +378,63 @@ func (fimg *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
 	}
 
 	return descr, index, nil
+}
+
+// IsSigned returns true if the primary system partition is signed, note that
+// the signuture is not verified here - just the presence of a signature
+func (fimg *FileImage) IsSigned() (bool, error) {
+	descr, _, err := fimg.GetPartPrimSys()
+	if err != nil {
+		return false, fmt.Errorf("no primary partition found: %v", err)
+	}
+
+	signatures, _, err := fimg.GetFromLinkedDescr(descr.ID)
+	if err != nil {
+		return false, fmt.Errorf("no signatures found for system partition: %v", err)
+	}
+
+	return len(signatures) != 0, nil
+}
+
+// GetSignatureFingerprints returns the entitys' fingerprints for the signature
+// block of the primary system partition if it is signed, note that data
+// integrity is not verified and the identity of the signed is not validated
+func (fimg *FileImage) GetSignatureFingerprints() (fingerprints []string, err error) {
+
+	var descr *Descriptor
+	descr, _, err = fimg.GetPartPrimSys()
+	if err != nil {
+		err = fmt.Errorf("no primary partition found: %v", err)
+		return
+	}
+
+	signatures, _, err := fimg.GetFromLinkedDescr(descr.ID)
+	if err != nil {
+		err = fmt.Errorf("no signatures found for system partition: %v", err)
+		return
+	}
+
+	if len(signatures) == 0 {
+		return
+	}
+
+	for _, s := range signatures {
+		data := s.GetData(fimg)
+		block, _ := clearsign.Decode(data)
+		if block == nil {
+			err = fmt.Errorf("failed to parse signature block")
+			return
+		}
+
+		// get the entity fingerprint for the signature block
+		var fingerprint string
+		fingerprint, err = s.GetEntityString()
+		if err != nil {
+			err = fmt.Errorf("could not get the signing entity fingerprint: %v", err)
+			return
+		}
+		fingerprints = append(fingerprints, fingerprint)
+	}
+
+	return
 }
