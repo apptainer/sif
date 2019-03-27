@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -18,8 +18,9 @@ package sif
 
 import (
 	"bytes"
-	"github.com/satori/go.uuid"
 	"os"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 // Layout of a SIF file (example)
@@ -254,10 +255,24 @@ type Header struct {
 // SIF file. Those data structures are internal.
 //
 
+// ReadWriter describes the operations needed to support reading and
+// writing SIF files
+type ReadWriter interface {
+	Name() string
+	Close() error
+	Fd() uintptr
+	Read(b []byte) (n int, err error)
+	Seek(offset int64, whence int) (ret int64, err error)
+	Stat() (os.FileInfo, error)
+	Sync() error
+	Truncate(size int64) error
+	Write(b []byte) (n int, err error)
+}
+
 // FileImage describes the representation of a SIF file in memory
 type FileImage struct {
 	Header     Header        // the loaded SIF global header
-	Fp         *os.File      // file pointer of opened SIF file
+	Fp         ReadWriter    // file pointer of opened SIF file
 	Filesize   int64         // file size of the opened SIF file
 	Filedata   []byte        // the content of the opened file
 	Amodebuf   bool          // access mode: mmap = false, buffered = true

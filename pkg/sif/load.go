@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -121,43 +121,25 @@ func (fimg *FileImage) unmapFile() error {
 // the container file name, and whether the file is opened as read-only
 // as arguments.
 func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
+	var fp ReadWriter
+
 	if rdonly { // open SIF rdonly if mounting immutable partitions or inspecting the image
-		if fimg.Fp, err = os.Open(filename); err != nil {
+		if fp, err = os.Open(filename); err != nil {
 			return fimg, fmt.Errorf("opening(RDONLY) container file: %s", err)
 		}
 	} else { // open SIF read-write when adding and removing data objects
-		if fimg.Fp, err = os.OpenFile(filename, os.O_RDWR, 0644); err != nil {
+		if fp, err = os.OpenFile(filename, os.O_RDWR, 0644); err != nil {
 			return fimg, fmt.Errorf("opening(RDWR) container file: %s", err)
 		}
 	}
 
-	// get a memory map of the SIF file
-	if err = fimg.mapFile(rdonly); err != nil {
-		return
-	}
-
-	// read global header from SIF file
-	if err = readHeader(&fimg); err != nil {
-		return
-	}
-
-	// validate global header
-	if err = isValidSif(&fimg); err != nil {
-		return
-	}
-
-	// read descriptor array from SIF file
-	if err = readDescriptors(&fimg); err != nil {
-		return
-	}
-
-	return
+	return LoadContainerFp(fp, rdonly)
 }
 
 // LoadContainerFp is responsible for loading a SIF container file. It takes
 // a *os.File pointing to an opened file, and whether the file is opened as
 // read-only for arguments.
-func LoadContainerFp(fp *os.File, rdonly bool) (fimg FileImage, err error) {
+func LoadContainerFp(fp ReadWriter, rdonly bool) (fimg FileImage, err error) {
 	if fp == nil {
 		return fimg, fmt.Errorf("provided fp for file is invalid")
 	}
