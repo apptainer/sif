@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -197,6 +197,32 @@ func TestLoadContainerFpMock(t *testing.T) {
 
 	if err = fimg.UnloadContainer(); err != nil {
 		t.Error("fimg.UnloadContainer():", err)
+	}
+}
+
+func TestLoadContainerInvalidMagic(t *testing.T) {
+	// Load a valid SIF file ...
+	content, err := ioutil.ReadFile("testdata/testcontainer2.sif")
+	if err != nil {
+		t.Error(`ioutil.ReadFile("testdata/testcontainer2.sif"):`, err)
+	}
+
+	// ... and edit the magic to make it invalid. Instead of
+	// exploring all kinds of invalid, simply mess with the last
+	// byte, as this would catch off-by-one errors in the code.
+	copy(content[HdrLaunchLen:HdrLaunchLen+HdrMagicLen], []byte("SIF_MAGIX"))
+
+	fp := &mockSifReadWriter{
+		buf:  content,
+		name: "invalid_magic",
+	}
+
+	fimg, err := LoadContainerFp(fp, true)
+	if err == nil {
+		// unload the container in case it's loaded, ignore
+		// any errors
+		_ = fimg.UnloadContainer()
+		t.Errorf(`LoadContainerFp(fp, true) did not report an error for a container with invalid magic.`)
 	}
 }
 
