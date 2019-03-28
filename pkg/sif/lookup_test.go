@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -332,7 +332,7 @@ func TestGetArch(t *testing.T) {
 		t.Error("parts[0].GetArch()", err)
 	}
 
-	if string(arch[:HdrArchLen-1]) != HdrArchAMD64 {
+	if cstrToString(arch[:]) != HdrArchAMD64 {
 		t.Logf("|%s|%s|\n", arch[:HdrArchLen-1], HdrArchAMD64)
 		t.Error("part.GetArch() should have returned 'HdrArchAMD64':", err)
 	}
