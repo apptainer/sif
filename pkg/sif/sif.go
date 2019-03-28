@@ -91,7 +91,7 @@ import (
 const (
 	HdrLaunch       = "#!/usr/bin/env run-singularity\n"
 	HdrMagic        = "SIF_MAGIC" // SIF identification
-	HdrVersion      = "02"        // SIF SPEC VERSION
+	HdrVersion      = "01"        // SIF SPEC VERSION
 	HdrArchUnknown  = "00"        // Undefined/Unsupported arch
 	HdrArch386      = "01"        // 386 (i[3-6]86) arch code
 	HdrArchAMD64    = "02"        // AMD64 arch code
