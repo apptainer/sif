@@ -8,11 +8,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/satori/go.uuid"
-	"github.com/sylabs/sif/pkg/sif"
 	"log"
 	"os"
 	"strconv"
+
+	uuid "github.com/satori/go.uuid"
+	"github.com/sylabs/sif/pkg/sif"
 )
 
 var datatype = flag.Int64("datatype", -1, "")
@@ -156,7 +157,11 @@ func cmdAdd(args []string) error {
 	if err != nil {
 		return err
 	}
-	defer fimg.UnloadContainer()
+	defer func() {
+		if err := fimg.UnloadContainer(); err != nil {
+			fmt.Println("Error unloading container: ", err)
+		}
+	}()
 
 	// add new data object to SIF file
 	if err = fimg.AddObject(input); err != nil {
@@ -180,10 +185,14 @@ func cmdDel(args []string) error {
 	if err != nil {
 		return err
 	}
-	defer fimg.UnloadContainer()
+	defer func() {
+		if err := fimg.UnloadContainer(); err != nil {
+			fmt.Println("Error unloading container: ", err)
+		}
+	}()
 
 	for _, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else if v.ID == uint32(id) {
 			if err := fimg.DeleteObject(uint32(id), 0); err != nil {
@@ -211,10 +220,14 @@ func cmdSetPrim(args []string) error {
 	if err != nil {
 		return err
 	}
-	defer fimg.UnloadContainer()
+	defer func() {
+		if err := fimg.UnloadContainer(); err != nil {
+			fmt.Println("Error unloading container: ", err)
+		}
+	}()
 
 	for _, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else if v.ID == uint32(id) {
 			if err := fimg.SetPrimPart(uint32(id)); err != nil {

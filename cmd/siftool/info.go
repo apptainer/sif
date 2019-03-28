@@ -7,11 +7,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/sylabs/sif/pkg/sif"
 	"io"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/sylabs/sif/pkg/sif"
 )
 
 // cmdHeader displays a SIF file global header to stdout
@@ -24,7 +25,11 @@ func cmdHeader(args []string) error {
 	if err != nil {
 		return err
 	}
-	defer fimg.UnloadContainer()
+	defer func() {
+		if err := fimg.UnloadContainer(); err != nil {
+			fmt.Println("Error unloading container: ", err)
+		}
+	}()
 
 	fmt.Print(fimg.FmtHeader())
 
@@ -41,7 +46,11 @@ func cmdList(args []string) error {
 	if err != nil {
 		return err
 	}
-	defer fimg.UnloadContainer()
+	defer func() {
+		if err := fimg.UnloadContainer(); err != nil {
+			fmt.Println("Error unloading container: ", err)
+		}
+	}()
 
 	fmt.Println("Container id:", fimg.Header.ID)
 	fmt.Println("Created on:  ", time.Unix(fimg.Header.Ctime, 0))
@@ -70,7 +79,11 @@ func cmdInfo(args []string) error {
 	if err != nil {
 		return err
 	}
-	defer fimg.UnloadContainer()
+	defer func() {
+		if err := fimg.UnloadContainer(); err != nil {
+			fmt.Println("Error unloading container: ", err)
+		}
+	}()
 
 	fmt.Print(fimg.FmtDescrInfo(uint32(id)))
 
@@ -92,10 +105,14 @@ func cmdDump(args []string) error {
 	if err != nil {
 		return err
 	}
-	defer fimg.UnloadContainer()
+	defer func() {
+		if err := fimg.UnloadContainer(); err != nil {
+			fmt.Println("Error unloading container: ", err)
+		}
+	}()
 
 	for _, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else if v.ID == uint32(id) {
 			if _, err := fimg.Fp.Seek(v.Fileoff, 0); err != nil {

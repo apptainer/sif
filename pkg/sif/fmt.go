@@ -130,7 +130,7 @@ func (fimg *FileImage) FmtDescrList() string {
 	s += fmt.Sprintln("------------------------------------------------------------------------------")
 
 	for _, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else {
 			s += fmt.Sprintf("%-4d ", v.ID)
@@ -175,7 +175,7 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 	var s string
 
 	for i, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else if v.ID == uint32(id) {
 			s = fmt.Sprintln("Descr slot#:", i)
