@@ -14,7 +14,11 @@ func TestFmtHeader(t *testing.T) {
 	if err != nil {
 		t.Error(`LoadContainer("testdata/testcontainer2.sif", true):`, err)
 	}
-	defer fimg.UnloadContainer()
+	defer func() {
+		if err := fimg.UnloadContainer(); err != nil {
+			t.Errorf("Error unloading container: %v", err)
+		}
+	}()
 
 	t.Log(fimg.FmtHeader())
 }
@@ -24,7 +28,11 @@ func TestFmtDescrList(t *testing.T) {
 	if err != nil {
 		t.Error(`LoadContainer("testdata/testcontainer2.sif", true):`, err)
 	}
-	defer fimg.UnloadContainer()
+	defer func() {
+		if err := fimg.UnloadContainer(); err != nil {
+			t.Errorf("Error unloading container: %v", err)
+		}
+	}()
 
 	t.Log(fimg.FmtDescrList())
 }
@@ -34,7 +42,11 @@ func TestFmtDescrInfo(t *testing.T) {
 	if err != nil {
 		t.Error(`LoadContainer("testdata/testcontainer2.sif", true):`, err)
 	}
-	defer fimg.UnloadContainer()
+	defer func() {
+		if err := fimg.UnloadContainer(); err != nil {
+			t.Errorf("Error unloading container: %v", err)
+		}
+	}()
 
 	t.Log(fimg.FmtDescrInfo(1))
 	t.Log(fimg.FmtDescrInfo(2))

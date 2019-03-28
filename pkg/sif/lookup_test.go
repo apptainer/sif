@@ -204,7 +204,11 @@ func TestGetData(t *testing.T) {
 	if err != nil {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
-	defer fimg.UnloadContainer()
+	defer func() {
+		if err := fimg.UnloadContainer(); err != nil {
+			t.Errorf("Error unloading container: %v", err)
+		}
+	}()
 
 	// Get the signature block
 	descr, _, err := fimg.GetFromDescrID(3)
@@ -466,7 +470,11 @@ func TestGetPartPrimSys(t *testing.T) {
 	if err != nil {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
-	fimg.UnloadContainer()
+	defer func() {
+		if err := fimg.UnloadContainer(); err != nil {
+			t.Errorf("Error unloading container: %v", err)
+		}
+	}()
 
 	_, _, err = fimg.GetPartPrimSys()
 	if err != nil {
