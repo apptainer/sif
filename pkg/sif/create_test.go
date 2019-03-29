@@ -54,13 +54,17 @@ func TestCreateContainer(t *testing.T) {
 		Link:     DescrUnusedLink,
 		Fname:    "testdata/busybox.deffile",
 	}
+
 	// open up the data object file for this descriptor
-	if definput.Fp, err = os.Open(definput.Fname); err != nil {
+	defHandle, err := os.Open(definput.Fname)
+	if err != nil {
 		t.Error("CreateContainer(cinfo): read data object file:", err)
 	}
-	defer definput.Fp.Close()
+	defer defHandle.Close()
 
-	fi, err := definput.Fp.Stat()
+	definput.Fp = defHandle
+
+	fi, err := defHandle.Stat()
 	if err != nil {
 		t.Error("CreateContainer(cinfo): can't stat definition file", err)
 	}
@@ -78,12 +82,15 @@ func TestCreateContainer(t *testing.T) {
 		Alignment: 1048576, // Test an aggresive alignment requirement
 	}
 	// open up the data object file for this descriptor
-	if parinput.Fp, err = os.Open(parinput.Fname); err != nil {
+	partHandle, err := os.Open(parinput.Fname)
+	if err != nil {
 		t.Error("CreateContainer(cinfo): read data object file:", err)
 	}
-	defer parinput.Fp.Close()
+	defer partHandle.Close()
 
-	fi, err = parinput.Fp.Stat()
+	parinput.Fp = partHandle
+
+	fi, err = partHandle.Stat()
 	if err != nil {
 		t.Error("CreateContainer(cinfo): can't stat partition file", err)
 	}
@@ -124,12 +131,15 @@ func TestAddObject(t *testing.T) {
 		Fname:    "testdata/busybox.squash",
 	}
 	// open up the data object file for this descriptor
-	if parinput.Fp, err = os.Open(parinput.Fname); err != nil {
+	partHandle, err := os.Open(parinput.Fname)
+	if err != nil {
 		t.Error("CreateContainer(cinfo): read data object file:", err)
 	}
-	defer parinput.Fp.Close()
+	defer partHandle.Close()
 
-	fi, err := parinput.Fp.Stat()
+	parinput.Fp = partHandle
+
+	fi, err := partHandle.Stat()
 	if err != nil {
 		t.Error("CreateContainer(cinfo): can't stat partition file", err)
 	}

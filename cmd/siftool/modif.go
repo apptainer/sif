@@ -93,12 +93,15 @@ func cmdAdd(args []string) error {
 		input.Fp = os.Stdin
 	} else {
 		// open up the data object file for this descriptor
-		if input.Fp, err = os.Open(args[1]); err != nil {
+		fp, err := os.Open(args[1])
+		if err != nil {
 			return err
 		}
-		defer input.Fp.Close()
+		defer fp.Close()
 
-		fi, err := input.Fp.Stat()
+		input.Fp = fp
+
+		fi, err := fp.Stat()
 		if err != nil {
 			return err
 		}
