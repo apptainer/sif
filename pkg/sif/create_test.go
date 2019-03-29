@@ -6,11 +6,13 @@
 package sif
 
 import (
+	"bytes"
 	"encoding/binary"
-	"github.com/satori/go.uuid"
 	"os"
 	"runtime"
 	"testing"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -169,6 +171,65 @@ func TestAddObject(t *testing.T) {
 	// unload the test container
 	if err = fimg.UnloadContainer(); err != nil {
 		t.Error("UnloadContainer(fimg):", err)
+	}
+}
+
+func TestAddObjectPipe(t *testing.T) {
+	var err error
+
+	// the code treats a DescriptorInput with a non-nil Fp field and
+	// a Size == 0 field as a "pipe"
+	payload := []byte("0123456789")
+	input := DescriptorInput{
+		Datatype: DataGeneric,
+		Groupid:  DescrDefaultGroup,
+		Link:     DescrUnusedLink,
+		Fname:    "generic",
+		Fp:       bytes.NewBuffer(payload),
+		Size:     0,
+	}
+
+	fimg := &FileImage{
+		Header: Header{
+			Dfree:  1,
+			Dtotal: 1,
+		},
+		Fp:       &mockSifReadWriter{},
+		DescrArr: make([]Descriptor, 1),
+	}
+
+	if err = fimg.AddObject(input); err != nil {
+		t.Error("fimg.AddObject(...):", err)
+	}
+
+	if expected, actual := int64(0), fimg.Header.Dfree; actual != expected {
+		t.Errorf("after calling fimg.AddObject(...), unexpected value in fimg.Header.Dfree: expected=%d actual=%d",
+			expected, actual)
+	}
+
+	if expected, actual := "pipe1", fimg.DescrArr[0].GetName(); actual != expected {
+		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].GetName(): expected=%s actual=%s",
+			expected, actual)
+	}
+
+	if expected, actual := int64(len(payload)), fimg.DescrArr[0].Filelen; actual != expected {
+		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Filelen: expected=%d actual=%d",
+			expected, actual)
+	}
+
+	if expected, actual := input.Datatype, fimg.DescrArr[0].Datatype; actual != expected {
+		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Datatype: expected=%d actual=%d",
+			expected, actual)
+	}
+
+	if expected, actual := input.Groupid, fimg.DescrArr[0].Groupid; actual != expected {
+		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Groupid: expected=%d actual=%d",
+			expected, actual)
+	}
+
+	if expected, actual := input.Link, fimg.DescrArr[0].Link; actual != expected {
+		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Groupid: expected=%d actual=%d",
+			expected, actual)
 	}
 }
 

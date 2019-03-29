@@ -469,11 +469,17 @@ func (di *DescriptorInput) SetSignExtra(hash Hashtype, entity string) error {
 // SetName sets the byte array field "Name" to the value of string "name"
 func (d *Descriptor) SetName(name string) {
 	copy(d.Name[:], []byte(name))
+	for i := len(name); i < len(d.Name); i++ {
+		d.Name[i] = 0
+	}
 }
 
 // SetExtra sets the extra byte array to a provided byte array
 func (d *Descriptor) SetExtra(extra []byte) {
 	copy(d.Extra[:], extra)
+	for i := len(extra); i < len(d.Extra); i++ {
+		d.Extra[i] = 0
+	}
 }
 
 // SetPrimPart sets the specified system partition to be the primary one
