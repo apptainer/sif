@@ -18,6 +18,7 @@ package sif
 
 import (
 	"bytes"
+	"io"
 	"os"
 
 	uuid "github.com/satori/go.uuid"
@@ -298,9 +299,9 @@ type DescriptorInput struct {
 	Size      int64    // size of the data object for the new descriptor
 	Alignment int      // Align requirement for data object
 
-	Fname string   // file containing data associated with the new descriptor
-	Fp    *os.File // file pointer to opened 'fname'
-	Data  []byte   // loaded data from file
+	Fname string    // file containing data associated with the new descriptor
+	Fp    io.Reader // file pointer to opened 'fname'
+	Data  []byte    // loaded data from file
 
 	Image *FileImage  // loaded SIF file in memory
 	Descr *Descriptor // created end result descriptor
