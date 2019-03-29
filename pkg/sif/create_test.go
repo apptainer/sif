@@ -255,3 +255,70 @@ func TestDeleteObject(t *testing.T) {
 		t.Error("UnloadContainer(fimg):", err)
 	}
 }
+
+func TestSetPrimPart(t *testing.T) {
+	// the code treats a DescriptorInput with a non-nil Fp field and
+	// a Size == 0 field as a "pipe"
+	payload := []byte("0123456789")
+	inputs := []DescriptorInput{
+		{
+			Datatype: DataPartition,
+			Groupid:  DescrDefaultGroup,
+			Link:     DescrUnusedLink,
+			Fname:    "generic",
+			Fp:       bytes.NewBuffer(payload),
+			Size:     0,
+		},
+		{
+			Datatype: DataPartition,
+			Groupid:  DescrDefaultGroup,
+			Link:     DescrUnusedLink,
+			Fname:    "generic",
+			Fp:       bytes.NewBuffer(payload),
+			Size:     0,
+		},
+	}
+
+	fimg := &FileImage{
+		Header: Header{
+			Dfree:  int64(len(inputs)),
+			Dtotal: int64(len(inputs)),
+		},
+		Fp:       &mockSifReadWriter{},
+		DescrArr: make([]Descriptor, len(inputs)),
+	}
+
+	for i := range inputs {
+		if err := fimg.AddObject(inputs[i]); err != nil {
+			t.Fatalf("fimg.AddObject(...): %s", err)
+		}
+
+		partition := Partition{
+			Fstype:   FsRaw,
+			Parttype: PartSystem,
+		}
+		buffer := bytes.Buffer{}
+		if err := binary.Write(&buffer, binary.LittleEndian, partition); err != nil {
+			t.Fatalf("while serializing partition info: %s", err)
+		}
+		fimg.DescrArr[i].SetExtra(buffer.Bytes())
+	}
+
+	// the first pass tests that the primary partition can be set;
+	// the second pass tests that the primary can be changed.
+	for i := range inputs {
+		if err := fimg.SetPrimPart(fimg.DescrArr[i].ID); err != nil {
+			t.Error("fimg.SetPrimPart(...):", err)
+		}
+
+		if part, idx, err := fimg.GetPartPrimSys(); err != nil {
+			t.Error("fimg.GetPartPrimSys():", err)
+		} else if expected, actual := i, idx; actual != expected {
+			t.Errorf("after calling fimg.SetPrimPart(...), unexpected value from fimg.GetPartPrimSys(): expected=%d actual=%d",
+				expected, actual)
+		} else if expected, actual := fimg.DescrArr[i].ID, part.ID; actual != expected {
+			t.Errorf("after calling fimg.SetPrimPart(...), unexpected value from fimg.GetPartPrimSys(): expected=%d actual=%d",
+				expected, actual)
+		}
+	}
+}
