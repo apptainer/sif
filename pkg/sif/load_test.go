@@ -158,14 +158,16 @@ func (m *mockSifReadWriter) Write(b []byte) (n int, err error) {
 	}
 
 	if len(b) > cap(m.buf[m.pos:]) {
-		buf := make([]byte, 0, m.pos+int64(len(b)))
+		buf := make([]byte, m.pos, m.pos+int64(len(b)))
 		copy(buf, m.buf)
 		m.buf = buf
 	}
 
-	n = copy(m.buf[m.pos:], b)
+	n = copy(m.buf[m.pos:cap(m.buf)], b)
 
 	m.pos += int64(n)
+
+	m.buf = m.buf[:m.pos]
 
 	return n, err
 }
