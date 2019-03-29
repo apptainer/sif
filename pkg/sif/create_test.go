@@ -20,6 +20,29 @@ const (
 	descrLen  = 585
 )
 
+func TestNextAligned(t *testing.T) {
+	cases := []struct {
+		name     string
+		offset   int64
+		align    int
+		expected int64
+	}{
+		{name: "align 0 to 1024", offset: 0, align: 1024, expected: 0},
+		{name: "align 1 to 1024", offset: 1, align: 1024, expected: 1024},
+		{name: "align 1023 to 1024", offset: 1023, align: 1024, expected: 1024},
+		{name: "align 1024 to 1024", offset: 1024, align: 1024, expected: 1024},
+		{name: "align 1025 to 1024", offset: 1025, align: 1024, expected: 2048},
+	}
+
+	for _, tc := range cases {
+		actual := nextAligned(tc.offset, tc.align)
+		if actual != tc.expected {
+			t.Errorf("nextAligned case: %q, offset: %d, align: %d, expecting: %d, actual: %d\n",
+				tc.name, tc.offset, tc.align, tc.expected, actual)
+		}
+	}
+}
+
 func TestDataStructs(t *testing.T) {
 	var header Header
 	var descr Descriptor
