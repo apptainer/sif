@@ -1,6 +1,6 @@
 module github.com/sylabs/sif
 
-go 1.12
+go 1.11
 
 require (
 	github.com/kr/pretty v0.1.0 // indirect
