@@ -14,16 +14,7 @@
 //	  existing SIF files.
 //	- lookup.go mostly implements search/lookup and printing routines
 //	  and access to specific descriptor/data found in SIF container files.
-package sif
-
-import (
-	"bytes"
-	"io"
-	"os"
-
-	uuid "github.com/satori/go.uuid"
-)
-
+//
 // Layout of a SIF file (example)
 //
 // .================================================.
@@ -88,6 +79,15 @@ import (
 // | .                                              |
 // | .                                              |
 // `================================================'
+package sif
+
+import (
+	"bytes"
+	"io"
+	"os"
+
+	uuid "github.com/satori/go.uuid"
+)
 
 // SIF header constants and quantities
 const (
