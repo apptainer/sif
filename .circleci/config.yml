@@ -94,6 +94,20 @@ jobs:
           name: Check for Lint
           command: golangci-lint run ./...
 
+  lint_markdown:
+    <<: *defaults
+    docker:
+      - image: node:11
+    steps:
+      - attach_workspace:
+          at: /
+      - run:
+          name: Install markdownlint
+          command: npm install -g markdownlint-cli
+      - run:
+          name: Check for Lint
+          command: markdownlint -i vendor .
+
   unit_test:
     <<: *defaults
     steps:
@@ -122,6 +136,9 @@ workflows:
           requires:
             - get_source
       - lint_source:
+          requires:
+            - get_source
+      - lint_markdown:
           requires:
             - get_source
       - unit_test:

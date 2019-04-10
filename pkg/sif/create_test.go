@@ -104,7 +104,7 @@ func TestCreateContainer(t *testing.T) {
 		Groupid:   DescrDefaultGroup,
 		Link:      DescrUnusedLink,
 		Fname:     "testdata/busybox.squash",
-		Alignment: 1048576, // Test an aggresive alignment requirement
+		Alignment: 1048576, // Test an aggressive alignment requirement
 	}
 	// open up the data object file for this descriptor
 	partHandle, err := os.Open(parinput.Fname)
