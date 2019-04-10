@@ -144,7 +144,7 @@ func TestFromDescr(t *testing.T) {
 		t.Error("fimg.GetFromDescr(descr): should have found descriptor:", err)
 	}
 
-	// Simple lookup of a descriptor of type EnvVar (non-existant)
+	// Simple lookup of a descriptor of type EnvVar (non-existent)
 	descr = Descriptor{
 		Datatype: DataEnvVar,
 	}
@@ -153,7 +153,7 @@ func TestFromDescr(t *testing.T) {
 		t.Error("fimg.GetFromDescr(descr): should not have found descriptor:", err)
 	}
 
-	// Simple lookup of a descriptor of type Generic (non-existant)
+	// Simple lookup of a descriptor of type Generic (non-existent)
 	descr = Descriptor{
 		Datatype: DataGeneric,
 	}
