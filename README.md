@@ -13,22 +13,22 @@ stored in a single file.
 Unless otherwise noted, the SIF source files are distributed under the BSD-style
 license found in the LICENSE.md file.
 
-### Download and Install From Source
+## Download and Install From Source
 
 To get the sif package to use directly from your programs:
 
-```Shell Session
-$ go get -u github.com/sylabs/sif/pkg/sif
+```sh
+go get -u github.com/sylabs/sif/pkg/sif
 ```
 
 To get the siftool CLI program installed to $GOPATH/bin to manipulate SIF container files:
 
-```Shell Session
-$ mkdir -p $GOPATH/src/github.com/sylabs
-$ cd $GOPATH/src/github.com/sylabs
-$ git clone https://github.com/sylabs/sif
-$ cd sif
-$ ./build.sh
+```sh
+mkdir -p $GOPATH/src/github.com/sylabs
+cd $GOPATH/src/github.com/sylabs
+git clone https://github.com/sylabs/sif
+cd sif
+./build.sh
 ```
 
 ### Contributing
@@ -36,4 +36,4 @@ $ ./build.sh
 SIF and Singularity is the work of many contributors. We appreciate your help!
 
 To contribute, please read the contribution guidelines:
-	[CONTRIBUTING.md](./CONTRIBUTING.md)
+    [CONTRIBUTING.md](./CONTRIBUTING.md)
