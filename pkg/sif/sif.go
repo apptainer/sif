@@ -15,70 +15,71 @@
 //	- lookup.go mostly implements search/lookup and printing routines
 //	  and access to specific descriptor/data found in SIF container files.
 //
-// Layout of a SIF file (example)
+// Layout of a SIF file (example):
 //
-// .================================================.
-// | GLOBAL HEADER: Sifheader                       |
-// | - launch: "#!/usr/bin/env..."                  |
-// | - magic: "SIF_MAGIC"                           |
-// | - version: "1"                                 |
-// | - arch: "4"                                    |
-// | - uuid: b2659d4e-bd50-4ea5-bd17-eec5e54f918e   |
-// | - ctime: 1504657553                            |
-// | - mtime: 1504657653                            |
-// | - ndescr: 3                                    |
-// | - descroff: 120                                | --.
-// | - descrlen: 432                                |   |
-// | - dataoff: 4096                                |   |
-// | - datalen: 619362                              |   |
-// |------------------------------------------------| <-'
-// | DESCR[0]: Sifdeffile                           |
-// | - Sifcommon                                    |
-// |   - datatype: DATA_DEFFILE                     |
-// |   - id: 1                                      |
-// |   - groupid: 1                                 |
-// |   - link: NONE                                 |
-// |   - fileoff: 4096                              | --.
-// |   - filelen: 222                               |   |
-// |------------------------------------------------| <-----.
-// | DESCR[1]: Sifpartition                         |   |   |
-// | - Sifcommon                                    |   |   |
-// |   - datatype: DATA_PARTITION                   |   |   |
-// |   - id: 2                                      |   |   |
-// |   - groupid: 1                                 |   |   |
-// |   - link: NONE                                 |   |   |
-// |   - fileoff: 4318                              | ----. |
-// |   - filelen: 618496                            |   | | |
-// | - fstype: Squashfs                             |   | | |
-// | - parttype: System                             |   | | |
-// | - content: Linux                               |   | | |
-// |------------------------------------------------|   | | |
-// | DESCR[2]: Sifsignature                         |   | | |
-// | - Sifcommon                                    |   | | |
-// |   - datatype: DATA_SIGNATURE                   |   | | |
-// |   - id: 3                                      |   | | |
-// |   - groupid: NONE                              |   | | |
-// |   - link: 2                                    | ------'
-// |   - fileoff: 622814                            | ------.
-// |   - filelen: 644                               |   | | |
-// | - hashtype: SHA384                             |   | | |
-// | - entity: @                                    |   | | |
-// |------------------------------------------------| <-' | |
-// | Definition file data                           |     | |
-// | .                                              |     | |
-// | .                                              |     | |
-// | .                                              |     | |
-// |------------------------------------------------| <---' |
-// | File system partition image                    |       |
-// | .                                              |       |
-// | .                                              |       |
-// | .                                              |       |
-// |------------------------------------------------| <-----'
-// | Signed verification data                       |
-// | .                                              |
-// | .                                              |
-// | .                                              |
-// `================================================'
+//     .================================================.
+//     | GLOBAL HEADER: Sifheader                       |
+//     | - launch: "#!/usr/bin/env..."                  |
+//     | - magic: "SIF_MAGIC"                           |
+//     | - version: "1"                                 |
+//     | - arch: "4"                                    |
+//     | - uuid: b2659d4e-bd50-4ea5-bd17-eec5e54f918e   |
+//     | - ctime: 1504657553                            |
+//     | - mtime: 1504657653                            |
+//     | - ndescr: 3                                    |
+//     | - descroff: 120                                | --.
+//     | - descrlen: 432                                |   |
+//     | - dataoff: 4096                                |   |
+//     | - datalen: 619362                              |   |
+//     |------------------------------------------------| <-'
+//     | DESCR[0]: Sifdeffile                           |
+//     | - Sifcommon                                    |
+//     |   - datatype: DATA_DEFFILE                     |
+//     |   - id: 1                                      |
+//     |   - groupid: 1                                 |
+//     |   - link: NONE                                 |
+//     |   - fileoff: 4096                              | --.
+//     |   - filelen: 222                               |   |
+//     |------------------------------------------------| <-----.
+//     | DESCR[1]: Sifpartition                         |   |   |
+//     | - Sifcommon                                    |   |   |
+//     |   - datatype: DATA_PARTITION                   |   |   |
+//     |   - id: 2                                      |   |   |
+//     |   - groupid: 1                                 |   |   |
+//     |   - link: NONE                                 |   |   |
+//     |   - fileoff: 4318                              | ----. |
+//     |   - filelen: 618496                            |   | | |
+//     | - fstype: Squashfs                             |   | | |
+//     | - parttype: System                             |   | | |
+//     | - content: Linux                               |   | | |
+//     |------------------------------------------------|   | | |
+//     | DESCR[2]: Sifsignature                         |   | | |
+//     | - Sifcommon                                    |   | | |
+//     |   - datatype: DATA_SIGNATURE                   |   | | |
+//     |   - id: 3                                      |   | | |
+//     |   - groupid: NONE                              |   | | |
+//     |   - link: 2                                    | ------'
+//     |   - fileoff: 622814                            | ------.
+//     |   - filelen: 644                               |   | | |
+//     | - hashtype: SHA384                             |   | | |
+//     | - entity: @                                    |   | | |
+//     |------------------------------------------------| <-' | |
+//     | Definition file data                           |     | |
+//     | .                                              |     | |
+//     | .                                              |     | |
+//     | .                                              |     | |
+//     |------------------------------------------------| <---' |
+//     | File system partition image                    |       |
+//     | .                                              |       |
+//     | .                                              |       |
+//     | .                                              |       |
+//     |------------------------------------------------| <-----'
+//     | Signed verification data                       |
+//     | .                                              |
+//     | .                                              |
+//     | .                                              |
+//     `================================================'
+//
 package sif
 
 import (
