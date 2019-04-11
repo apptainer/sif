@@ -9,10 +9,8 @@
 package siftool
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/sif/internal/app/siftool"
 )
 
 // Header implements 'siftool header' sub-command
@@ -23,19 +21,7 @@ func Header() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fimg, err := sif.LoadContainer(args[0], true)
-			if err != nil {
-				return err
-			}
-			defer func() {
-				if err := fimg.UnloadContainer(); err != nil {
-					fmt.Println("Error unloading container: ", err)
-				}
-			}()
-
-			fmt.Print(fimg.FmtHeader())
-
-			return nil
+			return siftool.Header(args[0])
 		},
 		DisableFlagsInUseLine: true,
 	}

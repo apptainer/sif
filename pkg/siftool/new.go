@@ -8,9 +8,8 @@
 package siftool
 
 import (
-	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/sif/internal/app/siftool"
 )
 
 // New implements 'siftool new' sub-command
@@ -21,19 +20,7 @@ func New() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cinfo := sif.CreateInfo{
-				Pathname:   args[0],
-				Launchstr:  sif.HdrLaunch,
-				Sifversion: sif.HdrVersion,
-				ID:         uuid.NewV4(),
-			}
-
-			_, err := sif.CreateContainer(cinfo)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return siftool.New(args[0])
 		},
 		DisableFlagsInUseLine: true,
 	}

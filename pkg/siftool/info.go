@@ -13,7 +13,7 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/sif/internal/app/siftool"
 )
 
 // Info implements 'siftool info' sub-command
@@ -29,19 +29,7 @@ func Info() *cobra.Command {
 				return fmt.Errorf("while converting input descriptor id: %s", err)
 			}
 
-			fimg, err := sif.LoadContainer(args[1], true)
-			if err != nil {
-				return err
-			}
-			defer func() {
-				if err := fimg.UnloadContainer(); err != nil {
-					fmt.Println("Error unloading container: ", err)
-				}
-			}()
-
-			fmt.Print(fimg.FmtDescrInfo(uint32(id)))
-
-			return nil
+			return siftool.Info(id, args[1])
 		},
 		DisableFlagsInUseLine: true,
 	}
