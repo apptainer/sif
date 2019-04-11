@@ -9,11 +9,8 @@
 package siftool
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/spf13/cobra"
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/sif/internal/app/siftool"
 )
 
 // List implements 'siftool list' sub-command
@@ -24,26 +21,7 @@ func List() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fimg, err := sif.LoadContainer(args[0], true)
-			if err != nil {
-				return err
-			}
-			defer func() {
-				if err := fimg.UnloadContainer(); err != nil {
-					fmt.Println("Error unloading container: ", err)
-				}
-			}()
-
-			fmt.Println("Container id:", fimg.Header.ID)
-			fmt.Println("Created on:  ", time.Unix(fimg.Header.Ctime, 0))
-			fmt.Println("Modified on: ", time.Unix(fimg.Header.Mtime, 0))
-			fmt.Println("----------------------------------------------------")
-
-			fmt.Println("Descriptor list:")
-
-			fmt.Print(fimg.FmtDescrList())
-
-			return nil
+			return siftool.List(args[0])
 		},
 		DisableFlagsInUseLine: true,
 	}
