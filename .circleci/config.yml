@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: /src
   docker:
-    - image: golang:1.11.6-stretch
+    - image: golang:1.12
 
 jobs:
   build:
