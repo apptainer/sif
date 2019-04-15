@@ -4,6 +4,7 @@ linters:
   enable:
     - deadcode
     - errcheck
+    - gofmt
     - gosimple
     - govet
     - ineffassign
@@ -12,3 +13,7 @@ linters:
     - typecheck
     - unused
     - varcheck
+
+linters-settings:
+  gofmt:
+    simplify: true

@@ -14,9 +14,6 @@ jobs:
           name: Build Source
           command: ./build.sh
       - run:
-          name: Check Formatting
-          command: test -z $(go fmt ./...)
-      - run:
           name: Install golangci-lint
           command: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.16.0
       - run:
@@ -68,17 +65,6 @@ jobs:
           name: Build Source
           command: ./build.sh
 
-  check_formatting:
-    <<: *defaults
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - go-mod-{{ checksum "go.sum" }}
-      - run:
-          name: Check Formatting
-          command: test -z $(go fmt ./...)
-
   lint_source:
     <<: *defaults
     steps:
@@ -112,9 +98,6 @@ workflows:
       - lint_markdown
       - cache_go_mod
       - build_source:
-          requires:
-            - cache_go_mod
-      - check_formatting:
           requires:
             - cache_go_mod
       - lint_source:
