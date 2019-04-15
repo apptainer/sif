@@ -17,7 +17,7 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 )
 
-// New creates a new emtpy SIF file
+// New creates a new empty SIF file
 func New(file string) error {
 	cinfo := sif.CreateInfo{
 		Pathname:   file,
@@ -34,7 +34,7 @@ func New(file string) error {
 	return nil
 }
 
-// AddOptions contains the options when adding a sectiont to a SIF file
+// AddOptions contains the options when adding a section to a SIF file
 type AddOptions struct {
 	Datatype   *int64
 	Parttype   *int64

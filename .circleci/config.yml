@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: /src
   docker:
-    - image: golang:1.11.6-stretch
+    - image: golang:1.12
 
 jobs:
   build:
@@ -14,14 +14,8 @@ jobs:
           name: Build Source
           command: ./build.sh
       - run:
-          name: Check Formatting
-          command: test -z $(go fmt ./...)
-      - run:
-          name: Vet Source
-          command: go vet -all ./...
-      - run:
           name: Install golangci-lint
-          command: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
+          command: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.16.0
       - run:
           name: Check for Lint
           command: golangci-lint run ./...
@@ -29,78 +23,12 @@ jobs:
           name: Run Tests
           command: go test -cover -race -timeout 60s ./...
 
-  get_source:
-    <<: *defaults
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - go-mod-{{ checksum "go.sum" }}
-      - run:
-          name: Populate Go Mod Cache
-          command: |-
-            if [ ! -d /go/pkg/mod ]; then
-              go mod download
-            fi
-      - save_cache:
-          key: go-mod-{{ checksum "go.sum" }}
-          paths:
-            - /go/pkg/mod
-      - run:
-          name: Go Mod Verify
-          command: go mod verify
-      - persist_to_workspace:
-          root: /
-          paths:
-            - go/pkg/mod
-            - src
-
-  build_source:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: /
-      - run:
-          name: Build Source
-          command: ./build.sh
-
-  check_formatting:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: /
-      - run:
-          name: Check Formatting
-          command: test -z $(go fmt ./...)
-
-  vet_source:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: /
-      - run:
-          name: Vet Source
-          command: go vet -all ./...
-
-  lint_source:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: /
-      - run:
-          name: Install golangci-lint
-          command: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
-      - run:
-          name: Check for Lint
-          command: golangci-lint run ./...
-
   lint_markdown:
     <<: *defaults
     docker:
-      - image: node:11
+      - image: node:11-slim
     steps:
-      - attach_workspace:
-          at: /
+      - checkout
       - run:
           name: Install markdownlint
           command: npm install -g markdownlint-cli
@@ -108,39 +36,73 @@ jobs:
           name: Check for Lint
           command: markdownlint -i vendor .
 
+  cache_go_mod:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - go-mod-{{ checksum "go.sum" }}
+      - run:
+          name: Verify go.mod
+          command: go list -mod=readonly ./... >/dev/null
+      - run:
+          name: Populate Go Mod Cache
+          command: go mod download
+      - save_cache:
+          key: go-mod-{{ checksum "go.sum" }}
+          paths:
+            - '/go/pkg/mod'
+
+  build_source:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - go-mod-{{ checksum "go.sum" }}
+      - run:
+          name: Build Source
+          command: ./build.sh
+
+  lint_source:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - go-mod-{{ checksum "go.sum" }}
+      - run:
+          name: Install golangci-lint
+          command: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.16.0
+      - run:
+          name: Check for Lint
+          command: golangci-lint run ./...
+
   unit_test:
     <<: *defaults
     steps:
-      - attach_workspace:
-          at: /
+      - checkout
+      - restore_cache:
+          keys:
+            - go-mod-{{ checksum "go.sum" }}
       - run:
           name: Run Tests
-          command: go test -coverprofile cover.out -race -timeout 60s ./...
-      - store_artifacts:
-          path: cover.out
-          destination: cover.out
+          command: go test -cover -race -timeout 60s ./...
 
 workflows:
   version: 2
 
   build_and_test:
     jobs:
-      - get_source
+      - lint_markdown
+      - cache_go_mod
       - build_source:
           requires:
-            - get_source
-      - check_formatting:
-          requires:
-            - get_source
-      - vet_source:
-          requires:
-            - get_source
+            - cache_go_mod
       - lint_source:
           requires:
-            - get_source
-      - lint_markdown:
-          requires:
-            - get_source
+            - cache_go_mod
       - unit_test:
           requires:
-            - get_source
+            - cache_go_mod
