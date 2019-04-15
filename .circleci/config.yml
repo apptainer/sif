@@ -116,10 +116,7 @@ jobs:
             - go-mod-{{ checksum "go.sum" }}
       - run:
           name: Run Tests
-          command: go test -coverprofile cover.out -race -timeout 60s ./...
-      - store_artifacts:
-          path: cover.out
-          destination: cover.out
+          command: go test -cover -race -timeout 60s ./...
 
 workflows:
   version: 2
