@@ -44,15 +44,15 @@ jobs:
           keys:
             - go-mod-{{ checksum "go.sum" }}
       - run:
-          name: Verify go.mod
-          command: go list -mod=readonly ./... >/dev/null
-      - run:
           name: Populate Go Mod Cache
           command: go mod download
       - save_cache:
           key: go-mod-{{ checksum "go.sum" }}
           paths:
             - '/go/pkg/mod'
+      - run:
+          name: Check vendor/ module is up-to-date
+          command: scripts/check-vendor
 
   build_source:
     <<: *defaults
