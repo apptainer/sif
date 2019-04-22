@@ -85,7 +85,7 @@ func main() {
 	              [NEEDED, no default]:
 	                1-Deffile,   2-EnvVar,    3-Labels,
 	                4-Partition, 5-Signature, 6-GenericJSON
-	-parttype     the type of parition (with -datatype 4-Partition)
+	-parttype     the type of partition (with -datatype 4-Partition)
 	              [NEEDED, no default]:
 	                1-System,    2-PrimSys,   3-Data,
 	                4-Overlay
