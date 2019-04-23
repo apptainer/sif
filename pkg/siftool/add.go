@@ -26,7 +26,7 @@ func Add() *cobra.Command {
 [NEEDED, no default]:
   1-Deffile,   2-EnvVar,    3-Labels,
   4-Partition, 5-Signature, 6-GenericJSON`),
-		Parttype: ret.Flags().Int64("parttype", -1, `the type of parition (with -datatype 4-Partition)
+		Parttype: ret.Flags().Int64("parttype", -1, `the type of partition (with -datatype 4-Partition)
 [NEEDED, no default]:
   1-System,    2-PrimSys,   3-Data,
   4-Overlay`),
