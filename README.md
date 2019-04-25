@@ -2,6 +2,7 @@
 
 [![GoDoc](https://godoc.org/github.com/sylabs/sif?status.svg)](https://godoc.org/github.com/sylabs/sif)
 [![Build Status](https://circleci.com/gh/sylabs/sif.svg?style=shield)](https://circleci.com/gh/sylabs/workflows/sif)
+[![Code Coverage](https://codecov.io/gh/sylabs/sif/branch/master/graph/badge.svg)](https://codecov.io/gh/sylabs/sif)
 [![Go Report Card](https://goreportcard.com/badge/github.com/sylabs/sif)](https://goreportcard.com/report/github.com/sylabs/sif)
 
 SIF is an open source implementation of the Singularity Container Image Format
