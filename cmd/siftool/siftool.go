@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -10,10 +10,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/sylabs/sif/pkg/sif"
 	"log"
 	"os"
 	"runtime"
+
+	"github.com/sylabs/sif/pkg/sif"
 )
 
 var usageMessage = `siftool is a utility program for manipulating SIF files.
@@ -140,7 +141,7 @@ func main() {
 
 	cmd, ok := subcmds[subcommand]
 	if !ok {
-		log.Fatal("Unknown command:", subcommand)
+		log.Fatal("Unknown command: ", subcommand)
 	}
 
 	if err := cmd.fn(args); err != nil {
