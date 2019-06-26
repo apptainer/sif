@@ -90,7 +90,7 @@ func fstypeStr(ftype Fstype) string {
 	case FsRaw:
 		return "Raw"
 	case FsEncrypt:
-		return "FsEncrypt"
+		return "Encrypted"
 	}
 	return "Unknown fs-type"
 }
