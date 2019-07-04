@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -252,6 +252,11 @@ func (descr *Descriptor) GetData(fimg *FileImage) []byte {
 			return nil
 		}
 		return data
+	}
+
+	if int64(len(fimg.Filedata)) < descr.Fileoff+descr.Filelen {
+		// corrupted header
+		return nil
 	}
 
 	return fimg.Filedata[descr.Fileoff : descr.Fileoff+descr.Filelen]
