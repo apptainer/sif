@@ -255,7 +255,8 @@ func (descr *Descriptor) GetData(fimg *FileImage) []byte {
 	}
 
 	if descr.Fileoff+descr.Filelen > int64(len(fimg.Filedata)) {
-		// corrupted header
+		// there's not enough data in the file to account for the indicated
+		// payload. Is the header corrupted?
 		return nil
 	}
 
