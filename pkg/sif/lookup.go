@@ -254,7 +254,7 @@ func (descr *Descriptor) GetData(fimg *FileImage) []byte {
 		return data
 	}
 
-	if int64(len(fimg.Filedata)) < descr.Fileoff+descr.Filelen {
+	if descr.Fileoff+descr.Filelen > int64(len(fimg.Filedata)) {
 		// corrupted header
 		return nil
 	}
