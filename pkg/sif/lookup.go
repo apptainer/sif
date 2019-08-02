@@ -161,7 +161,7 @@ func (fimg *FileImage) GetFromLinkedDescr(ID uint32) ([]*Descriptor, []int, erro
 	for i, v := range fimg.DescrArr {
 		if !v.Used {
 			continue
-		} else {
+		} else if v.Datatype == DataSignature {
 			if v.Link == ID {
 				indexes = append(indexes, i)
 				descrs = append(descrs, &fimg.DescrArr[i])
