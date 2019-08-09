@@ -152,8 +152,8 @@ func (fimg *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, e
 	return descrs, indexes, nil
 }
 
-// GetLinkingDescriptorsByType searches for descriptors that point to "id", only returns the specified type
-func (fimg *FileImage) GetLinkingDescriptorsByType(ID uint32, dataType Datatype) ([]*Descriptor, []int, error) {
+// GetLinkedDescrsByType searches for descriptors that point to "id", only returns the specified type
+func (fimg *FileImage) GetLinkedDescrsByType(ID uint32, dataType Datatype) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
 
