@@ -101,7 +101,7 @@ func TestGetSignFromGroup(t *testing.T) {
 	}
 }
 
-func TestGetLinkingDescriptorsByType(t *testing.T) {
+func TestGetLinkedDescrsByType(t *testing.T) {
 	// load the test container
 	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
 	if err != nil {
@@ -117,9 +117,9 @@ func TestGetLinkingDescriptorsByType(t *testing.T) {
 		t.Error("multiple partitions found where expecting 1")
 	}
 
-	fd, snum, err := fimg.GetLinkingDescriptorsByType(parts[0].ID, DataSignature)
+	fd, snum, err := fimg.GetLinkedDescrsByType(parts[0].ID, DataSignature)
 	if err != nil {
-		t.Error("fimg.GetLinkingDescriptorsByType(parts[0].ID): should have found descriptor:", err)
+		t.Error("fimg.GetLinkedDescrsByType(parts[0].ID): should have found descriptor:", err)
 	}
 
 	if len(snum) != 1 {
@@ -144,9 +144,9 @@ func TestGetLinkingDescriptorsByType(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer1.sif, true):", err)
 	}
 
-	fd, snum, err = fimg.GetLinkingDescriptorsByType(parts[0].ID, DataSignature)
+	fd, snum, err = fimg.GetLinkedDescrsByType(parts[0].ID, DataSignature)
 	if err == nil {
-		t.Error("fimg.GetLinkingDescriptorsByType(parts[0].ID): unexpected signature partition: ", err)
+		t.Error("fimg.GetLinkedDescrsByType(parts[0].ID): unexpected signature partition: ", err)
 	}
 
 	if len(snum) != 0 {
