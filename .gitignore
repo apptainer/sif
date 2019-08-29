@@ -1,2 +1,6 @@
 *~
 /cmd/siftool/siftool
+
+# couple test images to ignore
+/pkg/sif/testdata/testcontainer.sif
+/pkg/sif/testdata/test-obj-container.sif

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,6 +8,7 @@ package sif
 import (
 	"bytes"
 	"encoding/binary"
+	"io"
 	"os"
 	"runtime"
 	"testing"
@@ -18,6 +19,8 @@ import (
 const (
 	headerLen = 128
 	descrLen  = 585
+
+	testObjContainer = "testdata/test-obj-container.sif"
 )
 
 func TestNextAligned(t *testing.T) {
@@ -57,8 +60,6 @@ func TestDataStructs(t *testing.T) {
 }
 
 func TestCreateContainer(t *testing.T) {
-	var err error
-
 	// general info for the new SIF file creation
 	cinfo := CreateInfo{
 		Pathname:   "testdata/testcontainer.sif",
@@ -77,13 +78,13 @@ func TestCreateContainer(t *testing.T) {
 		Datatype: DataDeffile,
 		Groupid:  DescrDefaultGroup,
 		Link:     DescrUnusedLink,
-		Fname:    "testdata/busybox.deffile",
+		Fname:    "testdata/busybox.def",
 	}
 
 	// open up the data object file for this descriptor
 	defHandle, err := os.Open(definput.Fname)
 	if err != nil {
-		t.Error("CreateContainer(cinfo): read data object file:", err)
+		t.Errorf("CreateContainer(cinfo): read data object file: %s", err)
 	}
 	defer defHandle.Close()
 
@@ -91,7 +92,7 @@ func TestCreateContainer(t *testing.T) {
 
 	fi, err := defHandle.Stat()
 	if err != nil {
-		t.Error("CreateContainer(cinfo): can't stat definition file", err)
+		t.Errorf("CreateContainer(cinfo): can't stat definition file: %s", err)
 	}
 	definput.Size = fi.Size()
 
@@ -109,7 +110,7 @@ func TestCreateContainer(t *testing.T) {
 	// open up the data object file for this descriptor
 	partHandle, err := os.Open(parinput.Fname)
 	if err != nil {
-		t.Error("CreateContainer(cinfo): read data object file:", err)
+		t.Errorf("CreateContainer(cinfo): read data object file: %s", err)
 	}
 	defer partHandle.Close()
 
@@ -117,13 +118,13 @@ func TestCreateContainer(t *testing.T) {
 
 	fi, err = partHandle.Stat()
 	if err != nil {
-		t.Error("CreateContainer(cinfo): can't stat partition file", err)
+		t.Errorf("CreateContainer(cinfo): can't stat partition file: %s", err)
 	}
 	parinput.Size = fi.Size()
 
 	err = parinput.SetPartExtra(FsSquash, PartPrimSys, GetSIFArch(runtime.GOARCH))
 	if err != nil {
-		t.Error("CreateContainer(cinfo): can't set extra info", err)
+		t.Errorf("CreateContainer(cinfo): can't set extra info: %s", err)
 	}
 
 	// add this descriptor input element to creation descriptor slice
@@ -131,13 +132,11 @@ func TestCreateContainer(t *testing.T) {
 
 	// test container creation with two partition input descriptors
 	if _, err := CreateContainer(cinfo); err != nil {
-		t.Error("CreateContainer(cinfo): CreateContainer():", err)
+		t.Errorf("CreateContainer(cinfo): CreateContainer(): %s", err)
 	}
 }
 
-func TestAddObject(t *testing.T) {
-	var err error
-
+func TestAddDelObject(t *testing.T) {
 	// data we need to create a dummy labels descriptor
 	labinput := DescriptorInput{
 		Datatype: DataLabels,
@@ -158,7 +157,7 @@ func TestAddObject(t *testing.T) {
 	// open up the data object file for this descriptor
 	partHandle, err := os.Open(parinput.Fname)
 	if err != nil {
-		t.Error("CreateContainer(cinfo): read data object file:", err)
+		t.Errorf("os.Open(parinput.Fname): unable to read data object file: %s", err)
 	}
 	defer partHandle.Close()
 
@@ -166,40 +165,73 @@ func TestAddObject(t *testing.T) {
 
 	fi, err := partHandle.Stat()
 	if err != nil {
-		t.Error("CreateContainer(cinfo): can't stat partition file", err)
+		t.Errorf("CreateContainer(cinfo): can't stat partition file: %s", err)
 	}
 	parinput.Size = fi.Size()
 
 	err = parinput.SetPartExtra(FsSquash, PartPrimSys, GetSIFArch(runtime.GOARCH))
 	if err != nil {
-		t.Error("CreateContainer(cinfo): can't stat partition file", err)
+		t.Errorf("CreateContainer(cinfo): can't stat partition file: %s", err)
 	}
 
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer1.sif", false)
+	// copy a test container, so we dont modify the existing container
+	err = cpFile("testdata/testcontainer1.sif", testObjContainer)
 	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer1.sif, false):", err)
+		t.Fatalf("failed to copy test containers: %s", err)
+	}
+
+	//
+	// Add the object
+	//
+
+	// load the test container
+	fimg, err := LoadContainer(testObjContainer, false)
+	if err != nil {
+		t.Errorf("failed to load test container: %s: %s", testObjContainer, err)
 	}
 
 	// add new data object 'DataLabels' to SIF file
 	if err = fimg.AddObject(labinput); err != nil {
-		t.Error("fimg.AddObject():", err)
+		t.Errorf("fimg.AddObject(): %s", err)
 	}
 
 	// add new data object 'DataPartition' to SIF file
 	if err = fimg.AddObject(parinput); err != nil {
-		t.Error("fimg.AddObject():", err)
+		t.Errorf("fimg.AddObject(): %s", err)
 	}
 
 	// unload the test container
 	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
+		t.Errorf("UnloadContainer(fimg): %s", err)
+	}
+
+	//
+	// Delete the object
+	//
+
+	// load the test container
+	fimg, err = LoadContainer(testObjContainer, false)
+	if err != nil {
+		t.Errorf("failed to load test container: %s: %s", testObjContainer, err)
+	}
+
+	// test data object deletation
+	if err := fimg.DeleteObject(1, DelZero); err != nil {
+		t.Errorf("fimg.DeleteObject(1, DelZero): %s", err)
+	}
+
+	// test data object deletation
+	if err := fimg.DeleteObject(2, DelCompact); err != nil {
+		t.Errorf("fimg.DeleteObject(2, DelZero): %s", err)
+	}
+
+	// unload the test container
+	if err = fimg.UnloadContainer(); err != nil {
+		t.Errorf("UnloadContainer(fimg): %s", err)
 	}
 }
 
 func TestAddObjectPipe(t *testing.T) {
-	var err error
-
 	// the code treats a DescriptorInput with a non-nil Fp field and
 	// a Size == 0 field as a "pipe"
 	payload := []byte("0123456789")
@@ -221,8 +253,8 @@ func TestAddObjectPipe(t *testing.T) {
 		DescrArr: make([]Descriptor, 1),
 	}
 
-	if err = fimg.AddObject(input); err != nil {
-		t.Error("fimg.AddObject(...):", err)
+	if err := fimg.AddObject(input); err != nil {
+		t.Errorf("fimg.AddObject(...): %s", err)
 	}
 
 	if expected, actual := int64(0), fimg.Header.Dfree; actual != expected {
@@ -253,29 +285,6 @@ func TestAddObjectPipe(t *testing.T) {
 	if expected, actual := input.Link, fimg.DescrArr[0].Link; actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Groupid: expected=%d actual=%d",
 			expected, actual)
-	}
-}
-
-func TestDeleteObject(t *testing.T) {
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer1.sif", false)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer1.sif, false):", err)
-	}
-
-	// test data object deletation
-	if err := fimg.DeleteObject(1, DelZero); err != nil {
-		t.Error(`fimg.DeleteObject(1, DelZero):`, err)
-	}
-
-	// test data object deletation
-	if err := fimg.DeleteObject(2, DelCompact); err != nil {
-		t.Error(`fimg.DeleteObject(2, DelZero):`, err)
-	}
-
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
 	}
 }
 
@@ -344,4 +353,23 @@ func TestSetPrimPart(t *testing.T) {
 				expected, actual)
 		}
 	}
+}
+
+// cpFile is a simple function to copy the test container to a file
+func cpFile(fromFile, toFile string) error {
+	s, err := os.Open(fromFile)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
+	d, err := os.OpenFile(toFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+
+	_, err = io.Copy(d, s)
+
+	return err
 }
