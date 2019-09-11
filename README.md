@@ -32,6 +32,10 @@ cd sif
 ./build.sh
 ```
 
+## Go Version Compatibility
+
+This module aims to maintain support for the two most recent stable versions of Go.
+
 ### Contributing
 
 SIF and Singularity is the work of many contributors. We appreciate your help!
