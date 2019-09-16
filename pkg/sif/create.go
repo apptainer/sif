@@ -482,7 +482,7 @@ func (di *DescriptorInput) SetCryptoMsgExtra(format Formattype, message Messaget
 
 // SetName sets the byte array field "Name" to the value of string "name".
 func (d *Descriptor) SetName(name string) {
-	copy(d.Name[:], []byte(name))
+	copy(d.Name[:], name)
 	for i := len(name); i < len(d.Name); i++ {
 		d.Name[i] = 0
 	}

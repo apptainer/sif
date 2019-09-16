@@ -208,7 +208,7 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 	for i, v := range fimg.DescrArr {
 		if !v.Used {
 			continue
-		} else if v.ID == uint32(id) {
+		} else if v.ID == id {
 			s = fmt.Sprintln("Descr slot#:", i)
 			s += fmt.Sprintln("  Datatype: ", datatypeStr(v.Datatype))
 			s += fmt.Sprintln("  ID:       ", v.ID)
