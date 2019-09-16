@@ -289,15 +289,13 @@ type Header struct {
 // ReadWriter describes the operations needed to support reading and
 // writing SIF files.
 type ReadWriter interface {
+	io.ReadWriteSeeker
+	io.Closer
 	Name() string
-	Close() error
 	Fd() uintptr
-	Read(b []byte) (n int, err error)
-	Seek(offset int64, whence int) (ret int64, err error)
 	Stat() (os.FileInfo, error)
 	Sync() error
 	Truncate(size int64) error
-	Write(b []byte) (n int, err error)
 }
 
 // FileImage describes the representation of a SIF file in memory.
