@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/sif/internal/app/siftool"
 )
 
-// Header implements 'siftool header' sub-command
+// Header implements 'siftool header' sub-command.
 func Header() *cobra.Command {
 	return &cobra.Command{
 		Use:   "header <containerfile>",

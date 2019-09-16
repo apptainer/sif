@@ -15,17 +15,13 @@ import (
 	"strings"
 )
 
-// ErrNotFound is the code for when no search key is not found
+// ErrNotFound is the code for when no search key is not found.
 var ErrNotFound = errors.New("no match found")
 
-// ErrMultValues is the code for when search key is not unique
+// ErrMultValues is the code for when search key is not unique.
 var ErrMultValues = errors.New("lookup would return more than one match")
 
-//
-// Methods on (fimg *FIleImage)
-//
-
-// GetSIFArch returns the SIF arch code from go runtime arch code
+// GetSIFArch returns the SIF arch code from go runtime arch code.
 func GetSIFArch(goarch string) (sifarch string) {
 	var ok bool
 
@@ -49,7 +45,7 @@ func GetSIFArch(goarch string) (sifarch string) {
 	return sifarch
 }
 
-// GetGoArch returns the go runtime arch code from the SIF arch code
+// GetGoArch returns the go runtime arch code from the SIF arch code.
 func GetGoArch(sifarch string) (goarch string) {
 	var ok bool
 
@@ -73,12 +69,12 @@ func GetGoArch(sifarch string) (goarch string) {
 	return goarch
 }
 
-// GetHeader returns the loaded SIF global header
+// GetHeader returns the loaded SIF global header.
 func (fimg *FileImage) GetHeader() *Header {
 	return &fimg.Header
 }
 
-// GetFromDescrID searches for a descriptor with
+// GetFromDescrID searches for a descriptor with.
 func (fimg *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
 	var match = -1
 
@@ -102,7 +98,7 @@ func (fimg *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
 	return &fimg.DescrArr[match], match, nil
 }
 
-// GetPartFromGroup searches for partition descriptors inside a specific group
+// GetPartFromGroup searches for partition descriptors inside a specific group.
 func (fimg *FileImage) GetPartFromGroup(groupid uint32) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
@@ -127,7 +123,7 @@ func (fimg *FileImage) GetPartFromGroup(groupid uint32) ([]*Descriptor, []int, e
 	return descrs, indexes, nil
 }
 
-// GetSignFromGroup searches for signature descriptors inside a specific group
+// GetSignFromGroup searches for signature descriptors inside a specific group.
 func (fimg *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
@@ -152,7 +148,7 @@ func (fimg *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, e
 	return descrs, indexes, nil
 }
 
-// GetLinkedDescrsByType searches for descriptors that point to "id", only returns the specified type
+// GetLinkedDescrsByType searches for descriptors that point to "id", only returns the specified type.
 func (fimg *FileImage) GetLinkedDescrsByType(ID uint32, dataType Datatype) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
@@ -174,7 +170,7 @@ func (fimg *FileImage) GetLinkedDescrsByType(ID uint32, dataType Datatype) ([]*D
 	return descrs, indexes, nil
 }
 
-// GetFromLinkedDescr searches for descriptors that point to "id"
+// GetFromLinkedDescr searches for descriptors that point to "id".
 func (fimg *FileImage) GetFromLinkedDescr(ID uint32) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
@@ -199,7 +195,7 @@ func (fimg *FileImage) GetFromLinkedDescr(ID uint32) ([]*Descriptor, []int, erro
 	return descrs, indexes, nil
 }
 
-// GetFromDescr searches for descriptors comparing all non-nil fields of a provided descriptor
+// GetFromDescr searches for descriptors comparing all non-nil fields of a provided descriptor.
 func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
@@ -259,45 +255,41 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 	return descrs, indexes, nil
 }
 
-//
-// Methods on (descr *Descriptor)
-//
-
 // GetData return a memory mapped byte slice mirroring the data object in a SIF file.
-func (descr *Descriptor) GetData(fimg *FileImage) []byte {
+func (d *Descriptor) GetData(fimg *FileImage) []byte {
 	if fimg.Amodebuf {
-		if _, err := fimg.Fp.Seek(descr.Fileoff, 0); err != nil {
+		if _, err := fimg.Fp.Seek(d.Fileoff, 0); err != nil {
 			return nil
 		}
-		data := make([]byte, descr.Filelen)
-		if n, _ := fimg.Fp.Read(data); int64(n) != descr.Filelen {
+		data := make([]byte, d.Filelen)
+		if n, _ := fimg.Fp.Read(data); int64(n) != d.Filelen {
 			return nil
 		}
 		return data
 	}
 
-	if descr.Fileoff+descr.Filelen > int64(len(fimg.Filedata)) {
+	if d.Fileoff+d.Filelen > int64(len(fimg.Filedata)) {
 		// there's not enough data in the file to account for the indicated
 		// payload. Is the header corrupted?
 		return nil
 	}
 
-	return fimg.Filedata[descr.Fileoff : descr.Fileoff+descr.Filelen]
+	return fimg.Filedata[d.Fileoff : d.Fileoff+d.Filelen]
 }
 
 // GetName returns the name tag associated with the descriptor. Analogous to file name.
-func (descr *Descriptor) GetName() string {
-	return strings.TrimRight(string(descr.Name[:]), "\000")
+func (d *Descriptor) GetName() string {
+	return strings.TrimRight(string(d.Name[:]), "\000")
 }
 
-// GetFsType extracts the Fstype field from the Extra field of a Partition Descriptor
-func (descr *Descriptor) GetFsType() (Fstype, error) {
-	if descr.Datatype != DataPartition {
-		return -1, fmt.Errorf("expected DataPartition, got %v", descr.Datatype)
+// GetFsType extracts the Fstype field from the Extra field of a Partition Descriptor.
+func (d *Descriptor) GetFsType() (Fstype, error) {
+	if d.Datatype != DataPartition {
+		return -1, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
 	}
 
 	var pinfo Partition
-	b := bytes.NewReader(descr.Extra[:])
+	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
 		return -1, fmt.Errorf("while extracting Partition extra info: %s", err)
 	}
@@ -305,14 +297,14 @@ func (descr *Descriptor) GetFsType() (Fstype, error) {
 	return pinfo.Fstype, nil
 }
 
-// GetPartType extracts the Parttype field from the Extra field of a Partition Descriptor
-func (descr *Descriptor) GetPartType() (Parttype, error) {
-	if descr.Datatype != DataPartition {
-		return -1, fmt.Errorf("expected DataPartition, got %v", descr.Datatype)
+// GetPartType extracts the Parttype field from the Extra field of a Partition Descriptor.
+func (d *Descriptor) GetPartType() (Parttype, error) {
+	if d.Datatype != DataPartition {
+		return -1, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
 	}
 
 	var pinfo Partition
-	b := bytes.NewReader(descr.Extra[:])
+	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
 		return -1, fmt.Errorf("while extracting Partition extra info: %s", err)
 	}
@@ -320,14 +312,14 @@ func (descr *Descriptor) GetPartType() (Parttype, error) {
 	return pinfo.Parttype, nil
 }
 
-// GetArch extracts the Arch field from the Extra field of a Partition Descriptor
-func (descr *Descriptor) GetArch() ([HdrArchLen]byte, error) {
-	if descr.Datatype != DataPartition {
-		return [HdrArchLen]byte{}, fmt.Errorf("expected DataPartition, got %v", descr.Datatype)
+// GetArch extracts the Arch field from the Extra field of a Partition Descriptor.
+func (d *Descriptor) GetArch() ([HdrArchLen]byte, error) {
+	if d.Datatype != DataPartition {
+		return [HdrArchLen]byte{}, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
 	}
 
 	var pinfo Partition
-	b := bytes.NewReader(descr.Extra[:])
+	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
 		return [HdrArchLen]byte{}, fmt.Errorf("while extracting Partition extra info: %s", err)
 	}
@@ -335,14 +327,14 @@ func (descr *Descriptor) GetArch() ([HdrArchLen]byte, error) {
 	return pinfo.Arch, nil
 }
 
-// GetHashType extracts the Hashtype field from the Extra field of a Signature Descriptor
-func (descr *Descriptor) GetHashType() (Hashtype, error) {
-	if descr.Datatype != DataSignature {
-		return -1, fmt.Errorf("expected DataSignature, got %v", descr.Datatype)
+// GetHashType extracts the Hashtype field from the Extra field of a Signature Descriptor.
+func (d *Descriptor) GetHashType() (Hashtype, error) {
+	if d.Datatype != DataSignature {
+		return -1, fmt.Errorf("expected DataSignature, got %v", d.Datatype)
 	}
 
 	var sinfo Signature
-	b := bytes.NewReader(descr.Extra[:])
+	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &sinfo); err != nil {
 		return -1, fmt.Errorf("while extracting Signature extra info: %s", err)
 	}
@@ -350,14 +342,14 @@ func (descr *Descriptor) GetHashType() (Hashtype, error) {
 	return sinfo.Hashtype, nil
 }
 
-// GetEntity extracts the signing entity field from the Extra field of a Signature Descriptor
-func (descr *Descriptor) GetEntity() ([]byte, error) {
-	if descr.Datatype != DataSignature {
-		return nil, fmt.Errorf("expected DataSignature, got %v", descr.Datatype)
+// GetEntity extracts the signing entity field from the Extra field of a Signature Descriptor.
+func (d *Descriptor) GetEntity() ([]byte, error) {
+	if d.Datatype != DataSignature {
+		return nil, fmt.Errorf("expected DataSignature, got %v", d.Datatype)
 	}
 
 	var sinfo Signature
-	b := bytes.NewReader(descr.Extra[:])
+	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &sinfo); err != nil {
 		return nil, fmt.Errorf("while extracting Signature extra info: %s", err)
 	}
@@ -365,9 +357,9 @@ func (descr *Descriptor) GetEntity() ([]byte, error) {
 	return sinfo.Entity[:], nil
 }
 
-// GetEntityString returns the string version of the stored entity
-func (descr *Descriptor) GetEntityString() (string, error) {
-	fingerprint, err := descr.GetEntity()
+// GetEntityString returns the string version of the stored entity.
+func (d *Descriptor) GetEntityString() (string, error) {
+	fingerprint, err := d.GetEntity()
 	if err != nil {
 		return "", err
 	}
@@ -375,14 +367,14 @@ func (descr *Descriptor) GetEntityString() (string, error) {
 	return fmt.Sprintf("%0X", fingerprint[:20]), nil
 }
 
-// GetFormatType extracts the Formattype field from the Extra field of a Cryptographic Message Descriptor
-func (descr *Descriptor) GetFormatType() (Formattype, error) {
-	if descr.Datatype != DataCryptoMessage {
-		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", descr.Datatype)
+// GetFormatType extracts the Formattype field from the Extra field of a Cryptographic Message Descriptor.
+func (d *Descriptor) GetFormatType() (Formattype, error) {
+	if d.Datatype != DataCryptoMessage {
+		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", d.Datatype)
 	}
 
 	var cinfo CryptoMessage
-	b := bytes.NewReader(descr.Extra[:])
+	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &cinfo); err != nil {
 		return -1, fmt.Errorf("while extracting Crypto extra info: %s", err)
 	}
@@ -390,14 +382,14 @@ func (descr *Descriptor) GetFormatType() (Formattype, error) {
 	return cinfo.Formattype, nil
 }
 
-// GetMessageType extracts the Messagetype field from the Extra field of a Cryptographic Message Descriptor
-func (descr *Descriptor) GetMessageType() (Messagetype, error) {
-	if descr.Datatype != DataCryptoMessage {
-		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", descr.Datatype)
+// GetMessageType extracts the Messagetype field from the Extra field of a Cryptographic Message Descriptor.
+func (d *Descriptor) GetMessageType() (Messagetype, error) {
+	if d.Datatype != DataCryptoMessage {
+		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", d.Datatype)
 	}
 
 	var cinfo CryptoMessage
-	b := bytes.NewReader(descr.Extra[:])
+	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &cinfo); err != nil {
 		return -1, fmt.Errorf("while extracting Crypto extra info: %s", err)
 	}

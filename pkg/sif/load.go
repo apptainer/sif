@@ -15,7 +15,7 @@ import (
 	"syscall"
 )
 
-// Read the global header from the container file
+// Read the global header from the container file.
 func readHeader(fimg *FileImage) error {
 	if err := binary.Read(fimg.Reader, binary.LittleEndian, &fimg.Header); err != nil {
 		return fmt.Errorf("reading global header from container file: %s", err)
@@ -24,7 +24,7 @@ func readHeader(fimg *FileImage) error {
 	return nil
 }
 
-// Read the used descriptors and populate an in-memory representation of those in node list
+// Read the used descriptors and populate an in-memory representation of those in node list.
 func readDescriptors(fimg *FileImage) error {
 	// start by positioning us to the start of descriptors
 	_, err := fimg.Reader.Seek(fimg.Header.Descroff, 0)
@@ -61,7 +61,7 @@ func isValidSif(fimg *FileImage) error {
 	return nil
 }
 
-// mapFile takes a file pointer and returns a slice of bytes representing the file data
+// mapFile takes a file pointer and returns a slice of bytes representing the file data.
 func (fimg *FileImage) mapFile(rdonly bool) error {
 	prot := syscall.PROT_READ
 	flags := syscall.MAP_PRIVATE
@@ -194,7 +194,7 @@ func LoadContainerReader(b *bytes.Reader) (fimg FileImage, err error) {
 	return fimg, err
 }
 
-// UnloadContainer closes the SIF container file and free associated resources if needed
+// UnloadContainer closes the SIF container file and free associated resources if needed.
 func (fimg *FileImage) UnloadContainer() (err error) {
 	// if SIF data comes from file, not a slice buffer (see LoadContainer() variants)
 	if fimg.Fp != nil {

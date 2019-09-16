@@ -12,7 +12,7 @@ import (
 	"github.com/sylabs/sif/internal/app/siftool"
 )
 
-// cmdHeader displays a SIF file global header to stdout
+// cmdHeader displays a SIF file global header to stdout.
 func cmdHeader(args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("usage")
@@ -21,7 +21,7 @@ func cmdHeader(args []string) error {
 	return siftool.Header(args[0])
 }
 
-// cmdList displays a list of all active descriptors from a SIF file to stdout
+// cmdList displays a list of all active descriptors from a SIF file to stdout.
 func cmdList(args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("usage")
@@ -30,7 +30,7 @@ func cmdList(args []string) error {
 	return siftool.List(args[0])
 }
 
-// cmdInfo displays detailed info about a descriptor from a SIF file to stdout
+// cmdInfo displays detailed info about a descriptor from a SIF file to stdout.
 func cmdInfo(args []string) error {
 	if len(args) != 2 {
 		return fmt.Errorf("usage")
@@ -44,7 +44,7 @@ func cmdInfo(args []string) error {
 	return siftool.Info(id, args[1])
 }
 
-// cmdDump extracts and output a data object from a SIF file to stdout
+// cmdDump extracts and output a data object from a SIF file to stdout.
 func cmdDump(args []string) error {
 	if len(args) != 2 {
 		return fmt.Errorf("usage")

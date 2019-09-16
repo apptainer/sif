@@ -17,7 +17,7 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 )
 
-// Header displays a SIF file global header
+// Header displays a SIF file global header.
 func Header(file string) error {
 	fimg, err := sif.LoadContainer(file, true)
 	if err != nil {
@@ -34,7 +34,7 @@ func Header(file string) error {
 	return nil
 }
 
-// List displays a list of all active descriptors from a SIF file
+// List displays a list of all active descriptors from a SIF file.
 func List(file string) error {
 	fimg, err := sif.LoadContainer(file, true)
 	if err != nil {
@@ -58,7 +58,7 @@ func List(file string) error {
 	return nil
 }
 
-// Info displays detailed info about a descriptor from a SIF file
+// Info displays detailed info about a descriptor from a SIF file.
 func Info(descr uint64, file string) error {
 	fimg, err := sif.LoadContainer(file, true)
 	if err != nil {
@@ -75,7 +75,7 @@ func Info(descr uint64, file string) error {
 	return nil
 }
 
-// Dump extracts and outputs a data object from a SIF file
+// Dump extracts and outputs a data object from a SIF file.
 func Dump(descr uint64, file string) error {
 	fimg, err := sif.LoadContainer(file, true)
 	if err != nil {
@@ -90,7 +90,8 @@ func Dump(descr uint64, file string) error {
 	for _, v := range fimg.DescrArr {
 		if !v.Used {
 			continue
-		} else if v.ID == uint32(descr) {
+		}
+		if v.ID == uint32(descr) {
 			if _, err := fimg.Fp.Seek(v.Fileoff, 0); err != nil {
 				return fmt.Errorf("while seeking to data object: %s", err)
 			}

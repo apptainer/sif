@@ -12,7 +12,7 @@ import (
 	"github.com/sylabs/sif/internal/app/siftool"
 )
 
-// New implements 'siftool new' sub-command
+// New implements 'siftool new' sub-command.
 func New() *cobra.Command {
 	return &cobra.Command{
 		Use:   "new <containerfile>",

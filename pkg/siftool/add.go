@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 )
 
-// Add implements 'siftool add' sub-command
+// Add implements 'siftool add' sub-command.
 func Add() *cobra.Command {
 	ret := &cobra.Command{
 		Use:   "add [OPTIONS] <containerfile> <dataobjectfile>",
