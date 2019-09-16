@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"log"
 	"os"
 	"syscall"
 )
@@ -120,31 +121,42 @@ func (fimg *FileImage) unmapFile() error {
 // LoadContainer is responsible for loading a SIF container file. It takes
 // the container file name, and whether the file is opened as read-only
 // as arguments.
-func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
-	var fp ReadWriter
-
-	if rdonly { // open SIF rdonly if mounting immutable partitions or inspecting the image
-		if fp, err = os.Open(filename); err != nil {
-			return fimg, fmt.Errorf("opening(RDONLY) container file: %s", err)
-		}
-	} else { // open SIF read-write when adding and removing data objects
-		if fp, err = os.OpenFile(filename, os.O_RDWR, 0644); err != nil {
-			return fimg, fmt.Errorf("opening(RDWR) container file: %s", err)
-		}
+func LoadContainer(filename string, rdonly bool) (FileImage, error) {
+	mode := os.O_RDWR // open SIF read-write when adding and removing data objects
+	if rdonly {
+		mode = os.O_RDONLY // open SIF rdonly if mounting immutable partitions or inspecting the image
 	}
 
-	return LoadContainerFp(fp, rdonly)
+	f, err := os.OpenFile(filename, mode, 0)
+	if err != nil {
+		return FileImage{}, fmt.Errorf("opening(%s) container file: %v", modeToStr(mode), err)
+	}
+
+	fimg, err := LoadContainerFp(f, rdonly)
+	if err != nil {
+		_ = f.Close()
+		return FileImage{}, err
+	}
+
+	return fimg, nil
 }
 
 // LoadContainerFp is responsible for loading a SIF container file. It takes
-// a *os.File pointing to an opened file, and whether the file is opened as
+// a ReadWriter pointing to an opened file, and whether the file is opened as
 // read-only for arguments.
 func LoadContainerFp(fp ReadWriter, rdonly bool) (fimg FileImage, err error) {
 	if fp == nil {
 		return fimg, fmt.Errorf("provided fp for file is invalid")
 	}
-
 	fimg.Fp = fp
+
+	defer func() {
+		if err != nil {
+			if err := fimg.unmapFile(); err != nil {
+				log.Printf("could not unmap SIF: %v", err)
+			}
+		}
+	}()
 
 	// get a memory map of the SIF file
 	if err = fimg.mapFile(rdonly); err != nil {
@@ -214,4 +226,14 @@ func cstrToString(str []byte) string {
 		n = m
 	}
 	return string(str[:n])
+}
+
+func modeToStr(mode int) string {
+	switch mode {
+	case os.O_RDONLY:
+		return "RDONLY"
+	case os.O_RDWR:
+		return "RDWR"
+	}
+	return ""
 }
