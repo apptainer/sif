@@ -11,6 +11,7 @@ package siftool
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"time"
 
@@ -25,7 +26,7 @@ func Header(file string) error {
 	}
 	defer func() {
 		if err := fimg.UnloadContainer(); err != nil {
-			fmt.Println("Error unloading container: ", err)
+			log.Printf("Error unloading container: %v", err)
 		}
 	}()
 
@@ -42,7 +43,7 @@ func List(file string) error {
 	}
 	defer func() {
 		if err := fimg.UnloadContainer(); err != nil {
-			fmt.Println("Error unloading container: ", err)
+			log.Printf("Error unloading container: %v", err)
 		}
 	}()
 
@@ -66,7 +67,7 @@ func Info(descr uint64, file string) error {
 	}
 	defer func() {
 		if err := fimg.UnloadContainer(); err != nil {
-			fmt.Println("Error unloading container: ", err)
+			log.Printf("Error unloading container: %v", err)
 		}
 	}()
 
@@ -83,7 +84,7 @@ func Dump(descr uint64, file string) error {
 	}
 	defer func() {
 		if err := fimg.UnloadContainer(); err != nil {
-			fmt.Println("Error unloading container: ", err)
+			log.Printf("Error unloading container: %v", err)
 		}
 	}()
 
@@ -97,7 +98,6 @@ func Dump(descr uint64, file string) error {
 			if _, err := io.CopyN(os.Stdout, fimg.Fp, v.Filelen); err != nil {
 				return fmt.Errorf("while copying data object to stdout: %s", err)
 			}
-
 			return nil
 		}
 	}

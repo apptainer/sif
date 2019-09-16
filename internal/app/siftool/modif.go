@@ -162,7 +162,7 @@ func Add(containerFile, dataFile string, opts AddOptions) error {
 	}
 	defer func() {
 		if err := fimg.UnloadContainer(); err != nil {
-			fmt.Println("Error unloading container: ", err)
+			log.Printf("Error unloading container: %v", err)
 		}
 	}()
 
@@ -182,7 +182,7 @@ func Del(descr uint64, file string) error {
 	}
 	defer func() {
 		if err := fimg.UnloadContainer(); err != nil {
-			fmt.Println("Error unloading container: ", err)
+			log.Printf("Error unloading container: %v", err)
 		}
 	}()
 
@@ -209,7 +209,7 @@ func Setprim(descr uint64, file string) error {
 	}
 	defer func() {
 		if err := fimg.UnloadContainer(); err != nil {
-			fmt.Println("Error unloading container: ", err)
+			log.Printf("Error unloading container: %v", err)
 		}
 	}()
 
