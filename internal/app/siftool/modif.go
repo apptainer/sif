@@ -17,7 +17,7 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 )
 
-// New creates a new empty SIF file
+// New creates a new empty SIF file.
 func New(file string) error {
 	cinfo := sif.CreateInfo{
 		Pathname:   file,
@@ -34,7 +34,7 @@ func New(file string) error {
 	return nil
 }
 
-// AddOptions contains the options when adding a section to a SIF file
+// AddOptions contains the options when adding a section to a SIF file.
 type AddOptions struct {
 	Datatype   *int64
 	Parttype   *int64
@@ -48,7 +48,7 @@ type AddOptions struct {
 	Filename   *string
 }
 
-// Add adds a data object to a SIF file
+// Add adds a data object to a SIF file.
 func Add(containerFile, dataFile string, opts AddOptions) error {
 	var err error
 	var d sif.Datatype
@@ -174,7 +174,7 @@ func Add(containerFile, dataFile string, opts AddOptions) error {
 	return nil
 }
 
-// Del deletes a specified object descriptor and data from the SIF file
+// Del deletes a specified object descriptor and data from the SIF file.
 func Del(descr uint64, file string) error {
 	fimg, err := sif.LoadContainer(file, false)
 	if err != nil {
@@ -201,7 +201,7 @@ func Del(descr uint64, file string) error {
 	return fmt.Errorf("descriptor not in range or currently unused")
 }
 
-// Setprim sets the primary system partition of the SIF file
+// Setprim sets the primary system partition of the SIF file.
 func Setprim(descr uint64, file string) error {
 	fimg, err := sif.LoadContainer(file, false)
 	if err != nil {

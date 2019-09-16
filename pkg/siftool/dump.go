@@ -16,7 +16,7 @@ import (
 	"github.com/sylabs/sif/internal/app/siftool"
 )
 
-// Dump implements 'siftool dump' sub-command
+// Dump implements 'siftool dump' sub-command.
 func Dump() *cobra.Command {
 	return &cobra.Command{
 		Use:   "dump <descriptorid> <containerfile>",

@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/sif/internal/app/siftool"
 )
 
-// List implements 'siftool list' sub-command
+// List implements 'siftool list' sub-command.
 func List() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list <containerfile>",

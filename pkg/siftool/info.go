@@ -16,7 +16,7 @@ import (
 	"github.com/sylabs/sif/internal/app/siftool"
 )
 
-// Info implements 'siftool info' sub-command
+// Info implements 'siftool info' sub-command.
 func Info() *cobra.Command {
 	return &cobra.Command{
 		Use:   "info <descriptorid> <containerfile>",

@@ -6,7 +6,7 @@
 // rights to use or distribute this software.
 
 // Package siftool implements cobra.Command structs for the siftool functionality. This
-// allows for easy inclusion of siftool functions in the singularity cli
+// allows for easy inclusion of siftool functions in the singularity cli.
 package siftool
 
 import (

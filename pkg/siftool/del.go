@@ -15,7 +15,7 @@ import (
 	"github.com/sylabs/sif/internal/app/siftool"
 )
 
-// Del implements 'siftool del' sub-command
+// Del implements 'siftool del' sub-command.
 func Del() *cobra.Command {
 	return &cobra.Command{
 		Use:   "del <descriptorid> <containerfile>",

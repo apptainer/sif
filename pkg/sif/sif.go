@@ -90,7 +90,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-// SIF header constants and quantities
+// SIF header constants and quantities.
 const (
 	HdrLaunch       = "#!/usr/bin/env run-singularity\n"
 	HdrMagic        = "SIF_MAGIC" // SIF identification
@@ -125,10 +125,10 @@ const (
 	DataStartOffset   = 32768              // where data object start after descriptors
 )
 
-// Datatype represents the different SIF data object types stored in the image
+// Datatype represents the different SIF data object types stored in the image.
 type Datatype int32
 
-// List of supported SIF data types
+// List of supported SIF data types.
 const (
 	DataDeffile       Datatype = iota + 0x4001 // definition file data object
 	DataEnvVar                                 // environment variables data object
@@ -140,10 +140,10 @@ const (
 	DataCryptoMessage                          // cryptographic message data object
 )
 
-// Fstype represents the different SIF file system types found in partition data objects
+// Fstype represents the different SIF file system types found in partition data objects.
 type Fstype int32
 
-// List of supported file systems
+// List of supported file systems.
 const (
 	FsSquash            Fstype = iota + 1 // Squashfs file system, RDONLY
 	FsExt3                                // EXT3 file system, RDWR (deprecated)
@@ -152,10 +152,10 @@ const (
 	FsEncryptedSquashfs                   // Encrypted Squashfs file system, RDONLY
 )
 
-// Parttype represents the different SIF container partition types (system and data)
+// Parttype represents the different SIF container partition types (system and data).
 type Parttype int32
 
-// List of supported partition types
+// List of supported partition types.
 const (
 	PartSystem  Parttype = iota + 1 // partition hosts an operating system
 	PartPrimSys                     // partition hosts the primary operating system
@@ -163,10 +163,10 @@ const (
 	PartOverlay                     // partition hosts an overlay
 )
 
-// Hashtype represents the different SIF hashing function types used to fingerprint data objects
+// Hashtype represents the different SIF hashing function types used to fingerprint data objects.
 type Hashtype int32
 
-// List of supported hash functions
+// List of supported hash functions.
 const (
 	HashSHA256 Hashtype = iota + 1
 	HashSHA384
@@ -175,19 +175,19 @@ const (
 	HashBLAKE2B
 )
 
-// Formattype represents the different formats used to store cryptographic message objects
+// Formattype represents the different formats used to store cryptographic message objects.
 type Formattype int32
 
-// List of supported cryptographic message formats
+// List of supported cryptographic message formats.
 const (
 	FormatOpenPGP Formattype = iota + 1
 	FormatPEM
 )
 
-// Messagetype represents the different messages stored within cryptographic message objects
+// Messagetype represents the different messages stored within cryptographic message objects.
 type Messagetype int32
 
-// List of supported cryptographic message formats
+// List of supported cryptographic message formats.
 const (
 	// openPGP formatted messages
 	MessageClearSignature Messagetype = 0x100
@@ -196,13 +196,13 @@ const (
 	MessageRSAOAEP Messagetype = 0x200
 )
 
-// SIF data object deletation strategies
+// SIF data object deletion strategies.
 const (
 	DelZero    = iota + 1 // zero the data object bytes
 	DelCompact            // free the space used by data object
 )
 
-// Descriptor represents the SIF descriptor type
+// Descriptor represents the SIF descriptor type.
 type Descriptor struct {
 	Datatype Datatype // informs of descriptor type
 	Used     bool     // is the descriptor in use
@@ -221,46 +221,46 @@ type Descriptor struct {
 	Extra [DescrMaxPrivLen]byte // big enough for extra data below
 }
 
-// Deffile represents the SIF definition-file data object descriptor
+// Deffile represents the SIF definition-file data object descriptor.
 type Deffile struct {
 }
 
-// Labels represents the SIF JSON-labels data object descriptor
+// Labels represents the SIF JSON-labels data object descriptor.
 type Labels struct {
 }
 
-// Envvar represents the SIF envvar data object descriptor
+// Envvar represents the SIF envvar data object descriptor.
 type Envvar struct {
 }
 
-// Partition represents the SIF partition data object descriptor
+// Partition represents the SIF partition data object descriptor.
 type Partition struct {
 	Fstype   Fstype
 	Parttype Parttype
 	Arch     [HdrArchLen]byte // arch the image is built for
 }
 
-// Signature represents the SIF signature data object descriptor
+// Signature represents the SIF signature data object descriptor.
 type Signature struct {
 	Hashtype Hashtype
 	Entity   [DescrEntityLen]byte
 }
 
-// GenericJSON represents the SIF generic JSON meta-data data object descriptor
+// GenericJSON represents the SIF generic JSON meta-data data object descriptor.
 type GenericJSON struct {
 }
 
-// Generic represents the SIF generic data object descriptor
+// Generic represents the SIF generic data object descriptor.
 type Generic struct {
 }
 
-// CryptoMessage represents the SIF crypto message object descriptor
+// CryptoMessage represents the SIF crypto message object descriptor.
 type CryptoMessage struct {
 	Formattype  Formattype
 	Messagetype Messagetype
 }
 
-// Header describes a loaded SIF file
+// Header describes a loaded SIF file.
 type Header struct {
 	Launch [HdrLaunchLen]byte // #! shell execution line
 
@@ -287,7 +287,7 @@ type Header struct {
 //
 
 // ReadWriter describes the operations needed to support reading and
-// writing SIF files
+// writing SIF files.
 type ReadWriter interface {
 	Name() string
 	Close() error
@@ -300,7 +300,7 @@ type ReadWriter interface {
 	Write(b []byte) (n int, err error)
 }
 
-// FileImage describes the representation of a SIF file in memory
+// FileImage describes the representation of a SIF file in memory.
 type FileImage struct {
 	Header     Header        // the loaded SIF global header
 	Fp         ReadWriter    // file pointer of opened SIF file
@@ -312,7 +312,7 @@ type FileImage struct {
 	PrimPartID uint32        // ID of primary system partition if present
 }
 
-// CreateInfo wraps all SIF file creation info needed
+// CreateInfo wraps all SIF file creation info needed.
 type CreateInfo struct {
 	Pathname   string            // the end result output filename
 	Launchstr  string            // the shell run command
@@ -321,7 +321,7 @@ type CreateInfo struct {
 	InputDescr []DescriptorInput // slice of input info for descriptor creation
 }
 
-// DescriptorInput describes the common info needed to create a data object descriptor
+// DescriptorInput describes the common info needed to create a data object descriptor.
 type DescriptorInput struct {
 	Datatype  Datatype // datatype being harvested for new descriptor
 	Groupid   uint32   // group to be set for new descriptor

@@ -15,7 +15,7 @@ import (
 	"github.com/sylabs/sif/internal/app/siftool"
 )
 
-// Setprim implements 'siftool setprim' sub-command
+// Setprim implements 'siftool setprim' sub-command.
 func Setprim() *cobra.Command {
 	return &cobra.Command{
 		Use:   "setprim <descriptorid> <containerfile>",

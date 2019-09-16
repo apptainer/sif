@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// readableSize returns the size in human readable format
+// readableSize returns the size in human readable format.
 func readableSize(size uint64) string {
 	var divs int
 	var conversion string
@@ -38,7 +38,7 @@ func readableSize(size uint64) string {
 	return conversion
 }
 
-// FmtHeader formats the output of a SIF file global header
+// FmtHeader formats the output of a SIF file global header.
 func (fimg *FileImage) FmtHeader() string {
 	s := fmt.Sprintln("Launch:  ", cstrToString(fimg.Header.Launch[:]))
 	s += fmt.Sprintln("Magic:   ", cstrToString(fimg.Header.Magic[:]))
@@ -57,7 +57,7 @@ func (fimg *FileImage) FmtHeader() string {
 	return s
 }
 
-// datatypeStr returns a string representation of a datatype
+// datatypeStr returns a string representation of a datatype.
 func datatypeStr(dtype Datatype) string {
 	switch dtype {
 	case DataDeffile:
@@ -80,7 +80,7 @@ func datatypeStr(dtype Datatype) string {
 	return "Unknown data-type"
 }
 
-// fstypeStr returns a string representation of a file system type
+// fstypeStr returns a string representation of a file system type.
 func fstypeStr(ftype Fstype) string {
 	switch ftype {
 	case FsSquash:
@@ -97,7 +97,7 @@ func fstypeStr(ftype Fstype) string {
 	return "Unknown fs-type"
 }
 
-// parttypeStr returns a string representation of a partition type
+// parttypeStr returns a string representation of a partition type.
 func parttypeStr(ptype Parttype) string {
 	switch ptype {
 	case PartSystem:
@@ -112,7 +112,7 @@ func parttypeStr(ptype Parttype) string {
 	return "Unknown part-type"
 }
 
-// hashtypeStr returns a string representation of a  hash type
+// hashtypeStr returns a string representation of a  hash type.
 func hashtypeStr(htype Hashtype) string {
 	switch htype {
 	case HashSHA256:
@@ -129,7 +129,7 @@ func hashtypeStr(htype Hashtype) string {
 	return "Unknown hash-type"
 }
 
-// formattypeStr returns a string representation of a format type
+// formattypeStr returns a string representation of a format type.
 func formattypeStr(ftype Formattype) string {
 	switch ftype {
 	case FormatOpenPGP:
@@ -140,7 +140,7 @@ func formattypeStr(ftype Formattype) string {
 	return "Unknown format-type"
 }
 
-// messagetypeStr returns a string representation of a message type
+// messagetypeStr returns a string representation of a message type.
 func messagetypeStr(mtype Messagetype) string {
 	switch mtype {
 	case MessageClearSignature:
@@ -151,7 +151,7 @@ func messagetypeStr(mtype Messagetype) string {
 	return "Unknown message-type"
 }
 
-// FmtDescrList formats the output of a list of all active descriptors from a SIF file
+// FmtDescrList formats the output of a list of all active descriptors from a SIF file.
 func (fimg *FileImage) FmtDescrList() string {
 	s := fmt.Sprintf("%-4s %-8s %-8s %-26s %s\n", "ID", "|GROUP", "|LINK", "|SIF POSITION (start-end)", "|TYPE")
 	s += fmt.Sprintln("------------------------------------------------------------------------------")
@@ -201,7 +201,7 @@ func (fimg *FileImage) FmtDescrList() string {
 	return s
 }
 
-// FmtDescrInfo formats the output of detailed info about a descriptor from a SIF file
+// FmtDescrInfo formats the output of detailed info about a descriptor from a SIF file.
 func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 	var s string
 
