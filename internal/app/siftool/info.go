@@ -99,6 +99,9 @@ func Dump(descr uint64, file string) error {
 			if _, err := io.CopyN(os.Stdout, fimg.Fp, v.Filelen); err != nil {
 				return fmt.Errorf("while copying data object to stdout: %s", err)
 			}
+			if v.Datatype == sif.DataGenericJSON {
+				fmt.Println()
+			}
 			return nil
 		}
 	}
