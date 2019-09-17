@@ -52,10 +52,10 @@ func readDescriptors(fimg *FileImage) error {
 // `runnable' checks is current container can run on host.
 func isValidSif(fimg *FileImage) error {
 	// check various header fields
-	if cstrToString(fimg.Header.Magic[:]) != HdrMagic {
+	if trimZeroBytes(fimg.Header.Magic[:]) != HdrMagic {
 		return fmt.Errorf("invalid SIF file: Magic |%s| want |%s|", fimg.Header.Magic, HdrMagic)
 	}
-	if cstrToString(fimg.Header.Version[:]) > HdrVersion {
+	if trimZeroBytes(fimg.Header.Version[:]) > HdrVersion {
 		return fmt.Errorf("invalid SIF file: Version %s want <= %s", fimg.Header.Version, HdrVersion)
 	}
 
@@ -220,12 +220,8 @@ func (fimg *FileImage) UnloadContainer() (err error) {
 	return
 }
 
-func cstrToString(str []byte) string {
-	n := len(str)
-	if m := n - 1; str[m] == 0 {
-		n = m
-	}
-	return string(str[:n])
+func trimZeroBytes(str []byte) string {
+	return string(bytes.TrimRight(str, "\x00"))
 }
 
 func modeToStr(mode int) string {
