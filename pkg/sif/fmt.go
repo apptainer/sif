@@ -40,10 +40,10 @@ func readableSize(size uint64) string {
 
 // FmtHeader formats the output of a SIF file global header.
 func (fimg *FileImage) FmtHeader() string {
-	s := fmt.Sprintln("Launch:  ", cstrToString(fimg.Header.Launch[:]))
-	s += fmt.Sprintln("Magic:   ", cstrToString(fimg.Header.Magic[:]))
-	s += fmt.Sprintln("Version: ", cstrToString(fimg.Header.Version[:]))
-	s += fmt.Sprintln("Arch:    ", GetGoArch(cstrToString(fimg.Header.Arch[:])))
+	s := fmt.Sprintln("Launch:  ", trimZeroBytes(fimg.Header.Launch[:]))
+	s += fmt.Sprintln("Magic:   ", trimZeroBytes(fimg.Header.Magic[:]))
+	s += fmt.Sprintln("Version: ", trimZeroBytes(fimg.Header.Version[:]))
+	s += fmt.Sprintln("Arch:    ", GetGoArch(trimZeroBytes(fimg.Header.Arch[:])))
 	s += fmt.Sprintln("ID:      ", fimg.Header.ID)
 	s += fmt.Sprintln("Ctime:   ", time.Unix(fimg.Header.Ctime, 0))
 	s += fmt.Sprintln("Mtime:   ", time.Unix(fimg.Header.Mtime, 0))
@@ -184,7 +184,7 @@ func (fimg *FileImage) FmtDescrList() string {
 				f, _ := v.GetFsType()
 				p, _ := v.GetPartType()
 				a, _ := v.GetArch()
-				s += fmt.Sprintf("|%s (%s/%s/%s)\n", datatypeStr(v.Datatype), fstypeStr(f), parttypeStr(p), GetGoArch(cstrToString(a[:])))
+				s += fmt.Sprintf("|%s (%s/%s/%s)\n", datatypeStr(v.Datatype), fstypeStr(f), parttypeStr(p), GetGoArch(trimZeroBytes(a[:])))
 			case DataSignature:
 				h, _ := v.GetHashType()
 				s += fmt.Sprintf("|%s (%s)\n", datatypeStr(v.Datatype), hashtypeStr(h))
@@ -233,7 +233,7 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 			s += fmt.Sprintln("  Mtime:    ", time.Unix(v.Mtime, 0))
 			s += fmt.Sprintln("  UID:      ", v.UID)
 			s += fmt.Sprintln("  Gid:      ", v.Gid)
-			s += fmt.Sprintln("  Name:     ", string(v.Name[:]))
+			s += fmt.Sprintln("  Name:     ", trimZeroBytes(v.Name[:]))
 			switch v.Datatype {
 			case DataPartition:
 				f, _ := v.GetFsType()
@@ -241,7 +241,7 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 				a, _ := v.GetArch()
 				s += fmt.Sprintln("  Fstype:   ", fstypeStr(f))
 				s += fmt.Sprintln("  Parttype: ", parttypeStr(p))
-				s += fmt.Sprintln("  Arch:     ", GetGoArch(cstrToString(a[:])))
+				s += fmt.Sprintln("  Arch:     ", GetGoArch(trimZeroBytes(a[:])))
 			case DataSignature:
 				h, _ := v.GetHashType()
 				e, _ := v.GetEntityString()

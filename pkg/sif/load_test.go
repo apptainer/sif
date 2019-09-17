@@ -257,3 +257,36 @@ func TestLoadContainerReader(t *testing.T) {
 		t.Error(`fimg.UnloadContainer():`, err)
 	}
 }
+
+func TestTrimZeroBytes(t *testing.T) {
+	tt := []struct {
+		name   string
+		in     []byte
+		expect string
+	}{
+		{
+			name:   "no zero",
+			in:     []byte("hello!"),
+			expect: "hello!",
+		},
+		{
+			name:   "c string",
+			in:     []byte("hello!\x00"),
+			expect: "hello!",
+		},
+		{
+			name:   "many zeroes",
+			in:     []byte("hello!\x00\x00\x00\x00\x00\x00\x00"),
+			expect: "hello!",
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := trimZeroBytes(tc.in)
+			if tc.expect != actual {
+				t.Fatalf("Expected %q, but got %q", tc.expect, actual)
+			}
+		})
+	}
+}
