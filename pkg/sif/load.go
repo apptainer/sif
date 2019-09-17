@@ -221,10 +221,7 @@ func (fimg *FileImage) UnloadContainer() (err error) {
 }
 
 func trimZeroBytes(str []byte) string {
-	n := len(str) - 1
-	for ; str[n] == 0; n-- {
-	}
-	return string(str[:n+1])
+	return string(bytes.TrimRight(str, "\x00"))
 }
 
 func modeToStr(mode int) string {
