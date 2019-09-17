@@ -270,13 +270,23 @@ func TestTrimZeroBytes(t *testing.T) {
 			expect: "hello!",
 		},
 		{
-			name:   "c string",
+			name:   "c string x00",
 			in:     []byte("hello!\x00"),
 			expect: "hello!",
 		},
 		{
-			name:   "many zeroes",
+			name:   "c string 000",
+			in:     []byte("hello!\000"),
+			expect: "hello!",
+		},
+		{
+			name:   "many zeroes x00",
 			in:     []byte("hello!\x00\x00\x00\x00\x00\x00\x00"),
+			expect: "hello!",
+		},
+		{
+			name:   "many zeroes 000",
+			in:     []byte("hello!\000\000\000\000\000\000\000"),
 			expect: "hello!",
 		},
 	}
