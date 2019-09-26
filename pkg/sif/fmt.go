@@ -11,6 +11,29 @@ import (
 	"time"
 )
 
+// String will return a string corresponding to the Datatype.
+func (d Datatype) String() string {
+	switch d {
+	case DataDeffile:
+		return "Def.FILE"
+	case DataEnvVar:
+		return "Env.Vars"
+	case DataLabels:
+		return "JSON.Labels"
+	case DataPartition:
+		return "FS"
+	case DataSignature:
+		return "Signature"
+	case DataGenericJSON:
+		return "JSON.Generic"
+	case DataGeneric:
+		return "Generic/Raw"
+	case DataCryptoMessage:
+		return "Cryptographic Message"
+	}
+	return "Unknown"
+}
+
 // readableSize returns the size in human readable format.
 func readableSize(size uint64) string {
 	var divs int
@@ -55,29 +78,6 @@ func (fimg *FileImage) FmtHeader() string {
 	s += fmt.Sprintln("Datalen: ", readableSize(uint64(fimg.Header.Datalen)))
 
 	return s
-}
-
-// datatypeStr returns a string representation of a datatype.
-func datatypeStr(dtype Datatype) string {
-	switch dtype {
-	case DataDeffile:
-		return "Def.FILE"
-	case DataEnvVar:
-		return "Env.Vars"
-	case DataLabels:
-		return "JSON.Labels"
-	case DataPartition:
-		return "FS"
-	case DataSignature:
-		return "Signature"
-	case DataGenericJSON:
-		return "JSON.Generic"
-	case DataGeneric:
-		return "Generic/Raw"
-	case DataCryptoMessage:
-		return "Cryptographic Message"
-	}
-	return "Unknown data-type"
 }
 
 // fstypeStr returns a string representation of a file system type.
@@ -184,16 +184,16 @@ func (fimg *FileImage) FmtDescrList() string {
 				f, _ := v.GetFsType()
 				p, _ := v.GetPartType()
 				a, _ := v.GetArch()
-				s += fmt.Sprintf("|%s (%s/%s/%s)\n", datatypeStr(v.Datatype), fstypeStr(f), parttypeStr(p), GetGoArch(trimZeroBytes(a[:])))
+				s += fmt.Sprintf("|%s (%s/%s/%s)\n", v.Datatype, fstypeStr(f), parttypeStr(p), GetGoArch(trimZeroBytes(a[:])))
 			case DataSignature:
 				h, _ := v.GetHashType()
-				s += fmt.Sprintf("|%s (%s)\n", datatypeStr(v.Datatype), hashtypeStr(h))
+				s += fmt.Sprintf("|%s (%s)\n", v.Datatype, hashtypeStr(h))
 			case DataCryptoMessage:
 				f, _ := v.GetFormatType()
 				m, _ := v.GetMessageType()
-				s += fmt.Sprintf("|%s (%s/%s)\n", datatypeStr(v.Datatype), formattypeStr(f), messagetypeStr(m))
+				s += fmt.Sprintf("|%s (%s/%s)\n", v.Datatype, formattypeStr(f), messagetypeStr(m))
 			default:
-				s += fmt.Sprintf("|%s\n", datatypeStr(v.Datatype))
+				s += fmt.Sprintf("|%s\n", v.Datatype)
 			}
 		}
 	}
@@ -210,7 +210,7 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 			continue
 		} else if v.ID == id {
 			s = fmt.Sprintln("Descr slot#:", i)
-			s += fmt.Sprintln("  Datatype: ", datatypeStr(v.Datatype))
+			s += fmt.Sprintln("  Datatype: ", v.Datatype)
 			s += fmt.Sprintln("  ID:       ", v.ID)
 			s += fmt.Sprintln("  Used:     ", v.Used)
 			if v.Groupid == DescrUnusedGroup {
