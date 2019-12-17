@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"syscall"
@@ -64,42 +65,62 @@ func isValidSif(fimg *FileImage) error {
 
 // mapFile takes a file pointer and returns a slice of bytes representing the file data.
 func (fimg *FileImage) mapFile(rdonly bool) error {
-	prot := syscall.PROT_READ
-	flags := syscall.MAP_PRIVATE
-
 	info, err := fimg.Fp.Stat()
 	if err != nil {
 		return fmt.Errorf("while trying to size SIF file to mmap")
 	}
-	fimg.Filesize = info.Size()
 
-	size := nextAligned(info.Size(), syscall.Getpagesize())
-	if int64(int(size)) < info.Size() {
-		return fmt.Errorf("file is to big to be mapped")
+	switch info.Mode() & os.ModeType {
+	case 0:
+		// regular file
+		fimg.Filesize = info.Size()
+	case os.ModeDevice:
+		// block device
+		fimg.Amodebuf = true
+		fimg.Filesize, err = fimg.Fp.Seek(0, io.SeekEnd)
+		if err != nil {
+			return fmt.Errorf("while getting block device size: %s", err)
+		}
+	default:
+		return fmt.Errorf("%s is neither a file nor a block device", fimg.Fp.Name())
 	}
 
-	if !rdonly {
-		prot = syscall.PROT_WRITE
-		flags = syscall.MAP_SHARED
+	fimg.Filedata = nil
+
+	if !fimg.Amodebuf {
+		prot := syscall.PROT_READ
+		flags := syscall.MAP_PRIVATE
+
+		if !rdonly {
+			prot = syscall.PROT_WRITE
+			flags = syscall.MAP_SHARED
+		}
+
+		size := nextAligned(fimg.Filesize, syscall.Getpagesize())
+		if int64(int(size)) < fimg.Filesize {
+			return fmt.Errorf("file is too big to be mapped")
+		}
+
+		fimg.Filedata, err = syscall.Mmap(int(fimg.Fp.Fd()), 0, int(size), prot, flags)
+		if err != nil {
+			// mmap failed, use sequential read() instead for top of file
+			log.Printf("mmap on %s failed (%s), reading buffer sequentially...", err, fimg.Fp.Name())
+			fimg.Amodebuf = true
+		}
 	}
 
-	fimg.Filedata, err = syscall.Mmap(int(fimg.Fp.Fd()), 0, int(size), prot, flags)
-	if err != nil {
-		// mmap failed, use sequential read() instead for top of file
-		log.Printf("mmap on %s failed, reading buffer sequentially...", fimg.Fp.Name())
+	if fimg.Filedata == nil {
 		fimg.Filedata = make([]byte, DataStartOffset)
 
 		// start by positioning us to the start of the file
-		_, err := fimg.Fp.Seek(0, 0)
+		_, err := fimg.Fp.Seek(0, io.SeekStart)
 		if err != nil {
 			return fmt.Errorf("seek() setting to start of file: %s", err)
 		}
 
 		if n, err := fimg.Fp.Read(fimg.Filedata); n != DataStartOffset {
 			return fmt.Errorf("short read while reading top of file: %v", err)
-
 		}
-		fimg.Amodebuf = true
 	}
 
 	// create and associate a new bytes.Reader on top of mmap'ed or buffered data from file
