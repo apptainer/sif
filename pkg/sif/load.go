@@ -54,10 +54,10 @@ func readDescriptors(fimg *FileImage) error {
 func isValidSif(fimg *FileImage) error {
 	// check various header fields
 	if trimZeroBytes(fimg.Header.Magic[:]) != HdrMagic {
-		return fmt.Errorf("invalid SIF file: Magic |%s| want |%s|", fimg.Header.Magic, HdrMagic)
+		return fmt.Errorf("invalid SIF file: Magic |%s| want |%s|", trimZeroBytes(fimg.Header.Magic[:]), HdrMagic)
 	}
 	if trimZeroBytes(fimg.Header.Version[:]) > HdrVersion {
-		return fmt.Errorf("invalid SIF file: Version %s want <= %s", fimg.Header.Version, HdrVersion)
+		return fmt.Errorf("invalid SIF file: Version %s want <= %s", trimZeroBytes(fimg.Header.Version[:]), HdrVersion)
 	}
 
 	return nil
