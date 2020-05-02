@@ -25,6 +25,7 @@ linters:
     - nolintlint
     - prealloc
     - rowserrcheck
+    - scopelint
     - staticcheck
     - structcheck
     - typecheck
