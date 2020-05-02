@@ -12,7 +12,7 @@ jobs:
   lint_markdown:
     <<: *defaults
     docker:
-      - image: node:12-slim
+      - image: node:14-slim
     steps:
       - checkout
       - run:
@@ -20,15 +20,17 @@ jobs:
           command: npm install -g markdownlint-cli
       - run:
           name: Check for Lint
-          command: markdownlint -i vendor .
+          command: markdownlint .
 
-  check_vendor:
+  check_go_mod:
     <<: *defaults
     steps:
       - checkout
       - run:
-          name: Check vendor/ module is up-to-date
-          command: scripts/check-vendor
+          name: Check go.mod and go.sum are tidy
+          command: |-
+            go mod tidy
+            git diff --exit-code -- go.mod go.sum
 
   build_source:
     <<: *defaults
@@ -44,7 +46,7 @@ jobs:
       - checkout
       - run:
           name: Install golangci-lint
-          command: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.7
+          command: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.26.0
       - run:
           name: Check for Lint
           command: golangci-lint run
@@ -65,7 +67,7 @@ workflows:
   build_and_test:
     jobs:
       - lint_markdown
-      - check_vendor
+      - check_go_mod
       - build_source
       - lint_source
       - unit_test

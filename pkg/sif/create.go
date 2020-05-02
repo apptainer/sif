@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -129,11 +129,14 @@ func writeDataObject(fimg *FileImage, index int, input DescriptorInput) error {
 			return fmt.Errorf("copying data object data to SIF file: %s", err)
 		}
 	} else {
-		if n, err := io.Copy(fimg.Fp, input.Fp); err != nil {
+		n, err := io.Copy(fimg.Fp, input.Fp)
+		if err != nil {
 			return fmt.Errorf("copying data object file to SIF file: %s", err)
-		} else if n != input.Size && input.Size != 0 {
+		}
+		if n != input.Size && input.Size != 0 {
 			return fmt.Errorf("short write while copying to SIF file")
-		} else if input.Size == 0 {
+		}
+		if input.Size == 0 {
 			// coming in from os.Stdin (pipe)
 			descr := &fimg.DescrArr[index]
 			descr.Filelen = n
@@ -357,10 +360,9 @@ func compactAtDescr(fimg *FileImage, descr *Descriptor) error {
 	for _, v := range fimg.DescrArr {
 		if !v.Used || v.ID == descr.ID {
 			continue
-		} else {
-			if v.Fileoff > prev.Fileoff {
-				prev = v
-			}
+		}
+		if v.Fileoff > prev.Fileoff {
+			prev = v
 		}
 	}
 	// make sure it's not the only used descriptor first
@@ -438,7 +440,7 @@ func (di *DescriptorInput) SetPartExtra(fs Fstype, part Parttype, arch string) e
 	if arch == HdrArchUnknown {
 		return fmt.Errorf("architecture not supported: %v", arch)
 	}
-	copy(extra.Arch[:], arch[:])
+	copy(extra.Arch[:], arch)
 
 	// serialize the partition data for integration with the base descriptor input
 	if err := binary.Write(&di.Extra, binary.LittleEndian, extra); err != nil {
