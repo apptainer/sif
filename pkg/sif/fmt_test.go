@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -132,7 +132,6 @@ func TestFileImage_FmtDescrInfo(t *testing.T) {
 		actual := fimg.FmtDescrInfo(uint32(i + 1))
 		if len(expect[i]) != len(actual) {
 			t.Errorf("Expected info len: %d, but got: %d", len(expect[i]), len(actual))
-
 		}
 		if expect[i] != actual {
 			t.Errorf("Expected info:\n%q\nBut got:\n%q", expect[i], actual)
