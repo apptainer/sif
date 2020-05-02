@@ -9,6 +9,7 @@ linters:
     - dupl
     - errcheck
     - gochecknoinits
+    - gocritic
     - godot
     - godox
     - gofmt

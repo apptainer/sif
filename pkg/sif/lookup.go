@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -81,13 +81,12 @@ func (fimg *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
 	for i, v := range fimg.DescrArr {
 		if !v.Used {
 			continue
-		} else {
-			if v.ID == id {
-				if match != -1 {
-					return nil, -1, ErrMultValues
-				}
-				match = i
+		}
+		if v.ID == id {
+			if match != -1 {
+				return nil, -1, ErrMultValues
 			}
+			match = i
 		}
 	}
 
@@ -107,12 +106,11 @@ func (fimg *FileImage) GetPartFromGroup(groupid uint32) ([]*Descriptor, []int, e
 	for i, v := range fimg.DescrArr {
 		if !v.Used {
 			continue
-		} else {
-			if v.Datatype == DataPartition && v.Groupid == groupid {
-				indexes = append(indexes, i)
-				descrs = append(descrs, &fimg.DescrArr[i])
-				count++
-			}
+		}
+		if v.Datatype == DataPartition && v.Groupid == groupid {
+			indexes = append(indexes, i)
+			descrs = append(descrs, &fimg.DescrArr[i])
+			count++
 		}
 	}
 
@@ -132,12 +130,11 @@ func (fimg *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, e
 	for i, v := range fimg.DescrArr {
 		if !v.Used {
 			continue
-		} else {
-			if v.Datatype == DataSignature && v.Groupid == groupid {
-				indexes = append(indexes, i)
-				descrs = append(descrs, &fimg.DescrArr[i])
-				count++
-			}
+		}
+		if v.Datatype == DataSignature && v.Groupid == groupid {
+			indexes = append(indexes, i)
+			descrs = append(descrs, &fimg.DescrArr[i])
+			count++
 		}
 	}
 
@@ -149,7 +146,7 @@ func (fimg *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, e
 }
 
 // GetLinkedDescrsByType searches for descriptors that point to "id", only returns the specified type.
-func (fimg *FileImage) GetLinkedDescrsByType(ID uint32, dataType Datatype) ([]*Descriptor, []int, error) {
+func (fimg *FileImage) GetLinkedDescrsByType(id uint32, dataType Datatype) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
 
@@ -157,7 +154,7 @@ func (fimg *FileImage) GetLinkedDescrsByType(ID uint32, dataType Datatype) ([]*D
 		if !v.Used {
 			continue
 		}
-		if v.Datatype == dataType && v.Link == ID {
+		if v.Datatype == dataType && v.Link == id {
 			indexes = append(indexes, i)
 			descrs = append(descrs, &fimg.DescrArr[i])
 		}
@@ -171,7 +168,7 @@ func (fimg *FileImage) GetLinkedDescrsByType(ID uint32, dataType Datatype) ([]*D
 }
 
 // GetFromLinkedDescr searches for descriptors that point to "id".
-func (fimg *FileImage) GetFromLinkedDescr(ID uint32) ([]*Descriptor, []int, error) {
+func (fimg *FileImage) GetFromLinkedDescr(id uint32) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
 	var count int
@@ -179,12 +176,11 @@ func (fimg *FileImage) GetFromLinkedDescr(ID uint32) ([]*Descriptor, []int, erro
 	for i, v := range fimg.DescrArr {
 		if !v.Used {
 			continue
-		} else {
-			if v.Link == ID {
-				indexes = append(indexes, i)
-				descrs = append(descrs, &fimg.DescrArr[i])
-				count++
-			}
+		}
+		if v.Link == id {
+			indexes = append(indexes, i)
+			descrs = append(descrs, &fimg.DescrArr[i])
+			count++
 		}
 	}
 
@@ -406,19 +402,18 @@ func (fimg *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
 	for i, v := range fimg.DescrArr {
 		if !v.Used {
 			continue
-		} else {
-			if v.Datatype == DataPartition {
-				ptype, err := v.GetPartType()
-				if err != nil {
-					return nil, -1, err
+		}
+		if v.Datatype == DataPartition {
+			ptype, err := v.GetPartType()
+			if err != nil {
+				return nil, -1, err
+			}
+			if ptype == PartPrimSys {
+				if index != -1 {
+					return nil, -1, ErrMultValues
 				}
-				if ptype == PartPrimSys {
-					if index != -1 {
-						return nil, -1, ErrMultValues
-					}
-					index = i
-					descr = &fimg.DescrArr[i]
-				}
+				index = i
+				descr = &fimg.DescrArr[i]
 			}
 		}
 	}
