@@ -6,4 +6,4 @@ version=`(git describe --match 'v[0-9]*' --always --dirty 2>/dev/null || \
 
 go install -ldflags="-X main.version=$version" ./...
 
-echo "siftool version $version built and installed in $GOPATH/bin"
+echo "siftool version $version built and installed in $(go env GOPATH)/bin"
