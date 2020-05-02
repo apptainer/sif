@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -355,7 +355,7 @@ func TestSetPrimPart(t *testing.T) {
 	}
 }
 
-// cpFile is a simple function to copy the test container to a file
+// cpFile is a simple function to copy the test container to a file.
 func cpFile(fromFile, toFile string) error {
 	s, err := os.Open(fromFile)
 	if err != nil {
