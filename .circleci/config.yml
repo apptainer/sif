@@ -20,15 +20,17 @@ jobs:
           command: npm install -g markdownlint-cli
       - run:
           name: Check for Lint
-          command: markdownlint -i vendor .
+          command: markdownlint .
 
-  check_vendor:
+  check_go_mod:
     <<: *defaults
     steps:
       - checkout
       - run:
-          name: Check vendor/ module is up-to-date
-          command: scripts/check-vendor
+          name: Check go.mod and go.sum are tidy
+          command: |-
+            go mod tidy
+            git diff --exit-code -- go.mod go.sum
 
   build_source:
     <<: *defaults
@@ -65,7 +67,7 @@ workflows:
   build_and_test:
     jobs:
       - lint_markdown
-      - check_vendor
+      - check_go_mod
       - build_source
       - lint_source
       - unit_test
