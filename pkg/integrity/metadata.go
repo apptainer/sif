@@ -75,3 +75,37 @@ func getHeaderMetadata(hdr sif.Header, h crypto.Hash) (headerMetadata, error) {
 
 	return headerMetadata{Digest: d}, nil
 }
+
+type objectMetadata struct {
+	ID               uint32  `json:"id"`
+	DescriptorDigest digest  `json:"descriptorDigest"`
+	ObjectDigest     *digest `json:"objectDigest,omitempty"`
+}
+
+// getObjectMetadata returns objectMetadata for object with descriptor od and content r using hash
+// algorithm h.
+func getObjectMetadata(od sif.Descriptor, r io.Reader, h crypto.Hash) (objectMetadata, error) {
+	b := bytes.Buffer{}
+	if err := writeDescriptor(&b, od); err != nil {
+		return objectMetadata{}, err
+	}
+
+	// Calculate digest on object descriptor.
+	d, err := newDigestReader(h, &b)
+	if err != nil {
+		return objectMetadata{}, err
+	}
+	md := objectMetadata{
+		ID:               od.ID,
+		DescriptorDigest: d,
+	}
+
+	// Calculate digest on object data.
+	d, err = newDigestReader(h, r)
+	if err != nil {
+		return objectMetadata{}, err
+	}
+	md.ObjectDigest = &d
+
+	return md, nil
+}

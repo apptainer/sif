@@ -12,6 +12,8 @@ import (
 	_ "crypto/sha512"
 	"encoding/json"
 	"errors"
+	"io"
+	"strings"
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
@@ -225,6 +227,51 @@ func TestGetHeaderMetadata(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			md, err := getHeaderMetadata(tt.header, tt.hash)
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+
+			if err == nil {
+				b := bytes.Buffer{}
+				if err := json.NewEncoder(&b).Encode(md); err != nil {
+					t.Fatal(err)
+				}
+
+				if err := verifyGolden(t.Name(), &b); err != nil {
+					t.Errorf("failed to verify golden: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestGetObjectMetadata(t *testing.T) {
+	od := sif.Descriptor{
+		Datatype: sif.DataDeffile,
+		Used:     true,
+		ID:       1,
+	}
+
+	tests := []struct {
+		name    string
+		od      sif.Descriptor
+		r       io.Reader
+		hash    crypto.Hash
+		wantErr error
+	}{
+		{name: "HashUnavailable", hash: crypto.MD4, wantErr: errHashUnavailable},
+		{name: "HashUnsupported", hash: crypto.MD5, wantErr: errHashUnsupported},
+		{name: "SHA1", od: od, r: strings.NewReader("blah"), hash: crypto.SHA1},
+		{name: "SHA224", od: od, r: strings.NewReader("blah"), hash: crypto.SHA224},
+		{name: "SHA256", od: od, r: strings.NewReader("blah"), hash: crypto.SHA256},
+		{name: "SHA384", od: od, r: strings.NewReader("blah"), hash: crypto.SHA384},
+		{name: "SHA512", od: od, r: strings.NewReader("blah"), hash: crypto.SHA512},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			md, err := getObjectMetadata(tt.od, tt.r, tt.hash)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
