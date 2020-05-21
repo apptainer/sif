@@ -13,11 +13,41 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+
+	"golang.org/x/crypto/openpgp"
 )
 
 var update = flag.Bool("update", false, "update .golden files")
+
+// fixedTime returns a fixed time value, useful for ensuring tests are deterministic.
+func fixedTime() time.Time {
+	return time.Unix(1504657553, 0)
+}
+
+// getTestEntity returns a fixed test PGP entity.
+func getTestEntity(t *testing.T) *openpgp.Entity {
+	t.Helper()
+
+	f, err := os.Open(filepath.Join("testdata", "keys", "private.asc"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	el, err := openpgp.ReadArmoredKeyRing(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := len(el), 1; got != want {
+		t.Fatalf("got %v entities, want %v", got, want)
+	}
+	return el[0]
+}
 
 // goldenPath returns the path of the golden file corresponding to name.
 func goldenPath(name string) string {
