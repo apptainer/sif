@@ -6,6 +6,8 @@
 package integrity
 
 import (
+	"bytes"
+	"crypto"
 	"encoding/binary"
 	"io"
 
@@ -53,4 +55,23 @@ func writeDescriptor(w io.Writer, od sif.Descriptor) error {
 		}
 	}
 	return nil
+}
+
+type headerMetadata struct {
+	Digest digest `json:"digest"`
+}
+
+// getHeaderMetadata returns headerMetadata for hdr, using hash algorithm h.
+func getHeaderMetadata(hdr sif.Header, h crypto.Hash) (headerMetadata, error) {
+	b := bytes.Buffer{}
+	if err := writeHeader(&b, hdr); err != nil {
+		return headerMetadata{}, err
+	}
+
+	d, err := newDigestReader(h, &b)
+	if err != nil {
+		return headerMetadata{}, err
+	}
+
+	return headerMetadata{Digest: d}, nil
 }

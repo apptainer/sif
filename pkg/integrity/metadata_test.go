@@ -7,6 +7,11 @@ package integrity
 
 import (
 	"bytes"
+	"crypto"
+	_ "crypto/sha256"
+	_ "crypto/sha512"
+	"encoding/json"
+	"errors"
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
@@ -185,6 +190,54 @@ func TestWriteDescriptor(t *testing.T) {
 
 			if err := verifyGolden(t.Name(), &b); err != nil {
 				t.Errorf("failed to verify golden: %v", err)
+			}
+		})
+	}
+}
+
+func TestGetHeaderMetadata(t *testing.T) {
+	h := sif.Header{
+		ID:    uuid.UUID{0xb2, 0x65, 0x9d, 0x4e, 0xbd, 0x50, 0x4e, 0xa5, 0xbd, 0x17, 0xee, 0xc5, 0xe5, 0x4f, 0x91, 0x8e},
+		Ctime: 1504657553,
+		Mtime: 1504657653,
+	}
+	copy(h.Launch[:], sif.HdrLaunch)
+	copy(h.Magic[:], sif.HdrMagic)
+	copy(h.Version[:], sif.HdrVersion)
+	copy(h.Arch[:], sif.HdrArchAMD64)
+
+	tests := []struct {
+		name    string
+		header  sif.Header
+		hash    crypto.Hash
+		wantErr error
+	}{
+		{name: "HashUnavailable", hash: crypto.MD4, wantErr: errHashUnavailable},
+		{name: "HashUnsupported", hash: crypto.MD5, wantErr: errHashUnsupported},
+		{name: "SHA1", header: h, hash: crypto.SHA1},
+		{name: "SHA224", header: h, hash: crypto.SHA224},
+		{name: "SHA256", header: h, hash: crypto.SHA256},
+		{name: "SHA384", header: h, hash: crypto.SHA384},
+		{name: "SHA512", header: h, hash: crypto.SHA512},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			md, err := getHeaderMetadata(tt.header, tt.hash)
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+
+			if err == nil {
+				b := bytes.Buffer{}
+				if err := json.NewEncoder(&b).Encode(md); err != nil {
+					t.Fatal(err)
+				}
+
+				if err := verifyGolden(t.Name(), &b); err != nil {
+					t.Errorf("failed to verify golden: %v", err)
+				}
 			}
 		})
 	}
