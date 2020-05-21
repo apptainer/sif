@@ -109,3 +109,42 @@ func getObjectMetadata(od sif.Descriptor, r io.Reader, h crypto.Hash) (objectMet
 
 	return md, nil
 }
+
+type mdVersion int
+
+const (
+	metadataVersion1 mdVersion = iota + 1
+)
+
+type imageMetadata struct {
+	Version mdVersion        `json:"version"`
+	Header  headerMetadata   `json:"header"`
+	Objects []objectMetadata `json:"objects"`
+}
+
+// getImageMetadata returns populated imageMetadata for object descriptors ods in f, using hash
+// algorithm h.
+func getImageMetadata(f *sif.FileImage, ods []*sif.Descriptor, h crypto.Hash) (imageMetadata, error) {
+	im := imageMetadata{Version: metadataVersion1}
+
+	// Add header metadata.
+	hm, err := getHeaderMetadata(f.Header, h)
+	if err != nil {
+		return imageMetadata{}, err
+	}
+	im.Header = hm
+
+	// Add object descriptor/data metadata.
+	for _, od := range ods {
+		// TODO: use something more efficient than GetData.
+		r := bytes.NewReader(od.GetData(f))
+
+		om, err := getObjectMetadata(*od, r, h)
+		if err != nil {
+			return imageMetadata{}, err
+		}
+		im.Objects = append(im.Objects, om)
+	}
+
+	return im, nil
+}

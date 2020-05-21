@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -272,6 +273,61 @@ func TestGetObjectMetadata(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			md, err := getObjectMetadata(tt.od, tt.r, tt.hash)
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+
+			if err == nil {
+				b := bytes.Buffer{}
+				if err := json.NewEncoder(&b).Encode(md); err != nil {
+					t.Fatal(err)
+				}
+
+				if err := verifyGolden(t.Name(), &b); err != nil {
+					t.Errorf("failed to verify golden: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestGetImageMetadata(t *testing.T) {
+	f, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	od1, _, err := f.GetFromDescrID(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	od2, _, err := f.GetFromDescrID(2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name    string
+		ods     []*sif.Descriptor
+		hash    crypto.Hash
+		wantErr error
+	}{
+		{name: "HashUnavailable", hash: crypto.MD4, wantErr: errHashUnavailable},
+		{name: "HashUnsupported", hash: crypto.MD5, wantErr: errHashUnsupported},
+		{name: "Object1", ods: []*sif.Descriptor{od1}, hash: crypto.SHA1},
+		{name: "Object2", ods: []*sif.Descriptor{od2}, hash: crypto.SHA1},
+		{name: "SHA1", ods: []*sif.Descriptor{od1, od2}, hash: crypto.SHA1},
+		{name: "SHA224", ods: []*sif.Descriptor{od1, od2}, hash: crypto.SHA224},
+		{name: "SHA256", ods: []*sif.Descriptor{od1, od2}, hash: crypto.SHA256},
+		{name: "SHA384", ods: []*sif.Descriptor{od1, od2}, hash: crypto.SHA384},
+		{name: "SHA512", ods: []*sif.Descriptor{od1, od2}, hash: crypto.SHA512},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			md, err := getImageMetadata(&f, tt.ods, tt.hash)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
