@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -26,6 +27,40 @@ var update = flag.Bool("update", false, "update .golden files")
 // fixedTime returns a fixed time value, useful for ensuring tests are deterministic.
 func fixedTime() time.Time {
 	return time.Unix(1504657553, 0)
+}
+
+// tempFileFrom copies the file at path to a temporary file, and returns a reference to it.
+func tempFileFrom(path string) (tf *os.File, err error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	pattern := "*"
+	if ext := filepath.Ext(path); ext != "" {
+		pattern = fmt.Sprintf("*.%s", ext)
+	}
+
+	tf, err = ioutil.TempFile("", pattern)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			tf.Close()
+		}
+	}()
+
+	if _, err := io.Copy(tf, f); err != nil {
+		return nil, err
+	}
+
+	if _, err := tf.Seek(0, io.SeekStart); err != nil {
+		return nil, err
+	}
+
+	return tf, nil
 }
 
 // getTestEntity returns a fixed test PGP entity.

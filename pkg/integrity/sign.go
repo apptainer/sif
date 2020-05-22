@@ -21,7 +21,11 @@ import (
 var (
 	errNoObjectsSpecified = errors.New("no objects specified")
 	errUnexpectedGroupID  = errors.New("unexpected group ID")
+	errNilFileImage       = errors.New("nil file image")
 )
+
+// ErrNoKeyMaterial is the error returned when no key material was provided.
+var ErrNoKeyMaterial = errors.New("key material not provided")
 
 func sifHashType(h crypto.Hash) sif.Hashtype {
 	switch h {
@@ -174,4 +178,147 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 	}
 
 	return di, nil
+}
+
+// Signer describes a SIF image signer.
+type Signer struct {
+	f       *sif.FileImage  // SIF image to sign.
+	signers []*groupSigner  // Signer for each group.
+	e       *openpgp.Entity // Entity to use to generate signature(s).
+}
+
+// SignerOpt are used to configure s.
+type SignerOpt func(s *Signer) error
+
+// OptSignWithEntity specifies e as the entity to use to generate signature(s).
+func OptSignWithEntity(e *openpgp.Entity) SignerOpt {
+	return func(s *Signer) error {
+		s.e = e
+		return nil
+	}
+}
+
+// OptSignGroup specifies that a signature be applied to cover all objects in the group with the
+// specified groupID. This may be called multiple times to add multiple group signatures.
+func OptSignGroup(groupID uint32) SignerOpt {
+	return func(s *Signer) error {
+		gs, err := newGroupSigner(s.f, groupID)
+		if err != nil {
+			return err
+		}
+		s.signers = append(s.signers, gs)
+		return nil
+	}
+}
+
+// OptSignObjects specifies that one or more signature(s) be applied to cover objects with the
+// specified ids. One signature will be applied for each group ID associated with the object(s).
+// This may be called multiple times to add multiple signatures.
+func OptSignObjects(ids ...uint32) SignerOpt {
+	return func(s *Signer) error {
+		if len(ids) == 0 {
+			return errNoObjectsSpecified
+		}
+
+		idMap := make(map[uint32]bool)
+		groupObjectIDs := make(map[uint32][]uint32)
+		var groupIDs []uint32
+
+		for _, id := range ids {
+			// Ignore duplicate IDs.
+			if _, ok := idMap[id]; ok {
+				continue
+			}
+			idMap[id] = true
+
+			// Get descriptor.
+			od, err := getObject(s.f, id)
+			if err != nil {
+				return err
+			}
+
+			// Note the group ID if it hasn't been seen before, and append the object ID to the
+			// appropriate group in the map.
+			groupID := od.Groupid &^ sif.DescrGroupMask
+			if _, ok := groupObjectIDs[groupID]; !ok {
+				groupIDs = append(groupIDs, groupID)
+			}
+			groupObjectIDs[groupID] = append(groupObjectIDs[groupID], id)
+		}
+
+		sort.Slice(groupIDs, func(i, j int) bool { return groupIDs[i] < groupIDs[j] })
+
+		// Add one groupSigner per group.
+		for _, groupID := range groupIDs {
+			gs, err := newGroupSigner(s.f, groupID, optSignGroupObjects(groupObjectIDs[groupID]...))
+			if err != nil {
+				return err
+			}
+			s.signers = append(s.signers, gs)
+		}
+
+		return nil
+	}
+}
+
+// NewSigner returns a Signer to add digital signature(s) to f, according to opts.
+//
+// Sign requires a signing entity be provided. OptSignWithEntity can be used for this purpose.
+//
+// By default, one digital signature is added per object group in f. To override this behavior,
+// consider using OptSignGroup and/or OptSignObjects.
+func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
+	if f == nil {
+		return nil, fmt.Errorf("integrity: %w", errNilFileImage)
+	}
+
+	s := Signer{f: f}
+
+	// Apply options.
+	for _, opt := range opts {
+		if err := opt(&s); err != nil {
+			return nil, fmt.Errorf("integrity: %w", err)
+		}
+	}
+
+	// If no signers specified, add one per object group.
+	if len(s.signers) == 0 {
+		ids, err := getGroupIDs(f)
+		if err != nil {
+			return nil, fmt.Errorf("integrity: %w", err)
+		}
+
+		for _, id := range ids {
+			gs, err := newGroupSigner(f, id)
+			if err != nil {
+				return nil, fmt.Errorf("integrity: %w", err)
+			}
+			s.signers = append(s.signers, gs)
+		}
+	}
+
+	return &s, nil
+}
+
+// Sign adds digital signatures as specified by s.
+//
+// If key material was not provided when s was created, Sign returns an error wrapping
+// ErrNoKeyMaterial.
+func (s *Signer) Sign() error {
+	if s.e == nil {
+		return fmt.Errorf("integrity: %w", ErrNoKeyMaterial)
+	}
+
+	for _, gs := range s.signers {
+		di, err := gs.signWithEntity(s.e)
+		if err != nil {
+			return fmt.Errorf("integrity: %w", err)
+		}
+
+		if err := s.f.AddObject(di); err != nil {
+			return fmt.Errorf("integrity: failed to add object: %w", err)
+		}
+	}
+
+	return nil
 }
