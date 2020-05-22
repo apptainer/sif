@@ -1,0 +1,14 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+{"version":1,"header":{"digest":"sha1:1b8bf6181036c00a17a445bf6669e23285e0517b"},"objects":[{"id":1,"descriptorDigest":"sha1:b02404a1b7c112f0c7d191635e2b3ecd1a7f002d","objectDigest":"sha1:15146b9bf4f1f5f9bf176a398d8c4f0321c63064"},{"id":2,"descriptorDigest":"sha1:15cf1f503594b31b240e349fb44b53f44a096eaa","objectDigest":"sha1:d78f8bb992a56a597f6c7a1fb918bb78271367eb"}]}
+-----BEGIN PGP SIGNATURE-----
+
+wsBcBAEBCAAQBQJZr0CRCRCiDCfuf/e6hAAAGqkIAJTno2gpD/XoPmUJtgWwwXsW
+9gnxJNG8GFyawBYpiBUQuCIuw8P455x6xXLb6coAQvv+JJD3wZdU+g1uEWrEXNjV
+eYM8Rpu2yMRPA9Te4FuJ+73wSEGA1YMJItD3o0lUn0FAHhiRR1yKCYZgLSflPB2w
+hNTGpwTLZaczj1Su7Zzzh9gCIvudS5+gjFseVdc5MgLVDOJQaL8ftoIRdKLU8Pf7
+8Yxyhc8MsPKC0J+0cagKKuCXu/t10QuIV8pJ5AsIP/HJ18AXrKBPTtMEyfkmsctv
+4mGP/G6ENU6mlEp+dLQGI3ERncgW0COixfi7KwRtJko3DIwfk4YELs7N4lVL47k=
+=Iyyk
+-----END PGP SIGNATURE-----
