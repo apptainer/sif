@@ -7,6 +7,7 @@ package integrity
 
 import (
 	"errors"
+	"io"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -45,6 +46,7 @@ func TestNewVerifier(t *testing.T) {
 		wantGroups  []uint32
 		wantObjects []uint32
 		wantLegacy  bool
+		wantTasks   int
 	}{
 		{
 			name:    "NilFileImage",
@@ -194,6 +196,60 @@ func TestNewVerifier(t *testing.T) {
 				if got, want := v.isLegacy, tt.wantLegacy; got != want {
 					t.Errorf("got legacy %v, want %v", got, want)
 				}
+
+				if got, want := len(v.tasks), tt.wantTasks; got != want {
+					t.Errorf("got %v tasks, want %v", got, want)
+				}
+			}
+		})
+	}
+}
+
+type mockVerifier struct {
+	err error
+}
+
+func (v mockVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
+	return v.err
+}
+
+func TestVerifier_Verify(t *testing.T) {
+	kr := openpgp.EntityList{getTestEntity(t)}
+
+	tests := []struct {
+		name    string
+		kr      openpgp.KeyRing
+		tasks   []verifyTask
+		wantErr error
+	}{
+		{
+			name:    "ErrNoKeyMaterial",
+			tasks:   []verifyTask{mockVerifier{}},
+			wantErr: ErrNoKeyMaterial,
+		},
+		{
+			name:    "EOF",
+			kr:      kr,
+			tasks:   []verifyTask{mockVerifier{err: io.EOF}},
+			wantErr: io.EOF,
+		},
+		{
+			name:  "OK",
+			kr:    kr,
+			tasks: []verifyTask{mockVerifier{}},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			v := Verifier{
+				keyRing: tt.kr,
+				tasks:   tt.tasks,
+			}
+
+			if got, want := v.Verify(), tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
 			}
 		})
 	}

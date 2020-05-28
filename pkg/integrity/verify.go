@@ -12,6 +12,10 @@ import (
 	"golang.org/x/crypto/openpgp"
 )
 
+type verifyTask interface {
+	verifyWithKeyRing(kr openpgp.KeyRing) error
+}
+
 // Verifier describes a SIF image verifier.
 type Verifier struct {
 	f *sif.FileImage // SIF image to verify.
@@ -20,6 +24,8 @@ type Verifier struct {
 	groups   []uint32        // Data object group(s) selected for verification.
 	objects  []uint32        // Individual data object(s) selected for verification.
 	isLegacy bool            // Enable verification of legacy signature(s).
+
+	tasks []verifyTask // Slice of verification tasks.
 }
 
 // VerifierOpt are used to configure v.
@@ -97,4 +103,21 @@ func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 	}
 
 	return v, nil
+}
+
+// Verify performs all cryptographic verification tasks specified by v.
+//
+// If key material was not provided when v was created, Verify returns an error wrapping
+// ErrNoKeyMaterial.
+func (v *Verifier) Verify() error {
+	if v.keyRing == nil {
+		return fmt.Errorf("integrity: %w", ErrNoKeyMaterial)
+	}
+
+	for _, t := range v.tasks {
+		if err := t.verifyWithKeyRing(v.keyRing); err != nil {
+			return fmt.Errorf("integrity: %w", err)
+		}
+	}
+	return nil
 }
