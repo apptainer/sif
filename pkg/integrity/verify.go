@@ -12,6 +12,60 @@ import (
 	"golang.org/x/crypto/openpgp"
 )
 
+type VerifyResult interface {
+	// Signature returns the ID of the signature object associated with the result.
+	Signature() uint32
+
+	// Signed returns the IDs of data objects that were signed.
+	Signed() []uint32
+
+	// Verified returns the IDs of data objects that were verified.
+	Verified() []uint32
+
+	// Entity returns the signing entity, or nil if the signing entity could not be determined.
+	Entity() *openpgp.Entity
+
+	// Error returns an error describing the reason verification failed, or nil if verification was
+	// successful.
+	Error() error
+}
+
+// VerifyCallback is called immediately after a signature is verified. If r contains a non-nil
+// error, and the callback returns true, the error is ignored, and verification proceeds as if no
+// error occurred.
+type VerifyCallback func(r VerifyResult) (ignoreError bool)
+
+type groupVerifier struct {
+	f        *sif.FileImage    // SIF image to verify.
+	cb       VerifyCallback    // Verification callback.
+	groupID  uint32            // Object group ID.
+	ods      []*sif.Descriptor // Object descriptors.
+	subsetOK bool              // If true, permit ods to be a subset of the objects in signatures.
+}
+
+// newGroupVerifier constructs a new group verifier, optionally limited to objects described by
+// ods. If no descriptors are supplied, verify all objects in group.
+func newGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32, ods ...*sif.Descriptor) (*groupVerifier, error) { // nolint:lll
+	v := groupVerifier{f: f, cb: cb, groupID: groupID, ods: ods}
+
+	if len(ods) == 0 {
+		ods, err := getGroupObjects(f, groupID)
+		if err != nil {
+			return nil, err
+		}
+		v.ods = ods
+	} else {
+		v.subsetOK = true
+	}
+
+	return &v, nil
+}
+
+// verifyWithKeyRing performs validation of the objects specified by v using keyring kr.
+func (v *groupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
+	return nil // TODO
+}
+
 type verifyTask interface {
 	verifyWithKeyRing(kr openpgp.KeyRing) error
 }
@@ -24,6 +78,7 @@ type Verifier struct {
 	groups   []uint32        // Data object group(s) selected for verification.
 	objects  []uint32        // Individual data object(s) selected for verification.
 	isLegacy bool            // Enable verification of legacy signature(s).
+	cb       VerifyCallback  // Verification callback.
 
 	tasks []verifyTask // Slice of verification tasks.
 }
@@ -72,6 +127,39 @@ func OptVerifyLegacy() VerifierOpt {
 	}
 }
 
+// getTasks returns verification tasks corresponding to groupIDs and objectIDs.
+func getTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, objectIDs []uint32) ([]verifyTask, error) {
+	t := make([]verifyTask, 0, len(groupIDs)+len(objectIDs))
+
+	for _, groupID := range groupIDs {
+		v, err := newGroupVerifier(f, cb, groupID)
+		if err != nil {
+			return nil, err
+		}
+		t = append(t, v)
+	}
+
+	for _, id := range objectIDs {
+		od, err := getObject(f, id)
+		if err != nil {
+			return nil, err
+		}
+
+		v, err := newGroupVerifier(f, cb, od.Groupid&^sif.DescrGroupMask, od)
+		if err != nil {
+			return nil, err
+		}
+		t = append(t, v)
+	}
+
+	return t, nil
+}
+
+// getLegacyTasks returns legacy verification tasks corresponding to groupIDs and objectIDs.
+func getLegacyTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, objectIDs []uint32) ([]verifyTask, error) {
+	return nil, nil // TODO
+}
+
 // NewVerifier returns a Verifier to examine and/or verify digital signatures(s) in f according to
 // opts.
 //
@@ -101,6 +189,17 @@ func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 		}
 		v.groups = ids
 	}
+
+	// Get tasks.
+	getTasksFunc := getTasks
+	if v.isLegacy {
+		getTasksFunc = getLegacyTasks
+	}
+	t, err := getTasksFunc(f, v.cb, v.groups, v.objects)
+	if err != nil {
+		return nil, fmt.Errorf("integrity: %w", err)
+	}
+	v.tasks = t
 
 	return v, nil
 }
