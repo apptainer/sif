@@ -66,6 +66,47 @@ func (v *groupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 	return nil // TODO
 }
 
+type legacyGroupVerifier struct {
+	f       *sif.FileImage    // SIF image to verify.
+	cb      VerifyCallback    // Verification callback.
+	groupID uint32            // Object group ID.
+	ods     []*sif.Descriptor // Object descriptors.
+}
+
+// newLegacyGroupVerifier constructs a new legacy group verifier.
+func newLegacyGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32) (*legacyGroupVerifier, error) {
+	ods, err := getGroupObjects(f, groupID)
+	if err != nil {
+		return nil, err
+	}
+	return &legacyGroupVerifier{f: f, cb: cb, groupID: groupID, ods: ods}, nil
+}
+
+// verifyWithKeyRing performs validation of the objects specified by v using keyring kr.
+func (v *legacyGroupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
+	return nil // TODO
+}
+
+type legacyObjectVerifier struct {
+	f  *sif.FileImage  // SIF image to verify.
+	cb VerifyCallback  // Verification callback.
+	od *sif.Descriptor // Object descriptor.
+}
+
+// newLegacyObjectVerifier constructs a new legacy object verifier.
+func newLegacyObjectVerifier(f *sif.FileImage, cb VerifyCallback, id uint32) (*legacyObjectVerifier, error) {
+	od, err := getObject(f, id)
+	if err != nil {
+		return nil, err
+	}
+	return &legacyObjectVerifier{f: f, cb: cb, od: od}, nil
+}
+
+// verifyWithKeyRing performs validation of the objects specified by v using keyring kr.
+func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
+	return nil // TODO
+}
+
 type verifyTask interface {
 	verifyWithKeyRing(kr openpgp.KeyRing) error
 }
@@ -157,7 +198,25 @@ func getTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, objectIDs 
 
 // getLegacyTasks returns legacy verification tasks corresponding to groupIDs and objectIDs.
 func getLegacyTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, objectIDs []uint32) ([]verifyTask, error) {
-	return nil, nil // TODO
+	t := make([]verifyTask, 0, len(groupIDs)+len(objectIDs))
+
+	for _, groupID := range groupIDs {
+		v, err := newLegacyGroupVerifier(f, cb, groupID)
+		if err != nil {
+			return nil, err
+		}
+		t = append(t, v)
+	}
+
+	for _, id := range objectIDs {
+		v, err := newLegacyObjectVerifier(f, cb, id)
+		if err != nil {
+			return nil, err
+		}
+		t = append(t, v)
+	}
+
+	return t, nil
 }
 
 // NewVerifier returns a Verifier to examine and/or verify digital signatures(s) in f according to

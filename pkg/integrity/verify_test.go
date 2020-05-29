@@ -73,6 +73,12 @@ func TestNewVerifier(t *testing.T) {
 			wantErr: errGroupNotFound,
 		},
 		{
+			name:    "GroupNotFoundLegacy",
+			fi:      &emptyImage,
+			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(1), OptVerifyLegacy()},
+			wantErr: errGroupNotFound,
+		},
+		{
 			name:    "InvalidObjectID",
 			fi:      &emptyImage,
 			opts:    []VerifierOpt{OptVerifyObject(0)},
@@ -82,6 +88,12 @@ func TestNewVerifier(t *testing.T) {
 			name:    "ObjectNotFound",
 			fi:      &emptyImage,
 			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyObject(1)},
+			wantErr: errObjectNotFound,
+		},
+		{
+			name:    "ObjectNotFoundLegacy",
+			fi:      &emptyImage,
+			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyObject(1), OptVerifyLegacy()},
 			wantErr: errObjectNotFound,
 		},
 		{
@@ -175,6 +187,7 @@ func TestNewVerifier(t *testing.T) {
 			opts:       []VerifierOpt{OptVerifyLegacy()},
 			wantGroups: []uint32{1, 2},
 			wantLegacy: true,
+			wantTasks:  2,
 		},
 		{
 			name:       "OptVerifyLegacyGroup1",
@@ -182,6 +195,7 @@ func TestNewVerifier(t *testing.T) {
 			opts:       []VerifierOpt{OptVerifyLegacy(), OptVerifyGroup(1)},
 			wantGroups: []uint32{1},
 			wantLegacy: true,
+			wantTasks:  1,
 		},
 		{
 			name:        "OptVerifyLegacyObject1",
@@ -189,6 +203,7 @@ func TestNewVerifier(t *testing.T) {
 			opts:        []VerifierOpt{OptVerifyLegacy(), OptVerifyObject(1)},
 			wantObjects: []uint32{1},
 			wantLegacy:  true,
+			wantTasks:   1,
 		},
 	}
 
