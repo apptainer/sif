@@ -1,11 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/sylabs/sif/pkg/integrity"
 	"github.com/sylabs/sif/pkg/sif"
+	"golang.org/x/crypto/openpgp"
 )
 
 func createImage(path string, dis []sif.DescriptorInput) error {
@@ -21,7 +25,30 @@ func createImage(path string, dis []sif.DescriptorInput) error {
 	return err
 }
 
+func getEntity() (*openpgp.Entity, error) {
+	f, err := os.Open(filepath.Join("keys", "private.asc"))
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	el, err := openpgp.ReadArmoredKeyRing(f)
+	if err != nil {
+		return nil, err
+	}
+
+	if got, want := len(el), 1; got != want {
+		return nil, fmt.Errorf("got %v entities, want %v", got, want)
+	}
+	return el[0], nil
+}
+
 func generateImages() error {
+	e, err := getEntity()
+	if err != nil {
+		return err
+	}
+
 	partSystemGroup1 := sif.DescriptorInput{
 		Datatype: sif.DataPartition,
 		Groupid:  sif.DescrGroupMask | 1,
@@ -53,8 +80,10 @@ func generateImages() error {
 	}
 
 	images := []struct {
-		path string
-		dis  []sif.DescriptorInput
+		path     string
+		dis      []sif.DescriptorInput
+		sign     bool
+		signOpts []integrity.SignerOpt
 	}{
 		// Images with no objects.
 		{
@@ -69,6 +98,17 @@ func generateImages() error {
 				partPrimSysGroup1,
 			},
 		},
+		{
+			path: "one-group-signed.sif",
+			dis: []sif.DescriptorInput{
+				partSystemGroup1,
+				partPrimSysGroup1,
+			},
+			sign: true,
+			signOpts: []integrity.SignerOpt{
+				integrity.OptSignWithEntity(e),
+			},
+		},
 
 		// Images with three partitions in two groups.
 		{
@@ -79,6 +119,18 @@ func generateImages() error {
 				partSystemGroup2,
 			},
 		},
+		{
+			path: "two-groups-signed.sif",
+			dis: []sif.DescriptorInput{
+				partSystemGroup1,
+				partPrimSysGroup1,
+				partSystemGroup2,
+			},
+			sign: true,
+			signOpts: []integrity.SignerOpt{
+				integrity.OptSignWithEntity(e),
+			},
+		},
 	}
 
 	for _, image := range images {
@@ -86,6 +138,23 @@ func generateImages() error {
 
 		if err := createImage(path, image.dis); err != nil {
 			return err
+		}
+
+		f, err := sif.LoadContainer(path, false)
+		if err != nil {
+			return err
+		}
+		defer f.UnloadContainer() // nolint:errcheck
+
+		if image.sign {
+			s, err := integrity.NewSigner(&f, image.signOpts...)
+			if err != nil {
+				return err
+			}
+
+			if err := s.Sign(); err != nil {
+				return err
+			}
 		}
 	}
 
