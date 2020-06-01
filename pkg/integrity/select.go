@@ -74,6 +74,20 @@ func getGroupObjects(f *sif.FileImage, groupID uint32) ([]*sif.Descriptor, error
 	return ods, err
 }
 
+// getObjectSignatures returns all descriptors in f that contain signature objects linked to the
+// object with identifier id. If no such signatures are found, errSignatureNotFound is returned.
+func getObjectSignatures(f *sif.FileImage, id uint32) ([]*sif.Descriptor, error) {
+	if id == 0 {
+		return nil, errInvalidObjectID
+	}
+
+	sigs, _, err := f.GetLinkedDescrsByType(id, sif.DataSignature)
+	if errors.Is(err, sif.ErrNotFound) {
+		err = errSignatureNotFound
+	}
+	return sigs, err
+}
+
 // getGroupSignatures returns descriptors in f that contain signature objects linked to the object
 // group with identifier groupID. If legacy is true, only legacy signatures are considered.
 // Otherwise, only non-legacy signatures are considered. If no such signatures are found,

@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/sylabs/sif/pkg/sif"
 	"golang.org/x/crypto/openpgp"
@@ -143,9 +144,78 @@ func newLegacyGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32)
 	return &legacyGroupVerifier{f: f, cb: cb, groupID: groupID, ods: ods}, nil
 }
 
+// verifySignature verifies the objects specified by v against signature sig using keyring kr.
+func (v *legacyGroupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
+	// Verify signature and decode plaintext.
+	e, b, _, err := verifyAndDecode(sig.GetData(v.f), kr)
+	if err != nil {
+		return e, err
+	}
+
+	// Ensure signing entity matches fingerprint in descriptor.
+	fp, err := sig.GetEntity()
+	if err != nil {
+		return e, err
+	}
+	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:20]) {
+		return e, errFingerprintMismatch
+	}
+
+	// Determine hash type.
+	ht, err := sig.GetHashType()
+	if err != nil {
+		return e, err
+	}
+
+	// Obtain digest from plaintext.
+	d, err := newLegacyDigest(ht, b)
+	if err != nil {
+		return e, err
+	}
+
+	// Get reader covering all non-signature objects.
+	rs := make([]io.Reader, 0, len(v.ods))
+	for _, od := range v.ods {
+		// TODO: use something more efficient than GetData.
+		rs = append(rs, bytes.NewReader(od.GetData(v.f)))
+	}
+	r := io.MultiReader(rs...)
+
+	// Verify header and object integrity.
+	if ok, err := d.matches(r); err != nil {
+		return e, err
+	} else if !ok {
+		return e, fmt.Errorf("group %d: %w", v.groupID, errObjectIntegrity)
+	}
+
+	return e, nil
+}
+
 // verifyWithKeyRing performs validation of the objects specified by v using keyring kr.
 func (v *legacyGroupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
-	return nil // TODO
+	// Obtain all signatures related to object.
+	sigs, err := getGroupSignatures(v.f, v.groupID, true)
+	if err != nil {
+		return err
+	}
+
+	for _, sig := range sigs {
+		e, err := v.verifySignature(sig, kr)
+
+		// Call verify callback, if applicable.
+		if v.cb != nil {
+			r := legacyResult{signature: sig.ID, ods: v.ods, e: e, err: err}
+			if ignoreError := v.cb(r); ignoreError {
+				err = nil
+			}
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type legacyObjectVerifier struct {
@@ -163,9 +233,73 @@ func newLegacyObjectVerifier(f *sif.FileImage, cb VerifyCallback, id uint32) (*l
 	return &legacyObjectVerifier{f: f, cb: cb, od: od}, nil
 }
 
+// verifySignature verifies the objects specified by v against signature sig using keyring kr.
+func (v *legacyObjectVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
+	// Verify signature and decode plaintext.
+	e, b, _, err := verifyAndDecode(sig.GetData(v.f), kr)
+	if err != nil {
+		return e, err
+	}
+
+	// Ensure signing entity matches fingerprint in descriptor.
+	fp, err := sig.GetEntity()
+	if err != nil {
+		return e, err
+	}
+	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:20]) {
+		return e, errFingerprintMismatch
+	}
+
+	// Determine hash type.
+	ht, err := sig.GetHashType()
+	if err != nil {
+		return e, err
+	}
+
+	// Obtain digest from plaintext.
+	d, err := newLegacyDigest(ht, b)
+	if err != nil {
+		return e, err
+	}
+
+	// TODO: use something more efficient than GetData.
+	r := bytes.NewReader(v.od.GetData(v.f))
+
+	// Verify header and object integrity.
+	if ok, err := d.matches(r); err != nil {
+		return e, err
+	} else if !ok {
+		return e, fmt.Errorf("object %d: %w", v.od.ID, errObjectIntegrity)
+	}
+
+	return e, nil
+}
+
 // verifyWithKeyRing performs validation of the objects specified by v using keyring kr.
 func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
-	return nil // TODO
+	// Obtain all signatures related to object.
+	sigs, err := getObjectSignatures(v.f, v.od.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, sig := range sigs {
+		e, err := v.verifySignature(sig, kr)
+
+		// Call verify callback, if applicable.
+		if v.cb != nil {
+			r := legacyResult{signature: sig.ID, ods: []*sif.Descriptor{v.od}, e: e, err: err}
+			if ignoreError := v.cb(r); ignoreError {
+				err = nil
+			}
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type verifyTask interface {
