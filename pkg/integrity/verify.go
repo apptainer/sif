@@ -6,11 +6,15 @@
 package integrity
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 
 	"github.com/sylabs/sif/pkg/sif"
 	"golang.org/x/crypto/openpgp"
 )
+
+var errFingerprintMismatch = errors.New("fingerprint in descriptor does not correspond to signing entity")
 
 type VerifyResult interface {
 	// Signature returns the ID of the signature object associated with the result.
@@ -61,9 +65,66 @@ func newGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32, ods .
 	return &v, nil
 }
 
+// verifySignature verifies the objects specified by v against signature sig using keyring kr.
+func (v *groupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (imageMetadata, []uint32, *openpgp.Entity, error) { // nolint:lll
+	// Verify signature and decode image metadata.
+	var im imageMetadata
+	e, _, err := verifyAndDecodeJSON(sig.GetData(v.f), &im, kr)
+	if err != nil {
+		return im, nil, e, err
+	}
+
+	// Ensure signing entity matches fingerprint in descriptor.
+	fp, err := sig.GetEntity()
+	if err != nil {
+		return im, nil, e, err
+	}
+	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:20]) {
+		return im, nil, e, errFingerprintMismatch
+	}
+
+	// If an object subset is not permitted, verify our set of IDs match exactly what is in the
+	// image metadata.
+	if !v.subsetOK {
+		if err := im.objectIDsMatch(v.ods); err != nil {
+			return im, nil, e, err
+		}
+	}
+
+	// Verify header and object integrity.
+	verified, err := im.matches(v.f, v.ods)
+	if err != nil {
+		return im, verified, e, err
+	}
+
+	return im, verified, e, nil
+}
+
 // verifyWithKeyRing performs validation of the objects specified by v using keyring kr.
 func (v *groupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
-	return nil // TODO
+	// Obtain all signatures related to group.
+	sigs, err := getGroupSignatures(v.f, v.groupID, false)
+	if err != nil {
+		return err
+	}
+
+	for _, sig := range sigs {
+		im, verified, e, err := v.verifySignature(sig, kr)
+
+		// Call verify callback, if applicable.
+		if v.cb != nil {
+			r := result{signature: sig.ID, im: im, verified: verified, e: e, err: err}
+			if ignoreError := v.cb(r); ignoreError {
+				err = nil
+			}
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type legacyGroupVerifier struct {

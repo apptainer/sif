@@ -14,7 +14,99 @@ import (
 
 	"github.com/sylabs/sif/pkg/sif"
 	"golang.org/x/crypto/openpgp"
+	pgperrors "golang.org/x/crypto/openpgp/errors"
 )
+
+func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
+	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer oneGroupImage.UnloadContainer() // nolint:errcheck
+
+	oneGroupSignedImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed.sif"), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer oneGroupSignedImage.UnloadContainer() // nolint:errcheck
+
+	kr := openpgp.EntityList{getTestEntity(t)}
+
+	tests := []struct {
+		name      string
+		f         *sif.FileImage
+		groupID   uint32
+		objectIDs []uint32
+		subsetOK  bool
+		kr        openpgp.KeyRing
+		wantErr   error
+	}{
+		{
+			name:      "SignatureNotFound",
+			f:         &oneGroupImage,
+			groupID:   1,
+			objectIDs: []uint32{1, 2},
+			kr:        kr,
+			wantErr:   errSignatureNotFound,
+		},
+		{
+			name:      "SignedObjectNotFound",
+			f:         &oneGroupSignedImage,
+			groupID:   1,
+			objectIDs: []uint32{1},
+			kr:        kr,
+			wantErr:   errSignedObjectNotFound,
+		},
+		{
+			name:      "UnknownIssuer",
+			f:         &oneGroupSignedImage,
+			groupID:   1,
+			objectIDs: []uint32{1, 2},
+			kr:        openpgp.EntityList{},
+			wantErr:   pgperrors.ErrUnknownIssuer,
+		},
+		{
+			name:      "OneGroupSigned",
+			f:         &oneGroupSignedImage,
+			groupID:   1,
+			objectIDs: []uint32{1, 2},
+			kr:        kr,
+		},
+		{
+			name:      "OneGroupSignedSubset",
+			f:         &oneGroupSignedImage,
+			groupID:   1,
+			objectIDs: []uint32{1},
+			subsetOK:  true,
+			kr:        kr,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			ods := make([]*sif.Descriptor, len(tt.objectIDs))
+			for i, id := range tt.objectIDs {
+				od, err := getObject(tt.f, id)
+				if err != nil {
+					t.Fatal(err)
+				}
+				ods[i] = od
+			}
+
+			v := &groupVerifier{
+				f:        tt.f,
+				groupID:  tt.groupID,
+				ods:      ods,
+				subsetOK: tt.subsetOK,
+			}
+
+			if got, want := v.verifyWithKeyRing(tt.kr), tt.wantErr; !errors.Is(got, want) {
+				t.Errorf("got error %v, want %v", got, want)
+			}
+		})
+	}
+}
 
 func TestNewVerifier(t *testing.T) {
 	emptyImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "empty.sif"), true)

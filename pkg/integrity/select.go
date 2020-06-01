@@ -19,6 +19,7 @@ var (
 	errObjectNotFound       = errors.New("object not found")
 	errGroupNotFound        = errors.New("group not found")
 	errNoGroupsFound        = errors.New("no groups found")
+	errSignatureNotFound    = errors.New("signature not found")
 )
 
 // insertSorted inserts unique vals into the sorted slice s.
@@ -71,6 +72,38 @@ func getGroupObjects(f *sif.FileImage, groupID uint32) ([]*sif.Descriptor, error
 		err = errGroupNotFound
 	}
 	return ods, err
+}
+
+// getGroupSignatures returns descriptors in f that contain signature objects linked to the object
+// group with identifier groupID. If legacy is true, only legacy signatures are considered.
+// Otherwise, only non-legacy signatures are considered. If no such signatures are found,
+// errSignatureNotFound is returned.
+func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]*sif.Descriptor, error) {
+	if groupID == 0 {
+		return nil, errInvalidGroupID
+	}
+
+	// Get list of signature blocks linked to group.
+	ods, _, err := f.GetLinkedDescrsByType(groupID|sif.DescrGroupMask, sif.DataSignature)
+	if errors.Is(err, sif.ErrNotFound) {
+		return nil, errSignatureNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Filter signatures based on legacy flag.
+	sigs := make([]*sif.Descriptor, 0, len(ods))
+	for _, od := range ods {
+		if isLegacySignature(od.GetData(f)) == legacy {
+			sigs = append(sigs, od)
+		}
+	}
+
+	if len(sigs) == 0 {
+		return nil, errSignatureNotFound
+	}
+
+	return sigs, err
 }
 
 // getGroupIDs returns all identifiers for the groups contained in f, sorted by ID. If no groups

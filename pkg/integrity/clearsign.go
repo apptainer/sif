@@ -56,3 +56,14 @@ func verifyAndDecode(data []byte, kr openpgp.KeyRing) (*openpgp.Entity, []byte, 
 	e, err := openpgp.CheckDetachedSignature(kr, bytes.NewReader(b.Bytes), b.ArmoredSignature.Body)
 	return e, b.Plaintext, rest, err
 }
+
+// isLegacySignature reads the first clearsigned message in data, and returns true if the plaintext
+// contains a legacy signature.
+func isLegacySignature(data []byte) bool {
+	// Decode clearsign block.
+	b, _ := clearsign.Decode(data)
+
+	// The plaintext of legacy signatures always begins with "SIFHASH", and non-legacy signatures
+	// never do, as they are JSON.
+	return bytes.HasPrefix(b.Plaintext, []byte("SIFHASH:\n"))
+}
