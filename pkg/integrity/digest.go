@@ -14,6 +14,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/sylabs/sif/pkg/sif"
 )
 
 var (
@@ -69,6 +71,40 @@ func newDigestReader(h crypto.Hash, r io.Reader) (digest, error) {
 	if err != nil {
 		return digest{}, err
 	}
+	return newDigest(h, value)
+}
+
+// hashType converts ht into a crypto.Hash value.
+func hashType(ht sif.Hashtype) (crypto.Hash, error) {
+	switch ht {
+	case sif.HashSHA256:
+		return crypto.SHA256, nil
+	case sif.HashSHA384:
+		return crypto.SHA384, nil
+	case sif.HashSHA512:
+		return crypto.SHA512, nil
+	}
+	return 0, errHashUnsupported
+}
+
+// newLegacyDigest parses the plaintext contained in legacy signatures, returning a digest
+// representing the contents.
+func newLegacyDigest(ht sif.Hashtype, b []byte) (digest, error) {
+	b = bytes.TrimPrefix(b, []byte("SIFHASH:\n"))
+	b = bytes.TrimSuffix(b, []byte("\n"))
+
+	// Convert hash type.
+	h, err := hashType(ht)
+	if err != nil {
+		return digest{}, err
+	}
+
+	// Decode hex input.
+	value := make([]byte, hex.DecodedLen(len(b)))
+	if _, err := hex.Decode(value, b); err != nil {
+		return digest{}, err
+	}
+
 	return newDigest(h, value)
 }
 
