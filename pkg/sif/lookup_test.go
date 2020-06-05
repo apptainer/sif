@@ -19,7 +19,7 @@ func TestGetHeader(t *testing.T) {
 
 	header := fimg.GetHeader()
 	if header == nil {
-		t.Error("fimg.GetHeader(): returned nil")
+		t.Fatal("fimg.GetHeader(): returned nil")
 	}
 
 	if string(header.Magic[:9]) != "SIF_MAGIC" {
