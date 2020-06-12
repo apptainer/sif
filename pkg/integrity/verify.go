@@ -363,6 +363,15 @@ func OptVerifyLegacy() VerifierOpt {
 	}
 }
 
+// OptVerifyCallback registers cb as the verification callback, which is called after each
+// signature is verified.
+func OptVerifyCallback(cb VerifyCallback) VerifierOpt {
+	return func(v *Verifier) error {
+		v.cb = cb
+		return nil
+	}
+}
+
 // getTasks returns verification tasks corresponding to groupIDs and objectIDs.
 func getTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, objectIDs []uint32) ([]verifyTask, error) {
 	t := make([]verifyTask, 0, len(groupIDs)+len(objectIDs))

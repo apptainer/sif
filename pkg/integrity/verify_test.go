@@ -30,16 +30,24 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 	}
 	defer oneGroupSignedImage.UnloadContainer() // nolint:errcheck
 
-	kr := openpgp.EntityList{getTestEntity(t)}
+	e := getTestEntity(t)
+	kr := openpgp.EntityList{e}
 
 	tests := []struct {
-		name      string
-		f         *sif.FileImage
-		groupID   uint32
-		objectIDs []uint32
-		subsetOK  bool
-		kr        openpgp.KeyRing
-		wantErr   error
+		name            string
+		f               *sif.FileImage
+		testCallback    bool
+		ignoreError     bool
+		groupID         uint32
+		objectIDs       []uint32
+		subsetOK        bool
+		kr              openpgp.KeyRing
+		wantCBSignature uint32
+		wantCBSigned    []uint32
+		wantCBVerified  []uint32
+		wantCBEntity    *openpgp.Entity
+		wantCBErr       error
+		wantErr         error
 	}{
 		{
 			name:      "SignatureNotFound",
@@ -66,11 +74,36 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 			wantErr:   pgperrors.ErrUnknownIssuer,
 		},
 		{
+			name:            "IgnoreError",
+			f:               &oneGroupSignedImage,
+			testCallback:    true,
+			ignoreError:     true,
+			groupID:         1,
+			objectIDs:       []uint32{1, 2},
+			kr:              openpgp.EntityList{},
+			wantCBSignature: 3,
+			wantCBErr:       pgperrors.ErrUnknownIssuer,
+			wantErr:         nil,
+			wantCBSigned:    []uint32{},
+		},
+		{
 			name:      "OneGroupSigned",
 			f:         &oneGroupSignedImage,
 			groupID:   1,
 			objectIDs: []uint32{1, 2},
 			kr:        kr,
+		},
+		{
+			name:            "OneGroupSignedWithCallback",
+			f:               &oneGroupSignedImage,
+			testCallback:    true,
+			groupID:         1,
+			objectIDs:       []uint32{1, 2},
+			kr:              kr,
+			wantCBSignature: 3,
+			wantCBSigned:    []uint32{1, 2},
+			wantCBVerified:  []uint32{1, 2},
+			wantCBEntity:    e,
 		},
 		{
 			name:      "OneGroupSignedSubset",
@@ -79,6 +112,19 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 			objectIDs: []uint32{1},
 			subsetOK:  true,
 			kr:        kr,
+		},
+		{
+			name:            "OneGroupSignedSubsetWithCallback",
+			f:               &oneGroupSignedImage,
+			testCallback:    true,
+			groupID:         1,
+			objectIDs:       []uint32{1},
+			subsetOK:        true,
+			kr:              kr,
+			wantCBSignature: 3,
+			wantCBSigned:    []uint32{1, 2},
+			wantCBVerified:  []uint32{1},
+			wantCBEntity:    e,
 		},
 	}
 
@@ -94,8 +140,37 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 				ods[i] = od
 			}
 
+			// Test callback functionality, if requested.
+			var cb VerifyCallback
+			if tt.testCallback {
+				cb = func(r VerifyResult) bool {
+					if got, want := r.Signature(), tt.wantCBSignature; got != want {
+						t.Errorf("got signature %v, want %v", got, want)
+					}
+
+					if got, want := r.Signed(), tt.wantCBSigned; !reflect.DeepEqual(got, want) {
+						t.Errorf("got signed %v, want %v", got, want)
+					}
+
+					if got, want := r.Verified(), tt.wantCBVerified; !reflect.DeepEqual(got, want) {
+						t.Errorf("got verified %v, want %v", got, want)
+					}
+
+					if got, want := r.Entity(), tt.wantCBEntity; got != want {
+						t.Errorf("got entity %v, want %v", got, want)
+					}
+
+					if got, want := r.Error(), tt.wantCBErr; got != want {
+						t.Errorf("got error %v, want %v", got, want)
+					}
+
+					return tt.ignoreError
+				}
+			}
+
 			v := &groupVerifier{
 				f:        tt.f,
+				cb:       cb,
 				groupID:  tt.groupID,
 				ods:      ods,
 				subsetOK: tt.subsetOK,
@@ -129,16 +204,19 @@ func TestNewVerifier(t *testing.T) {
 
 	kr := openpgp.EntityList{getTestEntity(t)}
 
+	cb := func(r VerifyResult) bool { return false }
+
 	tests := []struct {
-		name        string
-		fi          *sif.FileImage
-		opts        []VerifierOpt
-		wantErr     error
-		wantKeyring openpgp.KeyRing
-		wantGroups  []uint32
-		wantObjects []uint32
-		wantLegacy  bool
-		wantTasks   int
+		name         string
+		fi           *sif.FileImage
+		opts         []VerifierOpt
+		wantErr      error
+		wantKeyring  openpgp.KeyRing
+		wantGroups   []uint32
+		wantObjects  []uint32
+		wantLegacy   bool
+		wantCallback bool
+		wantTasks    int
 	}{
 		{
 			name:    "NilFileImage",
@@ -146,11 +224,10 @@ func TestNewVerifier(t *testing.T) {
 			wantErr: errNilFileImage,
 		},
 		{
-			name:        "NoGroupsFound",
-			fi:          &emptyImage,
-			opts:        []VerifierOpt{},
-			wantKeyring: kr,
-			wantErr:     errNoGroupsFound,
+			name:    "NoGroupsFound",
+			fi:      &emptyImage,
+			opts:    []VerifierOpt{},
+			wantErr: errNoGroupsFound,
 		},
 		{
 			name:    "InvalidGroupID",
@@ -179,13 +256,13 @@ func TestNewVerifier(t *testing.T) {
 		{
 			name:    "ObjectNotFound",
 			fi:      &emptyImage,
-			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyObject(1)},
+			opts:    []VerifierOpt{OptVerifyObject(1)},
 			wantErr: errObjectNotFound,
 		},
 		{
 			name:    "ObjectNotFoundLegacy",
 			fi:      &emptyImage,
-			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyObject(1), OptVerifyLegacy()},
+			opts:    []VerifierOpt{OptVerifyObject(1), OptVerifyLegacy()},
 			wantErr: errObjectNotFound,
 		},
 		{
@@ -297,6 +374,14 @@ func TestNewVerifier(t *testing.T) {
 			wantLegacy:  true,
 			wantTasks:   1,
 		},
+		{
+			name:         "OptVerifyCallback",
+			fi:           &twoGroupImage,
+			opts:         []VerifierOpt{OptVerifyCallback(cb)},
+			wantGroups:   []uint32{1, 2},
+			wantCallback: true,
+			wantTasks:    2,
+		},
 	}
 
 	for _, tt := range tests {
@@ -326,6 +411,10 @@ func TestNewVerifier(t *testing.T) {
 
 				if got, want := v.isLegacy, tt.wantLegacy; got != want {
 					t.Errorf("got legacy %v, want %v", got, want)
+				}
+
+				if got := v.cb; (got != nil) != tt.wantCallback {
+					t.Errorf("got callback %v, want callback %v", got, tt.wantCallback)
 				}
 
 				if got, want := len(v.tasks), tt.wantTasks; got != want {
