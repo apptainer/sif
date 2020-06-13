@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 
 	"github.com/sylabs/sif/pkg/sif"
 	"golang.org/x/crypto/openpgp"
@@ -64,6 +65,16 @@ func newGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32, ods .
 	}
 
 	return &v, nil
+}
+
+// fingerprints returns a sorted list of unique fingerprints of entities that have signed the
+// objects specified by v.
+func (v *groupVerifier) fingerprints() ([][20]byte, error) {
+	sigs, err := getGroupSignatures(v.f, v.groupID, false)
+	if err != nil {
+		return nil, err
+	}
+	return getFingerprints(sigs)
 }
 
 // verifySignature verifies the objects specified by v against signature sig using keyring kr.
@@ -142,6 +153,16 @@ func newLegacyGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32)
 		return nil, err
 	}
 	return &legacyGroupVerifier{f: f, cb: cb, groupID: groupID, ods: ods}, nil
+}
+
+// fingerprints returns a sorted list of unique fingerprints of entities that have signed the
+// objects specified by v.
+func (v *legacyGroupVerifier) fingerprints() ([][20]byte, error) {
+	sigs, err := getGroupSignatures(v.f, v.groupID, true)
+	if err != nil {
+		return nil, err
+	}
+	return getFingerprints(sigs)
 }
 
 // verifySignature verifies the objects specified by v against signature sig using keyring kr.
@@ -233,6 +254,16 @@ func newLegacyObjectVerifier(f *sif.FileImage, cb VerifyCallback, id uint32) (*l
 	return &legacyObjectVerifier{f: f, cb: cb, od: od}, nil
 }
 
+// fingerprints returns a sorted list of unique fingerprints of entities that have signed the
+// objects specified by v.
+func (v *legacyObjectVerifier) fingerprints() ([][20]byte, error) {
+	sigs, err := getObjectSignatures(v.f, v.od.ID)
+	if err != nil {
+		return nil, err
+	}
+	return getFingerprints(sigs)
+}
+
 // verifySignature verifies the objects specified by v against signature sig using keyring kr.
 func (v *legacyObjectVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
 	// Verify signature and decode plaintext.
@@ -303,6 +334,7 @@ func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 }
 
 type verifyTask interface {
+	fingerprints() ([][20]byte, error)
 	verifyWithKeyRing(kr openpgp.KeyRing) error
 }
 
@@ -426,7 +458,9 @@ func getLegacyTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, obje
 // NewVerifier returns a Verifier to examine and/or verify digital signatures(s) in f according to
 // opts.
 //
-// Verify requires key material be provided. OptVerifyWithKeyRing can be used for this purpose.
+// Verify requires key material be provided. OptVerifyWithKeyRing can be used for this purpose. Key
+// material is not required for routines that do not perform cryptographic verification, such as
+// AnySignedBy or AllSignedBy.
 //
 // By default, the returned Verifier will consider non-legacy signatures for all object groups. To
 // override this behavior, consider using OptVerifyGroup, OptVerifyObject, and/or OptVerifyLegacy.
@@ -465,6 +499,68 @@ func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 	v.tasks = t
 
 	return v, nil
+}
+
+// fingerprints returns a sorted list of unique fingerprints of entities participating in the
+// verification tasks in v. If any is true, entities involved in at least one task are included.
+// Otherwise, only entities participatinging in all tasks are included.
+func (v *Verifier) fingerprints(any bool) ([][20]byte, error) {
+	m := make(map[[20]byte]int)
+
+	// Build up a map containing fingerprints, and the number of tasks they are participating in.
+	for _, t := range v.tasks {
+		fps, err := t.fingerprints()
+		if errors.Is(err, errSignatureNotFound) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		for _, fp := range fps {
+			m[fp]++
+		}
+	}
+
+	// Build up list of fingerprints.
+	var fps [][20]byte
+	for fp, n := range m {
+		if any || len(v.tasks) == n {
+			fps = append(fps, fp)
+		}
+	}
+
+	sort.Slice(fps, func(i, j int) bool {
+		return bytes.Compare(fps[i][:], fps[j][:]) < 0
+	})
+
+	return fps, nil
+}
+
+// AnySignedBy returns fingerprints for entities that have signed any of the objects specified by
+// verification tasks in v.
+//
+// Note that this routine does not perform cryptograhic validation. To ensure the image contains
+// cryptographically valid signatures, use Verify.
+func (v *Verifier) AnySignedBy() ([][20]byte, error) {
+	fps, err := v.fingerprints(true)
+	if err != nil {
+		return nil, fmt.Errorf("integrity: %w", err)
+	}
+	return fps, nil
+}
+
+// AllSignedBy returns fingerprints for entities that have signed all of the objects specified by
+// verification tasks in v.
+//
+// Note that this routine does not perform cryptograhic validation. To ensure the image contains
+// cryptographically valid signatures, use Verify.
+func (v *Verifier) AllSignedBy() ([][20]byte, error) {
+	fps, err := v.fingerprints(false)
+	if err != nil {
+		return nil, fmt.Errorf("integrity: %w", err)
+	}
+	return fps, nil
 }
 
 // Verify performs all cryptographic verification tasks specified by v.

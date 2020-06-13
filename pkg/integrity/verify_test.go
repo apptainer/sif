@@ -426,11 +426,194 @@ func TestNewVerifier(t *testing.T) {
 }
 
 type mockVerifier struct {
+	fps [][20]byte
 	err error
 }
 
+func (v mockVerifier) fingerprints() ([][20]byte, error) {
+	return v.fps, v.err
+}
 func (v mockVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 	return v.err
+}
+
+func TestVerifier_AnySignedBy(t *testing.T) {
+	fp1 := [20]byte{
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+		0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
+	}
+
+	fp2 := [20]byte{
+		0x13, 0x12, 0x11, 0x10, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a,
+		0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00,
+	}
+
+	tests := []struct {
+		name             string
+		tasks            []verifyTask
+		wantErr          error
+		wantFingerprints [][20]byte
+	}{
+		{
+			name: "EOF",
+			tasks: []verifyTask{
+				mockVerifier{err: io.EOF},
+			},
+			wantErr: io.EOF,
+		},
+		{
+			name: "OneTaskNoFP",
+			tasks: []verifyTask{
+				mockVerifier{fps: [][20]byte{}},
+			},
+		},
+		{
+			name: "OneTaskOneFP",
+			tasks: []verifyTask{
+				mockVerifier{fps: [][20]byte{fp1}},
+			},
+			wantFingerprints: [][20]byte{fp1},
+		},
+		{
+			name: "TwoTasksSignatureNotFound",
+			tasks: []verifyTask{
+				mockVerifier{err: errSignatureNotFound},
+				mockVerifier{fps: [][20]byte{fp1}},
+			},
+			wantFingerprints: [][20]byte{fp1},
+		},
+		{
+			name: "TwoTasksSameFP",
+			tasks: []verifyTask{
+				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{fps: [][20]byte{fp1}},
+			},
+			wantFingerprints: [][20]byte{fp1},
+		},
+		{
+			name: "TwoTasksTwoFP",
+			tasks: []verifyTask{
+				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{fps: [][20]byte{fp2}},
+			},
+			wantFingerprints: [][20]byte{fp1, fp2},
+		},
+		{
+			name: "KitchenSink",
+			tasks: []verifyTask{
+				mockVerifier{fps: [][20]byte{}},
+				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{fps: [][20]byte{fp2}},
+				mockVerifier{fps: [][20]byte{fp1, fp2}},
+			},
+			wantFingerprints: [][20]byte{fp1, fp2},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			v := Verifier{tasks: tt.tasks}
+
+			fp, err := v.AnySignedBy()
+
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+
+			if got, want := fp, tt.wantFingerprints; !reflect.DeepEqual(got, want) {
+				t.Fatalf("got fingerprints %v, want %v", got, want)
+			}
+		})
+	}
+}
+
+func TestVerifier_AllSignedBy(t *testing.T) {
+	fp1 := [20]byte{
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+		0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
+	}
+
+	fp2 := [20]byte{
+		0x13, 0x12, 0x11, 0x10, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a,
+		0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00,
+	}
+
+	tests := []struct {
+		name             string
+		tasks            []verifyTask
+		wantErr          error
+		wantFingerprints [][20]byte
+	}{
+		{
+			name: "EOF",
+			tasks: []verifyTask{
+				mockVerifier{err: io.EOF},
+			},
+			wantErr: io.EOF,
+		},
+		{
+			name: "OneTaskNoFP",
+			tasks: []verifyTask{
+				mockVerifier{fps: [][20]byte{}},
+			},
+		},
+		{
+			name: "OneTaskOneFP",
+			tasks: []verifyTask{
+				mockVerifier{fps: [][20]byte{fp1}},
+			},
+			wantFingerprints: [][20]byte{fp1},
+		},
+		{
+			name: "TwoTasksSignatureNotFound",
+			tasks: []verifyTask{
+				mockVerifier{err: errSignatureNotFound},
+				mockVerifier{fps: [][20]byte{fp1}},
+			},
+		},
+		{
+			name: "TwoTasksSameFP",
+			tasks: []verifyTask{
+				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{fps: [][20]byte{fp1}},
+			},
+			wantFingerprints: [][20]byte{fp1},
+		},
+		{
+			name: "TwoTasksTwoFP",
+			tasks: []verifyTask{
+				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{fps: [][20]byte{fp2}},
+			},
+		},
+		{
+			name: "KitchenSink",
+			tasks: []verifyTask{
+				mockVerifier{fps: [][20]byte{}},
+				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{fps: [][20]byte{fp2}},
+				mockVerifier{fps: [][20]byte{fp1, fp2}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			v := Verifier{tasks: tt.tasks}
+
+			fp, err := v.AllSignedBy()
+
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+
+			if got, want := fp, tt.wantFingerprints; !reflect.DeepEqual(got, want) {
+				t.Fatalf("got fingerprints %v, want %v", got, want)
+			}
+		})
+	}
 }
 
 func TestVerifier_Verify(t *testing.T) {

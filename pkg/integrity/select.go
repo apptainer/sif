@@ -6,6 +6,7 @@
 package integrity
 
 import (
+	"bytes"
 	"errors"
 	"sort"
 
@@ -138,4 +139,35 @@ func getGroupIDs(f *sif.FileImage) (groupIDs []uint32, err error) {
 	}
 
 	return groupIDs, err
+}
+
+// getFingerprints returns a sorted list of unique fingerprints contained in sigs.
+func getFingerprints(sigs []*sif.Descriptor) ([][20]byte, error) {
+	fps := make([][20]byte, 0, len(sigs))
+
+	for _, sig := range sigs {
+		e, err := sig.GetEntity()
+		if err != nil {
+			return nil, err
+		}
+
+		// Extract fingerprint from entity.
+		var fp [20]byte
+		copy(fp[:], e)
+
+		// Check if fingerprint is already in list.
+		i := sort.Search(len(fps), func(i int) bool {
+			return bytes.Compare(fps[i][:], fp[:]) < 0
+		})
+		if i < len(fps) && fps[i] == fp {
+			continue
+		}
+
+		// Insert into (sorted) list.
+		fps = append(fps, [20]byte{})
+		copy(fps[i+1:], fps[i:])
+		fps[i] = fp
+	}
+
+	return fps, nil
 }
