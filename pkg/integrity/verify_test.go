@@ -207,16 +207,17 @@ func TestNewVerifier(t *testing.T) {
 	cb := func(r VerifyResult) bool { return false }
 
 	tests := []struct {
-		name         string
-		fi           *sif.FileImage
-		opts         []VerifierOpt
-		wantErr      error
-		wantKeyring  openpgp.KeyRing
-		wantGroups   []uint32
-		wantObjects  []uint32
-		wantLegacy   bool
-		wantCallback bool
-		wantTasks    int
+		name          string
+		fi            *sif.FileImage
+		opts          []VerifierOpt
+		wantErr       error
+		wantKeyring   openpgp.KeyRing
+		wantGroups    []uint32
+		wantObjects   []uint32
+		wantLegacy    bool
+		wantLegacyAll bool
+		wantCallback  bool
+		wantTasks     int
 	}{
 		{
 			name:    "NilFileImage",
@@ -375,6 +376,15 @@ func TestNewVerifier(t *testing.T) {
 			wantTasks:   1,
 		},
 		{
+			name:          "OptVerifyLegacyAll",
+			fi:            &twoGroupImage,
+			opts:          []VerifierOpt{OptVerifyLegacyAll()},
+			wantObjects:   []uint32{1, 2, 3},
+			wantLegacy:    true,
+			wantLegacyAll: true,
+			wantTasks:     3,
+		},
+		{
 			name:         "OptVerifyCallback",
 			fi:           &twoGroupImage,
 			opts:         []VerifierOpt{OptVerifyCallback(cb)},
@@ -411,6 +421,10 @@ func TestNewVerifier(t *testing.T) {
 
 				if got, want := v.isLegacy, tt.wantLegacy; got != want {
 					t.Errorf("got legacy %v, want %v", got, want)
+				}
+
+				if got, want := v.isLegacyAll, tt.wantLegacyAll; got != want {
+					t.Errorf("got legacy all %v, want %v", got, want)
 				}
 
 				if got := v.cb; (got != nil) != tt.wantCallback {

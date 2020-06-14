@@ -342,11 +342,12 @@ type verifyTask interface {
 type Verifier struct {
 	f *sif.FileImage // SIF image to verify.
 
-	keyRing  openpgp.KeyRing // Keyring to use for verification.
-	groups   []uint32        // Data object group(s) selected for verification.
-	objects  []uint32        // Individual data object(s) selected for verification.
-	isLegacy bool            // Enable verification of legacy signature(s).
-	cb       VerifyCallback  // Verification callback.
+	keyRing     openpgp.KeyRing // Keyring to use for verification.
+	groups      []uint32        // Data object group(s) selected for verification.
+	objects     []uint32        // Individual data object(s) selected for verification.
+	isLegacy    bool            // Enable verification of legacy signature(s).
+	isLegacyAll bool            // Verify legacy sigs of all of non-signature objects in a group.
+	cb          VerifyCallback  // Verification callback.
 
 	tasks []verifyTask // Slice of verification tasks.
 }
@@ -391,6 +392,17 @@ func OptVerifyObject(id uint32) VerifierOpt {
 func OptVerifyLegacy() VerifierOpt {
 	return func(v *Verifier) error {
 		v.isLegacy = true
+		return nil
+	}
+}
+
+// OptVerifyLegacyAll enables verification of legacy signatures, and adds verification tasks for
+// all non-signature objects that are part of a group. Non-legacy signatures will not be
+// considered.
+func OptVerifyLegacyAll() VerifierOpt {
+	return func(v *Verifier) error {
+		v.isLegacy = true
+		v.isLegacyAll = true
 		return nil
 	}
 }
@@ -463,7 +475,8 @@ func getLegacyTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, obje
 // AnySignedBy or AllSignedBy.
 //
 // By default, the returned Verifier will consider non-legacy signatures for all object groups. To
-// override this behavior, consider using OptVerifyGroup, OptVerifyObject, and/or OptVerifyLegacy.
+// override this behavior, consider using OptVerifyGroup, OptVerifyObject, OptVerifyLegacy, and/or
+// OptVerifyLegacyAll.
 func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 	if f == nil {
 		return nil, fmt.Errorf("integrity: %w", errNilFileImage)
@@ -475,6 +488,22 @@ func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 	for _, o := range opts {
 		if err := o(v); err != nil {
 			return nil, fmt.Errorf("integrity: %w", err)
+		}
+	}
+
+	// If "legacy all" mode selected, add all non-signature objects that are in a group.
+	if v.isLegacyAll {
+		for _, od := range f.DescrArr {
+			if !od.Used {
+				continue
+			}
+			if od.Datatype == sif.DataSignature {
+				continue
+			}
+			if od.Groupid == sif.DescrUnusedGroup {
+				continue
+			}
+			v.objects = insertSorted(v.objects, od.ID)
 		}
 	}
 
