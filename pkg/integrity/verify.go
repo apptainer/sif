@@ -389,6 +389,10 @@ func OptVerifyObject(id uint32) VerifierOpt {
 
 // OptVerifyLegacy enables verification of legacy signatures. Non-legacy signatures will not be
 // considered.
+//
+// Note that legacy signatures do not provide integrity protection of metadata contained in the
+// global header or object descriptors. For the best security, use of non-legacy signatures is
+// required.
 func OptVerifyLegacy() VerifierOpt {
 	return func(v *Verifier) error {
 		v.isLegacy = true
@@ -399,6 +403,10 @@ func OptVerifyLegacy() VerifierOpt {
 // OptVerifyLegacyAll enables verification of legacy signatures, and adds verification tasks for
 // all non-signature objects that are part of a group. Non-legacy signatures will not be
 // considered.
+//
+// Note that legacy signatures do not provide integrity protection of metadata contained in the
+// global header or object descriptors. For the best security, use of non-legacy signatures is
+// required.
 func OptVerifyLegacyAll() VerifierOpt {
 	return func(v *Verifier) error {
 		v.isLegacy = true
