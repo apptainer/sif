@@ -157,7 +157,7 @@ func getFingerprints(sigs []*sif.Descriptor) ([][20]byte, error) {
 
 		// Check if fingerprint is already in list.
 		i := sort.Search(len(fps), func(i int) bool {
-			return bytes.Compare(fps[i][:], fp[:]) < 0
+			return bytes.Compare(fps[i][:], fp[:]) >= 0
 		})
 		if i < len(fps) && fps[i] == fp {
 			continue
