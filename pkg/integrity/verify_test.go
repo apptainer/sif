@@ -73,6 +73,7 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 		})
 	}
 }
+
 func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
 	if err != nil {
@@ -234,6 +235,124 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 
 			if got, want := v.verifyWithKeyRing(tt.kr), tt.wantErr; !errors.Is(got, want) {
 				t.Errorf("got error %v, want %v", got, want)
+			}
+		})
+	}
+}
+
+func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
+	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer oneGroupImage.UnloadContainer() // nolint:errcheck
+
+	oneGroupImageSigned, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed-legacy-group.sif"), true) // nolint:lll
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer oneGroupImageSigned.UnloadContainer() // nolint:errcheck
+
+	e := getTestEntity(t)
+
+	tests := []struct {
+		name    string
+		f       *sif.FileImage
+		id      uint32
+		wantFPs [][20]byte
+		wantErr error
+	}{
+		{
+			name:    "SignatureNotFound",
+			f:       &oneGroupImage,
+			id:      1,
+			wantErr: errSignatureNotFound,
+		},
+		{
+			name:    "OK",
+			f:       &oneGroupImageSigned,
+			id:      1,
+			wantFPs: [][20]byte{e.PrimaryKey.Fingerprint},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			v := &legacyGroupVerifier{
+				f:       tt.f,
+				groupID: 1,
+			}
+
+			got, err := v.fingerprints()
+
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("got error %v, want %v", err, tt.wantErr)
+			}
+
+			if !reflect.DeepEqual(got, tt.wantFPs) {
+				t.Errorf("got fingerprints %v, want %v", got, tt.wantFPs)
+			}
+		})
+	}
+}
+func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
+	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer oneGroupImage.UnloadContainer() // nolint:errcheck
+
+	oneGroupImageSigned, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed-legacy-all.sif"), true) // nolint:lll
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer oneGroupImageSigned.UnloadContainer() // nolint:errcheck
+
+	e := getTestEntity(t)
+
+	tests := []struct {
+		name    string
+		f       *sif.FileImage
+		id      uint32
+		wantFPs [][20]byte
+		wantErr error
+	}{
+		{
+			name:    "SignatureNotFound",
+			f:       &oneGroupImage,
+			id:      1,
+			wantErr: errSignatureNotFound,
+		},
+		{
+			name:    "OK",
+			f:       &oneGroupImageSigned,
+			id:      1,
+			wantFPs: [][20]byte{e.PrimaryKey.Fingerprint},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			od, err := getObject(tt.f, tt.id)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			v := &legacyObjectVerifier{
+				f:  tt.f,
+				od: od,
+			}
+
+			got, err := v.fingerprints()
+
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("got error %v, want %v", err, tt.wantErr)
+			}
+
+			if !reflect.DeepEqual(got, tt.wantFPs) {
+				t.Errorf("got fingerprints %v, want %v", got, tt.wantFPs)
 			}
 		})
 	}
