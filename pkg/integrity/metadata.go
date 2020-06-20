@@ -147,9 +147,7 @@ func (om objectMetadata) matches(f *sif.FileImage, od *sif.Descriptor) error {
 		return fmt.Errorf("object %d: %w", od.ID, errObjectIntegrity)
 	}
 
-	// TODO: use something more efficient than GetData.
-	r := bytes.NewReader(od.GetData(f))
-	if ok, err := om.ObjectDigest.matches(r); err != nil {
+	if ok, err := om.ObjectDigest.matches(od.GetReadSeeker(f)); err != nil {
 		return err
 	} else if !ok {
 		return fmt.Errorf("object %d: %w", od.ID, errObjectIntegrity)
@@ -183,10 +181,7 @@ func getImageMetadata(f *sif.FileImage, ods []*sif.Descriptor, h crypto.Hash) (i
 
 	// Add object descriptor/data metadata.
 	for _, od := range ods {
-		// TODO: use something more efficient than GetData.
-		r := bytes.NewReader(od.GetData(f))
-
-		om, err := getObjectMetadata(*od, r, h)
+		om, err := getObjectMetadata(*od, od.GetReadSeeker(f), h)
 		if err != nil {
 			return imageMetadata{}, err
 		}

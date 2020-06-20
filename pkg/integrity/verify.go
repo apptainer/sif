@@ -204,8 +204,7 @@ func (v *legacyGroupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.Ke
 	// Get reader covering all non-signature objects.
 	rs := make([]io.Reader, 0, len(v.ods))
 	for _, od := range v.ods {
-		// TODO: use something more efficient than GetData.
-		rs = append(rs, bytes.NewReader(od.GetData(v.f)))
+		rs = append(rs, od.GetReadSeeker(v.f))
 	}
 	r := io.MultiReader(rs...)
 
@@ -305,11 +304,8 @@ func (v *legacyObjectVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.K
 		return e, err
 	}
 
-	// TODO: use something more efficient than GetData.
-	r := bytes.NewReader(v.od.GetData(v.f))
-
 	// Verify header and object integrity.
-	if ok, err := d.matches(r); err != nil {
+	if ok, err := d.matches(v.od.GetReadSeeker(v.f)); err != nil {
 		return e, err
 	} else if !ok {
 		return e, fmt.Errorf("object %d: %w", v.od.ID, errObjectIntegrity)
