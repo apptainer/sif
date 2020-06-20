@@ -71,7 +71,9 @@ func newGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32, ods .
 // objects specified by v.
 func (v *groupVerifier) fingerprints() ([][20]byte, error) {
 	sigs, err := getGroupSignatures(v.f, v.groupID, false)
-	if err != nil {
+	if errors.Is(err, &SignatureNotFoundError{}) {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 	return getFingerprints(sigs)
@@ -113,6 +115,9 @@ func (v *groupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing)
 }
 
 // verifyWithKeyRing performs validation of the objects specified by v using keyring kr.
+//
+// If no signatures are found for the object group specified by v, a SignatureNotFoundError is
+// returned.
 func (v *groupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 	// Obtain all signatures related to group.
 	sigs, err := getGroupSignatures(v.f, v.groupID, false)
@@ -159,7 +164,9 @@ func newLegacyGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32)
 // objects specified by v.
 func (v *legacyGroupVerifier) fingerprints() ([][20]byte, error) {
 	sigs, err := getGroupSignatures(v.f, v.groupID, true)
-	if err != nil {
+	if errors.Is(err, &SignatureNotFoundError{}) {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 	return getFingerprints(sigs)
@@ -213,6 +220,9 @@ func (v *legacyGroupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.Ke
 }
 
 // verifyWithKeyRing performs validation of the objects specified by v using keyring kr.
+//
+// If no signatures are found for the object group specified by v, a SignatureNotFoundError is
+// returned.
 func (v *legacyGroupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 	// Obtain all signatures related to object.
 	sigs, err := getGroupSignatures(v.f, v.groupID, true)
@@ -258,7 +268,9 @@ func newLegacyObjectVerifier(f *sif.FileImage, cb VerifyCallback, id uint32) (*l
 // objects specified by v.
 func (v *legacyObjectVerifier) fingerprints() ([][20]byte, error) {
 	sigs, err := getObjectSignatures(v.f, v.od.ID)
-	if err != nil {
+	if errors.Is(err, &SignatureNotFoundError{}) {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 	return getFingerprints(sigs)
@@ -307,6 +319,8 @@ func (v *legacyObjectVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.K
 }
 
 // verifyWithKeyRing performs validation of the objects specified by v using keyring kr.
+//
+// If no signatures are found for the object specified by v, a SignatureNotFoundError is returned.
 func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 	// Obtain all signatures related to object.
 	sigs, err := getObjectSignatures(v.f, v.od.ID)
@@ -547,9 +561,6 @@ func (v *Verifier) fingerprints(any bool) ([][20]byte, error) {
 	// Build up a map containing fingerprints, and the number of tasks they are participating in.
 	for _, t := range v.tasks {
 		fps, err := t.fingerprints()
-		if errors.Is(err, errSignatureNotFound) {
-			continue
-		}
 		if err != nil {
 			return nil, err
 		}
@@ -604,6 +615,9 @@ func (v *Verifier) AllSignedBy() ([][20]byte, error) {
 //
 // If key material was not provided when v was created, Verify returns an error wrapping
 // ErrNoKeyMaterial.
+//
+// If no signatures are found for a task specified by v, an error wrapping a SignatureNotFoundError
+// is returned.
 func (v *Verifier) Verify() error {
 	if v.keyRing == nil {
 		return fmt.Errorf("integrity: %w", ErrNoKeyMaterial)

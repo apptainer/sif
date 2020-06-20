@@ -40,13 +40,12 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:    "SignatureNotFound",
+			name:    "Unsigned",
 			f:       &oneGroupImage,
 			groupID: 1,
-			wantErr: errSignatureNotFound,
 		},
 		{
-			name:    "OK",
+			name:    "Signed",
 			f:       &oneGroupSignedImage,
 			groupID: 1,
 			wantFPs: [][20]byte{e.PrimaryKey.Fingerprint},
@@ -112,7 +111,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 			groupID:   1,
 			objectIDs: []uint32{1, 2},
 			kr:        kr,
-			wantErr:   errSignatureNotFound,
+			wantErr:   &SignatureNotFoundError{},
 		},
 		{
 			name:      "SignedObjectNotFound",
@@ -263,13 +262,12 @@ func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:    "SignatureNotFound",
-			f:       &oneGroupImage,
-			id:      1,
-			wantErr: errSignatureNotFound,
+			name: "Unsigned",
+			f:    &oneGroupImage,
+			id:   1,
 		},
 		{
-			name:    "OK",
+			name:    "Signed",
 			f:       &oneGroupImageSigned,
 			id:      1,
 			wantFPs: [][20]byte{e.PrimaryKey.Fingerprint},
@@ -296,6 +294,7 @@ func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
 		})
 	}
 }
+
 func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
 	if err != nil {
@@ -319,13 +318,12 @@ func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:    "SignatureNotFound",
-			f:       &oneGroupImage,
-			id:      1,
-			wantErr: errSignatureNotFound,
+			name: "Unsigned",
+			f:    &oneGroupImage,
+			id:   1,
 		},
 		{
-			name:    "OK",
+			name:    "Signed",
 			f:       &oneGroupImageSigned,
 			id:      1,
 			wantFPs: [][20]byte{e.PrimaryKey.Fingerprint},
@@ -644,29 +642,23 @@ func TestVerifier_AnySignedBy(t *testing.T) {
 		wantFingerprints [][20]byte
 	}{
 		{
-			name: "EOF",
+			name: "OneTaskEOF",
 			tasks: []verifyTask{
 				mockVerifier{err: io.EOF},
 			},
 			wantErr: io.EOF,
 		},
 		{
-			name: "OneTaskNoFP",
+			name: "TwoTasksEOF",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{}},
+				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{err: io.EOF},
 			},
+			wantErr: io.EOF,
 		},
 		{
 			name: "OneTaskOneFP",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{fp1}},
-			},
-			wantFingerprints: [][20]byte{fp1},
-		},
-		{
-			name: "TwoTasksSignatureNotFound",
-			tasks: []verifyTask{
-				mockVerifier{err: errSignatureNotFound},
 				mockVerifier{fps: [][20]byte{fp1}},
 			},
 			wantFingerprints: [][20]byte{fp1},
@@ -735,8 +727,16 @@ func TestVerifier_AllSignedBy(t *testing.T) {
 		wantFingerprints [][20]byte
 	}{
 		{
-			name: "EOF",
+			name: "OneTaskEOF",
 			tasks: []verifyTask{
+				mockVerifier{err: io.EOF},
+			},
+			wantErr: io.EOF,
+		},
+		{
+			name: "TwoTasksEOF",
+			tasks: []verifyTask{
+				mockVerifier{fps: [][20]byte{fp1}},
 				mockVerifier{err: io.EOF},
 			},
 			wantErr: io.EOF,
@@ -753,13 +753,6 @@ func TestVerifier_AllSignedBy(t *testing.T) {
 				mockVerifier{fps: [][20]byte{fp1}},
 			},
 			wantFingerprints: [][20]byte{fp1},
-		},
-		{
-			name: "TwoTasksSignatureNotFound",
-			tasks: []verifyTask{
-				mockVerifier{err: errSignatureNotFound},
-				mockVerifier{fps: [][20]byte{fp1}},
-			},
 		},
 		{
 			name: "TwoTasksSameFP",
