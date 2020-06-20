@@ -295,6 +295,148 @@ func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
 	}
 }
 
+func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
+	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer oneGroupImage.UnloadContainer() // nolint:errcheck
+
+	oneGroupSignedImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed-legacy-group.sif"), true) // nolint:lll
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer oneGroupSignedImage.UnloadContainer() // nolint:errcheck
+
+	e := getTestEntity(t)
+	kr := openpgp.EntityList{e}
+
+	tests := []struct {
+		name            string
+		f               *sif.FileImage
+		testCallback    bool
+		ignoreError     bool
+		groupID         uint32
+		kr              openpgp.KeyRing
+		wantCBSignature uint32
+		wantCBSigned    []uint32
+		wantCBVerified  []uint32
+		wantCBEntity    *openpgp.Entity
+		wantCBErr       error
+		wantErr         error
+	}{
+		{
+			name:    "SignatureNotFound",
+			f:       &oneGroupImage,
+			groupID: 1,
+			kr:      kr,
+			wantErr: &SignatureNotFoundError{},
+		},
+		{
+			name:    "UnknownIssuer",
+			f:       &oneGroupSignedImage,
+			groupID: 1,
+			kr:      openpgp.EntityList{},
+			wantErr: pgperrors.ErrUnknownIssuer,
+		},
+		{
+			name:            "IgnoreError",
+			f:               &oneGroupSignedImage,
+			testCallback:    true,
+			ignoreError:     true,
+			groupID:         1,
+			kr:              openpgp.EntityList{},
+			wantCBSignature: 3,
+			wantCBSigned:    []uint32{1, 2},
+			wantCBErr:       pgperrors.ErrUnknownIssuer,
+			wantErr:         nil,
+		},
+		{
+			name:    "OneGroupSigned",
+			f:       &oneGroupSignedImage,
+			groupID: 1,
+			kr:      kr,
+		},
+		{
+			name:            "OneGroupSignedWithCallback",
+			f:               &oneGroupSignedImage,
+			testCallback:    true,
+			groupID:         1,
+			kr:              kr,
+			wantCBSignature: 3,
+			wantCBSigned:    []uint32{1, 2},
+			wantCBVerified:  []uint32{1, 2},
+			wantCBEntity:    e,
+		},
+		{
+			name:    "OneGroupSignedSubset",
+			f:       &oneGroupSignedImage,
+			groupID: 1,
+			kr:      kr,
+		},
+		{
+			name:            "OneGroupSignedSubsetWithCallback",
+			f:               &oneGroupSignedImage,
+			testCallback:    true,
+			groupID:         1,
+			kr:              kr,
+			wantCBSignature: 3,
+			wantCBSigned:    []uint32{1, 2},
+			wantCBVerified:  []uint32{1, 2},
+			wantCBEntity:    e,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			// Test callback functionality, if requested.
+			var cb VerifyCallback
+			if tt.testCallback {
+				cb = func(r VerifyResult) bool {
+					if got, want := r.Signature(), tt.wantCBSignature; got != want {
+						t.Errorf("got signature %v, want %v", got, want)
+					}
+
+					if got, want := r.Signed(), tt.wantCBSigned; !reflect.DeepEqual(got, want) {
+						t.Errorf("got signed %v, want %v", got, want)
+					}
+
+					if got, want := r.Verified(), tt.wantCBVerified; !reflect.DeepEqual(got, want) {
+						t.Errorf("got verified %v, want %v", got, want)
+					}
+
+					if got, want := r.Entity(), tt.wantCBEntity; got != want {
+						t.Errorf("got entity %v, want %v", got, want)
+					}
+
+					if got, want := r.Error(), tt.wantCBErr; got != want {
+						t.Errorf("got error %v, want %v", got, want)
+					}
+
+					return tt.ignoreError
+				}
+			}
+
+			ods, err := getGroupObjects(tt.f, tt.groupID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			v := &legacyGroupVerifier{
+				f:       tt.f,
+				cb:      cb,
+				groupID: tt.groupID,
+				ods:     ods,
+			}
+
+			if got, want := v.verifyWithKeyRing(tt.kr), tt.wantErr; !errors.Is(got, want) {
+				t.Errorf("got error %v, want %v", got, want)
+			}
+		})
+	}
+}
+
 func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
 	if err != nil {
@@ -351,6 +493,147 @@ func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 
 			if !reflect.DeepEqual(got, tt.wantFPs) {
 				t.Errorf("got fingerprints %v, want %v", got, tt.wantFPs)
+			}
+		})
+	}
+}
+
+func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
+	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer oneGroupImage.UnloadContainer() // nolint:errcheck
+
+	oneGroupSignedImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed-legacy-all.sif"), true) // nolint:lll
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer oneGroupSignedImage.UnloadContainer() // nolint:errcheck
+
+	e := getTestEntity(t)
+	kr := openpgp.EntityList{e}
+
+	tests := []struct {
+		name            string
+		f               *sif.FileImage
+		testCallback    bool
+		ignoreError     bool
+		id              uint32
+		kr              openpgp.KeyRing
+		wantCBSignature uint32
+		wantCBSigned    []uint32
+		wantCBVerified  []uint32
+		wantCBEntity    *openpgp.Entity
+		wantCBErr       error
+		wantErr         error
+	}{
+		{
+			name:    "SignatureNotFound",
+			f:       &oneGroupImage,
+			id:      1,
+			kr:      kr,
+			wantErr: &SignatureNotFoundError{},
+		},
+		{
+			name:    "UnknownIssuer",
+			f:       &oneGroupSignedImage,
+			id:      1,
+			kr:      openpgp.EntityList{},
+			wantErr: pgperrors.ErrUnknownIssuer,
+		},
+		{
+			name:            "IgnoreError",
+			f:               &oneGroupSignedImage,
+			testCallback:    true,
+			ignoreError:     true,
+			id:              1,
+			kr:              openpgp.EntityList{},
+			wantCBSignature: 3,
+			wantCBSigned:    []uint32{1},
+			wantCBErr:       pgperrors.ErrUnknownIssuer,
+			wantErr:         nil,
+		},
+		{
+			name: "OneGroupSigned",
+			f:    &oneGroupSignedImage,
+			id:   1,
+			kr:   kr,
+		},
+		{
+			name:            "OneGroupSignedWithCallback",
+			f:               &oneGroupSignedImage,
+			testCallback:    true,
+			id:              1,
+			kr:              kr,
+			wantCBSignature: 3,
+			wantCBSigned:    []uint32{1},
+			wantCBVerified:  []uint32{1},
+			wantCBEntity:    e,
+		},
+		{
+			name: "OneGroupSignedSubset",
+			f:    &oneGroupSignedImage,
+			id:   1,
+			kr:   kr,
+		},
+		{
+			name:            "OneGroupSignedSubsetWithCallback",
+			f:               &oneGroupSignedImage,
+			testCallback:    true,
+			id:              1,
+			kr:              kr,
+			wantCBSignature: 3,
+			wantCBSigned:    []uint32{1},
+			wantCBVerified:  []uint32{1},
+			wantCBEntity:    e,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			// Test callback functionality, if requested.
+			var cb VerifyCallback
+			if tt.testCallback {
+				cb = func(r VerifyResult) bool {
+					if got, want := r.Signature(), tt.wantCBSignature; got != want {
+						t.Errorf("got signature %v, want %v", got, want)
+					}
+
+					if got, want := r.Signed(), tt.wantCBSigned; !reflect.DeepEqual(got, want) {
+						t.Errorf("got signed %v, want %v", got, want)
+					}
+
+					if got, want := r.Verified(), tt.wantCBVerified; !reflect.DeepEqual(got, want) {
+						t.Errorf("got verified %v, want %v", got, want)
+					}
+
+					if got, want := r.Entity(), tt.wantCBEntity; got != want {
+						t.Errorf("got entity %v, want %v", got, want)
+					}
+
+					if got, want := r.Error(), tt.wantCBErr; got != want {
+						t.Errorf("got error %v, want %v", got, want)
+					}
+
+					return tt.ignoreError
+				}
+			}
+
+			od, err := getObject(tt.f, tt.id)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			v := &legacyObjectVerifier{
+				f:  tt.f,
+				cb: cb,
+				od: od,
+			}
+
+			if got, want := v.verifyWithKeyRing(tt.kr), tt.wantErr; !errors.Is(got, want) {
+				t.Errorf("got error %v, want %v", got, want)
 			}
 		})
 	}
