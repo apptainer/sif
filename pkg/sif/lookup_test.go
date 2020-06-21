@@ -262,27 +262,53 @@ func TestFromDescr(t *testing.T) {
 }
 
 func TestGetData(t *testing.T) {
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
+	mmapImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
 	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
+		t.Fatalf("failed to load container: %v", err)
 	}
 	defer func() {
-		if err := fimg.UnloadContainer(); err != nil {
-			t.Errorf("Error unloading container: %v", err)
+		if err := mmapImage.UnloadContainer(); err != nil {
+			t.Error(err)
 		}
 	}()
 
-	// Get the signature block
-	descr, _, err := fimg.GetFromDescrID(3)
+	// It's a little tough to test the code path for buffered I/O. Cheat a little by forcing
+	// Amodebuf to true, which simulates that.
+	bufferedImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
 	if err != nil {
-		t.Error("fimg.GetFromDescrID(): should have found descriptor")
+		t.Fatalf("failed to load container: %v", err)
+	}
+	bufferedImage.Amodebuf = true // apply hack to fake buffered I/O
+	defer func() {
+		bufferedImage.Amodebuf = false // undo hack to fake buffered I/O (ensures munmap called)
+		if err := bufferedImage.UnloadContainer(); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	tests := []struct {
+		name string
+		fimg *FileImage
+	}{
+		{"Mmap", &mmapImage},
+		{"Buffered", &bufferedImage},
 	}
 
-	data := descr.GetData(&fimg)
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			// Get the signature block
+			descr, _, err := tt.fimg.GetFromDescrID(3)
+			if err != nil {
+				t.Fatalf("failed to get descriptor: %v", err)
+			}
 
-	if string(data[5:10]) != "BEGIN" {
-		t.Errorf("expected `BEGIN' at data[5:9], got `%s'", data[5:10])
+			// Read data via ReadSeeker and validate data.
+			b := descr.GetData(tt.fimg)
+			if got, want := string(b[5:10]), "BEGIN"; got != want {
+				t.Errorf("got data %#v, want %#v", got, want)
+			}
+		})
 	}
 }
 
