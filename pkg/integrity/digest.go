@@ -87,8 +87,14 @@ func hashType(ht sif.Hashtype) (crypto.Hash, error) {
 	return 0, errHashUnsupported
 }
 
-// newLegacyDigest parses the plaintext contained in legacy signatures, returning a digest
-// representing the contents.
+// newLegacyDigest parses legacy signature plaintext b, and returns a digest based on the hash type
+// ht and the digest value read from the plaintext.
+//
+// For reference, the plaintext of legacy signatures is comprised of the string "SIFHASH:\n",
+// followed by a digest value. For example:
+//
+// 	SIFHASH:
+//  2f0b3dca0ec42683d306338f68689aba29cdb83625b8cc0b8a789f8de92342495a6264b0c134e706630636bf90c6f331
 func newLegacyDigest(ht sif.Hashtype, b []byte) (digest, error) {
 	b = bytes.TrimPrefix(b, []byte("SIFHASH:\n"))
 	b = bytes.TrimSuffix(b, []byte("\n"))
