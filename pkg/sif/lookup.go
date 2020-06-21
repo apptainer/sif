@@ -273,6 +273,15 @@ func (d *Descriptor) GetData(fimg *FileImage) []byte {
 	return fimg.Filedata[d.Fileoff : d.Fileoff+d.Filelen]
 }
 
+// GetReadSeeker returns a io.ReadSeeker that reads the data object associated with descriptor d
+// from image fimg.
+func (d *Descriptor) GetReadSeeker(fimg *FileImage) io.ReadSeeker {
+	if fimg.Amodebuf {
+		return io.NewSectionReader(fimg.Fp, d.Fileoff, d.Filelen)
+	}
+	return io.NewSectionReader(fimg.Reader, d.Fileoff, d.Filelen)
+}
+
 // GetName returns the name tag associated with the descriptor. Analogous to file name.
 func (d *Descriptor) GetName() string {
 	return strings.TrimRight(string(d.Name[:]), "\000")
