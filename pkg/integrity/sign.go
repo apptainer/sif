@@ -263,7 +263,7 @@ func OptSignObjects(ids ...uint32) SignerOpt {
 
 // NewSigner returns a Signer to add digital signature(s) to f, according to opts.
 //
-// Sign requires a signing entity be provided. OptSignWithEntity can be used for this purpose.
+// Sign requires key material be provided. OptSignWithEntity can be used for this purpose.
 //
 // By default, one digital signature is added per object group in f. To override this behavior,
 // consider using OptSignGroup and/or OptSignObjects.
