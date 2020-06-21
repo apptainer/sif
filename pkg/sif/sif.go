@@ -290,6 +290,7 @@ type Header struct {
 // writing SIF files.
 type ReadWriter interface {
 	io.ReadWriteSeeker
+	io.ReaderAt
 	io.Closer
 	Name() string
 	Fd() uintptr

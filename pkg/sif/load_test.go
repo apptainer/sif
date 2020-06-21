@@ -107,6 +107,18 @@ func (m *mockSifReadWriter) Read(b []byte) (n int, err error) {
 	return n, err
 }
 
+func (m *mockSifReadWriter) ReadAt(b []byte, off int64) (n int, err error) {
+	if m.closed {
+		return 0, os.ErrInvalid
+	}
+
+	if off >= int64(len(m.buf)) {
+		return 0, io.EOF
+	}
+
+	return copy(b, m.buf[off:]), nil
+}
+
 func (m *mockSifReadWriter) Seek(offset int64, whence int) (ret int64, err error) {
 	if m.closed {
 		return 0, os.ErrInvalid
