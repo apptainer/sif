@@ -9,7 +9,7 @@ image.
 
 Sign
 
-To add one or more digital signatures to a SIF, create a Signer:
+To add one or more digital signatures to a SIF, create a Signer, and supply a signing PGP entity:
 
 	s, err := integrity.NewSigner(f, OptSignWithEntity(e))
 
