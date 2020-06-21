@@ -97,7 +97,7 @@ func updateGolden(name string, b []byte) error {
 	if err := os.MkdirAll(path.Dir(p), 0755); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(p, b, 0600)
+	return ioutil.WriteFile(p, b, 0644) // nolint:gosec
 }
 
 // verifyGolden compares b to the contents golden file associated with name.
