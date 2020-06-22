@@ -12,6 +12,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 )
 
@@ -254,11 +255,8 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 // GetData return a memory mapped byte slice mirroring the data object in a SIF file.
 func (d *Descriptor) GetData(fimg *FileImage) []byte {
 	if fimg.Amodebuf {
-		if _, err := fimg.Fp.Seek(d.Fileoff, 0); err != nil {
-			return nil
-		}
 		data := make([]byte, d.Filelen)
-		if n, _ := fimg.Fp.Read(data); int64(n) != d.Filelen {
+		if _, err := io.ReadFull(d.GetReadSeeker(fimg), data); err != nil {
 			return nil
 		}
 		return data
@@ -271,6 +269,15 @@ func (d *Descriptor) GetData(fimg *FileImage) []byte {
 	}
 
 	return fimg.Filedata[d.Fileoff : d.Fileoff+d.Filelen]
+}
+
+// GetReadSeeker returns a io.ReadSeeker that reads the data object associated with descriptor d
+// from image fimg.
+func (d *Descriptor) GetReadSeeker(fimg *FileImage) io.ReadSeeker {
+	if fimg.Amodebuf {
+		return io.NewSectionReader(fimg.Fp, d.Fileoff, d.Filelen)
+	}
+	return io.NewSectionReader(fimg.Reader, d.Fileoff, d.Filelen)
 }
 
 // GetName returns the name tag associated with the descriptor. Analogous to file name.
