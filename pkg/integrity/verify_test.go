@@ -410,7 +410,7 @@ func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
 						t.Errorf("got entity %v, want %v", got, want)
 					}
 
-					if got, want := r.Error(), tt.wantCBErr; got != want {
+					if got, want := r.Error(), tt.wantCBErr; !errors.Is(got, want) {
 						t.Errorf("got error %v, want %v", got, want)
 					}
 
@@ -613,7 +613,7 @@ func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 						t.Errorf("got entity %v, want %v", got, want)
 					}
 
-					if got, want := r.Error(), tt.wantCBErr; got != want {
+					if got, want := r.Error(), tt.wantCBErr; !errors.Is(got, want) {
 						t.Errorf("got error %v, want %v", got, want)
 					}
 

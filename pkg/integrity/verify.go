@@ -80,6 +80,10 @@ func (v *groupVerifier) fingerprints() ([][20]byte, error) {
 }
 
 // verifySignature verifies the objects specified by v against signature sig using keyring kr.
+//
+// If verification of the SIF global header fails, ErrHeaderIntegrity is returned. If verification
+// of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
+// data object fails, a ObjectIntegrityError is returned.
 func (v *groupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (imageMetadata, []uint32, *openpgp.Entity, error) { // nolint:lll
 	// Verify signature and decode image metadata.
 	var im imageMetadata
@@ -114,10 +118,14 @@ func (v *groupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing)
 	return im, verified, e, nil
 }
 
-// verifyWithKeyRing performs validation of the objects specified by v using keyring kr.
+// verifyWithKeyRing performs verification of the objects specified by v using keyring kr.
 //
 // If no signatures are found for the object group specified by v, a SignatureNotFoundError is
 // returned.
+//
+// If verification of the SIF global header fails, ErrHeaderIntegrity is returned. If verification
+// of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
+// data object fails, a ObjectIntegrityError is returned.
 func (v *groupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 	// Obtain all signatures related to group.
 	sigs, err := getGroupSignatures(v.f, v.groupID, false)
@@ -173,6 +181,8 @@ func (v *legacyGroupVerifier) fingerprints() ([][20]byte, error) {
 }
 
 // verifySignature verifies the objects specified by v against signature sig using keyring kr.
+//
+// If verification of a data object fails, a ObjectIntegrityError is returned.
 func (v *legacyGroupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
 	// Verify signature and decode plaintext.
 	e, b, _, err := verifyAndDecode(sig.GetData(v.f), kr)
@@ -212,16 +222,18 @@ func (v *legacyGroupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.Ke
 	if ok, err := d.matches(r); err != nil {
 		return e, err
 	} else if !ok {
-		return e, fmt.Errorf("group %d: %w", v.groupID, errObjectIntegrity)
+		return e, &ObjectIntegrityError{}
 	}
 
 	return e, nil
 }
 
-// verifyWithKeyRing performs validation of the objects specified by v using keyring kr.
+// verifyWithKeyRing performs verification of the objects specified by v using keyring kr.
 //
 // If no signatures are found for the object group specified by v, a SignatureNotFoundError is
 // returned.
+//
+// If verification of the data object group fails, a ObjectIntegrityError is returned.
 func (v *legacyGroupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 	// Obtain all signatures related to object.
 	sigs, err := getGroupSignatures(v.f, v.groupID, true)
@@ -276,6 +288,8 @@ func (v *legacyObjectVerifier) fingerprints() ([][20]byte, error) {
 }
 
 // verifySignature verifies the objects specified by v against signature sig using keyring kr.
+//
+// If verification of a data object fails, a ObjectIntegrityError is returned.
 func (v *legacyObjectVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
 	// Verify signature and decode plaintext.
 	e, b, _, err := verifyAndDecode(sig.GetData(v.f), kr)
@@ -304,19 +318,21 @@ func (v *legacyObjectVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.K
 		return e, err
 	}
 
-	// Verify header and object integrity.
+	// Verify object integrity.
 	if ok, err := d.matches(v.od.GetReadSeeker(v.f)); err != nil {
 		return e, err
 	} else if !ok {
-		return e, fmt.Errorf("object %d: %w", v.od.ID, errObjectIntegrity)
+		return e, &ObjectIntegrityError{ID: v.od.ID}
 	}
 
 	return e, nil
 }
 
-// verifyWithKeyRing performs validation of the objects specified by v using keyring kr.
+// verifyWithKeyRing performs verification of the objects specified by v using keyring kr.
 //
 // If no signatures are found for the object specified by v, a SignatureNotFoundError is returned.
+//
+// If verification of the data object fails, a ObjectIntegrityError is returned.
 func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 	// Obtain all signatures related to object.
 	sigs, err := getObjectSignatures(v.f, v.od.ID)
@@ -614,6 +630,11 @@ func (v *Verifier) AllSignedBy() ([][20]byte, error) {
 //
 // If no signatures are found for a task specified by v, an error wrapping a SignatureNotFoundError
 // is returned.
+//
+// If verification of the SIF global header fails, an error wrapping ErrHeaderIntegrity is
+// returned. If verification of a data object descriptor fails, an error wrapping a
+// DescriptorIntegrityError is returned. If verification of a data object fails, an error wrapping
+// a ObjectIntegrityError is returned.
 func (v *Verifier) Verify() error {
 	if v.keyRing == nil {
 		return fmt.Errorf("integrity: %w", ErrNoKeyMaterial)

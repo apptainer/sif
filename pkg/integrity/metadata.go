@@ -19,9 +19,56 @@ import (
 var (
 	errObjectNotSigned      = errors.New("object not signed")
 	errSignedObjectNotFound = errors.New("signed object not found")
-	errHeaderIntegrity      = errors.New("header integrity compromised")
-	errObjectIntegrity      = errors.New("data object integrity compromised")
 )
+
+// ErrHeaderIntegrity is the error returned when the integrity of the SIF global header is
+// compromised.
+var ErrHeaderIntegrity = errors.New("header integrity compromised")
+
+// DescriptorIntegrityError records an error in cryptographic verification of a data object
+// descriptor.
+type DescriptorIntegrityError struct {
+	ID uint32 // Data object ID.
+}
+
+func (e *DescriptorIntegrityError) Error() string {
+	if e.ID == 0 {
+		return "data object descriptor integrity compromised"
+	}
+	return fmt.Sprintf("data object descriptor integrity compromised: %v", e.ID)
+}
+
+// Is compares e against target. If target is a DescriptorIntegrityError and matches e or target
+// has a zero value ID, true is returned.
+func (e *DescriptorIntegrityError) Is(target error) bool {
+	t, ok := target.(*DescriptorIntegrityError)
+	if !ok {
+		return false
+	}
+	return e.ID == t.ID || t.ID == 0
+}
+
+// ObjectIntegrityError records an error in cryptographic verification of a data object.
+type ObjectIntegrityError struct {
+	ID uint32 // Data object ID.
+}
+
+func (e *ObjectIntegrityError) Error() string {
+	if e.ID == 0 {
+		return "data object integrity compromised"
+	}
+	return fmt.Sprintf("data object integrity compromised: %v", e.ID)
+}
+
+// Is compares e against target. If target is a ObjectIntegrityError and matches e or target has a
+// zero value ID, true is returned.
+func (e *ObjectIntegrityError) Is(target error) bool {
+	t, ok := target.(*ObjectIntegrityError)
+	if !ok {
+		return false
+	}
+	return e.ID == t.ID || t.ID == 0
+}
 
 // writeHeader writes the integrity-protected fields of h to w.
 func writeHeader(w io.Writer, h sif.Header) error {
@@ -86,6 +133,8 @@ func getHeaderMetadata(hdr sif.Header, h crypto.Hash) (headerMetadata, error) {
 }
 
 // matches verifies hdr matches the metadata in hm.
+//
+// If the SIF global header does not match, ErrHeaderIntegrity is returned.
 func (hm headerMetadata) matches(hdr sif.Header) error {
 	b := bytes.Buffer{}
 	if err := writeHeader(&b, hdr); err != nil {
@@ -95,7 +144,7 @@ func (hm headerMetadata) matches(hdr sif.Header) error {
 	if ok, err := hm.Digest.matches(&b); err != nil {
 		return err
 	} else if !ok {
-		return errHeaderIntegrity
+		return ErrHeaderIntegrity
 	}
 	return nil
 }
@@ -135,6 +184,9 @@ func getObjectMetadata(od sif.Descriptor, r io.Reader, h crypto.Hash) (objectMet
 }
 
 // matches verifies the object in f described by od matches the metadata in om.
+//
+// If the data object descriptor does not match, a DescriptorIntegrityError is returned. If the
+// data object does not match, a ObjectIntegrityError is returned.
 func (om objectMetadata) matches(f *sif.FileImage, od *sif.Descriptor) error {
 	b := bytes.Buffer{}
 	if err := writeDescriptor(&b, *od); err != nil {
@@ -144,13 +196,13 @@ func (om objectMetadata) matches(f *sif.FileImage, od *sif.Descriptor) error {
 	if ok, err := om.DescriptorDigest.matches(&b); err != nil {
 		return err
 	} else if !ok {
-		return fmt.Errorf("object %d: %w", od.ID, errObjectIntegrity)
+		return &DescriptorIntegrityError{ID: od.ID}
 	}
 
 	if ok, err := om.ObjectDigest.matches(od.GetReadSeeker(f)); err != nil {
 		return err
 	} else if !ok {
-		return fmt.Errorf("object %d: %w", od.ID, errObjectIntegrity)
+		return &ObjectIntegrityError{ID: od.ID}
 	}
 	return nil
 }
@@ -227,6 +279,10 @@ func (im imageMetadata) metadataForObject(id uint32) (objectMetadata, error) {
 }
 
 // matches verifies the header and objects described by ods match the metadata in im.
+//
+// If the SIF global header does not match, ErrHeaderIntegrity is returned. If the data object
+// descriptor does not match, a DescriptorIntegrityError is returned. If the data object does not
+// match, a ObjectIntegrityError is returned.
 func (im imageMetadata) matches(f *sif.FileImage, ods []*sif.Descriptor) ([]uint32, error) {
 	verified := make([]uint32, 0, len(ods))
 
