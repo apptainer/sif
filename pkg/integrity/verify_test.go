@@ -127,7 +127,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 			groupID:   1,
 			objectIDs: []uint32{1, 2},
 			kr:        openpgp.EntityList{},
-			wantErr:   pgperrors.ErrUnknownIssuer,
+			wantErr:   &SignatureNotValidError{ID: 3, Err: pgperrors.ErrUnknownIssuer},
 		},
 		{
 			name:            "IgnoreError",
@@ -138,7 +138,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 			objectIDs:       []uint32{1, 2},
 			kr:              openpgp.EntityList{},
 			wantCBSignature: 3,
-			wantCBErr:       pgperrors.ErrUnknownIssuer,
+			wantCBErr:       &SignatureNotValidError{ID: 3, Err: pgperrors.ErrUnknownIssuer},
 			wantErr:         nil,
 			wantCBSigned:    []uint32{},
 		},
@@ -216,7 +216,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 						t.Errorf("got entity %v, want %v", got, want)
 					}
 
-					if got, want := r.Error(), tt.wantCBErr; got != want {
+					if got, want := r.Error(), tt.wantCBErr; !errors.Is(got, want) {
 						t.Errorf("got error %v, want %v", got, want)
 					}
 
