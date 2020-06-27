@@ -259,7 +259,7 @@ func (v *legacyGroupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.Ke
 	}
 	r := io.MultiReader(rs...)
 
-	// Verify header and object integrity.
+	// Verify integrity of objects.
 	if ok, err := d.matches(r); err != nil {
 		return e, err
 	} else if !ok {
