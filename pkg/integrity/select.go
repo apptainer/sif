@@ -75,6 +75,17 @@ func getGroupObjects(f *sif.FileImage, groupID uint32) ([]*sif.Descriptor, error
 	return ods, err
 }
 
+// getNonGroupObjects returns all descriptors in f that are not contained within an object group.
+func getNonGroupObjects(f *sif.FileImage) ([]*sif.Descriptor, error) {
+	ods, _, err := f.GetFromDescr(sif.Descriptor{
+		Groupid: sif.DescrUnusedGroup,
+	})
+	if errors.Is(err, sif.ErrNotFound) {
+		err = nil
+	}
+	return ods, err
+}
+
 // SignatureNotFoundError records an error attempting to locate one or more signatures for a data
 // object or data object group.
 type SignatureNotFoundError struct {

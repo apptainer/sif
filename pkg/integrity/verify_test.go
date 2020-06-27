@@ -1082,27 +1082,37 @@ func TestVerifier_AllSignedBy(t *testing.T) {
 }
 
 func TestVerifier_Verify(t *testing.T) {
+	oneGroupSignedImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed.sif"), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer oneGroupSignedImage.UnloadContainer() // nolint:errcheck
+
 	kr := openpgp.EntityList{getTestEntity(t)}
 
 	tests := []struct {
 		name    string
+		f       *sif.FileImage
 		kr      openpgp.KeyRing
 		tasks   []verifyTask
 		wantErr error
 	}{
 		{
 			name:    "ErrNoKeyMaterial",
+			f:       &oneGroupSignedImage,
 			tasks:   []verifyTask{mockVerifier{}},
 			wantErr: ErrNoKeyMaterial,
 		},
 		{
 			name:    "EOF",
+			f:       &oneGroupSignedImage,
 			kr:      kr,
 			tasks:   []verifyTask{mockVerifier{err: io.EOF}},
 			wantErr: io.EOF,
 		},
 		{
 			name:  "OK",
+			f:     &oneGroupSignedImage,
 			kr:    kr,
 			tasks: []verifyTask{mockVerifier{}},
 		},
@@ -1112,6 +1122,7 @@ func TestVerifier_Verify(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			v := Verifier{
+				f:       tt.f,
 				keyRing: tt.kr,
 				tasks:   tt.tasks,
 			}

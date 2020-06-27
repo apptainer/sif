@@ -17,7 +17,10 @@ import (
 	"golang.org/x/crypto/openpgp"
 )
 
-var errFingerprintMismatch = errors.New("fingerprint in descriptor does not correspond to signing entity")
+var (
+	errFingerprintMismatch = errors.New("fingerprint in descriptor does not correspond to signing entity")
+	errNonGroupedObject    = errors.New("non-signature object not associated with object group")
+)
 
 // SignatureNotValidError records an error when an invalid signature is encountered.
 type SignatureNotValidError struct {
@@ -683,6 +686,17 @@ func (v *Verifier) AllSignedBy() ([][20]byte, error) {
 func (v *Verifier) Verify() error {
 	if v.keyRing == nil {
 		return fmt.Errorf("integrity: %w", ErrNoKeyMaterial)
+	}
+
+	// All non-signature objects must be contained in an object group.
+	ods, err := getNonGroupObjects(v.f)
+	if err != nil {
+		return fmt.Errorf("integrity: %w", err)
+	}
+	for _, od := range ods {
+		if od.Datatype != sif.DataSignature {
+			return fmt.Errorf("integrity: %w", errNonGroupedObject)
+		}
 	}
 
 	for _, t := range v.tasks {
