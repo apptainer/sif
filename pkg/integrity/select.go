@@ -140,7 +140,11 @@ func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]*sif.D
 	// Filter signatures based on legacy flag.
 	sigs := make([]*sif.Descriptor, 0, len(ods))
 	for _, od := range ods {
-		if isLegacySignature(od.GetData(f)) == legacy {
+		isLegacy, err := isLegacySignature(od.GetData(f))
+		if err != nil {
+			return nil, err
+		}
+		if isLegacy == legacy {
 			sigs = append(sigs, od)
 		}
 	}

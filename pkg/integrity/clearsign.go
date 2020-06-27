@@ -8,12 +8,15 @@ package integrity
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/clearsign"
 	"golang.org/x/crypto/openpgp/packet"
 )
+
+var errClearsignedMsgNotFound = errors.New("clearsigned message not found")
 
 // signAndEncodeJSON encodes v, clear-signs it with privateKey, and writes it to w. If config is
 // nil, sensible defaults are used.
@@ -51,6 +54,9 @@ func verifyAndDecodeJSON(data []byte, v interface{}, kr openpgp.KeyRing) (*openp
 func verifyAndDecode(data []byte, kr openpgp.KeyRing) (*openpgp.Entity, []byte, []byte, error) {
 	// Decode clearsign block.
 	b, rest := clearsign.Decode(data)
+	if b == nil {
+		return nil, nil, rest, errClearsignedMsgNotFound
+	}
 
 	// Check signature.
 	e, err := openpgp.CheckDetachedSignature(kr, bytes.NewReader(b.Bytes), b.ArmoredSignature.Body)
@@ -59,11 +65,14 @@ func verifyAndDecode(data []byte, kr openpgp.KeyRing) (*openpgp.Entity, []byte, 
 
 // isLegacySignature reads the first clearsigned message in data, and returns true if the plaintext
 // contains a legacy signature.
-func isLegacySignature(data []byte) bool {
+func isLegacySignature(data []byte) (bool, error) {
 	// Decode clearsign block.
 	b, _ := clearsign.Decode(data)
+	if b == nil {
+		return false, errClearsignedMsgNotFound
+	}
 
 	// The plaintext of legacy signatures always begins with "SIFHASH", and non-legacy signatures
 	// never do, as they are JSON.
-	return bytes.HasPrefix(b.Plaintext, []byte("SIFHASH:\n"))
+	return bytes.HasPrefix(b.Plaintext, []byte("SIFHASH:\n")), nil
 }
