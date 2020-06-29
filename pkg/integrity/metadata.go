@@ -93,7 +93,6 @@ func writeDescriptor(w io.Writer, od sif.Descriptor) error {
 		od.Datatype,
 		od.Used,
 		od.ID,
-		od.Groupid,
 		od.Link,
 		od.Filelen,
 		od.Ctime,
