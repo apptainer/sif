@@ -6,9 +6,11 @@
 package integrity
 
 import (
+	"bufio"
 	"bytes"
 	"crypto"
 	"errors"
+	"io"
 	"reflect"
 	"strings"
 	"testing"
@@ -75,19 +77,48 @@ func TestVerifyAndDecodeJSON(t *testing.T) {
 	testValue := testType{1, 2}
 
 	// This is used to corrupt the plaintext.
-	corrupter := strings.NewReplacer(`{"One":1,"Two":2}`, `{"One":2,"Two":4}`)
+	corruptClearsign := func(w io.Writer, s string) error {
+		_, err := strings.NewReplacer(`{"One":1,"Two":2}`, `{"One":2,"Two":4}`).WriteString(w, s)
+		return err
+	}
+
+	// This is used to corrupt the signature.
+	corruptSignature := func(w io.Writer, s string) error {
+		sc := bufio.NewScanner(strings.NewReader(s))
+
+		for sigFound, n := false, 0; sc.Scan(); {
+			line := sc.Text()
+
+			if sigFound {
+				if n == 1 {
+					// Introduce some corruption
+					line = line[:len(line)-1]
+				}
+				n++
+			} else if line == "-----BEGIN PGP SIGNATURE-----" {
+				sigFound = true
+			}
+
+			if _, err := io.WriteString(w, line+"\n"); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
 
 	tests := []struct {
 		name       string
 		hash       crypto.Hash
 		el         openpgp.EntityList
-		corrupter  *strings.Replacer
+		corrupter  func(w io.Writer, s string) error
 		output     interface{}
 		wantErr    error
 		wantEntity *openpgp.Entity
 	}{
 		{name: "ErrUnknownIssuer", el: openpgp.EntityList{}, wantErr: pgperrors.ErrUnknownIssuer},
-		{name: "Corrupted", el: openpgp.EntityList{e}, corrupter: corrupter, wantEntity: e},
+		{name: "CorruptedClearsign", el: openpgp.EntityList{e}, corrupter: corruptClearsign},
+		{name: "CorruptedSignature", el: openpgp.EntityList{e}, corrupter: corruptSignature},
 		{name: "VerifyOnly", el: openpgp.EntityList{e}, wantEntity: e},
 		{name: "DefaultHash", el: openpgp.EntityList{e}, output: &testType{}, wantEntity: e},
 		{name: "SHA1", hash: crypto.SHA1, el: openpgp.EntityList{e}, output: &testType{}, wantEntity: e},
@@ -114,7 +145,7 @@ func TestVerifyAndDecodeJSON(t *testing.T) {
 			if tt.corrupter != nil {
 				s := b.String()
 				b.Reset()
-				if _, err := tt.corrupter.WriteString(&b, s); err != nil {
+				if err := tt.corrupter(&b, s); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -132,10 +163,8 @@ func TestVerifyAndDecodeJSON(t *testing.T) {
 				if got, want := err, tt.wantErr; !errors.Is(got, want) {
 					t.Fatalf("got error %v, want %v", got, want)
 				}
-			} else {
-				if _, ok := err.(pgperrors.SignatureError); !ok {
-					t.Fatalf("unexpected error type: %T", err)
-				}
+			} else if err == nil {
+				t.Errorf("got nil error despite corruption")
 			}
 
 			if err == nil {
