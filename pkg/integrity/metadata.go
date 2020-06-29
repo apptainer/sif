@@ -76,9 +76,7 @@ func writeHeader(w io.Writer, h sif.Header) error {
 		h.Launch,
 		h.Magic,
 		h.Version,
-		h.Arch,
 		h.ID,
-		h.Ctime,
 	}
 
 	for _, f := range fields {
