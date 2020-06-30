@@ -134,6 +134,13 @@ func (v *groupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing)
 		return im, nil, e, &SignatureNotValidError{ID: sig.ID, Err: err}
 	}
 
+	// Get minimum object ID in group, and use this to populate absolute object IDs in im.
+	minID, err := getGroupMinObjectID(v.f, v.groupID)
+	if err != nil {
+		return im, nil, e, err
+	}
+	im.populateAbsoluteObjectIDs(minID)
+
 	// Ensure signing entity matches fingerprint in descriptor.
 	fp, err := sig.GetEntity()
 	if err != nil {

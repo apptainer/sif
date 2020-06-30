@@ -167,6 +167,24 @@ func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]*sif.D
 	return sigs, err
 }
 
+// getGroupMinObjectID returns the minimum ID from the set of descriptors in f that are contained
+// in the object group with identifier groupID. If no such object group is found, errGroupNotFound
+// is returned.
+func getGroupMinObjectID(f *sif.FileImage, groupID uint32) (uint32, error) {
+	ods, err := getGroupObjects(f, groupID)
+	if err != nil {
+		return 0, err
+	}
+
+	minID := ^uint32(0)
+	for _, od := range ods {
+		if od.ID < minID {
+			minID = od.ID
+		}
+	}
+	return minID, nil
+}
+
 // getGroupIDs returns all identifiers for the groups contained in f, sorted by ID. If no groups
 // are present, errNoGroupsFound is returned.
 func getGroupIDs(f *sif.FileImage) (groupIDs []uint32, err error) {

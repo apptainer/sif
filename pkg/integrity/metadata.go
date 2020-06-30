@@ -19,6 +19,7 @@ import (
 var (
 	errObjectNotSigned      = errors.New("object not signed")
 	errSignedObjectNotFound = errors.New("signed object not found")
+	errMinimumIDInvalid     = errors.New("minimum ID value invalid")
 )
 
 // ErrHeaderIntegrity is the error returned when the integrity of the SIF global header is
@@ -88,11 +89,11 @@ func writeHeader(w io.Writer, h sif.Header) error {
 }
 
 // writeDescriptor writes the integrity-protected fields of od to w.
-func writeDescriptor(w io.Writer, od sif.Descriptor) error {
+func writeDescriptor(w io.Writer, relativeID uint32, od sif.Descriptor) error {
 	fields := []interface{}{
 		od.Datatype,
 		od.Used,
-		od.ID,
+		relativeID,
 		od.Link,
 		od.Filelen,
 		od.Ctime,
@@ -147,16 +148,21 @@ func (hm headerMetadata) matches(hdr sif.Header) error {
 }
 
 type objectMetadata struct {
-	ID               uint32  `json:"id"`
-	DescriptorDigest digest  `json:"descriptorDigest"`
-	ObjectDigest     *digest `json:"objectDigest,omitempty"`
+	RelativeID       uint32 `json:"relativeId"`
+	DescriptorDigest digest `json:"descriptorDigest"`
+	ObjectDigest     digest `json:"objectDigest"`
+
+	id uint32 // absolute object ID (minID + RelativeID)
 }
 
-// getObjectMetadata returns objectMetadata for object with descriptor od and content r using hash
-// algorithm h.
-func getObjectMetadata(od sif.Descriptor, r io.Reader, h crypto.Hash) (objectMetadata, error) {
+// getObjectMetadata returns objectMetadata for object with relativeID, descriptor od and content r
+// using hash algorithm h.
+func getObjectMetadata(relativeID uint32, od sif.Descriptor, r io.Reader, h crypto.Hash) (objectMetadata, error) {
+	om := objectMetadata{RelativeID: relativeID, id: od.ID}
+
+	// Write integrity-protected fields from object descriptor to buffer.
 	b := bytes.Buffer{}
-	if err := writeDescriptor(&b, od); err != nil {
+	if err := writeDescriptor(&b, relativeID, od); err != nil {
 		return objectMetadata{}, err
 	}
 
@@ -165,19 +171,21 @@ func getObjectMetadata(od sif.Descriptor, r io.Reader, h crypto.Hash) (objectMet
 	if err != nil {
 		return objectMetadata{}, err
 	}
-	md := objectMetadata{
-		ID:               od.ID,
-		DescriptorDigest: d,
-	}
+	om.DescriptorDigest = d
 
 	// Calculate digest on object data.
 	d, err = newDigestReader(h, r)
 	if err != nil {
 		return objectMetadata{}, err
 	}
-	md.ObjectDigest = &d
+	om.ObjectDigest = d
 
-	return md, nil
+	return om, nil
+}
+
+// populateAbsoluteID populates the absolute object ID of om based on minID.
+func (om *objectMetadata) populateAbsoluteID(minID uint32) {
+	om.id = minID + om.RelativeID
 }
 
 // matches verifies the object in f described by od matches the metadata in om.
@@ -186,7 +194,7 @@ func getObjectMetadata(od sif.Descriptor, r io.Reader, h crypto.Hash) (objectMet
 // data object does not match, a ObjectIntegrityError is returned.
 func (om objectMetadata) matches(f *sif.FileImage, od *sif.Descriptor) error {
 	b := bytes.Buffer{}
-	if err := writeDescriptor(&b, *od); err != nil {
+	if err := writeDescriptor(&b, om.RelativeID, *od); err != nil {
 		return err
 	}
 
@@ -218,7 +226,7 @@ type imageMetadata struct {
 
 // getImageMetadata returns populated imageMetadata for object descriptors ods in f, using hash
 // algorithm h.
-func getImageMetadata(f *sif.FileImage, ods []*sif.Descriptor, h crypto.Hash) (imageMetadata, error) {
+func getImageMetadata(f *sif.FileImage, minID uint32, ods []*sif.Descriptor, h crypto.Hash) (imageMetadata, error) {
 	im := imageMetadata{Version: metadataVersion1}
 
 	// Add header metadata.
@@ -230,7 +238,11 @@ func getImageMetadata(f *sif.FileImage, ods []*sif.Descriptor, h crypto.Hash) (i
 
 	// Add object descriptor/data metadata.
 	for _, od := range ods {
-		om, err := getObjectMetadata(*od, od.GetReadSeeker(f), h)
+		if od.ID < minID { // shouldn't really be possible...
+			return imageMetadata{}, errMinimumIDInvalid
+		}
+
+		om, err := getObjectMetadata(od.ID-minID, *od, od.GetReadSeeker(f), h)
 		if err != nil {
 			return imageMetadata{}, err
 		}
@@ -240,12 +252,20 @@ func getImageMetadata(f *sif.FileImage, ods []*sif.Descriptor, h crypto.Hash) (i
 	return im, nil
 }
 
+// populateAbsoluteObjectIDs populates the absolute object ID of each object in im by adding minID
+// to the relative ID of each object in im.
+func (im *imageMetadata) populateAbsoluteObjectIDs(minID uint32) {
+	for i := range im.Objects {
+		im.Objects[i].populateAbsoluteID(minID)
+	}
+}
+
 // objectIDsMatch verifies the object IDs described by ods match exactly the object IDs described
 // by im.
 func (im imageMetadata) objectIDsMatch(ods []*sif.Descriptor) error {
 	ids := make(map[uint32]bool)
 	for _, om := range im.Objects {
-		ids[om.ID] = false
+		ids[om.id] = false
 	}
 
 	// Check each object in ods exists in ids, and mark as seen.
@@ -268,7 +288,7 @@ func (im imageMetadata) objectIDsMatch(ods []*sif.Descriptor) error {
 // metadataForObject retrieves the objectMetadata for object specified by id.
 func (im imageMetadata) metadataForObject(id uint32) (objectMetadata, error) {
 	for _, om := range im.Objects {
-		if om.ID == id {
+		if om.id == id {
 			return om, nil
 		}
 	}

@@ -154,7 +154,14 @@ func (gs *groupSigner) addObject(od *sif.Descriptor) error {
 
 // signWithEntity signs the objects specified by gs with e.
 func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, error) {
-	md, err := getImageMetadata(gs.f, gs.ods, gs.mdHash)
+	// Get minimum object ID in group. Object IDs in the image metadata will be relative to this.
+	minID, err := getGroupMinObjectID(gs.f, gs.id)
+	if err != nil {
+		return sif.DescriptorInput{}, err
+	}
+
+	// Get metadata for the image.
+	md, err := getImageMetadata(gs.f, minID, gs.ods, gs.mdHash)
 	if err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("failed to get image metadata: %w", err)
 	}

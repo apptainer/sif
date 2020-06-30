@@ -27,7 +27,7 @@ func (r result) Signature() uint32 {
 func (r result) Signed() []uint32 {
 	ids := make([]uint32, 0, len(r.im.Objects))
 	for _, om := range r.im.Objects {
-		ids = append(ids, om.ID)
+		ids = append(ids, om.id)
 	}
 	return ids
 }

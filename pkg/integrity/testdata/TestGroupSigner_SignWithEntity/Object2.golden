@@ -1,14 +1,14 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA256
 
-{"version":1,"header":{"digest":"sha1:ada68a4647c332f3b89905972c28432bf8dfbe91"},"objects":[{"id":2,"descriptorDigest":"sha1:6b1176c5e7241f4e88c71bbad6c117b6e838efc2","objectDigest":"sha1:d78f8bb992a56a597f6c7a1fb918bb78271367eb"}]}
+{"version":1,"header":{"digest":"sha1:ada68a4647c332f3b89905972c28432bf8dfbe91"},"objects":[{"relativeId":1,"descriptorDigest":"sha1:bca0416acad6be788547cdc0476f65bcd7b82d34","objectDigest":"sha1:d78f8bb992a56a597f6c7a1fb918bb78271367eb"}]}
 -----BEGIN PGP SIGNATURE-----
 
-wsBcBAEBCAAQBQJZr0CRCRCiDCfuf/e6hAAAhVkIAB1Ea/Vd0T+j0GUDa/CCX/ti
-M75WKJaryS7k3CSCg+RGhYtQnM9Ags759+J28L6Y1Ay6hTc1fV1C/W67/mlxAv6H
-Oh6xm76VXoWPq+4QjJ5kCe00FPXhVEIcDWoHPSpGXh1js2I9ac0NeYZaiydcocGh
-Tcl98x7f5krVjtE6jPoZfYy5e4Sv1rTVTzhxbiYB8YYh3t7RX/4dm+DPC2uIYATk
-YiHOlz691VE4Yuv8drJYEF8iOGxgIStFEhRlozgLikrctndbOXdU7w/TM8VMAw/w
-hKCnOsd4u+g4IlXXvkfx1CT1EhO1rjx6meqqZNSdWnBxONgcUEI6RKBnb3XAiME=
-=UbnN
+wsBcBAEBCAAQBQJZr0CRCRCiDCfuf/e6hAAAnsYIACHdV/6TAcOzZ31xKohYVBcb
+h1pjWCaOgAei+RG0CGWFi248B3oqXk+yeFiaZwoiEaoXO/ULo9i64Cba9gZ6zA68
+EzBUY+AsIQauBTFbDy4nVsiMi7ax5w1bJlB014QSThw67SMckmS91MWM6ZMk2yOb
+RhUkIZXHVZHD9KiPzn93vuTa8IkRr8autmtaeQ7eBatEv5bKt1M4i/SCr8e6mlIV
+jYQsgfpmkaV54vOVBQi9fIP7kkk1ETR7x/8ID5+JcikI/XjOAUppXxsSQgrA5nPi
+/Ok28Puq4j8THd8bi2RTXZPYez8UrtJUKm1U3ITnwcKuvYCUveJcXtA49la4cb8=
+=kHXH
 -----END PGP SIGNATURE-----
