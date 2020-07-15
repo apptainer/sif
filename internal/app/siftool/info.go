@@ -48,8 +48,8 @@ func List(file string) error {
 	}()
 
 	fmt.Println("Container id:", fimg.Header.ID)
-	fmt.Println("Created on:  ", time.Unix(fimg.Header.Ctime, 0))
-	fmt.Println("Modified on: ", time.Unix(fimg.Header.Mtime, 0))
+	fmt.Println("Created on:  ", time.Unix(fimg.Header.Ctime, 0).UTC())
+	fmt.Println("Modified on: ", time.Unix(fimg.Header.Mtime, 0).UTC())
 	fmt.Println("----------------------------------------------------")
 
 	fmt.Println("Descriptor list:")
