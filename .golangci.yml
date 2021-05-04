@@ -8,6 +8,7 @@ linters:
     - dogsled
     - dupl
     - errcheck
+    - exportloopref
     - gochecknoinits
     - gocritic
     - godot
@@ -27,7 +28,6 @@ linters:
     - nolintlint
     - prealloc
     - rowserrcheck
-    - scopelint
     - staticcheck
     - structcheck
     - typecheck
