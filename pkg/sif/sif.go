@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -272,10 +272,10 @@ type Messagetype int32
 
 // List of supported cryptographic message formats.
 const (
-	// openPGP formatted messages
+	// openPGP formatted messages.
 	MessageClearSignature Messagetype = 0x100
 
-	// PEM formatted messages
+	// PEM formatted messages.
 	MessageRSAOAEP Messagetype = 0x200
 )
 
