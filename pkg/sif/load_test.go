@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -224,7 +224,7 @@ func TestLoadContainerInvalidMagic(t *testing.T) {
 	// ... and edit the magic to make it invalid. Instead of
 	// exploring all kinds of invalid, simply mess with the last
 	// byte, as this would catch off-by-one errors in the code.
-	copy(content[HdrLaunchLen:HdrLaunchLen+HdrMagicLen], []byte("SIF_MAGIX"))
+	copy(content[HdrLaunchLen:HdrLaunchLen+HdrMagicLen], "SIF_MAGIX")
 
 	fp := &mockSifReadWriter{
 		buf:  content,
