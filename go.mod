@@ -1,6 +1,6 @@
 module github.com/hpcng/sif
 
-go 1.13
+go 1.15
 
 require (
 	github.com/satori/go.uuid v1.2.1-0.20180404165556-75cca531ea76
