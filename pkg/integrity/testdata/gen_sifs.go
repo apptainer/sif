@@ -20,7 +20,7 @@ import (
 func createImage(path string, dis []sif.DescriptorInput) error {
 	id, err := uuid.NewV4()
 	if err != nil {
-		return fmt.Errorf("id generation failed: %v", err)
+		return err
 	}
 
 	ci := sif.CreateInfo{
