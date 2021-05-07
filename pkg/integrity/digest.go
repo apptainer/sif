@@ -15,7 +15,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/hpcng/sif/pkg/sif"
 )
 
 var (

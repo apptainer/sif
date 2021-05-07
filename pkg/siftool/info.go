@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/hpcng/sif/internal/app/siftool"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/sif/internal/app/siftool"
 )
 
 // Info implements 'siftool info' sub-command.

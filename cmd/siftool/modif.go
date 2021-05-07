@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/sylabs/sif/internal/app/siftool"
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/hpcng/sif/internal/app/siftool"
+	"github.com/hpcng/sif/pkg/sif"
 )
 
 var datatype = flag.Int64("datatype", -1, "")

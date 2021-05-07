@@ -9,8 +9,8 @@
 package siftool
 
 import (
+	"github.com/hpcng/sif/internal/app/siftool"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/sif/internal/app/siftool"
 )
 
 // Header implements 'siftool header' sub-command.

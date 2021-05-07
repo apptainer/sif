@@ -16,7 +16,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/hpcng/sif/pkg/sif"
 )
 
 func TestNewLegacyDigest(t *testing.T) {

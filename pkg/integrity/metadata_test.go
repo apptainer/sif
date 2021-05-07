@@ -17,8 +17,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hpcng/sif/pkg/sif"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/sif/pkg/sif"
 )
 
 func TestWriteHeader(t *testing.T) {

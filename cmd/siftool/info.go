@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/sylabs/sif/internal/app/siftool"
+	"github.com/hpcng/sif/internal/app/siftool"
 )
 
 // cmdHeader displays a SIF file global header to stdout.
