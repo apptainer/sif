@@ -21,7 +21,7 @@ import (
 func New(file string) error {
 	id, err := uuid.NewV4()
 	if err != nil {
-		return fmt.Errorf("id generation failed: %v", err)
+		return err
 	}
 
 	cinfo := sif.CreateInfo{

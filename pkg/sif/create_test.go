@@ -62,7 +62,7 @@ func TestDataStructs(t *testing.T) {
 func TestCreateContainer(t *testing.T) {
 	id, err := uuid.NewV4()
 	if err != nil {
-		t.Fatalf("id generation failed: %v", err)
+		t.Fatal(err)
 	}
 
 	// general info for the new SIF file creation
