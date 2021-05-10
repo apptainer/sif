@@ -19,14 +19,19 @@ import (
 
 // New creates a new empty SIF file.
 func New(file string) error {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return fmt.Errorf("id generation failed: %v", err)
+	}
+
 	cinfo := sif.CreateInfo{
 		Pathname:   file,
 		Launchstr:  sif.HdrLaunch,
 		Sifversion: sif.HdrVersion,
-		ID:         uuid.NewV4(),
+		ID:         id,
 	}
 
-	_, err := sif.CreateContainer(cinfo)
+	_, err = sif.CreateContainer(cinfo)
 	if err != nil {
 		return err
 	}
