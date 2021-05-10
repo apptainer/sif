@@ -60,12 +60,17 @@ func TestDataStructs(t *testing.T) {
 }
 
 func TestCreateContainer(t *testing.T) {
+	id, err := uuid.NewV4()
+	if err != nil {
+		t.Fatalf("id generation failed: %v", err)
+	}
+
 	// general info for the new SIF file creation
 	cinfo := CreateInfo{
 		Pathname:   "testdata/testcontainer.sif",
 		Launchstr:  HdrLaunch,
 		Sifversion: HdrVersion,
-		ID:         uuid.NewV4(),
+		ID:         id,
 	}
 
 	// test container creation without any input descriptors
