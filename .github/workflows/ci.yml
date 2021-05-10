@@ -1,0 +1,48 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build_and_test:
+    name: build_and_test
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check for markdown Lint
+        run: |
+          sudo npm install -g markdownlint-cli
+          markdownlint .
+
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: '1.14.x'
+
+      - name: Check go.mod and go.sum are tidy
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+
+      - name: Build Source
+        run: ./build.sh
+
+      - name: Check for Lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.27.0
+          $(go env GOPATH)/bin/golangci-lint run
+
+      - name: Run Tests
+        run: go test -coverprofile=cover.out -race ./...
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v1
+        with:
+          files: cover.out
+          flags: unittests
+          name: codecov
