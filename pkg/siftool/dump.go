@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/hpcng/sif/internal/app/siftool"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/sif/internal/app/siftool"
 )
 
 // Dump implements 'siftool dump' sub-command.

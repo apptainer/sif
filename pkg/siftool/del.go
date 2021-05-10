@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/hpcng/sif/internal/app/siftool"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/sif/internal/app/siftool"
 )
 
 // Del implements 'siftool del' sub-command.

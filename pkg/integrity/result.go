@@ -6,7 +6,7 @@
 package integrity
 
 import (
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/hpcng/sif/pkg/sif"
 	"golang.org/x/crypto/openpgp"
 )
 

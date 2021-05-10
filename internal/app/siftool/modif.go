@@ -13,8 +13,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/hpcng/sif/pkg/sif"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/sif/pkg/sif"
 )
 
 // New creates a new empty SIF file.

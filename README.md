@@ -1,6 +1,6 @@
 # The Singularity Image Format (SIF)
 
-[![GoDoc](https://godoc.org/github.com/sylabs/sif?status.svg)](https://godoc.org/github.com/sylabs/sif)
+[![GoDoc](https://godoc.org/github.com/hpcng/sif?status.svg)](https://godoc.org/github.com/hpcng/sif)
 [![Build Status](https://circleci.com/gh/hpcng/sif.svg?style=shield)](https://circleci.com/gh/hpcng/workflows/sif)
 [![Code Coverage](https://codecov.io/gh/hpcng/sif/branch/master/graph/badge.svg)](https://codecov.io/gh/hpcng/sif)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hpcng/sif)](https://goreportcard.com/report/github.com/hpcng/sif)
@@ -19,13 +19,13 @@ license found in the LICENSE.md file.
 To get the sif package to use directly from your programs:
 
 ```sh
-go get -u github.com/sylabs/sif/pkg/sif
+go get -u github.com/hpcng/sif/pkg/sif
 ```
 
 To get the siftool CLI program installed to `$(go env GOPATH)/bin` to manipulate SIF container files:
 
 ```sh
-git clone https://github.com/sylabs/sif
+git clone https://github.com/hpcng/sif
 cd sif
 ./build.sh
 ```

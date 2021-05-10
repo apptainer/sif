@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/hpcng/sif/pkg/integrity"
+	"github.com/hpcng/sif/pkg/sif"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/sif/pkg/integrity"
-	"github.com/sylabs/sif/pkg/sif"
 	"golang.org/x/crypto/openpgp"
 )
 
