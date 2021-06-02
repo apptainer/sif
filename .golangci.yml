@@ -15,7 +15,6 @@ linters:
     - godox
     - gofumpt
     - goimports
-    - golint
     - gomodguard
     - goprintffuncname
     - gosec
@@ -26,6 +25,7 @@ linters:
     - misspell
     - nolintlint
     - prealloc
+    - revive
     - rowserrcheck
     - staticcheck
     - structcheck
