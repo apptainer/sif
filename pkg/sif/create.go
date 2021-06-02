@@ -443,10 +443,7 @@ func (di *DescriptorInput) SetPartExtra(fs Fstype, part Parttype, arch string) e
 	copy(extra.Arch[:], arch)
 
 	// serialize the partition data for integration with the base descriptor input
-	if err := binary.Write(&di.Extra, binary.LittleEndian, extra); err != nil {
-		return err
-	}
-	return nil
+	return binary.Write(&di.Extra, binary.LittleEndian, extra)
 }
 
 // SetSignExtra serializes the hash type and the entity info into a binary buffer.
@@ -462,10 +459,7 @@ func (di *DescriptorInput) SetSignExtra(hash Hashtype, entity string) error {
 	copy(extra.Entity[:], h)
 
 	// serialize the signature data for integration with the base descriptor input
-	if err := binary.Write(&di.Extra, binary.LittleEndian, extra); err != nil {
-		return err
-	}
-	return nil
+	return binary.Write(&di.Extra, binary.LittleEndian, extra)
 }
 
 // SetCryptoMsgExtra serializes the message format and type info into a binary buffer.
@@ -476,10 +470,7 @@ func (di *DescriptorInput) SetCryptoMsgExtra(format Formattype, message Messaget
 	}
 
 	// serialize the message data for integration with the base descriptor input
-	if err := binary.Write(&di.Extra, binary.LittleEndian, extra); err != nil {
-		return err
-	}
-	return nil
+	return binary.Write(&di.Extra, binary.LittleEndian, extra)
 }
 
 // SetName sets the byte array field "Name" to the value of string "name".

@@ -172,11 +172,7 @@ func Add(containerFile, dataFile string, opts AddOptions) error {
 	}()
 
 	// add new data object to SIF file
-	if err = fimg.AddObject(input); err != nil {
-		return err
-	}
-
-	return nil
+	return fimg.AddObject(input)
 }
 
 // Del deletes a specified object descriptor and data from the SIF file.
@@ -195,11 +191,7 @@ func Del(descr uint64, file string) error {
 		if !v.Used {
 			continue
 		} else if v.ID == uint32(descr) {
-			if err := fimg.DeleteObject(uint32(descr), 0); err != nil {
-				return err
-			}
-
-			return nil
+			return fimg.DeleteObject(uint32(descr), 0)
 		}
 	}
 
@@ -222,11 +214,7 @@ func Setprim(descr uint64, file string) error {
 		if !v.Used {
 			continue
 		} else if v.ID == uint32(descr) {
-			if err := fimg.SetPrimPart(uint32(descr)); err != nil {
-				return err
-			}
-
-			return nil
+			return fimg.SetPrimPart(uint32(descr))
 		}
 	}
 
