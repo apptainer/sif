@@ -32,15 +32,7 @@ func New(file string) error {
 	}
 
 	_, err = sif.CreateContainer(cinfo)
-<<<<<<< HEAD
-	if err != nil {
-		return err
-	}
-
-	return nil
-=======
 	return err
->>>>>>> build(deps): bump github.com/satori/go.uuid module
 }
 
 // AddOptions contains the options when adding a section to a SIF file.
