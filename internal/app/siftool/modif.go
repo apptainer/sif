@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2018, Divya Cote <divya.cote@gmail.com> All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
@@ -32,11 +32,7 @@ func New(file string) error {
 	}
 
 	_, err = sif.CreateContainer(cinfo)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // AddOptions contains the options when adding a section to a SIF file.
