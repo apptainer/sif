@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -262,25 +262,11 @@ func TestFromDescr(t *testing.T) {
 }
 
 func TestGetData(t *testing.T) {
-	mmapImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
-	if err != nil {
-		t.Fatalf("failed to load container: %v", err)
-	}
-	defer func() {
-		if err := mmapImage.UnloadContainer(); err != nil {
-			t.Error(err)
-		}
-	}()
-
-	// It's a little tough to test the code path for buffered I/O. Cheat a little by forcing
-	// Amodebuf to true, which simulates that.
 	bufferedImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
 	if err != nil {
 		t.Fatalf("failed to load container: %v", err)
 	}
-	bufferedImage.Amodebuf = true // apply hack to fake buffered I/O
 	defer func() {
-		bufferedImage.Amodebuf = false // undo hack to fake buffered I/O (ensures munmap called)
 		if err := bufferedImage.UnloadContainer(); err != nil {
 			t.Error(err)
 		}
@@ -290,7 +276,6 @@ func TestGetData(t *testing.T) {
 		name string
 		fimg *FileImage
 	}{
-		{"Mmap", &mmapImage},
 		{"Buffered", &bufferedImage},
 	}
 
@@ -313,25 +298,11 @@ func TestGetData(t *testing.T) {
 }
 
 func TestGetReadSeeker(t *testing.T) {
-	mmapImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
-	if err != nil {
-		t.Fatalf("failed to load container: %v", err)
-	}
-	defer func() {
-		if err := mmapImage.UnloadContainer(); err != nil {
-			t.Error(err)
-		}
-	}()
-
-	// It's a little tough to test the code path for buffered I/O. Cheat a little by forcing
-	// Amodebuf to true, which simulates that.
 	bufferedImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
 	if err != nil {
 		t.Fatalf("failed to load container: %v", err)
 	}
-	bufferedImage.Amodebuf = true // apply hack to fake buffered I/O
 	defer func() {
-		bufferedImage.Amodebuf = false // undo hack to fake buffered I/O (ensures munmap called)
 		if err := bufferedImage.UnloadContainer(); err != nil {
 			t.Error(err)
 		}
@@ -341,7 +312,6 @@ func TestGetReadSeeker(t *testing.T) {
 		name string
 		fimg *FileImage
 	}{
-		{"Mmap", &mmapImage},
 		{"Buffered", &bufferedImage},
 	}
 

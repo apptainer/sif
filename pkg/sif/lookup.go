@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -252,32 +252,19 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 	return descrs, indexes, nil
 }
 
-// GetData return a memory mapped byte slice mirroring the data object in a SIF file.
+// GetData returns the data object associated with descriptor d from image fimg, or nil on error.
 func (d *Descriptor) GetData(fimg *FileImage) []byte {
-	if fimg.Amodebuf {
-		data := make([]byte, d.Filelen)
-		if _, err := io.ReadFull(d.GetReadSeeker(fimg), data); err != nil {
-			return nil
-		}
-		return data
-	}
-
-	if d.Fileoff+d.Filelen > int64(len(fimg.Filedata)) {
-		// there's not enough data in the file to account for the indicated
-		// payload. Is the header corrupted?
+	b := make([]byte, d.Filelen)
+	if _, err := io.ReadFull(d.GetReadSeeker(fimg), b); err != nil {
 		return nil
 	}
-
-	return fimg.Filedata[d.Fileoff : d.Fileoff+d.Filelen]
+	return b
 }
 
 // GetReadSeeker returns a io.ReadSeeker that reads the data object associated with descriptor d
 // from image fimg.
 func (d *Descriptor) GetReadSeeker(fimg *FileImage) io.ReadSeeker {
-	if fimg.Amodebuf {
-		return io.NewSectionReader(fimg.Fp, d.Fileoff, d.Filelen)
-	}
-	return io.NewSectionReader(fimg.Reader, d.Fileoff, d.Filelen)
+	return io.NewSectionReader(fimg.Fp, d.Fileoff, d.Filelen)
 }
 
 // GetName returns the name tag associated with the descriptor. Analogous to file name.

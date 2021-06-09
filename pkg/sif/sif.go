@@ -304,9 +304,9 @@ type FileImage struct {
 	Header     Header        // the loaded SIF global header
 	Fp         ReadWriter    // file pointer of opened SIF file
 	Filesize   int64         // file size of the opened SIF file
-	Filedata   []byte        // the content of the opened file
-	Amodebuf   bool          // access mode: mmap = false, buffered = true
-	Reader     *bytes.Reader // reader on top of Mapdata
+	Filedata   []byte        // Deprecated: Filedata exists for historical compatibility and should not be used.
+	Amodebuf   bool          // Deprecated: Amodebuf exists for historical compatibility and should not be used.
+	Reader     *bytes.Reader // Deprecated: Reader exists for historical compatibility and should not be used.
 	DescrArr   []Descriptor  // slice of loaded descriptors from SIF file
 	PrimPartID uint32        // ID of primary system partition if present
 }
