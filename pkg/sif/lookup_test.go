@@ -7,7 +7,7 @@ package sif
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"testing"
 )
@@ -325,8 +325,8 @@ func TestGetReadSeeker(t *testing.T) {
 			}
 
 			// Read data via ReadSeeker and validate data.
-			b, err := ioutil.ReadAll(descr.GetReadSeeker(tt.fimg))
-			if err != nil {
+			b := make([]byte, descr.Filelen)
+			if _, err := io.ReadFull(descr.GetReadSeeker(tt.fimg), b); err != nil {
 				t.Fatalf("failed to read: %v", err)
 			}
 			if got, want := string(b[5:10]), "BEGIN"; got != want {

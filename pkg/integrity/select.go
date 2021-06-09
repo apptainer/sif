@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"sort"
 
 	"github.com/hpcng/sif/pkg/sif"
@@ -151,10 +152,16 @@ func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]*sif.D
 	// Filter signatures based on legacy flag.
 	sigs := make([]*sif.Descriptor, 0, len(ods))
 	for _, od := range ods {
-		isLegacy, err := isLegacySignature(od.GetData(f))
+		b := make([]byte, od.Filelen)
+		if _, err := io.ReadFull(od.GetReadSeeker(f), b); err != nil {
+			return nil, err
+		}
+
+		isLegacy, err := isLegacySignature(b)
 		if err != nil {
 			return nil, err
 		}
+
 		if isLegacy == legacy {
 			sigs = append(sigs, od)
 		}
