@@ -15,25 +15,25 @@ import (
 	"os"
 )
 
-// Read the global header from r.
-func readHeader(r io.Reader, fimg *FileImage) error {
-	if err := binary.Read(r, binary.LittleEndian, &fimg.Header); err != nil {
+// readBinaryAt reads structured binary data from r at offset off into data.
+func readBinaryAt(r io.ReaderAt, off int64, data interface{}) error {
+	return binary.Read(io.NewSectionReader(r, off, int64(binary.Size(data))), binary.LittleEndian, data)
+}
+
+// Read the global header from r and populate fimg.Header.
+func readHeader(r io.ReaderAt, fimg *FileImage) error {
+	if err := readBinaryAt(r, 0, &fimg.Header); err != nil {
 		return fmt.Errorf("reading global header from container file: %s", err)
 	}
 
 	return nil
 }
 
-// Read the used descriptors from r and populate an in-memory representation of those in node list.
-func readDescriptors(r io.ReadSeeker, fimg *FileImage) error {
-	// start by positioning us to the start of descriptors
-	if _, err := r.Seek(fimg.Header.Descroff, io.SeekStart); err != nil {
-		return fmt.Errorf("seek() setting to descriptors start: %s", err)
-	}
-
+// Read the descriptors from r and populate fimg.DescrArr.
+func readDescriptors(r io.ReaderAt, fimg *FileImage) error {
 	// Initialize descriptor array (slice) and read them all from file
 	fimg.DescrArr = make([]Descriptor, fimg.Header.Dtotal)
-	if err := binary.Read(r, binary.LittleEndian, &fimg.DescrArr); err != nil {
+	if err := readBinaryAt(r, fimg.Header.Descroff, &fimg.DescrArr); err != nil {
 		fimg.DescrArr = nil
 		return fmt.Errorf("reading descriptor array from container file: %s", err)
 	}
