@@ -26,18 +26,38 @@ func TestLoadContainer(t *testing.T) {
 }
 
 func TestLoadContainerFp(t *testing.T) {
-	fp, err := os.Open("testdata/testcontainer2.sif")
-	if err != nil {
-		t.Error("error opening testdata/testcontainer2.sif:", err)
+	tests := []struct {
+		name   string
+		offset int64
+	}{
+		{
+			name: "NoSeek",
+		},
+		{
+			name:   "Seek",
+			offset: 1,
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fp, err := os.Open("testdata/testcontainer2.sif")
+			if err != nil {
+				t.Fatal("error opening testdata/testcontainer2.sif:", err)
+			}
 
-	fimg, err := LoadContainerFp(fp, true)
-	if err != nil {
-		t.Error("LoadContainerFp(fp, true):", err)
-	}
+			if _, err := fp.Seek(tt.offset, io.SeekStart); err != nil {
+				t.Fatal(err)
+			}
 
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("fimg.UnloadContainer():", err)
+			fimg, err := LoadContainerFp(fp, true)
+			if err != nil {
+				t.Error("LoadContainerFp(fp, true):", err)
+			}
+
+			if err = fimg.UnloadContainer(); err != nil {
+				t.Error("fimg.UnloadContainer():", err)
+			}
+		})
 	}
 }
 
@@ -251,7 +271,7 @@ func TestLoadContainerReader(t *testing.T) {
 	r := bytes.NewReader(content[:31768])
 	fimg, err := LoadContainerReader(r)
 	if err != nil || fimg.DescrArr != nil {
-		t.Error(`LoadContainerBuffer(buf):`, err)
+		t.Error(`LoadContainerReader(buf):`, err)
 	}
 
 	if err = fimg.UnloadContainer(); err != nil {
@@ -262,7 +282,7 @@ func TestLoadContainerReader(t *testing.T) {
 	r = bytes.NewReader(content[:32768])
 	fimg, err = LoadContainerReader(r)
 	if err != nil {
-		t.Error(`LoadContainerBuffer(buf):`, err)
+		t.Error(`LoadContainerReader(buf):`, err)
 	}
 
 	if err = fimg.UnloadContainer(); err != nil {
