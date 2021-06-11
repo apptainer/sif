@@ -297,6 +297,7 @@ func TestGetData(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func TestGetReadSeeker(t *testing.T) {
 	bufferedImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
 	if err != nil {
@@ -327,6 +328,46 @@ func TestGetReadSeeker(t *testing.T) {
 			// Read data via ReadSeeker and validate data.
 			b := make([]byte, descr.Filelen)
 			if _, err := io.ReadFull(descr.GetReadSeeker(tt.fimg), b); err != nil {
+				t.Fatalf("failed to read: %v", err)
+			}
+			if got, want := string(b[5:10]), "BEGIN"; got != want {
+				t.Errorf("got data %#v, want %#v", got, want)
+			}
+		})
+	}
+}
+
+//nolint:dupl
+func TestGetReader(t *testing.T) {
+	bufferedImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
+	if err != nil {
+		t.Fatalf("failed to load container: %v", err)
+	}
+	defer func() {
+		if err := bufferedImage.UnloadContainer(); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	tests := []struct {
+		name string
+		fimg *FileImage
+	}{
+		{"Buffered", &bufferedImage},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			// Get the signature block
+			descr, _, err := tt.fimg.GetFromDescrID(3)
+			if err != nil {
+				t.Fatalf("failed to get descriptor: %v", err)
+			}
+
+			// Read data via Reader and validate data.
+			b := make([]byte, descr.Filelen)
+			if _, err := io.ReadFull(descr.GetReader(tt.fimg), b); err != nil {
 				t.Fatalf("failed to read: %v", err)
 			}
 			if got, want := string(b[5:10]), "BEGIN"; got != want {

@@ -128,7 +128,7 @@ func (v *groupVerifier) fingerprints() ([][20]byte, error) {
 // data object fails, a ObjectIntegrityError is returned.
 func (v *groupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (imageMetadata, []uint32, *openpgp.Entity, error) { // nolint:lll
 	b := make([]byte, sig.Filelen)
-	if _, err := io.ReadFull(sig.GetReadSeeker(v.f), b); err != nil {
+	if _, err := io.ReadFull(sig.GetReader(v.f), b); err != nil {
 		return imageMetadata{}, nil, nil, err
 	}
 
@@ -241,7 +241,7 @@ func (v *legacyGroupVerifier) fingerprints() ([][20]byte, error) {
 // If verification of a data object fails, a ObjectIntegrityError is returned.
 func (v *legacyGroupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
 	b := make([]byte, sig.Filelen)
-	if _, err := io.ReadFull(sig.GetReadSeeker(v.f), b); err != nil {
+	if _, err := io.ReadFull(sig.GetReader(v.f), b); err != nil {
 		return nil, err
 	}
 
@@ -275,7 +275,7 @@ func (v *legacyGroupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.Ke
 	// Get reader covering all non-signature objects.
 	rs := make([]io.Reader, 0, len(v.ods))
 	for _, od := range v.ods {
-		rs = append(rs, od.GetReadSeeker(v.f))
+		rs = append(rs, od.GetReader(v.f))
 	}
 	r := io.MultiReader(rs...)
 
@@ -355,7 +355,7 @@ func (v *legacyObjectVerifier) fingerprints() ([][20]byte, error) {
 // If verification of a data object fails, a ObjectIntegrityError is returned.
 func (v *legacyObjectVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
 	b := make([]byte, sig.Filelen)
-	if _, err := io.ReadFull(sig.GetReadSeeker(v.f), b); err != nil {
+	if _, err := io.ReadFull(sig.GetReader(v.f), b); err != nil {
 		return nil, err
 	}
 
@@ -387,7 +387,7 @@ func (v *legacyObjectVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.K
 	}
 
 	// Verify object integrity.
-	if ok, err := d.matches(v.od.GetReadSeeker(v.f)); err != nil {
+	if ok, err := d.matches(v.od.GetReader(v.f)); err != nil {
 		return e, err
 	} else if !ok {
 		return e, &ObjectIntegrityError{ID: v.od.ID}

@@ -263,7 +263,16 @@ func (d *Descriptor) GetData(fimg *FileImage) []byte {
 
 // GetReadSeeker returns a io.ReadSeeker that reads the data object associated with descriptor d
 // from image fimg.
+//
+// Deprecated: GetReadSeeker will be removed in a future release. Use GetData or GetReader to read
+// the data object.
 func (d *Descriptor) GetReadSeeker(fimg *FileImage) io.ReadSeeker {
+	return io.NewSectionReader(fimg.Fp, d.Fileoff, d.Filelen)
+}
+
+// GetReader returns a io.Reader that reads the data object associated with descriptor d from image
+// fimg.
+func (d *Descriptor) GetReader(fimg *FileImage) io.Reader {
 	return io.NewSectionReader(fimg.Fp, d.Fileoff, d.Filelen)
 }
 

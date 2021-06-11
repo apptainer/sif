@@ -153,7 +153,7 @@ func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]*sif.D
 	sigs := make([]*sif.Descriptor, 0, len(ods))
 	for _, od := range ods {
 		b := make([]byte, od.Filelen)
-		if _, err := io.ReadFull(od.GetReadSeeker(f), b); err != nil {
+		if _, err := io.ReadFull(od.GetReader(f), b); err != nil {
 			return nil, err
 		}
 
