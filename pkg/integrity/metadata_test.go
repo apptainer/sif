@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -19,6 +19,7 @@ import (
 
 	"github.com/hpcng/sif/pkg/sif"
 	uuid "github.com/satori/go.uuid"
+	"github.com/sebdah/goldie/v2"
 )
 
 func TestWriteHeader(t *testing.T) {
@@ -98,9 +99,8 @@ func TestWriteHeader(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err := verifyGolden(t.Name(), &b); err != nil {
-				t.Errorf("failed to verify golden: %v", err)
-			}
+			g := goldie.New(t, goldie.WithTestNameForDir(true))
+			g.Assert(t, tt.name, b.Bytes())
 		})
 	}
 }
@@ -199,9 +199,8 @@ func TestWriteDescriptor(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err := verifyGolden(t.Name(), &b); err != nil {
-				t.Errorf("failed to verify golden: %v", err)
-			}
+			g := goldie.New(t, goldie.WithTestNameForDir(true))
+			g.Assert(t, tt.name, b.Bytes())
 		})
 	}
 }
@@ -246,9 +245,8 @@ func TestGetHeaderMetadata(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if err := verifyGolden(t.Name(), &b); err != nil {
-					t.Errorf("failed to verify golden: %v", err)
-				}
+				g := goldie.New(t, goldie.WithTestNameForDir(true))
+				g.Assert(t, tt.name, b.Bytes())
 			}
 		})
 	}
@@ -293,9 +291,8 @@ func TestGetObjectMetadata(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if err := verifyGolden(t.Name(), &b); err != nil {
-					t.Errorf("failed to verify golden: %v", err)
-				}
+				g := goldie.New(t, goldie.WithTestNameForDir(true))
+				g.Assert(t, tt.name, b.Bytes())
 			}
 		})
 	}
@@ -350,9 +347,8 @@ func TestGetImageMetadata(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if err := verifyGolden(t.Name(), &b); err != nil {
-					t.Errorf("failed to verify golden: %v", err)
-				}
+				g := goldie.New(t, goldie.WithTestNameForDir(true))
+				g.Assert(t, tt.name, b.Bytes())
 			}
 		})
 	}
