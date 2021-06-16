@@ -26,24 +26,15 @@ all your interactions with the project members and users.
 
 #### Process
 
-1. Essential bug fix PRs should be sent to both master and release branches.
-2. Small bug fix and feature enhancement PRs should be sent to master only.
-3. Follow the existing code style precedent, especially for C. For Golang, you
-   will mostly conform to the style and form enforced by the "go fmt" and
-   "golint" tools for proper formatting.
-4. Ensure any install or build dependencies are removed before doing a build
-   to test your PR locally.
-5. For any new functionality, please write appropriate go tests that will run
-   as part of the Continuous Integration (Circle CI) system.
-6. The project's default copyright and header have been included in any new
-   source files.
-7. Make sure you have implemented a local `make test` and all tests succeed
-   before submitting the PR.
-8. Is the code human understandable? This can be accomplished via a clear code
-   style as well as documentation and/or comments.
-9. The pull request will be reviewed by others, and finally merged when all
-   requirements are met.
-10. Documentation must be provided if necessary (next section)
+1. Essential bug fix PRs should be sent to both `master` and release branches (if applicable).
+1. Small bug fix and feature enhancement PRs should be sent to `master` only.
+1. Follow the existing code style precedent. Use [golangci-lint](https://golangci-lint.run) to ensure your code is properly formatted and free of lint.
+1. For any new functionality, please write appropriate tests that will run as part of the continuous integration system ([CircleCI](https://circleci.com/gh/sylabs/workflows/sif)).
+1. Ensure the project's default copyright and header have been included in any new source files.
+1. Make sure you have run `go test ./...` and all tests succeed before submitting the PR.
+1. Is the code human understandable? This can be accomplished via a clear code style as well as documentation and/or comments.
+1. The pull request will be reviewed by others, and finally merged when all requirements are met.
+1. Documentation must be provided if necessary (next section)
 
 #### Documentation
 
