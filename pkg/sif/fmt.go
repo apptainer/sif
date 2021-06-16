@@ -39,6 +39,8 @@ func readableSize(size uint64) string {
 }
 
 // FmtHeader formats the output of a SIF file global header.
+//
+// Deprecated: FmtHeader will be removed in a future release.
 func (fimg *FileImage) FmtHeader() string {
 	s := fmt.Sprintln("Launch:  ", trimZeroBytes(fimg.Header.Launch[:]))
 	s += fmt.Sprintln("Magic:   ", trimZeroBytes(fimg.Header.Magic[:]))
@@ -58,6 +60,8 @@ func (fimg *FileImage) FmtHeader() string {
 }
 
 // FmtDescrList formats the output of a list of all active descriptors from a SIF file.
+//
+// Deprecated: FmtDescrList will be removed in a future release.
 func (fimg *FileImage) FmtDescrList() string {
 	s := fmt.Sprintf("%-4s %-8s %-8s %-26s %s\n", "ID", "|GROUP", "|LINK", "|SIF POSITION (start-end)", "|TYPE")
 	s += fmt.Sprintln("------------------------------------------------------------------------------")
@@ -108,6 +112,8 @@ func (fimg *FileImage) FmtDescrList() string {
 }
 
 // FmtDescrInfo formats the output of detailed info about a descriptor from a SIF file.
+//
+// Deprecated: FmtDescrInfo will be removed in a future release.
 func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 	var s string
 

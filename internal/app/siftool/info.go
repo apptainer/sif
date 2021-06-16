@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2018, Divya Cote <divya.cote@gmail.com> All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
@@ -30,6 +30,7 @@ func Header(file string) error {
 		}
 	}()
 
+	//nolint:staticcheck // In use until v2 API to avoid code duplication
 	fmt.Print(fimg.FmtHeader())
 
 	return nil
@@ -54,6 +55,7 @@ func List(file string) error {
 
 	fmt.Println("Descriptor list:")
 
+	//nolint:staticcheck // In use until v2 API to avoid code duplication
 	fmt.Print(fimg.FmtDescrList())
 
 	return nil
@@ -71,6 +73,7 @@ func Info(descr uint64, file string) error {
 		}
 	}()
 
+	//nolint:staticcheck // In use until v2 API to avoid code duplication
 	fmt.Print(fimg.FmtDescrInfo(uint32(descr)))
 
 	return nil
