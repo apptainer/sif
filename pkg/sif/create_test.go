@@ -382,7 +382,7 @@ func cpFile(fromFile, toFile string) error {
 	}
 	defer s.Close()
 
-	d, err := os.OpenFile(toFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+	d, err := os.OpenFile(toFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o777)
 	if err != nil {
 		return err
 	}

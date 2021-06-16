@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -237,7 +237,7 @@ func CreateContainer(cinfo CreateInfo) (fimg *FileImage, err error) {
 	fimg.Header.Dataoff = DataStartOffset
 
 	// Create container file
-	fimg.Fp, err = os.OpenFile(cinfo.Pathname, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	fimg.Fp, err = os.OpenFile(cinfo.Pathname, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
 	if err != nil {
 		return nil, fmt.Errorf("container file creation failed: %s", err)
 	}

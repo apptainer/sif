@@ -77,7 +77,7 @@ func (fimg *FileImage) GetHeader() *Header {
 
 // GetFromDescrID searches for a descriptor with.
 func (fimg *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
-	var match = -1
+	match := -1
 
 	for i, v := range fimg.DescrArr {
 		if !v.Used {

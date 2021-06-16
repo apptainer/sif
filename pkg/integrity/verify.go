@@ -520,7 +520,7 @@ func OptVerifyCallback(cb VerifyCallback) VerifierOpt {
 }
 
 // getTasks returns verification tasks corresponding to groupIDs and objectIDs.
-func getTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, objectIDs []uint32) ([]verifyTask, error) {
+func getTasks(f *sif.FileImage, cb VerifyCallback, groupIDs, objectIDs []uint32) ([]verifyTask, error) {
 	t := make([]verifyTask, 0, len(groupIDs)+len(objectIDs))
 
 	for _, groupID := range groupIDs {
@@ -548,7 +548,7 @@ func getTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, objectIDs 
 }
 
 // getLegacyTasks returns legacy verification tasks corresponding to groupIDs and objectIDs.
-func getLegacyTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, objectIDs []uint32) ([]verifyTask, error) {
+func getLegacyTasks(f *sif.FileImage, cb VerifyCallback, groupIDs, objectIDs []uint32) ([]verifyTask, error) {
 	t := make([]verifyTask, 0, len(groupIDs)+len(objectIDs))
 
 	for _, groupID := range groupIDs {

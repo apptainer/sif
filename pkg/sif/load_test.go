@@ -76,7 +76,7 @@ func (m *mockFileInfo) Size() int64 {
 }
 
 func (m *mockFileInfo) Mode() os.FileMode {
-	return 0644
+	return 0o644
 }
 
 func (m *mockFileInfo) ModTime() time.Time {

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,16 +14,18 @@ import (
 	"github.com/hpcng/sif/pkg/sif"
 )
 
-var datatype = flag.Int64("datatype", -1, "")
-var parttype = flag.Int64("parttype", -1, "")
-var partfs = flag.Int64("partfs", -1, "")
-var partarch = flag.Int64("partarch", -1, "")
-var signhash = flag.Int64("signhash", -1, "")
-var signentity = flag.String("signentity", "", "")
-var groupid = flag.Int64("groupid", sif.DescrUnusedGroup, "")
-var link = flag.Int64("link", sif.DescrUnusedLink, "")
-var alignment = flag.Int("alignment", 0, "")
-var filename = flag.String("filename", "", "")
+var (
+	datatype   = flag.Int64("datatype", -1, "")
+	parttype   = flag.Int64("parttype", -1, "")
+	partfs     = flag.Int64("partfs", -1, "")
+	partarch   = flag.Int64("partarch", -1, "")
+	signhash   = flag.Int64("signhash", -1, "")
+	signentity = flag.String("signentity", "", "")
+	groupid    = flag.Int64("groupid", sif.DescrUnusedGroup, "")
+	link       = flag.Int64("link", sif.DescrUnusedLink, "")
+	alignment  = flag.Int("alignment", 0, "")
+	filename   = flag.String("filename", "", "")
+)
 
 func cmdNew(args []string) error {
 	if len(args) != 1 {

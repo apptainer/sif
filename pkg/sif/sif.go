@@ -316,16 +316,13 @@ type Descriptor struct {
 }
 
 // Deffile represents the SIF definition-file data object descriptor.
-type Deffile struct {
-}
+type Deffile struct{}
 
 // Labels represents the SIF JSON-labels data object descriptor.
-type Labels struct {
-}
+type Labels struct{}
 
 // Envvar represents the SIF envvar data object descriptor.
-type Envvar struct {
-}
+type Envvar struct{}
 
 // Partition represents the SIF partition data object descriptor.
 type Partition struct {
@@ -341,12 +338,10 @@ type Signature struct {
 }
 
 // GenericJSON represents the SIF generic JSON meta-data data object descriptor.
-type GenericJSON struct {
-}
+type GenericJSON struct{}
 
 // Generic represents the SIF generic data object descriptor.
-type Generic struct {
-}
+type Generic struct{}
 
 // CryptoMessage represents the SIF crypto message object descriptor.
 type CryptoMessage struct {
