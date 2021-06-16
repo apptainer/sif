@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2018, Divya Cote <divya.cote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
@@ -10,29 +10,6 @@ import (
 	"fmt"
 	"time"
 )
-
-// String will return a string corresponding to the Datatype.
-func (d Datatype) String() string {
-	switch d {
-	case DataDeffile:
-		return "Def.FILE"
-	case DataEnvVar:
-		return "Env.Vars"
-	case DataLabels:
-		return "JSON.Labels"
-	case DataPartition:
-		return "FS"
-	case DataSignature:
-		return "Signature"
-	case DataGenericJSON:
-		return "JSON.Generic"
-	case DataGeneric:
-		return "Generic/Raw"
-	case DataCryptoMessage:
-		return "Cryptographic Message"
-	}
-	return "Unknown"
-}
 
 // readableSize returns the size in human readable format.
 func readableSize(size uint64) string {
@@ -78,77 +55,6 @@ func (fimg *FileImage) FmtHeader() string {
 	s += fmt.Sprintln("Datalen: ", readableSize(uint64(fimg.Header.Datalen)))
 
 	return s
-}
-
-// fstypeStr returns a string representation of a file system type.
-func fstypeStr(ftype Fstype) string {
-	switch ftype {
-	case FsSquash:
-		return "Squashfs"
-	case FsExt3:
-		return "Ext3"
-	case FsImmuObj:
-		return "Archive"
-	case FsRaw:
-		return "Raw"
-	case FsEncryptedSquashfs:
-		return "Encrypted squashfs"
-	}
-	return "Unknown fs-type"
-}
-
-// parttypeStr returns a string representation of a partition type.
-func parttypeStr(ptype Parttype) string {
-	switch ptype {
-	case PartSystem:
-		return "System"
-	case PartPrimSys:
-		return "*System"
-	case PartData:
-		return "Data"
-	case PartOverlay:
-		return "Overlay"
-	}
-	return "Unknown part-type"
-}
-
-// hashtypeStr returns a string representation of a  hash type.
-func hashtypeStr(htype Hashtype) string {
-	switch htype {
-	case HashSHA256:
-		return "SHA256"
-	case HashSHA384:
-		return "SHA384"
-	case HashSHA512:
-		return "SHA512"
-	case HashBLAKE2S:
-		return "BLAKE2S"
-	case HashBLAKE2B:
-		return "BLAKE2B"
-	}
-	return "Unknown hash-type"
-}
-
-// formattypeStr returns a string representation of a format type.
-func formattypeStr(ftype Formattype) string {
-	switch ftype {
-	case FormatOpenPGP:
-		return "OpenPGP"
-	case FormatPEM:
-		return "PEM"
-	}
-	return "Unknown format-type"
-}
-
-// messagetypeStr returns a string representation of a message type.
-func messagetypeStr(mtype Messagetype) string {
-	switch mtype {
-	case MessageClearSignature:
-		return "Clear Signature"
-	case MessageRSAOAEP:
-		return "RSA-OAEP"
-	}
-	return "Unknown message-type"
 }
 
 // FmtDescrList formats the output of a list of all active descriptors from a SIF file.

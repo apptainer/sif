@@ -140,6 +140,29 @@ const (
 	DataCryptoMessage                          // cryptographic message data object
 )
 
+// String will return a string corresponding to the Datatype.
+func (d Datatype) String() string {
+	switch d {
+	case DataDeffile:
+		return "Def.FILE"
+	case DataEnvVar:
+		return "Env.Vars"
+	case DataLabels:
+		return "JSON.Labels"
+	case DataPartition:
+		return "FS"
+	case DataSignature:
+		return "Signature"
+	case DataGenericJSON:
+		return "JSON.Generic"
+	case DataGeneric:
+		return "Generic/Raw"
+	case DataCryptoMessage:
+		return "Cryptographic Message"
+	}
+	return "Unknown"
+}
+
 // Fstype represents the different SIF file system types found in partition data objects.
 type Fstype int32
 
@@ -152,6 +175,23 @@ const (
 	FsEncryptedSquashfs                   // Encrypted Squashfs file system, RDONLY
 )
 
+// fstypeStr returns a string representation of a file system type.
+func fstypeStr(ftype Fstype) string {
+	switch ftype {
+	case FsSquash:
+		return "Squashfs"
+	case FsExt3:
+		return "Ext3"
+	case FsImmuObj:
+		return "Archive"
+	case FsRaw:
+		return "Raw"
+	case FsEncryptedSquashfs:
+		return "Encrypted squashfs"
+	}
+	return "Unknown fs-type"
+}
+
 // Parttype represents the different SIF container partition types (system and data).
 type Parttype int32
 
@@ -162,6 +202,21 @@ const (
 	PartData                        // partition hosts data only
 	PartOverlay                     // partition hosts an overlay
 )
+
+// parttypeStr returns a string representation of a partition type.
+func parttypeStr(ptype Parttype) string {
+	switch ptype {
+	case PartSystem:
+		return "System"
+	case PartPrimSys:
+		return "*System"
+	case PartData:
+		return "Data"
+	case PartOverlay:
+		return "Overlay"
+	}
+	return "Unknown part-type"
+}
 
 // Hashtype represents the different SIF hashing function types used to fingerprint data objects.
 type Hashtype int32
@@ -175,6 +230,23 @@ const (
 	HashBLAKE2B
 )
 
+// hashtypeStr returns a string representation of a  hash type.
+func hashtypeStr(htype Hashtype) string {
+	switch htype {
+	case HashSHA256:
+		return "SHA256"
+	case HashSHA384:
+		return "SHA384"
+	case HashSHA512:
+		return "SHA512"
+	case HashBLAKE2S:
+		return "BLAKE2S"
+	case HashBLAKE2B:
+		return "BLAKE2B"
+	}
+	return "Unknown hash-type"
+}
+
 // Formattype represents the different formats used to store cryptographic message objects.
 type Formattype int32
 
@@ -183,6 +255,17 @@ const (
 	FormatOpenPGP Formattype = iota + 1
 	FormatPEM
 )
+
+// formattypeStr returns a string representation of a format type.
+func formattypeStr(ftype Formattype) string {
+	switch ftype {
+	case FormatOpenPGP:
+		return "OpenPGP"
+	case FormatPEM:
+		return "PEM"
+	}
+	return "Unknown format-type"
+}
 
 // Messagetype represents the different messages stored within cryptographic message objects.
 type Messagetype int32
@@ -195,6 +278,17 @@ const (
 	// PEM formatted messages
 	MessageRSAOAEP Messagetype = 0x200
 )
+
+// messagetypeStr returns a string representation of a message type.
+func messagetypeStr(mtype Messagetype) string {
+	switch mtype {
+	case MessageClearSignature:
+		return "Clear Signature"
+	case MessageRSAOAEP:
+		return "RSA-OAEP"
+	}
+	return "Unknown message-type"
+}
 
 // SIF data object deletion strategies.
 const (
