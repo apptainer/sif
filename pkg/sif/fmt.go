@@ -90,14 +90,14 @@ func (fimg *FileImage) FmtDescrList() string {
 				f, _ := v.GetFsType()
 				p, _ := v.GetPartType()
 				a, _ := v.GetArch()
-				s += fmt.Sprintf("|%s (%s/%s/%s)\n", v.Datatype, fstypeStr(f), parttypeStr(p), GetGoArch(trimZeroBytes(a[:])))
+				s += fmt.Sprintf("|%s (%s/%s/%s)\n", v.Datatype, f, p, GetGoArch(trimZeroBytes(a[:])))
 			case DataSignature:
 				h, _ := v.GetHashType()
-				s += fmt.Sprintf("|%s (%s)\n", v.Datatype, hashtypeStr(h))
+				s += fmt.Sprintf("|%s (%s)\n", v.Datatype, h)
 			case DataCryptoMessage:
 				f, _ := v.GetFormatType()
 				m, _ := v.GetMessageType()
-				s += fmt.Sprintf("|%s (%s/%s)\n", v.Datatype, formattypeStr(f), messagetypeStr(m))
+				s += fmt.Sprintf("|%s (%s/%s)\n", v.Datatype, f, m)
 			default:
 				s += fmt.Sprintf("|%s\n", v.Datatype)
 			}
@@ -145,19 +145,19 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 				f, _ := v.GetFsType()
 				p, _ := v.GetPartType()
 				a, _ := v.GetArch()
-				s += fmt.Sprintln("  Fstype:   ", fstypeStr(f))
-				s += fmt.Sprintln("  Parttype: ", parttypeStr(p))
+				s += fmt.Sprintln("  Fstype:   ", f)
+				s += fmt.Sprintln("  Parttype: ", p)
 				s += fmt.Sprintln("  Arch:     ", GetGoArch(trimZeroBytes(a[:])))
 			case DataSignature:
 				h, _ := v.GetHashType()
 				e, _ := v.GetEntityString()
-				s += fmt.Sprintln("  Hashtype: ", hashtypeStr(h))
+				s += fmt.Sprintln("  Hashtype: ", h)
 				s += fmt.Sprintln("  Entity:   ", e)
 			case DataCryptoMessage:
 				f, _ := v.GetFormatType()
 				m, _ := v.GetMessageType()
-				s += fmt.Sprintln("  Fmttype:  ", formattypeStr(f))
-				s += fmt.Sprintln("  Msgtype:  ", messagetypeStr(m))
+				s += fmt.Sprintln("  Fmttype:  ", f)
+				s += fmt.Sprintln("  Msgtype:  ", m)
 			}
 
 			return s
