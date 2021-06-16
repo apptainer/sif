@@ -58,6 +58,7 @@ func (e *SignatureNotValidError) Is(target error) bool {
 	return e.ID == t.ID || t.ID == 0
 }
 
+// VerifyResult is the interface that each verification result implements.
 type VerifyResult interface {
 	// Signature returns the ID of the signature object associated with the result.
 	Signature() uint32
