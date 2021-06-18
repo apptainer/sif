@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -8,6 +8,9 @@
 package siftool
 
 import (
+	"errors"
+	"os"
+
 	"github.com/hpcng/sif/internal/app/siftool"
 	"github.com/hpcng/sif/pkg/sif"
 	"github.com/spf13/cobra"
@@ -16,67 +19,130 @@ import (
 // Add implements 'siftool add' sub-command.
 func Add() *cobra.Command {
 	ret := &cobra.Command{
-		Use:   "add [OPTIONS] <containerfile> <dataobjectfile>",
+		Use:   "add <containerfile> <dataobjectfile>",
 		Short: "Add a data object to a SIF file",
 		Args:  cobra.ExactArgs(2),
 	}
 
-	opts := siftool.AddOptions{
-		Datatype: ret.Flags().Int64("datatype", -1, `the type of data to add
+	datatype := ret.Flags().Int("datatype", 0, `the type of data to add
 [NEEDED, no default]:
   1-Deffile,   2-EnvVar,    3-Labels,
-  4-Partition, 5-Signature, 6-GenericJSON`),
-		Parttype: ret.Flags().Int64("parttype", -1, `the type of partition (with -datatype 4-Partition)
+  4-Partition, 5-Signature, 6-GenericJSON`)
+	parttype := ret.Flags().Int32("parttype", 0, `the type of partition (with -datatype 4-Partition)
 [NEEDED, no default]:
   1-System,    2-PrimSys,   3-Data,
-  4-Overlay`),
-		Partfs: ret.Flags().Int64("partfs", -1, `the filesystem used (with -datatype 4-Partition)
+  4-Overlay`)
+	partfs := ret.Flags().Int32("partfs", 0, `the filesystem used (with -datatype 4-Partition)
 [NEEDED, no default]:
   1-Squash,    2-Ext3,      3-ImmuObj,
-  4-Raw`),
-		Partarch: ret.Flags().Int64("partarch", -1, `the main architecture used (with -datatype 4-Partition)
+  4-Raw`)
+	partarch := ret.Flags().Int32("partarch", 0, `the main architecture used (with -datatype 4-Partition)
 [NEEDED, no default]:
   1-386,       2-amd64,     3-arm,
   4-arm64,     5-ppc64,     6-ppc64le,
   7-mips,      8-mipsle,    9-mips64,
-  10-mips64le, 11-s390x`),
-		Signhash: ret.Flags().Int64("signhash", -1, `the signature hash used (with -datatype 5-Signature)
+  10-mips64le, 11-s390x`)
+	signhash := ret.Flags().Int32("signhash", 0, `the signature hash used (with -datatype 5-Signature)
 [NEEDED, no default]:
   1-SHA256,    2-SHA384,    3-SHA512,
-  4-BLAKE2S,   5-BLAKE2B`),
-		Signentity: ret.Flags().String("signentity", "", `the entity that signs (with -datatype 5-Signature)
+  4-BLAKE2S,   5-BLAKE2B`)
+	signentity := ret.Flags().String("signentity", "", `the entity that signs (with -datatype 5-Signature)
 [NEEDED, no default]:
-  example: 433FE984155206BD962725E20E8713472A879943`),
-		Groupid:   ret.Flags().Int64("groupid", sif.DescrUnusedGroup, "set groupid [default: DescrUnusedGroup]"),
-		Link:      ret.Flags().Int64("link", sif.DescrUnusedLink, "set link pointer [default: DescrUnusedLink]"),
-		Alignment: ret.Flags().Int("alignment", 0, "set alignment constraint [default: aligned on page size]"),
-		Filename:  ret.Flags().String("filename", "", "set logical filename/handle [default: input filename]"),
-	}
+  example: 433FE984155206BD962725E20E8713472A879943`)
+	groupid := ret.Flags().Uint32("groupid", 0, "set groupid [default: 0]")
+	link := ret.Flags().Uint32("link", 0, "set link pointer [default: 0]")
+	alignment := ret.Flags().Int("alignment", 0, "set alignment constraint [default: aligned on page size]")
+	filename := ret.Flags().String("filename", "", "set logical filename/handle [default: input filename]")
 
 	ret.RunE = func(cmd *cobra.Command, args []string) error {
-		return siftool.Add(args[0], args[1], opts)
-	}
-
-	// function to set flag.DefVal to the "zero-value"
-	fn := func(name, setdef string) {
-		fl := ret.Flags().Lookup(name)
-		if fl == nil {
-			return
+		opts := siftool.AddOptions{
+			Groupid:   *groupid,
+			Link:      *link,
+			Alignment: *alignment,
+			Filename:  *filename,
+			Fp:        os.Stdin,
 		}
 
-		fl.DefValue = setdef
-	}
+		switch *datatype {
+		case 1:
+			opts.Datatype = sif.DataDeffile
+		case 2:
+			opts.Datatype = sif.DataEnvVar
+		case 3:
+			opts.Datatype = sif.DataLabels
+		case 4:
+			opts.Datatype = sif.DataPartition
+		case 5:
+			opts.Datatype = sif.DataSignature
+		case 6:
+			opts.Datatype = sif.DataGenericJSON
+		case 7:
+			opts.Datatype = sif.DataGeneric
+		case 8:
+			opts.Datatype = sif.DataCryptoMessage
+		default:
+			return errors.New("-datatype flag is required with a valid range")
+		}
 
-	// set the DefVal fields for all the siftool add flags
-	fn("datatype", "0")
-	fn("parttype", "0")
-	fn("partfs", "0")
-	fn("partarch", "0")
-	fn("signhash", "0")
-	fn("signentity", "")
-	fn("groupid", "0")
-	fn("link", "0")
-	fn("alignment", "0")
+		if opts.Datatype == sif.DataPartition {
+			if *partfs == 0 || *parttype == 0 || *partarch == 0 {
+				return errors.New("with partition datatype, -partfs, -parttype and -partarch must be passed")
+			}
+
+			opts.Parttype = sif.Parttype(*parttype)
+			opts.Partfs = sif.Fstype(*partfs)
+
+			switch *partarch {
+			case 1:
+				opts.Partarch = sif.HdrArch386
+			case 2:
+				opts.Partarch = sif.HdrArchAMD64
+			case 3:
+				opts.Partarch = sif.HdrArchARM
+			case 4:
+				opts.Partarch = sif.HdrArchARM64
+			case 5:
+				opts.Partarch = sif.HdrArchPPC64
+			case 6:
+				opts.Partarch = sif.HdrArchPPC64le
+			case 7:
+				opts.Partarch = sif.HdrArchMIPS
+			case 8:
+				opts.Partarch = sif.HdrArchMIPSle
+			case 9:
+				opts.Partarch = sif.HdrArchMIPS64
+			case 10:
+				opts.Partarch = sif.HdrArchMIPS64le
+			case 11:
+				opts.Partarch = sif.HdrArchS390x
+			default:
+				return errors.New("-partarch flag is required with a valid range")
+			}
+		} else if opts.Datatype == sif.DataSignature {
+			if *signhash == 0 || *signentity == "" {
+				return errors.New("with signature datatype, -signhash and -signentity must be passed")
+			}
+
+			opts.Signhash = sif.Hashtype(*signhash)
+			opts.Signentity = *signentity
+		}
+
+		if dataFile := args[1]; dataFile != "-" {
+			fp, err := os.Open(dataFile)
+			if err != nil {
+				return err
+			}
+			defer fp.Close()
+
+			opts.Fp = fp
+
+			if opts.Filename == "" {
+				opts.Filename = dataFile
+			}
+		}
+
+		return siftool.Add(args[0], opts)
+	}
 
 	return ret
 }

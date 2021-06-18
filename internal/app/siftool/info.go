@@ -19,8 +19,8 @@ import (
 )
 
 // Header displays a SIF file global header.
-func Header(file string) error {
-	fimg, err := sif.LoadContainer(file, true)
+func Header(path string) error {
+	fimg, err := sif.LoadContainer(path, true)
 	if err != nil {
 		return err
 	}
@@ -37,8 +37,8 @@ func Header(file string) error {
 }
 
 // List displays a list of all active descriptors from a SIF file.
-func List(file string) error {
-	fimg, err := sif.LoadContainer(file, true)
+func List(path string) error {
+	fimg, err := sif.LoadContainer(path, true)
 	if err != nil {
 		return err
 	}
@@ -62,8 +62,8 @@ func List(file string) error {
 }
 
 // Info displays detailed info about a descriptor from a SIF file.
-func Info(descr uint64, file string) error {
-	fimg, err := sif.LoadContainer(file, true)
+func Info(path string, id uint32) error {
+	fimg, err := sif.LoadContainer(path, true)
 	if err != nil {
 		return err
 	}
@@ -74,14 +74,14 @@ func Info(descr uint64, file string) error {
 	}()
 
 	//nolint:staticcheck // In use until v2 API to avoid code duplication
-	fmt.Print(fimg.FmtDescrInfo(uint32(descr)))
+	fmt.Print(fimg.FmtDescrInfo(id))
 
 	return nil
 }
 
 // Dump extracts and outputs a data object from a SIF file.
-func Dump(descr uint64, file string) error {
-	fimg, err := sif.LoadContainer(file, true)
+func Dump(path string, id uint32) error {
+	fimg, err := sif.LoadContainer(path, true)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func Dump(descr uint64, file string) error {
 		if !v.Used {
 			continue
 		}
-		if v.ID == uint32(descr) {
+		if v.ID == id {
 			if _, err := fimg.Fp.Seek(v.Fileoff, 0); err != nil {
 				return fmt.Errorf("while seeking to data object: %s", err)
 			}
