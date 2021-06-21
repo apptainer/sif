@@ -31,9 +31,8 @@ func Header(path string) error {
 	}()
 
 	//nolint:staticcheck // In use until v2 API to avoid code duplication
-	fmt.Print(fimg.FmtHeader())
-
-	return nil
+	_, err = fmt.Print(fimg.FmtHeader())
+	return err
 }
 
 // List displays a list of all active descriptors from a SIF file.
@@ -56,9 +55,8 @@ func List(path string) error {
 	fmt.Println("Descriptor list:")
 
 	//nolint:staticcheck // In use until v2 API to avoid code duplication
-	fmt.Print(fimg.FmtDescrList())
-
-	return nil
+	_, err = fmt.Print(fimg.FmtDescrList())
+	return err
 }
 
 // Info displays detailed info about a descriptor from a SIF file.
@@ -74,9 +72,8 @@ func Info(path string, id uint32) error {
 	}()
 
 	//nolint:staticcheck // In use until v2 API to avoid code duplication
-	fmt.Print(fimg.FmtDescrInfo(id))
-
-	return nil
+	_, err = fmt.Print(fimg.FmtDescrInfo(id))
+	return err
 }
 
 // Dump extracts and outputs a data object from a SIF file.
@@ -91,20 +88,11 @@ func Dump(path string, id uint32) error {
 		}
 	}()
 
-	for _, v := range fimg.DescrArr {
-		if !v.Used {
-			continue
-		}
-		if v.ID == id {
-			if _, err := fimg.Fp.Seek(v.Fileoff, 0); err != nil {
-				return fmt.Errorf("while seeking to data object: %s", err)
-			}
-			if _, err := io.CopyN(os.Stdout, fimg.Fp, v.Filelen); err != nil {
-				return fmt.Errorf("while copying data object to stdout: %s", err)
-			}
-			return nil
-		}
+	d, _, err := fimg.GetFromDescrID(id)
+	if err != nil {
+		return err
 	}
 
-	return fmt.Errorf("descriptor not in range or currently unused")
+	_, err = io.CopyN(os.Stdout, d.GetReader(&fimg), d.Filelen)
+	return err
 }

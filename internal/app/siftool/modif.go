@@ -9,7 +9,6 @@
 package siftool
 
 import (
-	"fmt"
 	"io"
 	"log"
 
@@ -102,15 +101,7 @@ func Del(path string, id uint32) error {
 		}
 	}()
 
-	for _, v := range fimg.DescrArr {
-		if !v.Used {
-			continue
-		} else if v.ID == id {
-			return fimg.DeleteObject(id, 0)
-		}
-	}
-
-	return fmt.Errorf("descriptor not in range or currently unused")
+	return fimg.DeleteObject(id, 0)
 }
 
 // Setprim sets the primary system partition of the SIF file.
@@ -125,13 +116,5 @@ func Setprim(path string, id uint32) error {
 		}
 	}()
 
-	for _, v := range fimg.DescrArr {
-		if !v.Used {
-			continue
-		} else if v.ID == id {
-			return fimg.SetPrimPart(id)
-		}
-	}
-
-	return fmt.Errorf("descriptor not in range or currently unused")
+	return fimg.SetPrimPart(id)
 }
