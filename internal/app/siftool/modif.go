@@ -10,7 +10,6 @@ package siftool
 
 import (
 	"io"
-	"log"
 
 	"github.com/hpcng/sif/pkg/sif"
 	uuid "github.com/satori/go.uuid"
@@ -74,47 +73,21 @@ func Add(path string, opts AddOptions) error {
 		}
 	}
 
-	// load SIF image file
-	fimg, err := sif.LoadContainer(path, false)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := fimg.UnloadContainer(); err != nil {
-			log.Printf("Error unloading container: %v", err)
-		}
-	}()
-
-	// add new data object to SIF file
-	return fimg.AddObject(input)
+	return withFileImage(path, true, func(f *sif.FileImage) error {
+		return f.AddObject(input)
+	})
 }
 
 // Del deletes a specified object descriptor and data from the SIF file.
 func Del(path string, id uint32) error {
-	fimg, err := sif.LoadContainer(path, false)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := fimg.UnloadContainer(); err != nil {
-			log.Printf("Error unloading container: %v", err)
-		}
-	}()
-
-	return fimg.DeleteObject(id, 0)
+	return withFileImage(path, true, func(f *sif.FileImage) error {
+		return f.DeleteObject(id, 0)
+	})
 }
 
 // Setprim sets the primary system partition of the SIF file.
 func Setprim(path string, id uint32) error {
-	fimg, err := sif.LoadContainer(path, false)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := fimg.UnloadContainer(); err != nil {
-			log.Printf("Error unloading container: %v", err)
-		}
-	}()
-
-	return fimg.SetPrimPart(id)
+	return withFileImage(path, true, func(f *sif.FileImage) error {
+		return f.SetPrimPart(id)
+	})
 }
