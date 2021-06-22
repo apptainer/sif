@@ -11,8 +11,8 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/hpcng/sif/pkg/sif"
-	"github.com/hpcng/sif/pkg/siftool"
+	"github.com/hpcng/sif/v2/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/siftool"
 	"github.com/spf13/cobra"
 )
 

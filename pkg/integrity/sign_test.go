@@ -14,7 +14,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/sebdah/goldie/v2"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/packet"

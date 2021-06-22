@@ -11,8 +11,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/hpcng/sif/pkg/integrity"
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/integrity"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/openpgp"
 )

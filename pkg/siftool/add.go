@@ -11,8 +11,8 @@ import (
 	"errors"
 	"os"
 
-	"github.com/hpcng/sif/internal/app/siftool"
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/internal/app/siftool"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/spf13/cobra"
 )
 

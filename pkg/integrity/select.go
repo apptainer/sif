@@ -12,7 +12,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 )
 
 var (

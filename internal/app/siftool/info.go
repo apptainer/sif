@@ -14,7 +14,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 )
 
 // Header displays a SIF file global header.

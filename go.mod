@@ -1,4 +1,4 @@
-module github.com/hpcng/sif
+module github.com/hpcng/sif/v2
 
 go 1.15
 
