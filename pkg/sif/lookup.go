@@ -255,25 +255,15 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 // GetData returns the data object associated with descriptor d from image fimg, or nil on error.
 func (d *Descriptor) GetData(fimg *FileImage) []byte {
 	b := make([]byte, d.Filelen)
-	if _, err := io.ReadFull(d.GetReadSeeker(fimg), b); err != nil {
+	if _, err := io.ReadFull(d.GetReader(fimg), b); err != nil {
 		return nil
 	}
 	return b
 }
 
-// GetReadSeeker returns a io.ReadSeeker that reads the data object associated with descriptor d
-// from image fimg.
-//
-// Deprecated: GetReadSeeker will be removed in a future release. Use GetData or GetReader to read
-// the data object.
-func (d *Descriptor) GetReadSeeker(fimg *FileImage) io.ReadSeeker {
-	return io.NewSectionReader(fimg.Fp, d.Fileoff, d.Filelen)
-}
-
-// GetReader returns a io.Reader that reads the data object associated with descriptor d from image
-// fimg.
-func (d *Descriptor) GetReader(fimg *FileImage) io.Reader {
-	return io.NewSectionReader(fimg.Fp, d.Fileoff, d.Filelen)
+// GetReader returns a io.Reader that reads the data object associated with descriptor d from f.
+func (d *Descriptor) GetReader(f *FileImage) io.Reader {
+	return io.NewSectionReader(f.Fp, d.Fileoff, d.Filelen)
 }
 
 // GetName returns the name tag associated with the descriptor. Analogous to file name.
