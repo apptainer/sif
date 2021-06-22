@@ -128,8 +128,8 @@ func (v *groupVerifier) fingerprints() ([][20]byte, error) {
 // of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
 // data object fails, a ObjectIntegrityError is returned.
 func (v *groupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (imageMetadata, []uint32, *openpgp.Entity, error) { // nolint:lll
-	b := make([]byte, sig.Filelen)
-	if _, err := io.ReadFull(sig.GetReader(v.f), b); err != nil {
+	b, err := sig.GetData(v.f)
+	if err != nil {
 		return imageMetadata{}, nil, nil, err
 	}
 

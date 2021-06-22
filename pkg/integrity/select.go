@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"sort"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
@@ -152,8 +151,8 @@ func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]*sif.D
 	// Filter signatures based on legacy flag.
 	sigs := make([]*sif.Descriptor, 0, len(ods))
 	for _, od := range ods {
-		b := make([]byte, od.Filelen)
-		if _, err := io.ReadFull(od.GetReader(f), b); err != nil {
+		b, err := od.GetData(f)
+		if err != nil {
 			return nil, err
 		}
 
