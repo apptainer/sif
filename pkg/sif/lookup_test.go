@@ -288,8 +288,11 @@ func TestGetData(t *testing.T) {
 				t.Fatalf("failed to get descriptor: %v", err)
 			}
 
-			// Read data via ReadSeeker and validate data.
-			b := descr.GetData(tt.fimg)
+			b, err := descr.GetData(tt.fimg)
+			if err != nil {
+				t.Fatalf("failed to get data: %v", err)
+			}
+
 			if got, want := string(b[5:10]), "BEGIN"; got != want {
 				t.Errorf("got data %#v, want %#v", got, want)
 			}

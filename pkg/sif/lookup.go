@@ -252,13 +252,13 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 	return descrs, indexes, nil
 }
 
-// GetData returns the data object associated with descriptor d from image fimg, or nil on error.
-func (d *Descriptor) GetData(fimg *FileImage) []byte {
+// GetData returns the data object associated with descriptor d from f.
+func (d *Descriptor) GetData(f *FileImage) ([]byte, error) {
 	b := make([]byte, d.Filelen)
-	if _, err := io.ReadFull(d.GetReader(fimg), b); err != nil {
-		return nil
+	if _, err := io.ReadFull(d.GetReader(f), b); err != nil {
+		return nil, err
 	}
-	return b
+	return b, nil
 }
 
 // GetReader returns a io.Reader that reads the data object associated with descriptor d from f.
