@@ -9,28 +9,14 @@
 package siftool
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
-	"github.com/google/uuid"
 )
 
 // New creates a new empty SIF file.
 func (*App) New(path string) error {
-	id, err := uuid.NewRandom()
-	if err != nil {
-		return fmt.Errorf("id generation failed: %v", err)
-	}
-
-	cinfo := sif.CreateInfo{
-		Pathname:   path,
-		Launchstr:  sif.HdrLaunch,
-		Sifversion: sif.HdrVersion,
-		ID:         id,
-	}
-
-	_, err = sif.CreateContainer(cinfo)
+	_, err := sif.CreateContainer(path)
 	return err
 }
 

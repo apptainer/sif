@@ -18,6 +18,8 @@ import (
 	"path"
 	"strconv"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Find next offset aligned to block size.
@@ -216,55 +218,106 @@ func writeHeader(fimg *FileImage) error {
 	return nil
 }
 
-// CreateContainer is responsible for the creation of a new SIF container
-// file. It takes the creation information specification as input
-// and produces an output file as specified in the input data.
-func CreateContainer(cinfo CreateInfo) (fimg *FileImage, err error) {
-	fimg = &FileImage{}
-	fimg.DescrArr = make([]Descriptor, DescrNumEntries)
+// createOpts accumulates container creation options.
+type createOpts struct {
+	ID         uuid.UUID
+	InputDescr []DescriptorInput
+	GetTime    func() time.Time
+}
+
+// CreateOpt are used to specify container creation options.
+type CreateOpt func(*createOpts) error
+
+// WithID specifies id as the unique ID.
+func WithID(id string) CreateOpt {
+	return func(co *createOpts) error {
+		id, err := uuid.Parse(id)
+		co.ID = id
+		return err
+	}
+}
+
+// WithDescriptors appends dis to the list of descriptors.
+func WithDescriptors(dis ...DescriptorInput) CreateOpt {
+	return func(co *createOpts) error {
+		co.InputDescr = append(co.InputDescr, dis...)
+		return nil
+	}
+}
+
+// WithTimeFunc specifies fn as the function to obtain timestamps.
+func WithTimeFunc(fn func() time.Time) CreateOpt {
+	return func(co *createOpts) error {
+		co.GetTime = fn
+		return nil
+	}
+}
+
+// CreateContainer creates a new SIF container file at path, according to opts.
+func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return nil, err
+	}
+
+	co := createOpts{
+		ID:      id,
+		GetTime: time.Now,
+	}
+
+	for _, opt := range opts {
+		if err := opt(&co); err != nil {
+			return nil, err
+		}
+	}
+
+	now := co.GetTime()
+
+	f := &FileImage{}
+	f.DescrArr = make([]Descriptor, DescrNumEntries)
 
 	// Prepare a fresh global header
-	copy(fimg.Header.Launch[:], cinfo.Launchstr)
-	copy(fimg.Header.Magic[:], HdrMagic)
-	copy(fimg.Header.Version[:], cinfo.Sifversion)
-	copy(fimg.Header.Arch[:], HdrArchUnknown)
-	copy(fimg.Header.ID[:], cinfo.ID[:])
-	fimg.Header.Ctime = time.Now().Unix()
-	fimg.Header.Mtime = time.Now().Unix()
-	fimg.Header.Dfree = DescrNumEntries
-	fimg.Header.Dtotal = DescrNumEntries
-	fimg.Header.Descroff = DescrStartOffset
-	fimg.Header.Dataoff = DataStartOffset
+	copy(f.Header.Launch[:], HdrLaunch)
+	copy(f.Header.Magic[:], HdrMagic)
+	copy(f.Header.Version[:], HdrVersion)
+	copy(f.Header.Arch[:], HdrArchUnknown)
+	f.Header.ID = id
+	f.Header.Ctime = now.Unix()
+	f.Header.Mtime = now.Unix()
+	f.Header.Dfree = DescrNumEntries
+	f.Header.Dtotal = DescrNumEntries
+	f.Header.Descroff = DescrStartOffset
+	f.Header.Dataoff = DataStartOffset
 
 	// Create container file
-	fimg.Fp, err = os.OpenFile(cinfo.Pathname, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
+	f.Fp, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
 	if err != nil {
 		return nil, fmt.Errorf("container file creation failed: %s", err)
 	}
-	defer fimg.Fp.Close()
+	defer f.Fp.Close()
 
 	// set file pointer to start of data section */
-	if _, err = fimg.Fp.Seek(DataStartOffset, 0); err != nil {
+	if _, err = f.Fp.Seek(DataStartOffset, 0); err != nil {
 		return nil, fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}
 
-	for _, v := range cinfo.InputDescr {
-		if err = createDescriptor(fimg, v); err != nil {
-			return
+	for _, v := range co.InputDescr {
+		if err := createDescriptor(f, v); err != nil {
+			return nil, err
 		}
 	}
 
 	// Write down the descriptor array
-	if err = writeDescriptors(fimg); err != nil {
-		return
+	if err := writeDescriptors(f); err != nil {
+		return nil, err
 	}
 
 	// Write down global header to file
-	if err = writeHeader(fimg); err != nil {
-		return
+	if err := writeHeader(f); err != nil {
+		return nil, err
 	}
 
-	return
+	return f, nil
 }
 
 func zeroData(fimg *FileImage, descr *Descriptor) error {

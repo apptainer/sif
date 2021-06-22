@@ -453,15 +453,6 @@ func (f *FileImage) GetHeaderIntegrityReader() io.Reader {
 	return f.Header.GetIntegrityReader()
 }
 
-// CreateInfo wraps all SIF file creation info needed.
-type CreateInfo struct {
-	Pathname   string            // the end result output filename
-	Launchstr  string            // the shell run command
-	Sifversion string            // the SIF specification version used
-	ID         uuid.UUID         // image unique identifier
-	InputDescr []DescriptorInput // slice of input info for descriptor creation
-}
-
 // DescriptorInput describes the common info needed to create a data object descriptor.
 type DescriptorInput struct {
 	Datatype  Datatype // datatype being harvested for new descriptor
