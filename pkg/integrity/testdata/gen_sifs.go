@@ -13,7 +13,7 @@ import (
 
 	"github.com/hpcng/sif/v2/pkg/integrity"
 	"github.com/hpcng/sif/v2/pkg/sif"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/openpgp"
 )
 

@@ -13,12 +13,12 @@ import (
 	"io"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 // New creates a new empty SIF file.
 func New(path string) error {
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		return fmt.Errorf("id generation failed: %v", err)
 	}

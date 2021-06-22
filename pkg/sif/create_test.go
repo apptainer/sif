@@ -13,7 +13,7 @@ import (
 	"runtime"
 	"testing"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 const (
@@ -65,7 +65,7 @@ func TestCreateContainer(t *testing.T) {
 	defer os.Remove(f.Name())
 	f.Close()
 
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		t.Fatalf("id generation failed: %v", err)
 	}

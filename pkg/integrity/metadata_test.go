@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	"github.com/sebdah/goldie/v2"
 )
 
