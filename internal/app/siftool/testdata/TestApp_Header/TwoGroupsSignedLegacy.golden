@@ -1,0 +1,14 @@
+Launch:   #!/usr/bin/env run-singularity
+
+Magic:    SIF_MAGIC
+Version:  01
+Arch:     386
+ID:       0b19ec2c-0b08-46c9-95ae-fa88cd9e48a1
+Ctime:    2020-05-22 19:30:59 +0000 UTC
+Mtime:    2020-06-20 20:16:44 +0000 UTC
+Dfree:    44
+Dtotal:   48
+Descoff:  4096
+Descrlen: 27KB
+Dataoff:  32768
+Datalen:  12KB
