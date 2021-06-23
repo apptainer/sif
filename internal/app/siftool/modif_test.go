@@ -82,3 +82,33 @@ func TestApp_Add(t *testing.T) {
 		})
 	}
 }
+
+func TestApp_Del(t *testing.T) {
+	a, err := New()
+	if err != nil {
+		t.Fatalf("failed to create app: %v", err)
+	}
+
+	tf, err := os.CreateTemp("", "sif-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tf.Name())
+	tf.Close()
+
+	if err := a.New(tf.Name()); err != nil {
+		t.Fatal(err)
+	}
+
+	opts := AddOptions{
+		Datatype: sif.DataGeneric,
+		Fp:       bytes.NewBuffer([]byte{0xde, 0xad, 0xbe, 0xef}),
+	}
+	if err := a.Add(tf.Name(), opts); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Del(tf.Name(), 1); err != nil {
+		t.Fatal(err)
+	}
+}
