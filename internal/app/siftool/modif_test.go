@@ -112,3 +112,36 @@ func TestApp_Del(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestApp_Setprim(t *testing.T) {
+	a, err := New()
+	if err != nil {
+		t.Fatalf("failed to create app: %v", err)
+	}
+
+	tf, err := os.CreateTemp("", "sif-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tf.Name())
+	tf.Close()
+
+	if err := a.New(tf.Name()); err != nil {
+		t.Fatal(err)
+	}
+
+	opts := AddOptions{
+		Datatype: sif.DataPartition,
+		Parttype: sif.PartSystem,
+		Partfs:   sif.FsSquash,
+		Partarch: sif.HdrArch386,
+		Fp:       bytes.NewBuffer([]byte{0xde, 0xad, 0xbe, 0xef}),
+	}
+	if err := a.Add(tf.Name(), opts); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Setprim(tf.Name(), 1); err != nil {
+		t.Fatal(err)
+	}
+}
