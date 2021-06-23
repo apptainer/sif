@@ -11,55 +11,54 @@ package siftool
 import (
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
 )
 
 // Header displays a SIF file global header.
-func (*App) Header(path string) error {
+func (a *App) Header(path string) error {
 	return withFileImage(path, true, func(f *sif.FileImage) error {
 		//nolint:staticcheck // In use until v2 API to avoid code duplication
-		_, err := fmt.Print(f.FmtHeader())
+		_, err := fmt.Fprint(a.opts.out, f.FmtHeader())
 		return err
 	})
 }
 
 // List displays a list of all active descriptors from a SIF file.
-func (*App) List(path string) error {
+func (a *App) List(path string) error {
 	return withFileImage(path, false, func(f *sif.FileImage) error {
-		fmt.Println("Container id:", f.Header.ID)
-		fmt.Println("Created on:  ", time.Unix(f.Header.Ctime, 0).UTC())
-		fmt.Println("Modified on: ", time.Unix(f.Header.Mtime, 0).UTC())
-		fmt.Println("----------------------------------------------------")
+		fmt.Fprintln(a.opts.out, "Container id:", f.Header.ID)
+		fmt.Fprintln(a.opts.out, "Created on:  ", time.Unix(f.Header.Ctime, 0).UTC())
+		fmt.Fprintln(a.opts.out, "Modified on: ", time.Unix(f.Header.Mtime, 0).UTC())
+		fmt.Fprintln(a.opts.out, "----------------------------------------------------")
 
-		fmt.Println("Descriptor list:")
+		fmt.Fprintln(a.opts.out, "Descriptor list:")
 
 		//nolint:staticcheck // In use until v2 API to avoid code duplication
-		_, err := fmt.Print(f.FmtDescrList())
+		_, err := fmt.Fprint(a.opts.out, f.FmtDescrList())
 		return err
 	})
 }
 
 // Info displays detailed info about a descriptor from a SIF file.
-func (*App) Info(path string, id uint32) error {
+func (a *App) Info(path string, id uint32) error {
 	return withFileImage(path, false, func(f *sif.FileImage) error {
 		//nolint:staticcheck // In use until v2 API to avoid code duplication
-		_, err := fmt.Print(f.FmtDescrInfo(id))
+		_, err := fmt.Fprint(a.opts.out, f.FmtDescrInfo(id))
 		return err
 	})
 }
 
 // Dump extracts and outputs a data object from a SIF file.
-func (*App) Dump(path string, id uint32) error {
+func (a *App) Dump(path string, id uint32) error {
 	return withFileImage(path, false, func(f *sif.FileImage) error {
 		d, _, err := f.GetFromDescrID(id)
 		if err != nil {
 			return err
 		}
 
-		_, err = io.CopyN(os.Stdout, d.GetReader(f), d.Filelen)
+		_, err = io.CopyN(a.opts.out, d.GetReader(f), d.Filelen)
 		return err
 	})
 }

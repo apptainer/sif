@@ -5,8 +5,15 @@
 
 package siftool
 
+import (
+	"io"
+	"os"
+)
+
 // appOpts contains configured options.
-type appOpts struct{}
+type appOpts struct {
+	out io.Writer
+}
 
 // AppOpt are used to configure optional behavior.
 type AppOpt func(*appOpts) error
@@ -16,9 +23,21 @@ type App struct {
 	opts appOpts
 }
 
+// OptAppOutput specifies that output should be written to w.
+func OptAppOutput(w io.Writer) AppOpt {
+	return func(o *appOpts) error {
+		o.out = w
+		return nil
+	}
+}
+
 // New creates a new App configured with opts.
 func New(opts ...AppOpt) (*App, error) {
-	a := App{}
+	a := App{
+		opts: appOpts{
+			out: os.Stdout,
+		},
+	}
 
 	for _, opt := range opts {
 		if err := opt(&a.opts); err != nil {
