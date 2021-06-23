@@ -15,8 +15,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Del implements 'siftool del' sub-command.
-func Del() *cobra.Command {
+// getDel returns a command that deletes a data object from a SIF.
+func getDel(co commandOpts) *cobra.Command {
 	return &cobra.Command{
 		Use:   "del <descriptorid> <containerfile>",
 		Short: "Delete a specified object descriptor and data from SIF file",

@@ -8,6 +8,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 
@@ -40,17 +41,12 @@ header, the data object descriptors and to dump data objects. It is also
 possible to modify a SIF file via this tool via the add/del commands.`,
 	}
 
-	root.AddCommand(
-		getVersion(),
-		siftool.Header(),
-		siftool.List(),
-		siftool.Info(),
-		siftool.Dump(),
-		siftool.New(),
-		siftool.Add(),
-		siftool.Del(),
-		siftool.Setprim(),
-	)
+	root.AddCommand(getVersion())
+
+	if err := siftool.AddCommands(&root); err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(1)
+	}
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

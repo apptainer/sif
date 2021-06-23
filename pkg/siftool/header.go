@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Header implements 'siftool header' sub-command.
-func Header() *cobra.Command {
+// getHeader returns a command that displays the global SIF header.
+func getHeader(co commandOpts) *cobra.Command {
 	return &cobra.Command{
 		Use:   "header <containerfile>",
 		Short: "Display SIF global headers",

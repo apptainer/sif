@@ -5,48 +5,41 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// Package siftool implements cobra.Command structs for the siftool functionality. This
-// allows for easy inclusion of siftool functions in the singularity cli.
+// Package siftool adds siftool commands to a parent cobra.Command.
 package siftool
 
-import (
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
-const (
-	siftoolLong = `
-  A set of commands are provided to display elements such as the SIF global 
-  header, the data object descriptors and to dump data objects. It is also 
-  possible to modify a SIF file via this tool via the add/del commands.`
-)
+// commandOpts contains configured options.
+type commandOpts struct{}
 
-// Siftool is a program for Singularity Image Format (SIF) file manipulation.
+// CommandOpt are used to configure optional command behavior.
+type CommandOpt func(*commandOpts) error
+
+// AddCommands adds siftool commands to cmd according to opts.
 //
 // A set of commands are provided to display elements such as the SIF global
 // header, the data object descriptors and to dump data objects. It is also
 // possible to modify a SIF file via this tool via the add/del commands.
-func Siftool() *cobra.Command {
-	// Siftool is a program for Singularity Image Format (SIF) file manipulation.
-	//
-	// A set of commands are provided to display elements such as the SIF global
-	// header, the data object descriptors and to dump data objects. It is also
-	// possible to modify a SIF file via this tool via the add/del commands.
-	Siftool := &cobra.Command{
-		Use:                   "sif",
-		Short:                 "siftool is a program for Singularity Image Format (SIF) file manipulation",
-		Long:                  siftoolLong,
-		Aliases:               []string{"siftool"},
-		DisableFlagsInUseLine: true,
+func AddCommands(cmd *cobra.Command, opts ...CommandOpt) error {
+	co := commandOpts{}
+
+	for _, opt := range opts {
+		if err := opt(&co); err != nil {
+			return err
+		}
 	}
 
-	Siftool.AddCommand(Header())
-	Siftool.AddCommand(List())
-	Siftool.AddCommand(Info())
-	Siftool.AddCommand(Dump())
-	Siftool.AddCommand(New())
-	Siftool.AddCommand(Add())
-	Siftool.AddCommand(Del())
-	Siftool.AddCommand(Setprim())
+	cmd.AddCommand(
+		getHeader(co),
+		getList(co),
+		getInfo(co),
+		getDump(co),
+		getNew(co),
+		getAdd(co),
+		getDel(co),
+		getSetPrim(co),
+	)
 
-	return Siftool
+	return nil
 }

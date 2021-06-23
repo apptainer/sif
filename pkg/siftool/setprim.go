@@ -15,8 +15,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Setprim implements 'siftool setprim' sub-command.
-func Setprim() *cobra.Command {
+// getSetPrim returns a command that sets the primary system partition.
+func getSetPrim(co commandOpts) *cobra.Command {
 	return &cobra.Command{
 		Use:   "setprim <descriptorid> <containerfile>",
 		Short: "Set primary system partition",

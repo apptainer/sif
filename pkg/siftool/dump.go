@@ -16,8 +16,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Dump implements 'siftool dump' sub-command.
-func Dump() *cobra.Command {
+// getDump returns a command that dumps a data object from a SIF file.
+func getDump(co commandOpts) *cobra.Command {
 	return &cobra.Command{
 		Use:   "dump <descriptorid> <containerfile>",
 		Short: "Extract and output data objects from SIF files",

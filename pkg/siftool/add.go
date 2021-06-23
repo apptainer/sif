@@ -16,45 +16,45 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Add implements 'siftool add' sub-command.
-func Add() *cobra.Command {
-	ret := &cobra.Command{
+// getAdd returns a command that adds a data object to a SIF.
+func getAdd(co commandOpts) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "add <containerfile> <dataobjectfile>",
 		Short: "Add a data object to a SIF file",
 		Args:  cobra.ExactArgs(2),
 	}
 
-	datatype := ret.Flags().Int("datatype", 0, `the type of data to add
+	datatype := cmd.Flags().Int("datatype", 0, `the type of data to add
 [NEEDED, no default]:
   1-Deffile,   2-EnvVar,    3-Labels,
   4-Partition, 5-Signature, 6-GenericJSON`)
-	parttype := ret.Flags().Int32("parttype", 0, `the type of partition (with -datatype 4-Partition)
+	parttype := cmd.Flags().Int32("parttype", 0, `the type of partition (with -datatype 4-Partition)
 [NEEDED, no default]:
   1-System,    2-PrimSys,   3-Data,
   4-Overlay`)
-	partfs := ret.Flags().Int32("partfs", 0, `the filesystem used (with -datatype 4-Partition)
+	partfs := cmd.Flags().Int32("partfs", 0, `the filesystem used (with -datatype 4-Partition)
 [NEEDED, no default]:
   1-Squash,    2-Ext3,      3-ImmuObj,
   4-Raw`)
-	partarch := ret.Flags().Int32("partarch", 0, `the main architecture used (with -datatype 4-Partition)
+	partarch := cmd.Flags().Int32("partarch", 0, `the main architecture used (with -datatype 4-Partition)
 [NEEDED, no default]:
   1-386,       2-amd64,     3-arm,
   4-arm64,     5-ppc64,     6-ppc64le,
   7-mips,      8-mipsle,    9-mips64,
   10-mips64le, 11-s390x`)
-	signhash := ret.Flags().Int32("signhash", 0, `the signature hash used (with -datatype 5-Signature)
+	signhash := cmd.Flags().Int32("signhash", 0, `the signature hash used (with -datatype 5-Signature)
 [NEEDED, no default]:
   1-SHA256,    2-SHA384,    3-SHA512,
   4-BLAKE2S,   5-BLAKE2B`)
-	signentity := ret.Flags().String("signentity", "", `the entity that signs (with -datatype 5-Signature)
+	signentity := cmd.Flags().String("signentity", "", `the entity that signs (with -datatype 5-Signature)
 [NEEDED, no default]:
   example: 433FE984155206BD962725E20E8713472A879943`)
-	groupid := ret.Flags().Uint32("groupid", 0, "set groupid [default: 0]")
-	link := ret.Flags().Uint32("link", 0, "set link pointer [default: 0]")
-	alignment := ret.Flags().Int("alignment", 0, "set alignment constraint [default: aligned on page size]")
-	filename := ret.Flags().String("filename", "", "set logical filename/handle [default: input filename]")
+	groupid := cmd.Flags().Uint32("groupid", 0, "set groupid [default: 0]")
+	link := cmd.Flags().Uint32("link", 0, "set link pointer [default: 0]")
+	alignment := cmd.Flags().Int("alignment", 0, "set alignment constraint [default: aligned on page size]")
+	filename := cmd.Flags().String("filename", "", "set logical filename/handle [default: input filename]")
 
-	ret.RunE = func(cmd *cobra.Command, args []string) error {
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		opts := siftool.AddOptions{
 			Groupid:   *groupid,
 			Link:      *link,
@@ -144,5 +144,5 @@ func Add() *cobra.Command {
 		return siftool.Add(args[0], opts)
 	}
 
-	return ret
+	return cmd
 }
