@@ -158,6 +158,7 @@ func TestApp_List(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func TestApp_Info(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -191,6 +192,49 @@ func TestApp_Info(t *testing.T) {
 			}
 
 			if got, want := a.Info(tt.path, tt.id), tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+
+			g := goldie.New(t, goldie.WithTestNameForDir(true))
+			g.Assert(t, tt.name, b.Bytes())
+		})
+	}
+}
+
+//nolint:dupl
+func TestApp_Dump(t *testing.T) {
+	tests := []struct {
+		name    string
+		path    string
+		id      uint32
+		wantErr error
+	}{
+		{
+			name: "One",
+			path: filepath.Join(corpus, "one-group-signed.sif"),
+			id:   1,
+		},
+		{
+			name: "Two",
+			path: filepath.Join(corpus, "one-group-signed.sif"),
+			id:   2,
+		},
+		{
+			name: "Three",
+			path: filepath.Join(corpus, "one-group-signed.sif"),
+			id:   3,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var b bytes.Buffer
+
+			a, err := New(OptAppOutput(&b))
+			if err != nil {
+				t.Fatalf("failed to create app: %v", err)
+			}
+
+			if got, want := a.Dump(tt.path, tt.id), tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
 
