@@ -28,7 +28,7 @@ func getDel(co commandOpts) *cobra.Command {
 				return fmt.Errorf("while converting input descriptor id: %s", err)
 			}
 
-			return siftool.Del(args[1], uint32(id))
+			return co.app.Del(args[1], uint32(id))
 		},
 	}
 }

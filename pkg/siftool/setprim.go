@@ -28,7 +28,7 @@ func getSetPrim(co commandOpts) *cobra.Command {
 				return fmt.Errorf("while converting input descriptor id: %s", err)
 			}
 
-			return siftool.Setprim(args[1], uint32(id))
+			return co.app.Setprim(args[1], uint32(id))
 		},
 	}
 }

@@ -21,7 +21,7 @@ func getList(co commandOpts) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return siftool.List(args[0])
+			return co.app.List(args[0])
 		},
 		DisableFlagsInUseLine: true,
 	}

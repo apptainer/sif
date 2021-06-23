@@ -30,7 +30,7 @@ func getInfo(co commandOpts) *cobra.Command {
 				return fmt.Errorf("while converting input descriptor id: %s", err)
 			}
 
-			return siftool.Info(args[1], uint32(id))
+			return co.app.Info(args[1], uint32(id))
 		},
 		DisableFlagsInUseLine: true,
 	}

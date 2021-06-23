@@ -29,7 +29,7 @@ func getDump(co commandOpts) *cobra.Command {
 				return fmt.Errorf("while converting input descriptor id: %s", err)
 			}
 
-			return siftool.Dump(args[1], uint32(id))
+			return co.app.Dump(args[1], uint32(id))
 		},
 		DisableFlagsInUseLine: true,
 	}

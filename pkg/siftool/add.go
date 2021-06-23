@@ -141,7 +141,7 @@ func getAdd(co commandOpts) *cobra.Command {
 			}
 		}
 
-		return siftool.Add(args[0], opts)
+		return co.app.Add(args[0], opts)
 	}
 
 	return cmd

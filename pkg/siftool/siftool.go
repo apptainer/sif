@@ -8,10 +8,15 @@
 // Package siftool adds siftool commands to a parent cobra.Command.
 package siftool
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+	"github.com/sylabs/sif/v2/internal/app/siftool"
+)
 
 // commandOpts contains configured options.
-type commandOpts struct{}
+type commandOpts struct {
+	app *siftool.App
+}
 
 // CommandOpt are used to configure optional command behavior.
 type CommandOpt func(*commandOpts) error
@@ -22,7 +27,12 @@ type CommandOpt func(*commandOpts) error
 // header, the data object descriptors and to dump data objects. It is also
 // possible to modify a SIF file via this tool via the add/del commands.
 func AddCommands(cmd *cobra.Command, opts ...CommandOpt) error {
-	co := commandOpts{}
+	app, err := siftool.New()
+	if err != nil {
+		return err
+	}
+
+	co := commandOpts{app: app}
 
 	for _, opt := range opts {
 		if err := opt(&co); err != nil {
