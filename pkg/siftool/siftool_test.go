@@ -7,6 +7,7 @@ package siftool
 import (
 	"bytes"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/sebdah/goldie/v2"
@@ -14,6 +15,8 @@ import (
 	"github.com/sylabs/sif/v2/internal/app/siftool"
 	"github.com/sylabs/sif/v2/pkg/sif"
 )
+
+var corpus = filepath.Join("..", "integrity", "testdata", "images")
 
 func makeTestSIF(t *testing.T, withDataObject bool) string {
 	tf, err := os.CreateTemp("", "sif-test-*")
