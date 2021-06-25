@@ -34,7 +34,10 @@ func makeTestSIF(t *testing.T, withDataObject bool) string {
 
 	if withDataObject {
 		opts := siftool.AddOptions{
-			Datatype: sif.DataGeneric,
+			Datatype: sif.DataPartition,
+			Parttype: sif.PartSystem,
+			Partfs:   sif.FsSquash,
+			Partarch: sif.HdrArch386,
 			Fp:       bytes.NewBuffer([]byte{0xde, 0xad, 0xbe, 0xef}),
 		}
 		if err := app.Add(tf.Name(), opts); err != nil {
