@@ -30,5 +30,6 @@ func (c *command) getSetPrim() *cobra.Command {
 
 			return c.app.Setprim(args[1], uint32(id))
 		},
+		DisableFlagsInUseLine: true,
 	}
 }

@@ -30,5 +30,6 @@ func (c *command) getDel() *cobra.Command {
 
 			return c.app.Del(args[1], uint32(id))
 		},
+		DisableFlagsInUseLine: true,
 	}
 }

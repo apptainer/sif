@@ -1,7 +1,7 @@
 Set primary system partition
 
 Usage:
-  siftool setprim <descriptorid> <containerfile> [flags]
+  siftool setprim <descriptorid> <containerfile>
 
 Flags:
   -h, --help   help for setprim
