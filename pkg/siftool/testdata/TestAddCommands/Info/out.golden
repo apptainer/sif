@@ -1,0 +1,7 @@
+Display detailed information of object descriptors
+
+Usage:
+  siftool info <descriptorid> <containerfile>
+
+Flags:
+  -h, --help   help for info

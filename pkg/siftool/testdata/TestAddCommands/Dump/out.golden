@@ -1,0 +1,7 @@
+Extract and output data objects from SIF files
+
+Usage:
+  siftool dump <descriptorid> <containerfile>
+
+Flags:
+  -h, --help   help for dump

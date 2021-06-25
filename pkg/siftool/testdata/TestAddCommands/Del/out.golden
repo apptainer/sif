@@ -1,0 +1,7 @@
+Delete a specified object descriptor and data from SIF file
+
+Usage:
+  siftool del <descriptorid> <containerfile> [flags]
+
+Flags:
+  -h, --help   help for del

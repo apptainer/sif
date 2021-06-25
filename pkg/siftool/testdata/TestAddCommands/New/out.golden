@@ -1,0 +1,7 @@
+Create a new empty SIF image file
+
+Usage:
+  siftool new <containerfile>
+
+Flags:
+  -h, --help   help for new

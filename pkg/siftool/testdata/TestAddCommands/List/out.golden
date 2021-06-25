@@ -1,0 +1,7 @@
+List object descriptors from SIF files
+
+Usage:
+  siftool list <containerfile>
+
+Flags:
+  -h, --help   help for list

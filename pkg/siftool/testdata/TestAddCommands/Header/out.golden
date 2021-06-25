@@ -1,0 +1,7 @@
+Display SIF global headers
+
+Usage:
+  siftool header <containerfile>
+
+Flags:
+  -h, --help   help for header
