@@ -6,11 +6,33 @@ package siftool
 
 import (
 	"bytes"
+	"os"
 	"testing"
 
 	"github.com/sebdah/goldie/v2"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/sif/v2/internal/app/siftool"
 )
+
+func makeTestSIF(t *testing.T) string {
+	tf, err := os.CreateTemp("", "sif-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Remove(tf.Name()) })
+	tf.Close()
+
+	app, err := siftool.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := app.New(tf.Name()); err != nil {
+		t.Fatal(err)
+	}
+
+	return tf.Name()
+}
 
 func runCommand(t *testing.T, cmd *cobra.Command, args []string) {
 	var out, err bytes.Buffer
