@@ -1,0 +1,15 @@
+Descr slot#: 2
+  Datatype:  Signature
+  ID:        3
+  Used:      true
+  Groupid:   NONE
+  Link:      1 (G)
+  Fileoff:   40960
+  Filelen:   1021
+  Ctime:     2020-06-30 00:01:56 +0000 UTC
+  Mtime:     2020-06-30 00:01:56 +0000 UTC
+  UID:       501
+  Gid:       20
+  Name:      .
+  Hashtype:  SHA256
+  Entity:    12045C8C0B1004D058DE4BEDA20C27EE7FF7BA84
