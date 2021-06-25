@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func Test_command_getHeader(t *testing.T) {
+func Test_command_getList(t *testing.T) {
 	tests := []struct {
 		name string
 		opts commandOpts
@@ -66,7 +66,7 @@ func Test_command_getHeader(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &command{opts: tt.opts}
 
-			cmd := c.getHeader()
+			cmd := c.getList()
 
 			runCommand(t, cmd, []string{tt.path})
 		})

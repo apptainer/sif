@@ -1,0 +1,10 @@
+Container id: 73e1c5c3-5c41-41ed-ad7c-2504d669f140
+Created on:   2020-06-30 00:01:56 +0000 UTC
+Modified on:  2020-06-30 00:01:56 +0000 UTC
+----------------------------------------------------
+Descriptor list:
+ID   |GROUP   |LINK    |SIF POSITION (start-end)  |TYPE
+------------------------------------------------------------------------------
+1    |1       |NONE    |32768-32772               |FS (Raw/System/386)
+2    |1       |NONE    |36864-36868               |FS (Squashfs/*System/386)
+3    |NONE    |1   (G) |40960-41981               |Signature (SHA256)
