@@ -12,9 +12,10 @@ import (
 	"github.com/sebdah/goldie/v2"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/v2/internal/app/siftool"
+	"github.com/sylabs/sif/v2/pkg/sif"
 )
 
-func makeTestSIF(t *testing.T) string {
+func makeTestSIF(t *testing.T, withDataObject bool) string {
 	tf, err := os.CreateTemp("", "sif-test-*")
 	if err != nil {
 		t.Fatal(err)
@@ -29,6 +30,16 @@ func makeTestSIF(t *testing.T) string {
 
 	if err := app.New(tf.Name()); err != nil {
 		t.Fatal(err)
+	}
+
+	if withDataObject {
+		opts := siftool.AddOptions{
+			Datatype: sif.DataGeneric,
+			Fp:       bytes.NewBuffer([]byte{0xde, 0xad, 0xbe, 0xef}),
+		}
+		if err := app.Add(tf.Name(), opts); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	return tf.Name()

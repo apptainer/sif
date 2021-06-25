@@ -41,7 +41,7 @@ func Test_command_getAdd(t *testing.T) {
 			cmd := c.getAdd()
 
 			args := []string{
-				makeTestSIF(t),
+				makeTestSIF(t, false),
 				filepath.Join("testdata", "input", "input.bin"),
 			}
 			args = append(args, tt.flags...)
