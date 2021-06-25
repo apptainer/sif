@@ -15,19 +15,20 @@ import (
 )
 
 // getSetPrim returns a command that sets the primary system partition.
-func getSetPrim(co commandOpts) *cobra.Command {
+func (c *command) getSetPrim() *cobra.Command {
 	return &cobra.Command{
 		Use:   "setprim <descriptorid> <containerfile>",
 		Short: "Set primary system partition",
 		Args:  cobra.ExactArgs(2),
 
+		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := strconv.ParseUint(args[0], 10, 32)
 			if err != nil {
 				return fmt.Errorf("while converting input descriptor id: %s", err)
 			}
 
-			return co.app.Setprim(args[1], uint32(id))
+			return c.app.Setprim(args[1], uint32(id))
 		},
 	}
 }

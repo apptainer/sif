@@ -12,14 +12,15 @@ import (
 )
 
 // getNew returns a command that creates a new, empty SIF image.
-func getNew(co commandOpts) *cobra.Command {
+func (c *command) getNew() *cobra.Command {
 	return &cobra.Command{
 		Use:   "new <containerfile>",
 		Short: "Create a new empty SIF image file",
 		Args:  cobra.ExactArgs(1),
 
+		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return co.app.New(args[0])
+			return c.app.New(args[0])
 		},
 		DisableFlagsInUseLine: true,
 	}

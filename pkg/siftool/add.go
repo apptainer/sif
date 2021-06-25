@@ -17,7 +17,7 @@ import (
 )
 
 // getAdd returns a command that adds a data object to a SIF.
-func getAdd(co commandOpts) *cobra.Command {
+func (c *command) getAdd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <containerfile> <dataobjectfile>",
 		Short: "Add a data object to a SIF file",
@@ -54,6 +54,7 @@ func getAdd(co commandOpts) *cobra.Command {
 	alignment := cmd.Flags().Int("alignment", 0, "set alignment constraint [default: aligned on page size]")
 	filename := cmd.Flags().String("filename", "", "set logical filename/handle [default: input filename]")
 
+	cmd.PreRunE = c.initApp
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		opts := siftool.AddOptions{
 			Groupid:   *groupid,
@@ -141,7 +142,7 @@ func getAdd(co commandOpts) *cobra.Command {
 			}
 		}
 
-		return co.app.Add(args[0], opts)
+		return c.app.Add(args[0], opts)
 	}
 
 	return cmd

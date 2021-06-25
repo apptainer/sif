@@ -16,19 +16,20 @@ import (
 )
 
 // getDump returns a command that dumps a data object from a SIF file.
-func getDump(co commandOpts) *cobra.Command {
+func (c *command) getDump() *cobra.Command {
 	return &cobra.Command{
 		Use:   "dump <descriptorid> <containerfile>",
 		Short: "Extract and output data objects from SIF files",
 		Args:  cobra.ExactArgs(2),
 
+		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := strconv.ParseUint(args[0], 10, 32)
 			if err != nil {
 				return fmt.Errorf("while converting input descriptor id: %s", err)
 			}
 
-			return co.app.Dump(args[1], uint32(id))
+			return c.app.Dump(args[1], uint32(id))
 		},
 		DisableFlagsInUseLine: true,
 	}

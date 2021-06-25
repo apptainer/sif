@@ -13,10 +13,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// commandOpts contains configured options.
-type commandOpts struct {
-	app *siftool.App
+// command contains options and command state.
+type command struct {
+	opts commandOpts
+	app  *siftool.App
 }
+
+// initApp initializes the siftool app.
+func (c *command) initApp(cmd *cobra.Command, args []string) error {
+	app, err := siftool.New(
+		siftool.OptAppOutput(cmd.OutOrStdout()),
+	)
+	c.app = app
+
+	return err
+}
+
+// commandOpts contains configured options.
+type commandOpts struct{}
 
 // CommandOpt are used to configure optional command behavior.
 type CommandOpt func(*commandOpts) error
@@ -27,28 +41,23 @@ type CommandOpt func(*commandOpts) error
 // header, the data object descriptors and to dump data objects. It is also
 // possible to modify a SIF file via this tool via the add/del commands.
 func AddCommands(cmd *cobra.Command, opts ...CommandOpt) error {
-	app, err := siftool.New()
-	if err != nil {
-		return err
-	}
-
-	co := commandOpts{app: app}
+	c := command{}
 
 	for _, opt := range opts {
-		if err := opt(&co); err != nil {
+		if err := opt(&c.opts); err != nil {
 			return err
 		}
 	}
 
 	cmd.AddCommand(
-		getHeader(co),
-		getList(co),
-		getInfo(co),
-		getDump(co),
-		getNew(co),
-		getAdd(co),
-		getDel(co),
-		getSetPrim(co),
+		c.getHeader(),
+		c.getList(),
+		c.getInfo(),
+		c.getDump(),
+		c.getNew(),
+		c.getAdd(),
+		c.getDel(),
+		c.getSetPrim(),
 	)
 
 	return nil
