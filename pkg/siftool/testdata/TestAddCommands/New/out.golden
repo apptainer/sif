@@ -1,7 +1,7 @@
-Create a new empty SIF image file
+Create a new, empty SIF image.
 
 Usage:
-  siftool new <containerfile>
+  siftool new <sif_path>
 
 Flags:
   -h, --help   help for new

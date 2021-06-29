@@ -19,10 +19,10 @@ import (
 // image.
 func (c *command) getInfo() *cobra.Command {
 	return &cobra.Command{
-		Use:   "info <descriptorid> <containerfile>",
-		Short: "Display detailed information of object descriptors",
-		Args:  cobra.ExactArgs(2),
-
+		Use:     "info <id> <sif_path>",
+		Short:   "Display data object info",
+		Long:    "Display info about a data object from a SIF image.",
+		Args:    cobra.ExactArgs(2),
 		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := strconv.ParseUint(args[0], 10, 32)

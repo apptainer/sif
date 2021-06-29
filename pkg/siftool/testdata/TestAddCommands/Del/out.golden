@@ -1,7 +1,7 @@
-Delete a specified object descriptor and data from SIF file
+Delete a data object from a SIF image.
 
 Usage:
-  siftool del <descriptorid> <containerfile>
+  siftool del <id> <sif_path>
 
 Flags:
   -h, --help   help for del

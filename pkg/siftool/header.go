@@ -15,10 +15,10 @@ import (
 // getHeader returns a command that displays the global SIF header.
 func (c *command) getHeader() *cobra.Command {
 	return &cobra.Command{
-		Use:   "header <containerfile>",
-		Short: "Display SIF global headers",
-		Args:  cobra.ExactArgs(1),
-
+		Use:     "header <sif_path>",
+		Short:   "Display global header",
+		Long:    "Display global header from a SIF image.",
+		Args:    cobra.ExactArgs(1),
 		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.app.Header(args[0])

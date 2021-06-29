@@ -22,7 +22,8 @@ var version = "unknown"
 func getVersion() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
-		Short: "Print version information",
+		Short: "Display version information",
+		Long:  "Display binary version and compatible SIF version(s).",
 		Args:  cobra.ExactArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Printf("siftool version %s %s/%s\n", version, runtime.GOOS, runtime.GOARCH)

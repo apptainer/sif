@@ -1,7 +1,7 @@
-Add a data object to a SIF file
+Add a data object to a SIF image.
 
 Usage:
-  siftool add <containerfile> <dataobjectfile> [flags]
+  siftool add <sif_path> <object_path> [flags]
 
 Flags:
       --alignment int       set alignment constraint [default: aligned on page size]

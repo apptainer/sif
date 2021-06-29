@@ -1,7 +1,7 @@
-Extract and output data objects from SIF files
+Dump a data object from a SIF image.
 
 Usage:
-  siftool dump <descriptorid> <containerfile>
+  siftool dump <id> <sif_path>
 
 Flags:
   -h, --help   help for dump

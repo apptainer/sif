@@ -17,10 +17,10 @@ import (
 // getDel returns a command that deletes a data object from a SIF.
 func (c *command) getDel() *cobra.Command {
 	return &cobra.Command{
-		Use:   "del <descriptorid> <containerfile>",
-		Short: "Delete a specified object descriptor and data from SIF file",
-		Args:  cobra.ExactArgs(2),
-
+		Use:     "del <id> <sif_path>",
+		Short:   "Delete data object",
+		Long:    "Delete a data object from a SIF image.",
+		Args:    cobra.ExactArgs(2),
 		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := strconv.ParseUint(args[0], 10, 32)

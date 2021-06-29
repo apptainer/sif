@@ -19,8 +19,9 @@ import (
 // getAdd returns a command that adds a data object to a SIF.
 func (c *command) getAdd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add <containerfile> <dataobjectfile>",
-		Short: "Add a data object to a SIF file",
+		Use:   "add <sif_path> <object_path>",
+		Short: "Add data object",
+		Long:  "Add a data object to a SIF image.",
 		Args:  cobra.ExactArgs(2),
 	}
 

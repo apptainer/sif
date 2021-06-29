@@ -1,7 +1,7 @@
-Display SIF global headers
+Display global header from a SIF image.
 
 Usage:
-  siftool header <containerfile>
+  siftool header <sif_path>
 
 Flags:
   -h, --help   help for header

@@ -15,10 +15,10 @@ import (
 // getList returns a command that lists object descriptors from a SIF image.
 func (c *command) getList() *cobra.Command {
 	return &cobra.Command{
-		Use:   "list <containerfile>",
-		Short: "List object descriptors from SIF files",
-		Args:  cobra.ExactArgs(1),
-
+		Use:     "list <sif_path>",
+		Short:   "List data objects",
+		Long:    "List data objects from a SIF image.",
+		Args:    cobra.ExactArgs(1),
 		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.app.List(args[0])

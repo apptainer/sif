@@ -2,15 +2,15 @@ Usage:
   siftool [command]
 
 Available Commands:
-  add         Add a data object to a SIF file
+  add         Add data object
   completion  generate the autocompletion script for the specified shell
-  del         Delete a specified object descriptor and data from SIF file
-  dump        Extract and output data objects from SIF files
-  header      Display SIF global headers
+  del         Delete data object
+  dump        Dump data object
+  header      Display global header
   help        Help about any command
-  info        Display detailed information of object descriptors
-  list        List object descriptors from SIF files
-  new         Create a new empty SIF image file
+  info        Display data object info
+  list        List data objects
+  new         Create SIF image
   setprim     Set primary system partition
 
 Flags:
