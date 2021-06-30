@@ -20,6 +20,7 @@ func (c *command) getSetPrim() *cobra.Command {
 		Use:     "setprim <id> <sif_path>",
 		Short:   "Set primary system partition",
 		Long:    "Set the primary system partition in a SIF image.",
+		Example: c.opts.rootPath + " setprim 1 image.sif",
 		Args:    cobra.ExactArgs(2),
 		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {

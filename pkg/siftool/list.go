@@ -18,6 +18,7 @@ func (c *command) getList() *cobra.Command {
 		Use:     "list <sif_path>",
 		Short:   "List data objects",
 		Long:    "List data objects from a SIF image.",
+		Example: c.opts.rootPath + " list image.sif",
 		Args:    cobra.ExactArgs(1),
 		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -22,6 +22,7 @@ func (c *command) getInfo() *cobra.Command {
 		Use:     "info <id> <sif_path>",
 		Short:   "Display data object info",
 		Long:    "Display info about a data object from a SIF image.",
+		Example: c.opts.rootPath + " info 1 image.sif",
 		Args:    cobra.ExactArgs(2),
 		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {

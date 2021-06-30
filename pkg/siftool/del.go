@@ -20,6 +20,7 @@ func (c *command) getDel() *cobra.Command {
 		Use:     "del <id> <sif_path>",
 		Short:   "Delete data object",
 		Long:    "Delete a data object from a SIF image.",
+		Example: c.opts.rootPath + " del 1 image.sif",
 		Args:    cobra.ExactArgs(2),
 		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {

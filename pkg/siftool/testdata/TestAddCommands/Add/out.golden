@@ -3,6 +3,11 @@ Add a data object to a SIF image.
 Usage:
   siftool add <sif_path> <object_path> [flags]
 
+Examples:
+siftool add image.sif recipe.def -datatype 1
+siftool add image.sif rootfs.squashfs --datatype 4 --parttype 1 --partfs 1 ----partarch 2
+siftool add image.sif signature.bin -datatype 5 --signentity 433FE984155206BD962725E20E8713472A879943 --signhash 1
+
 Flags:
       --alignment int       set alignment constraint [default: aligned on page size]
       --datatype int        the type of data to add

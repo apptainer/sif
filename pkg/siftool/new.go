@@ -17,6 +17,7 @@ func (c *command) getNew() *cobra.Command {
 		Use:     "new <sif_path>",
 		Short:   "Create SIF image",
 		Long:    "Create a new, empty SIF image.",
+		Example: c.opts.rootPath + " new image.sif",
 		Args:    cobra.ExactArgs(1),
 		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {

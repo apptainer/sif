@@ -21,6 +21,7 @@ func (c *command) getDump() *cobra.Command {
 		Use:     "dump <id> <sif_path>",
 		Short:   "Dump data object",
 		Long:    "Dump a data object from a SIF image.",
+		Example: c.opts.rootPath + " dump 1 image.sif",
 		Args:    cobra.ExactArgs(2),
 		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {

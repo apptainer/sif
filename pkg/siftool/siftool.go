@@ -30,7 +30,9 @@ func (c *command) initApp(cmd *cobra.Command, args []string) error {
 }
 
 // commandOpts contains configured options.
-type commandOpts struct{}
+type commandOpts struct {
+	rootPath string
+}
 
 // CommandOpt are used to configure optional command behavior.
 type CommandOpt func(*commandOpts) error
@@ -41,7 +43,11 @@ type CommandOpt func(*commandOpts) error
 // header, the data object descriptors and to dump data objects. It is also
 // possible to modify a SIF file via this tool via the add/del commands.
 func AddCommands(cmd *cobra.Command, opts ...CommandOpt) error {
-	c := command{}
+	c := command{
+		opts: commandOpts{
+			rootPath: cmd.CommandPath(),
+		},
+	}
 
 	for _, opt := range opts {
 		if err := opt(&c.opts); err != nil {

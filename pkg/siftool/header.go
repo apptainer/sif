@@ -18,6 +18,7 @@ func (c *command) getHeader() *cobra.Command {
 		Use:     "header <sif_path>",
 		Short:   "Display global header",
 		Long:    "Display global header from a SIF image.",
+		Example: c.opts.rootPath + " header image.sif",
 		Args:    cobra.ExactArgs(1),
 		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {

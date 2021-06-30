@@ -73,6 +73,7 @@ func runCommand(t *testing.T, cmd *cobra.Command, args []string) {
 func TestAddCommands(t *testing.T) {
 	tests := []struct {
 		name string
+		opts []CommandOpt
 		args []string
 	}{
 		{
@@ -118,7 +119,7 @@ func TestAddCommands(t *testing.T) {
 				Use: "siftool",
 			}
 
-			if err := AddCommands(cmd); err != nil {
+			if err := AddCommands(cmd, tt.opts...); err != nil {
 				t.Fatal(err)
 			}
 

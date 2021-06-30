@@ -10,19 +10,34 @@ package siftool
 import (
 	"errors"
 	"os"
+	"strings"
 
 	"github.com/hpcng/sif/v2/internal/app/siftool"
 	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/spf13/cobra"
 )
 
+// getAddExamples returns add command examples based on rootCmd.
+func getAddExamples(rootPath string) string {
+	examples := []string{
+		rootPath +
+			" add image.sif recipe.def -datatype 1",
+		rootPath +
+			" add image.sif rootfs.squashfs --datatype 4 --parttype 1 --partfs 1 ----partarch 2",
+		rootPath +
+			" add image.sif signature.bin -datatype 5 --signentity 433FE984155206BD962725E20E8713472A879943 --signhash 1",
+	}
+	return strings.Join(examples, "\n")
+}
+
 // getAdd returns a command that adds a data object to a SIF.
 func (c *command) getAdd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add <sif_path> <object_path>",
-		Short: "Add data object",
-		Long:  "Add a data object to a SIF image.",
-		Args:  cobra.ExactArgs(2),
+		Use:     "add <sif_path> <object_path>",
+		Short:   "Add data object",
+		Long:    "Add a data object to a SIF image.",
+		Example: getAddExamples(c.opts.rootPath),
+		Args:    cobra.ExactArgs(2),
 	}
 
 	datatype := cmd.Flags().Int("datatype", 0, `the type of data to add
