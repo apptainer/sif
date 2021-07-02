@@ -98,7 +98,7 @@ func writeDescriptor(w io.Writer, relativeID uint32, od sif.Descriptor) error {
 		od.Filelen,
 		od.Ctime,
 		od.UID,
-		od.Gid,
+		od.GID,
 		od.Name,
 		od.Extra,
 	}

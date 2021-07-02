@@ -114,7 +114,7 @@ func TestWriteDescriptor(t *testing.T) {
 		Ctime:    1504657553,
 		Mtime:    1504657553,
 		UID:      1000,
-		Gid:      1000,
+		GID:      1000,
 	}
 	copy(od.Name[:], "GOOD_NAME")
 	copy(od.Extra[:], "GOOD_EXTRA")
@@ -173,8 +173,8 @@ func TestWriteDescriptor(t *testing.T) {
 			modFunc: func(od *sif.Descriptor) { od.UID++ },
 		},
 		{
-			name:    "Gid",
-			modFunc: func(od *sif.Descriptor) { od.Gid++ },
+			name:    "GID",
+			modFunc: func(od *sif.Descriptor) { od.GID++ },
 		},
 		{
 			name:    "Name",

@@ -232,7 +232,7 @@ func TestFromDescr(t *testing.T) {
 		Groupid:  DescrDefaultGroup,
 		Link:     DescrUnusedLink,
 		UID:      1002,
-		Gid:      1002,
+		GID:      1002,
 	}
 	descr.SetName("busybox.squash")
 	_, _, err = fimg.GetFromDescr(descr)
@@ -247,7 +247,7 @@ func TestFromDescr(t *testing.T) {
 		Groupid:  DescrDefaultGroup,
 		Link:     DescrUnusedLink,
 		UID:      1002,
-		Gid:      1002,
+		GID:      1002,
 	}
 	descr.SetName("busyb0x.squash")
 	_, _, err = fimg.GetFromDescr(descr)

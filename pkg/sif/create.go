@@ -92,7 +92,7 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 	descr.Storelen = descr.Fileoff + descr.Filelen - curoff
 	descr.Ctime = time.Now().Unix()
 	descr.Mtime = time.Now().Unix()
-	descr.UID, descr.Gid, err = getUserIDs()
+	descr.UID, descr.GID, err = getUserIDs()
 	if err != nil {
 		return fmt.Errorf("filling descriptor: %s", err)
 	}

@@ -9,7 +9,7 @@ Descr slot#: 1
   Ctime:     2018-08-14 07:45:59 +0000 UTC
   Mtime:     2018-08-14 07:45:59 +0000 UTC
   UID:       1002
-  Gid:       1002
+  GID:       1002
   Name:      busybox.squash
   Fstype:    Squashfs
   Parttype:  *System

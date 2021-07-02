@@ -9,7 +9,7 @@ Descr slot#: 1
   Ctime:     2020-06-30 00:01:56 +0000 UTC
   Mtime:     2020-06-30 00:01:56 +0000 UTC
   UID:       501
-  Gid:       20
+  GID:       20
   Name:      .
   Fstype:    Squashfs
   Parttype:  *System

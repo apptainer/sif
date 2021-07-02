@@ -9,7 +9,7 @@ Descr slot#: 2
   Ctime:     2020-06-30 00:01:56 +0000 UTC
   Mtime:     2020-06-30 00:01:56 +0000 UTC
   UID:       501
-  Gid:       20
+  GID:       20
   Name:      .
   Hashtype:  SHA256
   Entity:    12045C8C0B1004D058DE4BEDA20C27EE7FF7BA84

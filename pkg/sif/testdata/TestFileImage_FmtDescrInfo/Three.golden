@@ -9,7 +9,7 @@ Descr slot#: 2
   Ctime:     2018-08-14 07:47:36 +0000 UTC
   Mtime:     2018-08-14 07:47:36 +0000 UTC
   UID:       1002
-  Gid:       1002
+  GID:       1002
   Name:      part-signature
   Hashtype:  SHA384
   Entity:    9F2B6C36D999A3E91CB3104720671590C12D4222

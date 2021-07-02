@@ -232,7 +232,7 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 			if descr.UID != 0 && descr.UID != v.UID {
 				continue
 			}
-			if descr.Gid != 0 && descr.Gid != v.Gid {
+			if descr.GID != 0 && descr.GID != v.GID {
 				continue
 			}
 			if descr.Name[0] != 0 && !bytes.Equal(descr.Name[:], v.Name[:]) {
