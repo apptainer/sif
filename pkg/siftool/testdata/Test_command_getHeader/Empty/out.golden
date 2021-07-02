@@ -1,6 +1,5 @@
 Launch:   #!/usr/bin/env run-singularity
 
-Magic:    SIF_MAGIC
 Version:  01
 Arch:     unknown
 ID:       3fa802cc-358b-45e3-bcc0-69dc7a45f9f8

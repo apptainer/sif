@@ -1,6 +1,5 @@
 Launch:   #!/usr/bin/env run-singularity
 
-Magic:    SIF_MAGIC
 Version:  00
 Arch:     amd64
 ID:       293e8b11-dbd0-47e6-b0b9-390772c12be8

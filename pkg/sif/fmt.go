@@ -43,7 +43,6 @@ func readableSize(size uint64) string {
 // Deprecated: FmtHeader will be removed in a future release.
 func (fimg *FileImage) FmtHeader() string {
 	s := fmt.Sprintln("Launch:  ", trimZeroBytes(fimg.Header.Launch[:]))
-	s += fmt.Sprintln("Magic:   ", trimZeroBytes(fimg.Header.Magic[:]))
 	s += fmt.Sprintln("Version: ", trimZeroBytes(fimg.Header.Version[:]))
 	s += fmt.Sprintln("Arch:    ", GetGoArch(trimZeroBytes(fimg.Header.Arch[:])))
 	s += fmt.Sprintln("ID:      ", fimg.Header.ID)
