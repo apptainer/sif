@@ -86,6 +86,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -399,6 +400,42 @@ type FileImage struct {
 	DescrArr   []Descriptor  // slice of loaded descriptors from SIF file
 	PrimPartID uint32        // ID of primary system partition if present
 }
+
+// LaunchScript returns the image launch script.
+func (f *FileImage) LaunchScript() string { return trimZeroBytes(f.Header.Launch[:]) }
+
+// Version returns the SIF specification version of the image.
+func (f *FileImage) Version() string { return trimZeroBytes(f.Header.Version[:]) }
+
+// PrimaryArch returns the primary CPU architecture of the image.
+func (f *FileImage) PrimaryArch() string { return GetGoArch(trimZeroBytes(f.Header.Arch[:])) }
+
+// ID returns the ID of the image.
+func (f *FileImage) ID() string { return f.Header.ID.String() }
+
+// CreatedAt returns the creation time of the image.
+func (f *FileImage) CreatedAt() time.Time { return time.Unix(f.Header.Ctime, 0).UTC() }
+
+// ModifiedAt returns the last modification time of the image.
+func (f *FileImage) ModifiedAt() time.Time { return time.Unix(f.Header.Mtime, 0).UTC() }
+
+// DescriptorsFree returns the number of free descriptors in the image.
+func (f *FileImage) DescriptorsFree() uint64 { return uint64(f.Header.Dfree) }
+
+// DescriptorsTotal returns the total number of descriptors in the image.
+func (f *FileImage) DescriptorsTotal() uint64 { return uint64(f.Header.Dtotal) }
+
+// DescriptorSectionOffset returns the offset (in bytes) of the descriptors section in the image.
+func (f *FileImage) DescriptorSectionOffset() uint64 { return uint64(f.Header.Descroff) }
+
+// DescriptorSectionSize returns the size (in bytes) of the descriptors section in the image.
+func (f *FileImage) DescriptorSectionSize() uint64 { return uint64(f.Header.Descrlen) }
+
+// DataSectionOffset returns the offset (in bytes) of the data section in the image.
+func (f *FileImage) DataSectionOffset() uint64 { return uint64(f.Header.Dataoff) }
+
+// DataSectionSize returns the size (in bytes) of the data section in the image.
+func (f *FileImage) DataSectionSize() uint64 { return uint64(f.Header.Datalen) }
 
 // CreateInfo wraps all SIF file creation info needed.
 type CreateInfo struct {

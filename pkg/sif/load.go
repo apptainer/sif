@@ -46,15 +46,14 @@ func readDescriptors(r io.ReaderAt, fimg *FileImage) error {
 	return nil
 }
 
-// Look at key fields from the global header to assess SIF validity.
-// `runnable' checks is current container can run on host.
-func isValidSif(fimg *FileImage) error {
-	// check various header fields
-	if trimZeroBytes(fimg.Header.Magic[:]) != HdrMagic {
-		return fmt.Errorf("invalid SIF file: Magic |%s| want |%s|", trimZeroBytes(fimg.Header.Magic[:]), HdrMagic)
+// isValidSif looks at key fields from the global header to assess SIF validity.
+func isValidSif(f *FileImage) error {
+	if got, want := trimZeroBytes(f.Header.Magic[:]), HdrMagic; got != want {
+		return fmt.Errorf("invalid SIF file: Magic |%v| want |%v|", got, want)
 	}
-	if trimZeroBytes(fimg.Header.Version[:]) > HdrVersion {
-		return fmt.Errorf("invalid SIF file: Version %s want <= %s", trimZeroBytes(fimg.Header.Version[:]), HdrVersion)
+
+	if got, want := trimZeroBytes(f.Header.Version[:]), HdrVersion; got > want {
+		return fmt.Errorf("invalid SIF file: Version %s want <= %s", got, want)
 	}
 
 	return nil
