@@ -71,23 +71,6 @@ func (e *ObjectIntegrityError) Is(target error) bool {
 	return e.ID == t.ID || t.ID == 0
 }
 
-// writeHeader writes the integrity-protected fields of h to w.
-func writeHeader(w io.Writer, h sif.Header) error {
-	fields := []interface{}{
-		h.Launch,
-		h.Magic,
-		h.Version,
-		h.ID,
-	}
-
-	for _, f := range fields {
-		if err := binary.Write(w, binary.LittleEndian, f); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // writeDescriptor writes the integrity-protected fields of od to w.
 func writeDescriptor(w io.Writer, relativeID uint32, od sif.Descriptor) error {
 	fields := []interface{}{
@@ -115,14 +98,9 @@ type headerMetadata struct {
 	Digest digest `json:"digest"`
 }
 
-// getHeaderMetadata returns headerMetadata for hdr, using hash algorithm h.
-func getHeaderMetadata(hdr sif.Header, h crypto.Hash) (headerMetadata, error) {
-	b := bytes.Buffer{}
-	if err := writeHeader(&b, hdr); err != nil {
-		return headerMetadata{}, err
-	}
-
-	d, err := newDigestReader(h, &b)
+// getHeaderMetadata returns headerMetadata for the fields read from r, using hash algorithm h.
+func getHeaderMetadata(r io.Reader, h crypto.Hash) (headerMetadata, error) {
+	d, err := newDigestReader(h, r)
 	if err != nil {
 		return headerMetadata{}, err
 	}
@@ -130,16 +108,11 @@ func getHeaderMetadata(hdr sif.Header, h crypto.Hash) (headerMetadata, error) {
 	return headerMetadata{Digest: d}, nil
 }
 
-// matches verifies hdr matches the metadata in hm.
+// matches verifies the fields read fromr matche the metadata in hm.
 //
 // If the SIF global header does not match, ErrHeaderIntegrity is returned.
-func (hm headerMetadata) matches(hdr sif.Header) error {
-	b := bytes.Buffer{}
-	if err := writeHeader(&b, hdr); err != nil {
-		return err
-	}
-
-	if ok, err := hm.Digest.matches(&b); err != nil {
+func (hm headerMetadata) matches(r io.Reader) error {
+	if ok, err := hm.Digest.matches(r); err != nil {
 		return err
 	} else if !ok {
 		return ErrHeaderIntegrity
@@ -230,7 +203,7 @@ func getImageMetadata(f *sif.FileImage, minID uint32, ods []*sif.Descriptor, h c
 	im := imageMetadata{Version: metadataVersion1}
 
 	// Add header metadata.
-	hm, err := getHeaderMetadata(f.Header, h)
+	hm, err := getHeaderMetadata(f.GetHeaderIntegrityReader(), h)
 	if err != nil {
 		return imageMetadata{}, err
 	}
@@ -304,7 +277,7 @@ func (im imageMetadata) matches(f *sif.FileImage, ods []*sif.Descriptor) ([]uint
 	verified := make([]uint32, 0, len(ods))
 
 	// Verify header metadata.
-	if err := im.Header.matches(f.Header); err != nil {
+	if err := im.Header.matches(f.GetHeaderIntegrityReader()); err != nil {
 		return verified, err
 	}
 

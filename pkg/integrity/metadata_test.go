@@ -18,92 +18,8 @@ import (
 	"testing"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
-	"github.com/google/uuid"
 	"github.com/sebdah/goldie/v2"
 )
-
-func TestWriteHeader(t *testing.T) {
-	h := sif.Header{
-		ID:    uuid.UUID{0xb2, 0x65, 0x9d, 0x4e, 0xbd, 0x50, 0x4e, 0xa5, 0xbd, 0x17, 0xee, 0xc5, 0xe5, 0x4f, 0x91, 0x8e},
-		Ctime: 1504657553,
-		Mtime: 1504657653,
-	}
-	copy(h.Launch[:], sif.HdrLaunch)
-	copy(h.Magic[:], sif.HdrMagic)
-	copy(h.Version[:], sif.HdrVersion)
-	copy(h.Arch[:], sif.HdrArchAMD64)
-
-	tests := []struct {
-		name    string
-		modFunc func(h sif.Header) sif.Header
-	}{
-		{"Launch", func(h sif.Header) sif.Header {
-			copy(h.Launch[:], "#!/usr/bin/env rm\n")
-			return h
-		}},
-		{"Magic", func(h sif.Header) sif.Header {
-			copy(h.Magic[:], "BAD_MAGIC")
-			return h
-		}},
-		{"Version", func(h sif.Header) sif.Header {
-			copy(h.Version[:], "02")
-			return h
-		}},
-		{"Arch", func(h sif.Header) sif.Header {
-			copy(h.Arch[:], sif.HdrArchS390x)
-			return h
-		}},
-		{"ID", func(h sif.Header) sif.Header {
-			h.ID[0]++
-			return h
-		}},
-		{"Ctime", func(h sif.Header) sif.Header {
-			h.Ctime++
-			return h
-		}},
-		{"Mtime", func(h sif.Header) sif.Header {
-			h.Mtime++
-			return h
-		}},
-		{"Dfree", func(h sif.Header) sif.Header {
-			h.Dfree++
-			return h
-		}},
-		{"Dtotal", func(h sif.Header) sif.Header {
-			h.Dtotal++
-			return h
-		}},
-		{"Descroff", func(h sif.Header) sif.Header {
-			h.Descroff++
-			return h
-		}},
-		{"Descrlen", func(h sif.Header) sif.Header {
-			h.Descrlen++
-			return h
-		}},
-		{"Dataoff", func(h sif.Header) sif.Header {
-			h.Dataoff++
-			return h
-		}},
-		{"Datalen", func(h sif.Header) sif.Header {
-			h.Datalen++
-			return h
-		}},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			b := bytes.Buffer{}
-			if err := writeHeader(&b, tt.modFunc(h)); err != nil {
-				t.Fatal(err)
-			}
-
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, b.Bytes())
-		})
-	}
-}
 
 func TestWriteDescriptor(t *testing.T) {
 	od := sif.Descriptor{
@@ -206,29 +122,29 @@ func TestWriteDescriptor(t *testing.T) {
 }
 
 func TestGetHeaderMetadata(t *testing.T) {
-	h := sif.Header{
-		ID:    uuid.UUID{0xb2, 0x65, 0x9d, 0x4e, 0xbd, 0x50, 0x4e, 0xa5, 0xbd, 0x17, 0xee, 0xc5, 0xe5, 0x4f, 0x91, 0x8e},
-		Ctime: 1504657553,
-		Mtime: 1504657653,
+	// Byte stream that represents integrity-protected fields of an arbitrary image.
+	b := []byte{
+		0x23, 0x21, 0x2f, 0x75, 0x73, 0x72, 0x2f, 0x62, 0x69, 0x6e, 0x2f, 0x65,
+		0x6e, 0x76, 0x20, 0x72, 0x75, 0x6e, 0x2d, 0x73, 0x69, 0x6e, 0x67, 0x75,
+		0x6c, 0x61, 0x72, 0x69, 0x74, 0x79, 0x0a, 0x00, 0x53, 0x49, 0x46, 0x5f,
+		0x4d, 0x41, 0x47, 0x49, 0x43, 0x00, 0x30, 0x31, 0x00, 0xb2, 0x65, 0x9d,
+		0x4e, 0xbd, 0x50, 0x4e, 0xa5, 0xbd, 0x17, 0xee, 0xc5, 0xe5, 0x4f, 0x91,
+		0x8e,
 	}
-	copy(h.Launch[:], sif.HdrLaunch)
-	copy(h.Magic[:], sif.HdrMagic)
-	copy(h.Version[:], sif.HdrVersion)
-	copy(h.Arch[:], sif.HdrArchAMD64)
 
 	tests := []struct {
 		name    string
-		header  sif.Header
+		header  io.Reader
 		hash    crypto.Hash
 		wantErr error
 	}{
-		{name: "HashUnavailable", hash: crypto.MD4, wantErr: errHashUnavailable},
-		{name: "HashUnsupported", hash: crypto.MD5, wantErr: errHashUnsupported},
-		{name: "SHA1", header: h, hash: crypto.SHA1},
-		{name: "SHA224", header: h, hash: crypto.SHA224},
-		{name: "SHA256", header: h, hash: crypto.SHA256},
-		{name: "SHA384", header: h, hash: crypto.SHA384},
-		{name: "SHA512", header: h, hash: crypto.SHA512},
+		{name: "HashUnavailable", header: bytes.NewReader(b), hash: crypto.MD4, wantErr: errHashUnavailable},
+		{name: "HashUnsupported", header: bytes.NewReader(b), hash: crypto.MD5, wantErr: errHashUnsupported},
+		{name: "SHA1", header: bytes.NewReader(b), hash: crypto.SHA1},
+		{name: "SHA224", header: bytes.NewReader(b), hash: crypto.SHA224},
+		{name: "SHA256", header: bytes.NewReader(b), hash: crypto.SHA256},
+		{name: "SHA384", header: bytes.NewReader(b), hash: crypto.SHA384},
+		{name: "SHA512", header: bytes.NewReader(b), hash: crypto.SHA512},
 	}
 
 	for _, tt := range tests {

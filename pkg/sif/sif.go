@@ -370,6 +370,16 @@ type Header struct {
 	Datalen  int64 // bytes used by all data objects
 }
 
+// GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from h.
+func (h Header) GetIntegrityReader() io.Reader {
+	return io.MultiReader(
+		bytes.NewReader(h.Launch[:]),
+		bytes.NewReader(h.Magic[:]),
+		bytes.NewReader(h.Version[:]),
+		bytes.NewReader(h.ID[:]),
+	)
+}
+
 //
 // This section describes SIF creation/loading data structures used when
 // building or opening a SIF file. Transient data not found in the final
@@ -436,6 +446,12 @@ func (f *FileImage) DataSectionOffset() uint64 { return uint64(f.Header.Dataoff)
 
 // DataSectionSize returns the size (in bytes) of the data section in the image.
 func (f *FileImage) DataSectionSize() uint64 { return uint64(f.Header.Datalen) }
+
+// GetHeaderIntegrityReader returns an io.Reader that reads the integrity-protected fields from the
+// header of the image.
+func (f *FileImage) GetHeaderIntegrityReader() io.Reader {
+	return f.Header.GetIntegrityReader()
+}
 
 // CreateInfo wraps all SIF file creation info needed.
 type CreateInfo struct {
