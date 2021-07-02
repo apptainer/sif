@@ -8,34 +8,25 @@ package sif
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
 
 // readableSize returns the size in human readable format.
 func readableSize(size uint64) string {
-	var divs int
-	var conversion string
-
-	for ; size != 0; size >>= 10 {
-		if size < 1024 {
-			break
-		}
-		divs++
+	if size < 1024 {
+		return fmt.Sprintf("%d B", size)
 	}
 
-	switch divs {
-	case 0:
-		conversion = fmt.Sprintf("%d", size)
-	case 1:
-		conversion = fmt.Sprintf("%dKB", size)
-	case 2:
-		conversion = fmt.Sprintf("%dMB", size)
-	case 3:
-		conversion = fmt.Sprintf("%dGB", size)
-	case 4:
-		conversion = fmt.Sprintf("%dTB", size)
+	units := "KMGTPE"
+
+	div, exp := uint64(1024), 0
+	for n := size / 1024; (n >= 1024) && (exp < len(units)-1); n /= 1024 {
+		div *= 1024
+		exp++
 	}
-	return conversion
+
+	return fmt.Sprintf("%.0f %ciB", math.Round(float64(size)/float64(div)), units[exp])
 }
 
 // FmtHeader formats the output of a SIF file global header.
