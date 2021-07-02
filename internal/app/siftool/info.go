@@ -13,7 +13,6 @@ import (
 	"io"
 	"strings"
 	"text/tabwriter"
-	"time"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
 )
@@ -73,9 +72,9 @@ func (a *App) Header(path string) error {
 // List displays a list of all active descriptors from a SIF file.
 func (a *App) List(path string) error {
 	return withFileImage(path, false, func(f *sif.FileImage) error {
-		fmt.Fprintln(a.opts.out, "Container id:", f.Header.ID)
-		fmt.Fprintln(a.opts.out, "Created on:  ", time.Unix(f.Header.Ctime, 0).UTC())
-		fmt.Fprintln(a.opts.out, "Modified on: ", time.Unix(f.Header.Mtime, 0).UTC())
+		fmt.Fprintln(a.opts.out, "Container id:", f.ID())
+		fmt.Fprintln(a.opts.out, "Created on:  ", f.CreatedAt())
+		fmt.Fprintln(a.opts.out, "Modified on: ", f.ModifiedAt())
 		fmt.Fprintln(a.opts.out, "----------------------------------------------------")
 
 		fmt.Fprintln(a.opts.out, "Descriptor list:")
