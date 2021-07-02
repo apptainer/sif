@@ -3,6 +3,7 @@ Usage:
 
 Available Commands:
   add         Add a data object to a SIF file
+  completion  generate the autocompletion script for the specified shell
   del         Delete a specified object descriptor and data from SIF file
   dump        Extract and output data objects from SIF files
   header      Display SIF global headers
