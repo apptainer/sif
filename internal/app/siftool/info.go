@@ -11,6 +11,7 @@ package siftool
 import (
 	"fmt"
 	"io"
+	"math"
 	"strings"
 	"text/tabwriter"
 
@@ -19,27 +20,19 @@ import (
 
 // readableSize returns the size in human readable format.
 func readableSize(size uint64) string {
-	var divs int
-
-	for ; size != 0; size >>= 10 {
-		if size < 1024 {
-			break
-		}
-		divs++
+	if size < 1024 {
+		return fmt.Sprintf("%d B", size)
 	}
 
-	switch divs {
-	case 4:
-		return fmt.Sprintf("%dTB", size)
-	case 3:
-		return fmt.Sprintf("%dGB", size)
-	case 2:
-		return fmt.Sprintf("%dMB", size)
-	case 1:
-		return fmt.Sprintf("%dKB", size)
-	default:
-		return fmt.Sprintf("%d", size)
+	units := "KMGTPE"
+
+	div, exp := uint64(1024), 0
+	for n := size / 1024; (n >= 1024) && (exp < len(units)-1); n /= 1024 {
+		div *= 1024
+		exp++
 	}
+
+	return fmt.Sprintf("%.0f %ciB", math.Round(float64(size)/float64(div)), units[exp])
 }
 
 // writeHeader writes header information in f to w.
