@@ -22,7 +22,7 @@ func readBinaryAt(r io.ReaderAt, off int64, data interface{}) error {
 
 // Read the global header from r and populate fimg.Header.
 func readHeader(r io.ReaderAt, fimg *FileImage) error {
-	if err := readBinaryAt(r, 0, &fimg.Header); err != nil {
+	if err := readBinaryAt(r, 0, &fimg.h); err != nil {
 		return fmt.Errorf("reading global header from container file: %s", err)
 	}
 
@@ -32,8 +32,8 @@ func readHeader(r io.ReaderAt, fimg *FileImage) error {
 // Read the descriptors from r and populate fimg.DescrArr.
 func readDescriptors(r io.ReaderAt, fimg *FileImage) error {
 	// Initialize descriptor array (slice) and read them all from file
-	fimg.DescrArr = make([]Descriptor, fimg.Header.Dtotal)
-	if err := readBinaryAt(r, fimg.Header.Descroff, &fimg.DescrArr); err != nil {
+	fimg.DescrArr = make([]Descriptor, fimg.h.Dtotal)
+	if err := readBinaryAt(r, fimg.h.Descroff, &fimg.DescrArr); err != nil {
 		fimg.DescrArr = nil
 		return fmt.Errorf("reading descriptor array from container file: %s", err)
 	}
@@ -48,11 +48,11 @@ func readDescriptors(r io.ReaderAt, fimg *FileImage) error {
 
 // isValidSif looks at key fields from the global header to assess SIF validity.
 func isValidSif(f *FileImage) error {
-	if got, want := trimZeroBytes(f.Header.Magic[:]), hdrMagic; got != want {
+	if got, want := trimZeroBytes(f.h.Magic[:]), hdrMagic; got != want {
 		return fmt.Errorf("invalid SIF file: Magic |%v| want |%v|", got, want)
 	}
 
-	if got, want := trimZeroBytes(f.Header.Version[:]), CurrentVersion.String(); got > want {
+	if got, want := trimZeroBytes(f.h.Version[:]), CurrentVersion.String(); got > want {
 		return fmt.Errorf("invalid SIF file: Version %s want <= %s", got, want)
 	}
 

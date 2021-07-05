@@ -369,8 +369,8 @@ type CryptoMessage struct {
 	Messagetype Messagetype
 }
 
-// Header describes a loaded SIF file.
-type Header struct {
+// header describes a loaded SIF file.
+type header struct {
 	Launch [hdrLaunchLen]byte // #! shell execution line
 
 	Magic   [hdrMagicLen]byte   // look for "SIF_MAGIC"
@@ -390,7 +390,7 @@ type Header struct {
 }
 
 // GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from h.
-func (h Header) GetIntegrityReader() io.Reader {
+func (h header) GetIntegrityReader() io.Reader {
 	return io.MultiReader(
 		bytes.NewReader(h.Launch[:]),
 		bytes.NewReader(h.Magic[:]),
@@ -420,7 +420,7 @@ type ReadWriter interface {
 
 // FileImage describes the representation of a SIF file in memory.
 type FileImage struct {
-	Header     Header        // the loaded SIF global header
+	h          header        // the loaded SIF global header
 	Fp         ReadWriter    // file pointer of opened SIF file
 	Filesize   int64         // file size of the opened SIF file
 	Filedata   []byte        // Deprecated: Filedata exists for historical compatibility and should not be used.
@@ -431,45 +431,45 @@ type FileImage struct {
 }
 
 // LaunchScript returns the image launch script.
-func (f *FileImage) LaunchScript() string { return trimZeroBytes(f.Header.Launch[:]) }
+func (f *FileImage) LaunchScript() string { return trimZeroBytes(f.h.Launch[:]) }
 
 // Version returns the SIF specification version of the image.
-func (f *FileImage) Version() string { return trimZeroBytes(f.Header.Version[:]) }
+func (f *FileImage) Version() string { return trimZeroBytes(f.h.Version[:]) }
 
 // PrimaryArch returns the primary CPU architecture of the image.
-func (f *FileImage) PrimaryArch() string { return GetGoArch(trimZeroBytes(f.Header.Arch[:])) }
+func (f *FileImage) PrimaryArch() string { return GetGoArch(trimZeroBytes(f.h.Arch[:])) }
 
 // ID returns the ID of the image.
-func (f *FileImage) ID() string { return f.Header.ID.String() }
+func (f *FileImage) ID() string { return f.h.ID.String() }
 
 // CreatedAt returns the creation time of the image.
-func (f *FileImage) CreatedAt() time.Time { return time.Unix(f.Header.Ctime, 0).UTC() }
+func (f *FileImage) CreatedAt() time.Time { return time.Unix(f.h.Ctime, 0).UTC() }
 
 // ModifiedAt returns the last modification time of the image.
-func (f *FileImage) ModifiedAt() time.Time { return time.Unix(f.Header.Mtime, 0).UTC() }
+func (f *FileImage) ModifiedAt() time.Time { return time.Unix(f.h.Mtime, 0).UTC() }
 
 // DescriptorsFree returns the number of free descriptors in the image.
-func (f *FileImage) DescriptorsFree() uint64 { return uint64(f.Header.Dfree) }
+func (f *FileImage) DescriptorsFree() uint64 { return uint64(f.h.Dfree) }
 
 // DescriptorsTotal returns the total number of descriptors in the image.
-func (f *FileImage) DescriptorsTotal() uint64 { return uint64(f.Header.Dtotal) }
+func (f *FileImage) DescriptorsTotal() uint64 { return uint64(f.h.Dtotal) }
 
 // DescriptorSectionOffset returns the offset (in bytes) of the descriptors section in the image.
-func (f *FileImage) DescriptorSectionOffset() uint64 { return uint64(f.Header.Descroff) }
+func (f *FileImage) DescriptorSectionOffset() uint64 { return uint64(f.h.Descroff) }
 
 // DescriptorSectionSize returns the size (in bytes) of the descriptors section in the image.
-func (f *FileImage) DescriptorSectionSize() uint64 { return uint64(f.Header.Descrlen) }
+func (f *FileImage) DescriptorSectionSize() uint64 { return uint64(f.h.Descrlen) }
 
 // DataSectionOffset returns the offset (in bytes) of the data section in the image.
-func (f *FileImage) DataSectionOffset() uint64 { return uint64(f.Header.Dataoff) }
+func (f *FileImage) DataSectionOffset() uint64 { return uint64(f.h.Dataoff) }
 
 // DataSectionSize returns the size (in bytes) of the data section in the image.
-func (f *FileImage) DataSectionSize() uint64 { return uint64(f.Header.Datalen) }
+func (f *FileImage) DataSectionSize() uint64 { return uint64(f.h.Datalen) }
 
 // GetHeaderIntegrityReader returns an io.Reader that reads the integrity-protected fields from the
 // header of the image.
 func (f *FileImage) GetHeaderIntegrityReader() io.Reader {
-	return f.Header.GetIntegrityReader()
+	return f.h.GetIntegrityReader()
 }
 
 // DescriptorInput describes the common info needed to create a data object descriptor.

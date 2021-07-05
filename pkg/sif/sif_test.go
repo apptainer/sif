@@ -14,7 +14,7 @@ import (
 )
 
 func TestHeader_GetIntegrityReader(t *testing.T) {
-	h := Header{
+	h := header{
 		ID:    uuid.UUID{0xb2, 0x65, 0x9d, 0x4e, 0xbd, 0x50, 0x4e, 0xa5, 0xbd, 0x17, 0xee, 0xc5, 0xe5, 0x4f, 0x91, 0x8e},
 		Ctime: 1504657553,
 		Mtime: 1504657653,
@@ -26,57 +26,57 @@ func TestHeader_GetIntegrityReader(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		modFunc func(h Header) Header
+		modFunc func(h header) header
 	}{
-		{"Launch", func(h Header) Header {
+		{"Launch", func(h header) header {
 			copy(h.Launch[:], "#!/usr/bin/env rm\n")
 			return h
 		}},
-		{"Magic", func(h Header) Header {
+		{"Magic", func(h header) header {
 			copy(h.Magic[:], "BAD_MAGIC")
 			return h
 		}},
-		{"Version", func(h Header) Header {
+		{"Version", func(h header) header {
 			copy(h.Version[:], "02")
 			return h
 		}},
-		{"Arch", func(h Header) Header {
+		{"Arch", func(h header) header {
 			copy(h.Arch[:], HdrArchS390x)
 			return h
 		}},
-		{"ID", func(h Header) Header {
+		{"ID", func(h header) header {
 			h.ID[0]++
 			return h
 		}},
-		{"Ctime", func(h Header) Header {
+		{"Ctime", func(h header) header {
 			h.Ctime++
 			return h
 		}},
-		{"Mtime", func(h Header) Header {
+		{"Mtime", func(h header) header {
 			h.Mtime++
 			return h
 		}},
-		{"Dfree", func(h Header) Header {
+		{"Dfree", func(h header) header {
 			h.Dfree++
 			return h
 		}},
-		{"Dtotal", func(h Header) Header {
+		{"Dtotal", func(h header) header {
 			h.Dtotal++
 			return h
 		}},
-		{"Descroff", func(h Header) Header {
+		{"Descroff", func(h header) header {
 			h.Descroff++
 			return h
 		}},
-		{"Descrlen", func(h Header) Header {
+		{"Descrlen", func(h header) header {
 			h.Descrlen++
 			return h
 		}},
-		{"Dataoff", func(h Header) Header {
+		{"Dataoff", func(h header) header {
 			h.Dataoff++
 			return h
 		}},
-		{"Datalen", func(h Header) Header {
+		{"Datalen", func(h header) header {
 			h.Datalen++
 			return h
 		}},

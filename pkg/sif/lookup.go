@@ -70,11 +70,6 @@ func GetGoArch(sifarch string) (goarch string) {
 	return goarch
 }
 
-// GetHeader returns the loaded SIF global header.
-func (fimg *FileImage) GetHeader() *Header {
-	return &fimg.Header
-}
-
 // GetFromDescrID searches for a descriptor with.
 func (fimg *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
 	match := -1

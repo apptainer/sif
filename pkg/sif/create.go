@@ -116,7 +116,7 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 			if err != nil {
 				return err
 			}
-			copy(fimg.Header.Arch[:], arch[:])
+			copy(fimg.h.Arch[:], arch[:])
 		}
 	}
 
@@ -156,7 +156,7 @@ func createDescriptor(fimg *FileImage, input DescriptorInput) (err error) {
 		v   Descriptor
 	)
 
-	if fimg.Header.Dfree == 0 {
+	if fimg.h.Dfree == 0 {
 		return fmt.Errorf("no descriptor table free entry")
 	}
 
@@ -166,7 +166,7 @@ func createDescriptor(fimg *FileImage, input DescriptorInput) (err error) {
 			break
 		}
 	}
-	if int64(idx) == fimg.Header.Dtotal-1 && fimg.DescrArr[idx].Used {
+	if int64(idx) == fimg.h.Dtotal-1 && fimg.DescrArr[idx].Used {
 		return fmt.Errorf("no descriptor table free entry, warning: header.Dfree was > 0")
 	}
 
@@ -181,8 +181,8 @@ func createDescriptor(fimg *FileImage, input DescriptorInput) (err error) {
 	}
 
 	// update some global header fields from adding this new descriptor
-	fimg.Header.Dfree--
-	fimg.Header.Datalen += fimg.DescrArr[idx].Storelen
+	fimg.h.Dfree--
+	fimg.h.Datalen += fimg.DescrArr[idx].Storelen
 
 	return
 }
@@ -199,7 +199,7 @@ func writeDescriptors(fimg *FileImage) error {
 			return fmt.Errorf("binary writing descrtable to buf: %s", err)
 		}
 	}
-	fimg.Header.Descrlen = int64(binary.Size(fimg.DescrArr))
+	fimg.h.Descrlen = int64(binary.Size(fimg.DescrArr))
 
 	return nil
 }
@@ -211,7 +211,7 @@ func writeHeader(fimg *FileImage) error {
 		return fmt.Errorf("seeking to beginning of the file: %s", err)
 	}
 
-	if err := binary.Write(fimg.Fp, binary.LittleEndian, fimg.Header); err != nil {
+	if err := binary.Write(fimg.Fp, binary.LittleEndian, fimg.h); err != nil {
 		return fmt.Errorf("binary writing header to buf: %s", err)
 	}
 
@@ -277,17 +277,17 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 	f.DescrArr = make([]Descriptor, DescrNumEntries)
 
 	// Prepare a fresh global header
-	copy(f.Header.Launch[:], hdrLaunch)
-	copy(f.Header.Magic[:], hdrMagic)
-	copy(f.Header.Version[:], CurrentVersion.bytes())
-	copy(f.Header.Arch[:], HdrArchUnknown)
-	f.Header.ID = id
-	f.Header.Ctime = t.Unix()
-	f.Header.Mtime = t.Unix()
-	f.Header.Dfree = DescrNumEntries
-	f.Header.Dtotal = DescrNumEntries
-	f.Header.Descroff = DescrStartOffset
-	f.Header.Dataoff = DataStartOffset
+	copy(f.h.Launch[:], hdrLaunch)
+	copy(f.h.Magic[:], hdrMagic)
+	copy(f.h.Version[:], CurrentVersion.bytes())
+	copy(f.h.Arch[:], HdrArchUnknown)
+	f.h.ID = id
+	f.h.Ctime = t.Unix()
+	f.h.Mtime = t.Unix()
+	f.h.Dfree = DescrNumEntries
+	f.h.Dtotal = DescrNumEntries
+	f.h.Descroff = DescrStartOffset
+	f.h.Dataoff = DataStartOffset
 
 	// Create container file
 	f.Fp, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
@@ -353,10 +353,10 @@ func resetDescriptor(fimg *FileImage, index int) error {
 	_, idx, _ := fimg.GetPartPrimSys()
 	if idx == index {
 		fimg.PrimPartID = 0
-		copy(fimg.Header.Arch[:], HdrArchUnknown)
+		copy(fimg.h.Arch[:], HdrArchUnknown)
 	}
 
-	offset := fimg.Header.Descroff + int64(index)*int64(binary.Size(fimg.DescrArr[0]))
+	offset := fimg.h.Descroff + int64(index)*int64(binary.Size(fimg.DescrArr[0]))
 
 	// first, move to descriptor offset
 	if _, err := fimg.Fp.Seek(offset, 0); err != nil {
@@ -374,7 +374,7 @@ func resetDescriptor(fimg *FileImage, index int) error {
 // AddObject add a new data object and its descriptor into the specified SIF file.
 func (fimg *FileImage) AddObject(input DescriptorInput) error {
 	// set file pointer to the end of data section
-	if _, err := fimg.Fp.Seek(fimg.Header.Dataoff+fimg.Header.Datalen, 0); err != nil {
+	if _, err := fimg.Fp.Seek(fimg.h.Dataoff+fimg.h.Datalen, 0); err != nil {
 		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}
 
@@ -388,7 +388,7 @@ func (fimg *FileImage) AddObject(input DescriptorInput) error {
 		return err
 	}
 
-	fimg.Header.Mtime = time.Now().Unix()
+	fimg.h.Mtime = time.Now().Unix()
 	// write down global header to file
 	if err := writeHeader(fimg); err != nil {
 		return err
@@ -428,7 +428,7 @@ func compactAtDescr(fimg *FileImage, descr *Descriptor) error {
 			return err
 		}
 	}
-	fimg.Header.Datalen -= descr.Storelen
+	fimg.h.Datalen -= descr.Storelen
 	return nil
 }
 
@@ -464,8 +464,8 @@ func (fimg *FileImage) DeleteObject(id uint32, flags int) error {
 	}
 
 	// update some global header fields from deleting this descriptor
-	fimg.Header.Dfree++
-	fimg.Header.Mtime = time.Now().Unix()
+	fimg.h.Dfree++
+	fimg.h.Mtime = time.Now().Unix()
 
 	// zero out the unused descriptor
 	if err = resetDescriptor(fimg, index); err != nil {
@@ -582,7 +582,7 @@ func (fimg *FileImage) SetPrimPart(id uint32) error {
 		return err
 	}
 
-	copy(fimg.Header.Arch[:], arch[:])
+	copy(fimg.h.Arch[:], arch[:])
 	fimg.PrimPartID = descr.ID
 
 	extra := Partition{
@@ -625,7 +625,7 @@ func (fimg *FileImage) SetPrimPart(id uint32) error {
 		return err
 	}
 
-	fimg.Header.Mtime = time.Now().Unix()
+	fimg.h.Mtime = time.Now().Unix()
 	// write down global header to file
 	if err := writeHeader(fimg); err != nil {
 		return err

@@ -43,10 +43,10 @@ func TestNextAligned(t *testing.T) {
 }
 
 func TestDataStructs(t *testing.T) {
-	var header Header
+	var h header
 	var descr Descriptor
 
-	if hdrlen := binary.Size(header); hdrlen != headerLen {
+	if hdrlen := binary.Size(h); hdrlen != headerLen {
 		t.Errorf("expecting global header size of %d, got %d", headerLen, hdrlen)
 	}
 
@@ -243,7 +243,7 @@ func TestAddObjectPipe(t *testing.T) {
 	}
 
 	fimg := &FileImage{
-		Header: Header{
+		h: header{
 			Dfree:  1,
 			Dtotal: 1,
 		},
@@ -255,7 +255,7 @@ func TestAddObjectPipe(t *testing.T) {
 		t.Errorf("fimg.AddObject(...): %s", err)
 	}
 
-	if expected, actual := int64(0), fimg.Header.Dfree; actual != expected {
+	if expected, actual := int64(0), fimg.h.Dfree; actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value in fimg.Header.Dfree: expected=%d actual=%d",
 			expected, actual)
 	}
@@ -310,7 +310,7 @@ func TestSetPrimPart(t *testing.T) {
 	}
 
 	fimg := &FileImage{
-		Header: Header{
+		h: header{
 			Dfree:  int64(len(inputs)),
 			Dtotal: int64(len(inputs)),
 		},
