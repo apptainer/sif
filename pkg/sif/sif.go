@@ -84,6 +84,7 @@ package sif
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -93,27 +94,45 @@ import (
 
 // SIF header constants and quantities.
 const (
-	hdrLaunch       = "#!/usr/bin/env run-singularity\n"
-	hdrMagic        = "SIF_MAGIC" // SIF identification
-	HdrVersion      = "01"        // SIF SPEC VERSION
-	HdrArchUnknown  = "00"        // Undefined/Unsupported arch
-	HdrArch386      = "01"        // 386 (i[3-6]86) arch code
-	HdrArchAMD64    = "02"        // AMD64 arch code
-	HdrArchARM      = "03"        // ARM arch code
-	HdrArchARM64    = "04"        // AARCH64 arch code
-	HdrArchPPC64    = "05"        // PowerPC 64 arch code
-	HdrArchPPC64le  = "06"        // PowerPC 64 little-endian arch code
-	HdrArchMIPS     = "07"        // MIPS arch code
-	HdrArchMIPSle   = "08"        // MIPS little-endian arch code
-	HdrArchMIPS64   = "09"        // MIPS64 arch code
-	HdrArchMIPS64le = "10"        // MIPS64 little-endian arch code
-	HdrArchS390x    = "11"        // IBM s390x arch code
-
+	hdrLaunch     = "#!/usr/bin/env run-singularity\n"
 	hdrLaunchLen  = 32 // len("#!/usr/bin/env... ")
+	hdrMagic      = "SIF_MAGIC"
 	hdrMagicLen   = 10 // len("SIF_MAGIC")
 	hdrVersionLen = 3  // len("99")
 	hdrArchLen    = 3  // len("99")
+)
 
+// SpecVersion specifies a SIF specification version.
+type SpecVersion uint8
+
+func (v SpecVersion) String() string { return fmt.Sprintf("%02d", v) }
+func (v SpecVersion) bytes() []byte  { return []byte(v.String()) }
+
+// SIF specification versions.
+const (
+	version01 SpecVersion = iota + 1
+)
+
+// CurrentVersion specifies the current SIF specification version.
+const CurrentVersion = version01
+
+// SIF architecture values.
+const (
+	HdrArchUnknown  = "00" // Undefined/Unsupported arch
+	HdrArch386      = "01" // 386 (i[3-6]86) arch code
+	HdrArchAMD64    = "02" // AMD64 arch code
+	HdrArchARM      = "03" // ARM arch code
+	HdrArchARM64    = "04" // AARCH64 arch code
+	HdrArchPPC64    = "05" // PowerPC 64 arch code
+	HdrArchPPC64le  = "06" // PowerPC 64 little-endian arch code
+	HdrArchMIPS     = "07" // MIPS arch code
+	HdrArchMIPSle   = "08" // MIPS little-endian arch code
+	HdrArchMIPS64   = "09" // MIPS64 arch code
+	HdrArchMIPS64le = "10" // MIPS64 little-endian arch code
+	HdrArchS390x    = "11" // IBM s390x arch code
+)
+
+const (
 	DescrNumEntries   = 48                 // the default total number of available descriptors
 	DescrGroupMask    = 0xf0000000         // groups start at that offset
 	DescrUnusedGroup  = DescrGroupMask     // descriptor without a group

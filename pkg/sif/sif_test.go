@@ -21,7 +21,7 @@ func TestHeader_GetIntegrityReader(t *testing.T) {
 	}
 	copy(h.Launch[:], hdrLaunch)
 	copy(h.Magic[:], hdrMagic)
-	copy(h.Version[:], HdrVersion)
+	copy(h.Version[:], CurrentVersion.bytes())
 	copy(h.Arch[:], HdrArchAMD64)
 
 	tests := []struct {

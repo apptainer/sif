@@ -52,7 +52,7 @@ func isValidSif(f *FileImage) error {
 		return fmt.Errorf("invalid SIF file: Magic |%v| want |%v|", got, want)
 	}
 
-	if got, want := trimZeroBytes(f.Header.Version[:]), HdrVersion; got > want {
+	if got, want := trimZeroBytes(f.Header.Version[:]), CurrentVersion.String(); got > want {
 		return fmt.Errorf("invalid SIF file: Version %s want <= %s", got, want)
 	}
 

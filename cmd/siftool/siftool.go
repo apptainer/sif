@@ -27,7 +27,7 @@ func getVersion() *cobra.Command {
 		Args:  cobra.ExactArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Printf("siftool version %s %s/%s\n", version, runtime.GOOS, runtime.GOARCH)
-			cmd.Printf("SIF spec versions supported: <= %s\n", sif.HdrVersion)
+			cmd.Printf("SIF spec versions supported: <= %s\n", sif.CurrentVersion)
 		},
 		DisableFlagsInUseLine: true,
 	}

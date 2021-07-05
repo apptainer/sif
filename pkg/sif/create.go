@@ -279,7 +279,7 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 	// Prepare a fresh global header
 	copy(f.Header.Launch[:], hdrLaunch)
 	copy(f.Header.Magic[:], hdrMagic)
-	copy(f.Header.Version[:], HdrVersion)
+	copy(f.Header.Version[:], CurrentVersion.bytes())
 	copy(f.Header.Arch[:], HdrArchUnknown)
 	f.Header.ID = id
 	f.Header.Ctime = now.Unix()
