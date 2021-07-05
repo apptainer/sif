@@ -244,7 +244,7 @@ func TestLoadContainerInvalidMagic(t *testing.T) {
 	// ... and edit the magic to make it invalid. Instead of
 	// exploring all kinds of invalid, simply mess with the last
 	// byte, as this would catch off-by-one errors in the code.
-	copy(content[HdrLaunchLen:HdrLaunchLen+HdrMagicLen], "SIF_MAGIX")
+	copy(content[hdrLaunchLen:hdrLaunchLen+hdrMagicLen], "SIF_MAGIX")
 
 	fp := &mockSifReadWriter{
 		buf:  content,

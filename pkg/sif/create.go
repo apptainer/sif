@@ -277,8 +277,8 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 	f.DescrArr = make([]Descriptor, DescrNumEntries)
 
 	// Prepare a fresh global header
-	copy(f.Header.Launch[:], HdrLaunch)
-	copy(f.Header.Magic[:], HdrMagic)
+	copy(f.Header.Launch[:], hdrLaunch)
+	copy(f.Header.Magic[:], hdrMagic)
 	copy(f.Header.Version[:], HdrVersion)
 	copy(f.Header.Arch[:], HdrArchUnknown)
 	f.Header.ID = id

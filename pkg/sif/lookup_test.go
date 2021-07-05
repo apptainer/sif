@@ -449,7 +449,7 @@ func TestGetArch(t *testing.T) {
 	}
 
 	if trimZeroBytes(arch[:]) != HdrArchAMD64 {
-		t.Logf("|%s|%s|\n", arch[:HdrArchLen-1], HdrArchAMD64)
+		t.Logf("|%s|%s|\n", arch[:hdrArchLen-1], HdrArchAMD64)
 		t.Error("part.GetArch() should have returned 'HdrArchAMD64':", err)
 	}
 

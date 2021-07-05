@@ -19,8 +19,8 @@ func TestHeader_GetIntegrityReader(t *testing.T) {
 		Ctime: 1504657553,
 		Mtime: 1504657653,
 	}
-	copy(h.Launch[:], HdrLaunch)
-	copy(h.Magic[:], HdrMagic)
+	copy(h.Launch[:], hdrLaunch)
+	copy(h.Magic[:], hdrMagic)
 	copy(h.Version[:], HdrVersion)
 	copy(h.Arch[:], HdrArchAMD64)
 

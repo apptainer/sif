@@ -302,15 +302,15 @@ func (d *Descriptor) GetPartType() (Parttype, error) {
 }
 
 // GetArch extracts the Arch field from the Extra field of a Partition Descriptor.
-func (d *Descriptor) GetArch() ([HdrArchLen]byte, error) {
+func (d *Descriptor) GetArch() ([hdrArchLen]byte, error) {
 	if d.Datatype != DataPartition {
-		return [HdrArchLen]byte{}, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
+		return [hdrArchLen]byte{}, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
 	}
 
 	var pinfo Partition
 	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
-		return [HdrArchLen]byte{}, fmt.Errorf("while extracting Partition extra info: %s", err)
+		return [hdrArchLen]byte{}, fmt.Errorf("while extracting Partition extra info: %s", err)
 	}
 
 	return pinfo.Arch, nil

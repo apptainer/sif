@@ -93,8 +93,8 @@ import (
 
 // SIF header constants and quantities.
 const (
-	HdrLaunch       = "#!/usr/bin/env run-singularity\n"
-	HdrMagic        = "SIF_MAGIC" // SIF identification
+	hdrLaunch       = "#!/usr/bin/env run-singularity\n"
+	hdrMagic        = "SIF_MAGIC" // SIF identification
 	HdrVersion      = "01"        // SIF SPEC VERSION
 	HdrArchUnknown  = "00"        // Undefined/Unsupported arch
 	HdrArch386      = "01"        // 386 (i[3-6]86) arch code
@@ -109,10 +109,10 @@ const (
 	HdrArchMIPS64le = "10"        // MIPS64 little-endian arch code
 	HdrArchS390x    = "11"        // IBM s390x arch code
 
-	HdrLaunchLen  = 32 // len("#!/usr/bin/env... ")
-	HdrMagicLen   = 10 // len("SIF_MAGIC")
-	HdrVersionLen = 3  // len("99")
-	HdrArchLen    = 3  // len("99")
+	hdrLaunchLen  = 32 // len("#!/usr/bin/env... ")
+	hdrMagicLen   = 10 // len("SIF_MAGIC")
+	hdrVersionLen = 3  // len("99")
+	hdrArchLen    = 3  // len("99")
 
 	DescrNumEntries   = 48                 // the default total number of available descriptors
 	DescrGroupMask    = 0xf0000000         // groups start at that offset
@@ -329,7 +329,7 @@ type Envvar struct{}
 type Partition struct {
 	Fstype   Fstype
 	Parttype Parttype
-	Arch     [HdrArchLen]byte // arch the image is built for
+	Arch     [hdrArchLen]byte // arch the image is built for
 }
 
 // Signature represents the SIF signature data object descriptor.
@@ -352,11 +352,11 @@ type CryptoMessage struct {
 
 // Header describes a loaded SIF file.
 type Header struct {
-	Launch [HdrLaunchLen]byte // #! shell execution line
+	Launch [hdrLaunchLen]byte // #! shell execution line
 
-	Magic   [HdrMagicLen]byte   // look for "SIF_MAGIC"
-	Version [HdrVersionLen]byte // SIF version
-	Arch    [HdrArchLen]byte    // arch the primary partition is built for
+	Magic   [hdrMagicLen]byte   // look for "SIF_MAGIC"
+	Version [hdrVersionLen]byte // SIF version
+	Arch    [hdrArchLen]byte    // arch the primary partition is built for
 	ID      uuid.UUID           // image unique identifier
 
 	Ctime int64 // image creation time
