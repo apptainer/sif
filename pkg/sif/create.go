@@ -271,7 +271,7 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 		}
 	}
 
-	now := co.GetTime()
+	t := co.GetTime()
 
 	f := &FileImage{}
 	f.DescrArr = make([]Descriptor, DescrNumEntries)
@@ -282,8 +282,8 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 	copy(f.Header.Version[:], CurrentVersion.bytes())
 	copy(f.Header.Arch[:], HdrArchUnknown)
 	f.Header.ID = id
-	f.Header.Ctime = now.Unix()
-	f.Header.Mtime = now.Unix()
+	f.Header.Ctime = t.Unix()
+	f.Header.Mtime = t.Unix()
 	f.Header.Dfree = DescrNumEntries
 	f.Header.Dtotal = DescrNumEntries
 	f.Header.Descroff = DescrStartOffset
