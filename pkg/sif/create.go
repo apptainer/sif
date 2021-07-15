@@ -379,7 +379,7 @@ func (fimg *FileImage) AddObject(input DescriptorInput) error {
 
 // descrIsLast return true if passed descriptor's object is the last in a SIF file.
 func objectIsLast(fimg *FileImage, descr *Descriptor) bool {
-	return fimg.Filesize == descr.Fileoff+descr.Filelen
+	return fimg.size == descr.Fileoff+descr.Filelen
 }
 
 // compactAtDescr joins data objects leading and following "descr" by compacting a SIF file.

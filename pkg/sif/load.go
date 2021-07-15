@@ -95,7 +95,7 @@ func LoadContainerFp(fp ReadWriter, rdonly bool) (fimg FileImage, err error) {
 	if err != nil {
 		return fimg, err
 	}
-	fimg.Filesize = info.Size()
+	fimg.size = info.Size()
 
 	fimg.Amodebuf = true // for backwards compat, true == !mmap
 
