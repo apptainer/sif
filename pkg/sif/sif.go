@@ -84,6 +84,7 @@ package sif
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"os"
@@ -333,6 +334,34 @@ type Descriptor struct {
 	GID   int64                 // Deprecated: GID exists for historical compatibility and should not be used.
 	Name  [DescrNameLen]byte    // descriptor name (string identifier)
 	Extra [DescrMaxPrivLen]byte // big enough for extra data below
+}
+
+// GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from d.
+func (d *Descriptor) GetIntegrityReader(relativeID uint32) io.Reader {
+	fields := []interface{}{
+		d.Datatype,
+		d.Used,
+		relativeID,
+		d.Link,
+		d.Filelen,
+		d.Ctime,
+		d.UID,
+		d.GID,
+	}
+
+	// Encode endian-sensitive fields.
+	data := bytes.Buffer{}
+	for _, f := range fields {
+		if err := binary.Write(&data, binary.LittleEndian, f); err != nil {
+			panic(err) // (*bytes.Buffer).Write() is documented as always returning a nil error.
+		}
+	}
+
+	return io.MultiReader(
+		&data,
+		bytes.NewReader(d.Name[:]),
+		bytes.NewReader(d.Extra[:]),
+	)
 }
 
 // Deffile represents the SIF definition-file data object descriptor.

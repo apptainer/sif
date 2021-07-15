@@ -13,6 +13,105 @@ import (
 	"github.com/sebdah/goldie/v2"
 )
 
+func TestDescriptor_GetIntegrityReader(t *testing.T) {
+	d := Descriptor{
+		Datatype: DataDeffile,
+		Used:     true,
+		ID:       1,
+		Groupid:  DescrGroupMask | 1,
+		Ctime:    1504657553,
+		Mtime:    1504657553,
+	}
+	copy(d.Name[:], "GOOD_NAME")
+	copy(d.Extra[:], "GOOD_EXTRA")
+
+	tests := []struct {
+		name       string
+		relativeID uint32
+		modFunc    func(*Descriptor)
+	}{
+		{
+			name:    "Datatype",
+			modFunc: func(od *Descriptor) { od.Datatype = DataEnvVar },
+		},
+		{
+			name:    "Used",
+			modFunc: func(od *Descriptor) { od.Used = !od.Used },
+		},
+		{
+			name:    "ID",
+			modFunc: func(od *Descriptor) { od.ID++ },
+		},
+		{
+			name:       "RelativeID",
+			relativeID: 1,
+		},
+		{
+			name:    "Groupid",
+			modFunc: func(od *Descriptor) { od.Groupid++ },
+		},
+		{
+			name:    "Link",
+			modFunc: func(od *Descriptor) { od.Link++ },
+		},
+		{
+			name:    "Fileoff",
+			modFunc: func(od *Descriptor) { od.Fileoff++ },
+		},
+		{
+			name:    "Filelen",
+			modFunc: func(od *Descriptor) { od.Filelen++ },
+		},
+		{
+			name:    "Storelen",
+			modFunc: func(od *Descriptor) { od.Storelen++ },
+		},
+		{
+			name:    "Ctime",
+			modFunc: func(od *Descriptor) { od.Ctime++ },
+		},
+		{
+			name:    "Mtime",
+			modFunc: func(od *Descriptor) { od.Mtime++ },
+		},
+		{
+			name:    "UID",
+			modFunc: func(od *Descriptor) { od.UID++ },
+		},
+		{
+			name:    "GID",
+			modFunc: func(od *Descriptor) { od.GID++ },
+		},
+		{
+			name:    "Name",
+			modFunc: func(od *Descriptor) { copy(od.Name[:], "BAD_NAME") },
+		},
+		{
+			name:    "Extra",
+			modFunc: func(od *Descriptor) { copy(od.Extra[:], "BAD_EXTRA") },
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			d := d
+			if tt.modFunc != nil {
+				tt.modFunc(&d)
+			}
+
+			b := bytes.Buffer{}
+
+			if _, err := io.Copy(&b, d.GetIntegrityReader(tt.relativeID)); err != nil {
+				t.Fatal(err)
+			}
+
+			g := goldie.New(t, goldie.WithTestNameForDir(true))
+			g.Assert(t, tt.name, b.Bytes())
+		})
+	}
+}
+
 func TestHeader_GetIntegrityReader(t *testing.T) {
 	h := header{
 		ID:    uuid.UUID{0xb2, 0x65, 0x9d, 0x4e, 0xbd, 0x50, 0x4e, 0xa5, 0xbd, 0x17, 0xee, 0xc5, 0xe5, 0x4f, 0x91, 0x8e},

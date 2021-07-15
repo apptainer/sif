@@ -6,9 +6,7 @@
 package integrity
 
 import (
-	"bytes"
 	"crypto"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -71,29 +69,6 @@ func (e *ObjectIntegrityError) Is(target error) bool {
 	return e.ID == t.ID || t.ID == 0
 }
 
-// writeDescriptor writes the integrity-protected fields of od to w.
-func writeDescriptor(w io.Writer, relativeID uint32, od sif.Descriptor) error {
-	fields := []interface{}{
-		od.Datatype,
-		od.Used,
-		relativeID,
-		od.Link,
-		od.Filelen,
-		od.Ctime,
-		od.UID,
-		od.GID,
-		od.Name,
-		od.Extra,
-	}
-
-	for _, f := range fields {
-		if err := binary.Write(w, binary.LittleEndian, f); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 type headerMetadata struct {
 	Digest digest `json:"digest"`
 }
@@ -133,14 +108,8 @@ type objectMetadata struct {
 func getObjectMetadata(relativeID uint32, od sif.Descriptor, r io.Reader, h crypto.Hash) (objectMetadata, error) {
 	om := objectMetadata{RelativeID: relativeID, id: od.ID}
 
-	// Write integrity-protected fields from object descriptor to buffer.
-	b := bytes.Buffer{}
-	if err := writeDescriptor(&b, relativeID, od); err != nil {
-		return objectMetadata{}, err
-	}
-
 	// Calculate digest on object descriptor.
-	d, err := newDigestReader(h, &b)
+	d, err := newDigestReader(h, od.GetIntegrityReader(relativeID))
 	if err != nil {
 		return objectMetadata{}, err
 	}
@@ -166,12 +135,7 @@ func (om *objectMetadata) populateAbsoluteID(minID uint32) {
 // If the data object descriptor does not match, a DescriptorIntegrityError is returned. If the
 // data object does not match, a ObjectIntegrityError is returned.
 func (om objectMetadata) matches(f *sif.FileImage, od *sif.Descriptor) error {
-	b := bytes.Buffer{}
-	if err := writeDescriptor(&b, om.RelativeID, *od); err != nil {
-		return err
-	}
-
-	if ok, err := om.DescriptorDigest.matches(&b); err != nil {
+	if ok, err := om.DescriptorDigest.matches(od.GetIntegrityReader(om.RelativeID)); err != nil {
 		return err
 	} else if !ok {
 		return &DescriptorIntegrityError{ID: od.ID}
