@@ -74,8 +74,8 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 	descr.Mtime = time.Now().Unix()
 	descr.UID = 0
 	descr.GID = 0
-	descr.SetName(path.Base(input.Fname))
-	descr.SetExtra(input.Extra.Bytes())
+	descr.setName(path.Base(input.Fname))
+	descr.setExtra(input.Extra.Bytes())
 
 	// Check that none or only 1 primary partition is ever set
 	if descr.Datatype == DataPartition {
@@ -118,7 +118,7 @@ func writeDataObject(fimg *FileImage, index int, input DescriptorInput) error {
 			// coming in from os.Stdin (pipe)
 			descr := &fimg.DescrArr[index]
 			descr.Filelen = n
-			descr.SetName("pipe" + fmt.Sprint(index+1))
+			descr.setName("pipe" + fmt.Sprint(index+1))
 		}
 	}
 
@@ -555,7 +555,7 @@ func (fimg *FileImage) SetPrimPart(id uint32) error {
 	if err := binary.Write(&extrabuf, binary.LittleEndian, extra); err != nil {
 		return err
 	}
-	descr.SetExtra(extrabuf.Bytes())
+	descr.setExtra(extrabuf.Bytes())
 
 	if olddescr != nil {
 		oldfs, err := olddescr.GetFsType()
@@ -577,7 +577,7 @@ func (fimg *FileImage) SetPrimPart(id uint32) error {
 		if err := binary.Write(&oldextrabuf, binary.LittleEndian, oldextra); err != nil {
 			return err
 		}
-		olddescr.SetExtra(oldextrabuf.Bytes())
+		olddescr.setExtra(oldextrabuf.Bytes())
 	}
 
 	// write down the descriptor array

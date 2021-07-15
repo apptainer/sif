@@ -331,7 +331,7 @@ func TestSetPrimPart(t *testing.T) {
 		if err := binary.Write(&buffer, binary.LittleEndian, partition); err != nil {
 			t.Fatalf("while serializing partition info: %s", err)
 		}
-		fimg.DescrArr[i].SetExtra(buffer.Bytes())
+		fimg.DescrArr[i].setExtra(buffer.Bytes())
 	}
 
 	// the first pass tests that the primary partition can be set;

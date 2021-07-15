@@ -34,16 +34,16 @@ type Descriptor struct {
 	Extra [DescrMaxPrivLen]byte // big enough for extra data below
 }
 
-// SetName sets the byte array field "Name" to the value of string "name".
-func (d *Descriptor) SetName(name string) {
+// setName sets the byte array field "Name" to the value of string "name".
+func (d *Descriptor) setName(name string) {
 	copy(d.Name[:], name)
 	for i := len(name); i < len(d.Name); i++ {
 		d.Name[i] = 0
 	}
 }
 
-// SetExtra sets the extra byte array to a provided byte array.
-func (d *Descriptor) SetExtra(extra []byte) {
+// setExtra sets the extra byte array to a provided byte array.
+func (d *Descriptor) setExtra(extra []byte) {
 	copy(d.Extra[:], extra)
 	for i := len(extra); i < len(d.Extra); i++ {
 		d.Extra[i] = 0

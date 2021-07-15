@@ -207,7 +207,7 @@ func TestFromDescr(t *testing.T) {
 		Groupid:  DescrDefaultGroup,
 		Link:     DescrUnusedLink,
 	}
-	descr.SetName("busybox.squash")
+	descr.setName("busybox.squash")
 	_, _, err = fimg.GetFromDescr(descr)
 	if err != nil {
 		t.Error("fimg.GetFromDescr(descr): should have found descriptor:", err)
@@ -220,7 +220,7 @@ func TestFromDescr(t *testing.T) {
 		Groupid:  DescrDefaultGroup,
 		Link:     DescrUnusedLink,
 	}
-	descr.SetName("busyb0x.squash")
+	descr.setName("busyb0x.squash")
 	_, _, err = fimg.GetFromDescr(descr)
 	if err == nil {
 		t.Error("fimg.GetFromDescr(descr): should have not found descriptor:", err)
