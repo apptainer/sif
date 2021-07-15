@@ -84,7 +84,6 @@ package sif
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 	"io"
 	"os"
@@ -316,53 +315,6 @@ const (
 	DelZero    = iota + 1 // zero the data object bytes
 	DelCompact            // free the space used by data object
 )
-
-// Descriptor represents the SIF descriptor type.
-type Descriptor struct {
-	Datatype Datatype // informs of descriptor type
-	Used     bool     // is the descriptor in use
-	ID       uint32   // a unique id for this data object
-	Groupid  uint32   // object group this data object is related to
-	Link     uint32   // special link or relation to an id or group
-	Fileoff  int64    // offset from start of image file
-	Filelen  int64    // length of data in file
-	Storelen int64    // length of data + alignment to store data in file
-
-	Ctime int64                 // image creation time
-	Mtime int64                 // last modification time
-	UID   int64                 // Deprecated: UID exists for historical compatibility and should not be used.
-	GID   int64                 // Deprecated: GID exists for historical compatibility and should not be used.
-	Name  [DescrNameLen]byte    // descriptor name (string identifier)
-	Extra [DescrMaxPrivLen]byte // big enough for extra data below
-}
-
-// GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from d.
-func (d *Descriptor) GetIntegrityReader(relativeID uint32) io.Reader {
-	fields := []interface{}{
-		d.Datatype,
-		d.Used,
-		relativeID,
-		d.Link,
-		d.Filelen,
-		d.Ctime,
-		d.UID,
-		d.GID,
-	}
-
-	// Encode endian-sensitive fields.
-	data := bytes.Buffer{}
-	for _, f := range fields {
-		if err := binary.Write(&data, binary.LittleEndian, f); err != nil {
-			panic(err) // (*bytes.Buffer).Write() is documented as always returning a nil error.
-		}
-	}
-
-	return io.MultiReader(
-		&data,
-		bytes.NewReader(d.Name[:]),
-		bytes.NewReader(d.Extra[:]),
-	)
-}
 
 // Deffile represents the SIF definition-file data object descriptor.
 type Deffile struct{}
