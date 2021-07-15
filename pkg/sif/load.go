@@ -40,7 +40,7 @@ func readDescriptors(r io.ReaderAt, fimg *FileImage) error {
 
 	descr, _, err := fimg.GetPartPrimSys()
 	if err == nil {
-		fimg.PrimPartID = descr.ID
+		fimg.primPartID = descr.ID
 	}
 
 	return nil

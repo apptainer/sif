@@ -408,7 +408,7 @@ type FileImage struct {
 	Amodebuf   bool          // Deprecated: Amodebuf exists for historical compatibility and should not be used.
 	Reader     *bytes.Reader // Deprecated: Reader exists for historical compatibility and should not be used.
 	descrArr   []Descriptor  // slice of loaded descriptors from SIF file
-	PrimPartID uint32        // ID of primary system partition if present
+	primPartID uint32        // ID of primary system partition if present
 }
 
 // LaunchScript returns the image launch script.

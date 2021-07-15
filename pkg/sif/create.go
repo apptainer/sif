@@ -84,10 +84,10 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 			return err
 		}
 		if ptype == PartPrimSys {
-			if fimg.PrimPartID != 0 {
+			if fimg.primPartID != 0 {
 				return fmt.Errorf("only 1 FS data object may be a primary partition")
 			}
-			fimg.PrimPartID = descr.ID
+			fimg.primPartID = descr.ID
 			arch, err := descr.GetArch()
 			if err != nil {
 				return err
@@ -328,7 +328,7 @@ func resetDescriptor(fimg *FileImage, index int) error {
 	// on any architecture exists.
 	_, idx, _ := fimg.GetPartPrimSys()
 	if idx == index {
-		fimg.PrimPartID = 0
+		fimg.primPartID = 0
 		copy(fimg.h.Arch[:], HdrArchUnknown)
 	}
 
@@ -543,7 +543,7 @@ func (fimg *FileImage) SetPrimPart(id uint32) error {
 	}
 
 	copy(fimg.h.Arch[:], arch[:])
-	fimg.PrimPartID = descr.ID
+	fimg.primPartID = descr.ID
 
 	extra := Partition{
 		Fstype:   fs,
