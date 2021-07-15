@@ -48,7 +48,7 @@ func setFileOffNA(fimg *FileImage, alignment int) (int64, error) {
 
 // Fill all of the fields of a Descriptor.
 func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err error) {
-	descr := &fimg.DescrArr[index]
+	descr := &fimg.descrArr[index]
 
 	curoff, err := fimg.Fp.Seek(0, 1)
 	if err != nil {
@@ -116,7 +116,7 @@ func writeDataObject(fimg *FileImage, index int, input DescriptorInput) error {
 		}
 		if input.Size == 0 {
 			// coming in from os.Stdin (pipe)
-			descr := &fimg.DescrArr[index]
+			descr := &fimg.descrArr[index]
 			descr.Filelen = n
 			descr.setName("pipe" + fmt.Sprint(index+1))
 		}
@@ -137,12 +137,12 @@ func createDescriptor(fimg *FileImage, input DescriptorInput) (err error) {
 	}
 
 	// look for a free entry in the descriptor table
-	for idx, v = range fimg.DescrArr {
+	for idx, v = range fimg.descrArr {
 		if !v.Used {
 			break
 		}
 	}
-	if int64(idx) == fimg.h.Dtotal-1 && fimg.DescrArr[idx].Used {
+	if int64(idx) == fimg.h.Dtotal-1 && fimg.descrArr[idx].Used {
 		return fmt.Errorf("no descriptor table free entry, warning: header.Dfree was > 0")
 	}
 
@@ -158,7 +158,7 @@ func createDescriptor(fimg *FileImage, input DescriptorInput) (err error) {
 
 	// update some global header fields from adding this new descriptor
 	fimg.h.Dfree--
-	fimg.h.Datalen += fimg.DescrArr[idx].Storelen
+	fimg.h.Datalen += fimg.descrArr[idx].Storelen
 
 	return
 }
@@ -170,12 +170,12 @@ func writeDescriptors(fimg *FileImage) error {
 		return fmt.Errorf("seeking to descriptor start offset: %s", err)
 	}
 
-	for _, v := range fimg.DescrArr {
+	for _, v := range fimg.descrArr {
 		if err := binary.Write(fimg.Fp, binary.LittleEndian, v); err != nil {
 			return fmt.Errorf("binary writing descrtable to buf: %s", err)
 		}
 	}
-	fimg.h.Descrlen = int64(binary.Size(fimg.DescrArr))
+	fimg.h.Descrlen = int64(binary.Size(fimg.descrArr))
 
 	return nil
 }
@@ -250,7 +250,7 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 	t := co.GetTime()
 
 	f := &FileImage{}
-	f.DescrArr = make([]Descriptor, DescrNumEntries)
+	f.descrArr = make([]Descriptor, DescrNumEntries)
 
 	// Prepare a fresh global header
 	copy(f.h.Launch[:], hdrLaunch)
@@ -332,7 +332,7 @@ func resetDescriptor(fimg *FileImage, index int) error {
 		copy(fimg.h.Arch[:], HdrArchUnknown)
 	}
 
-	offset := fimg.h.Descroff + int64(index)*int64(binary.Size(fimg.DescrArr[0]))
+	offset := fimg.h.Descroff + int64(index)*int64(binary.Size(fimg.descrArr[0]))
 
 	// first, move to descriptor offset
 	if _, err := fimg.Fp.Seek(offset, 0); err != nil {
@@ -386,7 +386,7 @@ func objectIsLast(fimg *FileImage, descr *Descriptor) bool {
 func compactAtDescr(fimg *FileImage, descr *Descriptor) error {
 	var prev Descriptor
 
-	for _, v := range fimg.DescrArr {
+	for _, v := range fimg.descrArr {
 		if !v.Used || v.ID == descr.ID {
 			continue
 		}

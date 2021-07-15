@@ -407,7 +407,7 @@ type FileImage struct {
 	Filedata   []byte        // Deprecated: Filedata exists for historical compatibility and should not be used.
 	Amodebuf   bool          // Deprecated: Amodebuf exists for historical compatibility and should not be used.
 	Reader     *bytes.Reader // Deprecated: Reader exists for historical compatibility and should not be used.
-	DescrArr   []Descriptor  // slice of loaded descriptors from SIF file
+	descrArr   []Descriptor  // slice of loaded descriptors from SIF file
 	PrimPartID uint32        // ID of primary system partition if present
 }
 
@@ -455,12 +455,12 @@ func (f *FileImage) GetHeaderIntegrityReader() io.Reader {
 
 // WithDescriptors calls fn with each in-use descriptor in f.
 func (f *FileImage) WithDescriptors(fn func(d *Descriptor) error) error {
-	for i, d := range f.DescrArr {
+	for i, d := range f.descrArr {
 		if !d.Used {
 			continue
 		}
 
-		if err := fn(&f.DescrArr[i]); err != nil {
+		if err := fn(&f.descrArr[i]); err != nil {
 			return err
 		}
 	}

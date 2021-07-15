@@ -270,7 +270,7 @@ func TestLoadContainerReader(t *testing.T) {
 	// and that DescrArr is set to nil (since not complete)
 	r := bytes.NewReader(content[:31768])
 	fimg, err := LoadContainerReader(r)
-	if err != nil || fimg.DescrArr != nil {
+	if err != nil || fimg.descrArr != nil {
 		t.Error(`LoadContainerReader(buf):`, err)
 	}
 

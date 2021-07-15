@@ -18,7 +18,7 @@ func (fimg *FileImage) FmtDescrList() string {
 	s := fmt.Sprintf("%-4s %-8s %-8s %-26s %s\n", "ID", "|GROUP", "|LINK", "|SIF POSITION (start-end)", "|TYPE")
 	s += fmt.Sprintln("------------------------------------------------------------------------------")
 
-	for _, v := range fimg.DescrArr {
+	for _, v := range fimg.descrArr {
 		if !v.Used {
 			continue
 		} else {
@@ -69,7 +69,7 @@ func (fimg *FileImage) FmtDescrList() string {
 func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 	var s string
 
-	for i, v := range fimg.DescrArr {
+	for i, v := range fimg.descrArr {
 		if !v.Used {
 			continue
 		} else if v.ID == id {

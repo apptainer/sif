@@ -248,7 +248,7 @@ func TestAddObjectPipe(t *testing.T) {
 			Dtotal: 1,
 		},
 		Fp:       &mockSifReadWriter{},
-		DescrArr: make([]Descriptor, 1),
+		descrArr: make([]Descriptor, 1),
 	}
 
 	if err := fimg.AddObject(input); err != nil {
@@ -260,27 +260,27 @@ func TestAddObjectPipe(t *testing.T) {
 			expected, actual)
 	}
 
-	if expected, actual := "pipe1", fimg.DescrArr[0].GetName(); actual != expected {
+	if expected, actual := "pipe1", fimg.descrArr[0].GetName(); actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].GetName(): expected=%s actual=%s",
 			expected, actual)
 	}
 
-	if expected, actual := int64(len(payload)), fimg.DescrArr[0].Filelen; actual != expected {
+	if expected, actual := int64(len(payload)), fimg.descrArr[0].Filelen; actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Filelen: expected=%d actual=%d",
 			expected, actual)
 	}
 
-	if expected, actual := input.Datatype, fimg.DescrArr[0].Datatype; actual != expected {
+	if expected, actual := input.Datatype, fimg.descrArr[0].Datatype; actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Datatype: expected=%d actual=%d",
 			expected, actual)
 	}
 
-	if expected, actual := input.Groupid, fimg.DescrArr[0].Groupid; actual != expected {
+	if expected, actual := input.Groupid, fimg.descrArr[0].Groupid; actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Groupid: expected=%d actual=%d",
 			expected, actual)
 	}
 
-	if expected, actual := input.Link, fimg.DescrArr[0].Link; actual != expected {
+	if expected, actual := input.Link, fimg.descrArr[0].Link; actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Groupid: expected=%d actual=%d",
 			expected, actual)
 	}
@@ -315,7 +315,7 @@ func TestSetPrimPart(t *testing.T) {
 			Dtotal: int64(len(inputs)),
 		},
 		Fp:       &mockSifReadWriter{},
-		DescrArr: make([]Descriptor, len(inputs)),
+		descrArr: make([]Descriptor, len(inputs)),
 	}
 
 	for i := range inputs {
@@ -331,13 +331,13 @@ func TestSetPrimPart(t *testing.T) {
 		if err := binary.Write(&buffer, binary.LittleEndian, partition); err != nil {
 			t.Fatalf("while serializing partition info: %s", err)
 		}
-		fimg.DescrArr[i].setExtra(buffer.Bytes())
+		fimg.descrArr[i].setExtra(buffer.Bytes())
 	}
 
 	// the first pass tests that the primary partition can be set;
 	// the second pass tests that the primary can be changed.
 	for i := range inputs {
-		if err := fimg.SetPrimPart(fimg.DescrArr[i].ID); err != nil {
+		if err := fimg.SetPrimPart(fimg.descrArr[i].ID); err != nil {
 			t.Error("fimg.SetPrimPart(...):", err)
 		}
 
@@ -346,7 +346,7 @@ func TestSetPrimPart(t *testing.T) {
 		} else if expected, actual := i, idx; actual != expected {
 			t.Errorf("after calling fimg.SetPrimPart(...), unexpected value from fimg.GetPartPrimSys(): expected=%d actual=%d",
 				expected, actual)
-		} else if expected, actual := fimg.DescrArr[i].ID, part.ID; actual != expected {
+		} else if expected, actual := fimg.descrArr[i].ID, part.ID; actual != expected {
 			t.Errorf("after calling fimg.SetPrimPart(...), unexpected value from fimg.GetPartPrimSys(): expected=%d actual=%d",
 				expected, actual)
 		}
