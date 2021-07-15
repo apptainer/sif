@@ -50,6 +50,16 @@ func (d *Descriptor) setExtra(extra []byte) {
 	}
 }
 
+// GetDataType returns the type of data object.
+func (d *Descriptor) GetDataType() Datatype { return d.Datatype }
+
+// GetID returns the data object ID of d.
+func (d *Descriptor) GetID() uint32 { return d.ID }
+
+// GetGroupID returns the data object group ID of d, or zero if d is not part of a data object
+// group.
+func (d *Descriptor) GetGroupID() uint32 { return d.Groupid &^ DescrGroupMask }
+
 // GetName returns the name tag associated with the descriptor. Analogous to file name.
 func (d *Descriptor) GetName() string { return strings.TrimRight(string(d.Name[:]), "\000") }
 

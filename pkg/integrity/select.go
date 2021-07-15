@@ -194,17 +194,14 @@ func getGroupMinObjectID(f *sif.FileImage, groupID uint32) (uint32, error) {
 // getGroupIDs returns all identifiers for the groups contained in f, sorted by ID. If no groups
 // are present, errNoGroupsFound is returned.
 func getGroupIDs(f *sif.FileImage) (groupIDs []uint32, err error) {
-	for _, od := range f.DescrArr {
-		if !od.Used {
-			continue
+	err = f.WithDescriptors(func(od *sif.Descriptor) error {
+		if groupID := od.GetGroupID(); groupID != 0 {
+			groupIDs = insertSorted(groupIDs, groupID)
 		}
-		if od.Groupid == sif.DescrUnusedGroup {
-			continue
-		}
-		groupIDs = insertSorted(groupIDs, od.Groupid&^sif.DescrGroupMask)
-	}
+		return nil
+	})
 
-	if len(groupIDs) == 0 {
+	if err == nil && len(groupIDs) == 0 {
 		err = errNoGroupsFound
 	}
 
