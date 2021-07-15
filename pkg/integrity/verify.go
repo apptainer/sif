@@ -538,7 +538,7 @@ func getTasks(f *sif.FileImage, cb VerifyCallback, groupIDs, objectIDs []uint32)
 			return nil, err
 		}
 
-		v, err := newGroupVerifier(f, cb, od.Groupid&^sif.DescrGroupMask, od)
+		v, err := newGroupVerifier(f, cb, od.GetGroupID(), od)
 		if err != nil {
 			return nil, err
 		}

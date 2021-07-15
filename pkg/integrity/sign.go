@@ -136,7 +136,7 @@ func newGroupSigner(f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*
 
 // addObject adds od to the list of object descriptors to be signed.
 func (gs *groupSigner) addObject(od *sif.Descriptor) error {
-	if groupID := od.Groupid &^ sif.DescrGroupMask; groupID != gs.id {
+	if groupID := od.GetGroupID(); groupID != gs.id {
 		return fmt.Errorf("%w (%v)", errUnexpectedGroupID, groupID)
 	}
 
@@ -246,7 +246,7 @@ func OptSignObjects(ids ...uint32) SignerOpt {
 
 			// Note the group ID if it hasn't been seen before, and append the object ID to the
 			// appropriate group in the map.
-			groupID := od.Groupid &^ sif.DescrGroupMask
+			groupID := od.GetGroupID()
 			if _, ok := groupObjectIDs[groupID]; !ok {
 				groupIDs = append(groupIDs, groupID)
 			}
