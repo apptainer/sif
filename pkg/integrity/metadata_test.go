@@ -29,8 +29,6 @@ func TestWriteDescriptor(t *testing.T) {
 		Groupid:  sif.DescrGroupMask | 1,
 		Ctime:    1504657553,
 		Mtime:    1504657553,
-		UID:      1000,
-		GID:      1000,
 	}
 	copy(od.Name[:], "GOOD_NAME")
 	copy(od.Extra[:], "GOOD_EXTRA")
