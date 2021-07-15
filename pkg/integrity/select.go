@@ -184,8 +184,8 @@ func getGroupMinObjectID(f *sif.FileImage, groupID uint32) (uint32, error) {
 
 	minID := ^uint32(0)
 	for _, od := range ods {
-		if od.ID < minID {
-			minID = od.ID
+		if id := od.GetID(); id < minID {
+			minID = id
 		}
 	}
 	return minID, nil

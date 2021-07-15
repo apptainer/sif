@@ -85,7 +85,7 @@ func TestOptSignGroupObjects(t *testing.T) {
 			if err == nil {
 				var got []uint32
 				for _, od := range gs.ods {
-					got = append(got, od.ID)
+					got = append(got, od.GetID())
 				}
 				if want := tt.ids; !reflect.DeepEqual(got, want) {
 					t.Errorf("got objects %v, want %v", got, want)
@@ -287,7 +287,7 @@ func TestNewGroupSigner(t *testing.T) {
 
 				var got []uint32
 				for _, od := range s.ods {
-					got = append(got, od.ID)
+					got = append(got, od.GetID())
 				}
 				if want := tt.wantObjects; !reflect.DeepEqual(got, want) {
 					t.Errorf("got objects %v, want %v", got, want)
@@ -576,7 +576,7 @@ func TestOptSignObjects(t *testing.T) {
 					} else {
 						var got []uint32
 						for _, od := range gs.ods {
-							got = append(got, od.ID)
+							got = append(got, od.GetID())
 						}
 
 						if !reflect.DeepEqual(got, want) {
@@ -728,7 +728,7 @@ func TestNewSigner(t *testing.T) {
 					} else {
 						var got []uint32
 						for _, od := range signer.ods {
-							got = append(got, od.ID)
+							got = append(got, od.GetID())
 						}
 
 						if !reflect.DeepEqual(got, want) {

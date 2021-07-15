@@ -64,7 +64,7 @@ func (r legacyResult) Signature() uint32 {
 func (r legacyResult) Signed() []uint32 {
 	ids := make([]uint32, 0, len(r.ods))
 	for _, om := range r.ods {
-		ids = append(ids, om.ID)
+		ids = append(ids, om.GetID())
 	}
 	return ids
 }

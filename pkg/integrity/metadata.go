@@ -138,13 +138,13 @@ func (om objectMetadata) matches(f *sif.FileImage, od *sif.Descriptor) error {
 	if ok, err := om.DescriptorDigest.matches(od.GetIntegrityReader(om.RelativeID)); err != nil {
 		return err
 	} else if !ok {
-		return &DescriptorIntegrityError{ID: od.ID}
+		return &DescriptorIntegrityError{ID: od.GetID()}
 	}
 
 	if ok, err := om.ObjectDigest.matches(od.GetReader(f)); err != nil {
 		return err
 	} else if !ok {
-		return &ObjectIntegrityError{ID: od.ID}
+		return &ObjectIntegrityError{ID: od.GetID()}
 	}
 	return nil
 }
@@ -175,11 +175,13 @@ func getImageMetadata(f *sif.FileImage, minID uint32, ods []*sif.Descriptor, h c
 
 	// Add object descriptor/data metadata.
 	for _, od := range ods {
-		if od.ID < minID { // shouldn't really be possible...
+		id := od.GetID()
+
+		if id < minID { // shouldn't really be possible...
 			return imageMetadata{}, errMinimumIDInvalid
 		}
 
-		om, err := getObjectMetadata(od.ID-minID, od.GetIntegrityReader(od.ID-minID), od.GetReader(f), h)
+		om, err := getObjectMetadata(id-minID, od.GetIntegrityReader(id-minID), od.GetReader(f), h)
 		if err != nil {
 			return imageMetadata{}, err
 		}
@@ -209,10 +211,11 @@ func (im imageMetadata) objectIDsMatch(ods []*sif.Descriptor) error {
 
 	// Check each object in ods exists in ids, and mark as seen.
 	for _, od := range ods {
-		if _, ok := ids[od.ID]; !ok {
-			return fmt.Errorf("object %d: %w", od.ID, errObjectNotSigned)
+		id := od.GetID()
+		if _, ok := ids[id]; !ok {
+			return fmt.Errorf("object %d: %w", id, errObjectNotSigned)
 		}
-		ids[od.ID] = true
+		ids[id] = true
 	}
 
 	// Check that all objects in ids were seen.
@@ -249,7 +252,9 @@ func (im imageMetadata) matches(f *sif.FileImage, ods []*sif.Descriptor) ([]uint
 
 	// Verify data object metadata.
 	for _, od := range ods {
-		om, err := im.metadataForObject(od.ID)
+		id := od.GetID()
+
+		om, err := im.metadataForObject(id)
 		if err != nil {
 			return verified, err
 		}
@@ -258,7 +263,7 @@ func (im imageMetadata) matches(f *sif.FileImage, ods []*sif.Descriptor) ([]uint
 			return verified, err
 		}
 
-		verified = append(verified, od.ID)
+		verified = append(verified, id)
 	}
 
 	return verified, nil

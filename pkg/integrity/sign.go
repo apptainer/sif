@@ -141,8 +141,8 @@ func (gs *groupSigner) addObject(od *sif.Descriptor) error {
 	}
 
 	// Insert into sorted descriptor list, if not already present.
-	i := sort.Search(len(gs.ods), func(i int) bool { return gs.ods[i].ID >= od.ID })
-	if i < len(gs.ods) && gs.ods[i].ID == od.ID {
+	i := sort.Search(len(gs.ods), func(i int) bool { return gs.ods[i].GetID() >= od.GetID() })
+	if i < len(gs.ods) && gs.ods[i].GetID() == od.GetID() {
 		return nil
 	}
 	gs.ods = append(gs.ods, nil)
