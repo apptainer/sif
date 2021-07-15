@@ -714,7 +714,7 @@ func (v *Verifier) Verify() error {
 		return fmt.Errorf("integrity: %w", err)
 	}
 	for _, od := range ods {
-		if od.Datatype != sif.DataSignature {
+		if od.GetDataType() != sif.DataSignature {
 			return fmt.Errorf("integrity: %w", errNonGroupedObject)
 		}
 	}
