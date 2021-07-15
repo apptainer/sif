@@ -103,20 +103,20 @@ type objectMetadata struct {
 	id uint32 // absolute object ID (minID + RelativeID)
 }
 
-// getObjectMetadata returns objectMetadata for object with relativeID, descriptor od and content r
-// using hash algorithm h.
-func getObjectMetadata(relativeID uint32, od sif.Descriptor, r io.Reader, h crypto.Hash) (objectMetadata, error) {
-	om := objectMetadata{RelativeID: relativeID, id: od.ID}
+// getObjectMetadata returns objectMetadata for object with relativeID, using digests calculated
+// over descr and data using hash algorithm h.
+func getObjectMetadata(relativeID uint32, descr, data io.Reader, h crypto.Hash) (objectMetadata, error) {
+	om := objectMetadata{RelativeID: relativeID}
 
 	// Calculate digest on object descriptor.
-	d, err := newDigestReader(h, od.GetIntegrityReader(relativeID))
+	d, err := newDigestReader(h, descr)
 	if err != nil {
 		return objectMetadata{}, err
 	}
 	om.DescriptorDigest = d
 
 	// Calculate digest on object data.
-	d, err = newDigestReader(h, r)
+	d, err = newDigestReader(h, data)
 	if err != nil {
 		return objectMetadata{}, err
 	}
@@ -179,12 +179,14 @@ func getImageMetadata(f *sif.FileImage, minID uint32, ods []*sif.Descriptor, h c
 			return imageMetadata{}, errMinimumIDInvalid
 		}
 
-		om, err := getObjectMetadata(od.ID-minID, *od, od.GetReader(f), h)
+		om, err := getObjectMetadata(od.ID-minID, od.GetIntegrityReader(od.ID-minID), od.GetReader(f), h)
 		if err != nil {
 			return imageMetadata{}, err
 		}
 		im.Objects = append(im.Objects, om)
 	}
+
+	im.populateAbsoluteObjectIDs(minID)
 
 	return im, nil
 }

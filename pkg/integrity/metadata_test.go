@@ -65,34 +65,42 @@ func TestGetHeaderMetadata(t *testing.T) {
 }
 
 func TestGetObjectMetadata(t *testing.T) {
-	od := sif.Descriptor{
-		Datatype: sif.DataDeffile,
-		Used:     true,
-		ID:       1,
+	// Byte stream that represents integrity-protected fields of an arbitrary descriptor with
+	// relative ID of zero.
+	rid0, err := os.ReadFile(filepath.Join("testdata", "sources", "descr-rid0.bin"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Byte stream that represents integrity-protected fields of an arbitrary descriptor with
+	// relative ID of one.
+	rid1, err := os.ReadFile(filepath.Join("testdata", "sources", "descr-rid1.bin"))
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	tests := []struct {
 		name       string
 		relativeID uint32
-		od         sif.Descriptor
-		r          io.Reader
+		descr      io.Reader
+		data       io.Reader
 		hash       crypto.Hash
 		wantErr    error
 	}{
-		{name: "HashUnavailable", hash: crypto.MD4, wantErr: errHashUnavailable},
-		{name: "HashUnsupported", hash: crypto.MD5, wantErr: errHashUnsupported},
-		{name: "RelativeID", relativeID: 1, od: od, r: strings.NewReader("blah"), hash: crypto.SHA1},
-		{name: "SHA1", od: od, r: strings.NewReader("blah"), hash: crypto.SHA1},
-		{name: "SHA224", od: od, r: strings.NewReader("blah"), hash: crypto.SHA224},
-		{name: "SHA256", od: od, r: strings.NewReader("blah"), hash: crypto.SHA256},
-		{name: "SHA384", od: od, r: strings.NewReader("blah"), hash: crypto.SHA384},
-		{name: "SHA512", od: od, r: strings.NewReader("blah"), hash: crypto.SHA512},
+		{name: "HashUnavailable", descr: bytes.NewReader(rid0), hash: crypto.MD4, wantErr: errHashUnavailable},
+		{name: "HashUnsupported", descr: bytes.NewReader(rid0), hash: crypto.MD5, wantErr: errHashUnsupported},
+		{name: "RelativeID", relativeID: 1, descr: bytes.NewReader(rid1), data: strings.NewReader("blah"), hash: crypto.SHA1},
+		{name: "SHA1", descr: bytes.NewReader(rid0), data: strings.NewReader("blah"), hash: crypto.SHA1},
+		{name: "SHA224", descr: bytes.NewReader(rid0), data: strings.NewReader("blah"), hash: crypto.SHA224},
+		{name: "SHA256", descr: bytes.NewReader(rid0), data: strings.NewReader("blah"), hash: crypto.SHA256},
+		{name: "SHA384", descr: bytes.NewReader(rid0), data: strings.NewReader("blah"), hash: crypto.SHA384},
+		{name: "SHA512", descr: bytes.NewReader(rid0), data: strings.NewReader("blah"), hash: crypto.SHA512},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			md, err := getObjectMetadata(tt.relativeID, tt.od, tt.r, tt.hash)
+			md, err := getObjectMetadata(tt.relativeID, tt.descr, tt.data, tt.hash)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
