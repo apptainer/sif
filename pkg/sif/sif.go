@@ -453,6 +453,21 @@ func (f *FileImage) GetHeaderIntegrityReader() io.Reader {
 	return f.h.GetIntegrityReader()
 }
 
+// WithDescriptors calls fn with each in-use descriptor in f.
+func (f *FileImage) WithDescriptors(fn func(d *Descriptor) error) error {
+	for i, d := range f.DescrArr {
+		if !d.Used {
+			continue
+		}
+
+		if err := fn(&f.DescrArr[i]); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // DescriptorInput describes the common info needed to create a data object descriptor.
 type DescriptorInput struct {
 	Datatype  Datatype // datatype being harvested for new descriptor
