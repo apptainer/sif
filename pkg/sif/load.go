@@ -97,8 +97,6 @@ func LoadContainerFp(fp ReadWriter, rdonly bool) (fimg FileImage, err error) {
 	}
 	fimg.size = info.Size()
 
-	fimg.Amodebuf = true // for backwards compat, true == !mmap
-
 	// read global header from SIF file
 	if err = readHeader(fp, &fimg); err != nil {
 		return
@@ -121,8 +119,6 @@ func LoadContainerFp(fp ReadWriter, rdonly bool) (fimg FileImage, err error) {
 // and extract various components like the global header, descriptors and even
 // perhaps data, depending on how much is read from the source.
 func LoadContainerReader(b *bytes.Reader) (fimg FileImage, err error) {
-	fimg.Amodebuf = true // for backwards compat, true == !mmap
-
 	// read global header from SIF file
 	if err = readHeader(b, &fimg); err != nil {
 		return

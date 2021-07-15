@@ -401,14 +401,11 @@ type ReadWriter interface {
 
 // FileImage describes the representation of a SIF file in memory.
 type FileImage struct {
-	h          header        // the loaded SIF global header
-	fp         ReadWriter    // file pointer of opened SIF file
-	size       int64         // file size of the opened SIF file
-	Filedata   []byte        // Deprecated: Filedata exists for historical compatibility and should not be used.
-	Amodebuf   bool          // Deprecated: Amodebuf exists for historical compatibility and should not be used.
-	Reader     *bytes.Reader // Deprecated: Reader exists for historical compatibility and should not be used.
-	descrArr   []Descriptor  // slice of loaded descriptors from SIF file
-	primPartID uint32        // ID of primary system partition if present
+	h          header       // the loaded SIF global header
+	fp         ReadWriter   // file pointer of opened SIF file
+	size       int64        // file size of the opened SIF file
+	descrArr   []Descriptor // slice of loaded descriptors from SIF file
+	primPartID uint32       // ID of primary system partition if present
 }
 
 // LaunchScript returns the image launch script.
