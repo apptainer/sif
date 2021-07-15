@@ -224,12 +224,6 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 			if descr.Mtime != 0 && descr.Mtime != v.Mtime {
 				continue
 			}
-			if descr.UID != 0 && descr.UID != v.UID {
-				continue
-			}
-			if descr.GID != 0 && descr.GID != v.GID {
-				continue
-			}
 			if descr.Name[0] != 0 && !bytes.Equal(descr.Name[:], v.Name[:]) {
 				continue
 			}
