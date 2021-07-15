@@ -134,8 +134,6 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 			s += fmt.Sprintln("  Filelen:  ", v.Filelen)
 			s += fmt.Sprintln("  Ctime:    ", time.Unix(v.Ctime, 0).UTC())
 			s += fmt.Sprintln("  Mtime:    ", time.Unix(v.Mtime, 0).UTC())
-			s += fmt.Sprintln("  UID:      ", v.UID)
-			s += fmt.Sprintln("  Gid:      ", v.Gid)
 			s += fmt.Sprintln("  Name:     ", trimZeroBytes(v.Name[:]))
 			switch v.Datatype {
 			case DataPartition:
