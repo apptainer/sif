@@ -14,9 +14,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/user"
 	"path"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -48,26 +46,6 @@ func setFileOffNA(fimg *FileImage, alignment int) (int64, error) {
 	return offset, nil
 }
 
-// Get current user and returns both uid and gid.
-func getUserIDs() (int64, int64, error) {
-	u, err := user.Current()
-	if err != nil {
-		return -1, -1, fmt.Errorf("getting current user info: %s", err)
-	}
-
-	uid, err := strconv.Atoi(u.Uid)
-	if err != nil {
-		return -1, -1, fmt.Errorf("converting UID: %s", err)
-	}
-
-	gid, err := strconv.Atoi(u.Gid)
-	if err != nil {
-		return -1, -1, fmt.Errorf("converting GID: %s", err)
-	}
-
-	return int64(uid), int64(gid), nil
-}
-
 // Fill all of the fields of a Descriptor.
 func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err error) {
 	descr := &fimg.DescrArr[index]
@@ -94,10 +72,8 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 	descr.Storelen = descr.Fileoff + descr.Filelen - curoff
 	descr.Ctime = time.Now().Unix()
 	descr.Mtime = time.Now().Unix()
-	descr.UID, descr.GID, err = getUserIDs()
-	if err != nil {
-		return fmt.Errorf("filling descriptor: %s", err)
-	}
+	descr.UID = 0
+	descr.GID = 0
 	descr.SetName(path.Base(input.Fname))
 	descr.SetExtra(input.Extra.Bytes())
 

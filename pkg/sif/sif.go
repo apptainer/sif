@@ -329,8 +329,8 @@ type Descriptor struct {
 
 	Ctime int64                 // image creation time
 	Mtime int64                 // last modification time
-	UID   int64                 // system user owning the file
-	GID   int64                 // system group owning the file
+	UID   int64                 // Deprecated: UID exists for historical compatibility and should not be used.
+	GID   int64                 // Deprecated: GID exists for historical compatibility and should not be used.
 	Name  [DescrNameLen]byte    // descriptor name (string identifier)
 	Extra [DescrMaxPrivLen]byte // big enough for extra data below
 }
