@@ -402,7 +402,7 @@ type ReadWriter interface {
 // FileImage describes the representation of a SIF file in memory.
 type FileImage struct {
 	h          header        // the loaded SIF global header
-	Fp         ReadWriter    // file pointer of opened SIF file
+	fp         ReadWriter    // file pointer of opened SIF file
 	Filesize   int64         // file size of the opened SIF file
 	Filedata   []byte        // Deprecated: Filedata exists for historical compatibility and should not be used.
 	Amodebuf   bool          // Deprecated: Amodebuf exists for historical compatibility and should not be used.

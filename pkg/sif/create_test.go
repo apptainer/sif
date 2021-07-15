@@ -247,7 +247,7 @@ func TestAddObjectPipe(t *testing.T) {
 			Dfree:  1,
 			Dtotal: 1,
 		},
-		Fp:       &mockSifReadWriter{},
+		fp:       &mockSifReadWriter{},
 		descrArr: make([]Descriptor, 1),
 	}
 
@@ -314,7 +314,7 @@ func TestSetPrimPart(t *testing.T) {
 			Dfree:  int64(len(inputs)),
 			Dtotal: int64(len(inputs)),
 		},
-		Fp:       &mockSifReadWriter{},
+		fp:       &mockSifReadWriter{},
 		descrArr: make([]Descriptor, len(inputs)),
 	}
 

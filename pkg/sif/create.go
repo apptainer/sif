@@ -34,12 +34,12 @@ func nextAligned(offset int64, align int) int64 {
 
 // Set file pointer offset to next aligned block.
 func setFileOffNA(fimg *FileImage, alignment int) (int64, error) {
-	offset, err := fimg.Fp.Seek(0, 1) // get current position
+	offset, err := fimg.fp.Seek(0, 1) // get current position
 	if err != nil {
 		return -1, fmt.Errorf("seek() getting current file position: %s", err)
 	}
 	aligned := nextAligned(offset, alignment)
-	offset, err = fimg.Fp.Seek(aligned, 0) // set new position
+	offset, err = fimg.fp.Seek(aligned, 0) // set new position
 	if err != nil {
 		return -1, fmt.Errorf("seek() getting current file position: %s", err)
 	}
@@ -50,7 +50,7 @@ func setFileOffNA(fimg *FileImage, alignment int) (int64, error) {
 func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err error) {
 	descr := &fimg.descrArr[index]
 
-	curoff, err := fimg.Fp.Seek(0, 1)
+	curoff, err := fimg.fp.Seek(0, 1)
 	if err != nil {
 		return fmt.Errorf("while file pointer look at: %s", err)
 	}
@@ -103,11 +103,11 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 func writeDataObject(fimg *FileImage, index int, input DescriptorInput) error {
 	// if we have bytes in input.data use that instead of an input file
 	if input.Data != nil {
-		if _, err := fimg.Fp.Write(input.Data); err != nil {
+		if _, err := fimg.fp.Write(input.Data); err != nil {
 			return fmt.Errorf("copying data object data to SIF file: %s", err)
 		}
 	} else {
-		n, err := io.Copy(fimg.Fp, input.Fp)
+		n, err := io.Copy(fimg.fp, input.Fp)
 		if err != nil {
 			return fmt.Errorf("copying data object file to SIF file: %s", err)
 		}
@@ -166,12 +166,12 @@ func createDescriptor(fimg *FileImage, input DescriptorInput) (err error) {
 // Release and write the data object descriptor to backing storage (SIF container file).
 func writeDescriptors(fimg *FileImage) error {
 	// first, move to descriptor start offset
-	if _, err := fimg.Fp.Seek(DescrStartOffset, 0); err != nil {
+	if _, err := fimg.fp.Seek(DescrStartOffset, 0); err != nil {
 		return fmt.Errorf("seeking to descriptor start offset: %s", err)
 	}
 
 	for _, v := range fimg.descrArr {
-		if err := binary.Write(fimg.Fp, binary.LittleEndian, v); err != nil {
+		if err := binary.Write(fimg.fp, binary.LittleEndian, v); err != nil {
 			return fmt.Errorf("binary writing descrtable to buf: %s", err)
 		}
 	}
@@ -183,11 +183,11 @@ func writeDescriptors(fimg *FileImage) error {
 // Write the global header to file.
 func writeHeader(fimg *FileImage) error {
 	// first, move to descriptor start offset
-	if _, err := fimg.Fp.Seek(0, 0); err != nil {
+	if _, err := fimg.fp.Seek(0, 0); err != nil {
 		return fmt.Errorf("seeking to beginning of the file: %s", err)
 	}
 
-	if err := binary.Write(fimg.Fp, binary.LittleEndian, fimg.h); err != nil {
+	if err := binary.Write(fimg.fp, binary.LittleEndian, fimg.h); err != nil {
 		return fmt.Errorf("binary writing header to buf: %s", err)
 	}
 
@@ -266,14 +266,14 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 	f.h.Dataoff = DataStartOffset
 
 	// Create container file
-	f.Fp, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
+	f.fp, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
 	if err != nil {
 		return nil, fmt.Errorf("container file creation failed: %s", err)
 	}
-	defer f.Fp.Close()
+	defer f.fp.Close()
 
 	// set file pointer to start of data section */
-	if _, err = f.Fp.Seek(DataStartOffset, 0); err != nil {
+	if _, err = f.fp.Seek(DataStartOffset, 0); err != nil {
 		return nil, fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}
 
@@ -298,7 +298,7 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 
 func zeroData(fimg *FileImage, descr *Descriptor) error {
 	// first, move to data object offset
-	if _, err := fimg.Fp.Seek(descr.Fileoff, 0); err != nil {
+	if _, err := fimg.fp.Seek(descr.Fileoff, 0); err != nil {
 		return fmt.Errorf("seeking to data object offset: %s", err)
 	}
 
@@ -310,7 +310,7 @@ func zeroData(fimg *FileImage, descr *Descriptor) error {
 			upbound = n
 		}
 
-		if _, err := fimg.Fp.Write(zero[:upbound]); err != nil {
+		if _, err := fimg.fp.Write(zero[:upbound]); err != nil {
 			return fmt.Errorf("writing 0's to data object")
 		}
 		n -= 4096
@@ -335,12 +335,12 @@ func resetDescriptor(fimg *FileImage, index int) error {
 	offset := fimg.h.Descroff + int64(index)*int64(binary.Size(fimg.descrArr[0]))
 
 	// first, move to descriptor offset
-	if _, err := fimg.Fp.Seek(offset, 0); err != nil {
+	if _, err := fimg.fp.Seek(offset, 0); err != nil {
 		return fmt.Errorf("seeking to descriptor: %s", err)
 	}
 
 	var emptyDesc Descriptor
-	if err := binary.Write(fimg.Fp, binary.LittleEndian, emptyDesc); err != nil {
+	if err := binary.Write(fimg.fp, binary.LittleEndian, emptyDesc); err != nil {
 		return fmt.Errorf("binary writing empty descriptor: %s", err)
 	}
 
@@ -350,7 +350,7 @@ func resetDescriptor(fimg *FileImage, index int) error {
 // AddObject add a new data object and its descriptor into the specified SIF file.
 func (fimg *FileImage) AddObject(input DescriptorInput) error {
 	// set file pointer to the end of data section
-	if _, err := fimg.Fp.Seek(fimg.h.Dataoff+fimg.h.Datalen, 0); err != nil {
+	if _, err := fimg.fp.Seek(fimg.h.Dataoff+fimg.h.Datalen, 0); err != nil {
 		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}
 
@@ -370,7 +370,7 @@ func (fimg *FileImage) AddObject(input DescriptorInput) error {
 		return err
 	}
 
-	if err := fimg.Fp.Sync(); err != nil {
+	if err := fimg.fp.Sync(); err != nil {
 		return fmt.Errorf("while sync'ing new data object to SIF file: %s", err)
 	}
 
@@ -396,11 +396,11 @@ func compactAtDescr(fimg *FileImage, descr *Descriptor) error {
 	}
 	// make sure it's not the only used descriptor first
 	if prev.Used {
-		if err := fimg.Fp.Truncate(prev.Fileoff + prev.Filelen); err != nil {
+		if err := fimg.fp.Truncate(prev.Fileoff + prev.Filelen); err != nil {
 			return err
 		}
 	} else {
-		if err := fimg.Fp.Truncate(descr.Fileoff); err != nil {
+		if err := fimg.fp.Truncate(descr.Fileoff); err != nil {
 			return err
 		}
 	}
@@ -453,7 +453,7 @@ func (fimg *FileImage) DeleteObject(id uint32, flags int) error {
 		return err
 	}
 
-	if err := fimg.Fp.Sync(); err != nil {
+	if err := fimg.fp.Sync(); err != nil {
 		return fmt.Errorf("while sync'ing deleted data object to SIF file: %s", err)
 	}
 
@@ -591,7 +591,7 @@ func (fimg *FileImage) SetPrimPart(id uint32) error {
 		return err
 	}
 
-	if err := fimg.Fp.Sync(); err != nil {
+	if err := fimg.fp.Sync(); err != nil {
 		return fmt.Errorf("while sync'ing new data object to SIF file: %s", err)
 	}
 
