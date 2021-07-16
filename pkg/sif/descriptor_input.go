@@ -177,7 +177,7 @@ type DescriptorInput struct {
 	Size     int64
 	Fname    string
 
-	Alignment int
+	alignment int
 	Fp        io.Reader
 	Data      []byte
 
@@ -215,7 +215,7 @@ func NewDescriptorInput(t Datatype, r io.Reader, opts ...DescriptorInputOpt) (De
 		Fp:        r,
 		Groupid:   dopts.groupID | DescrGroupMask,
 		Link:      dopts.linkID,
-		Alignment: dopts.alignment,
+		alignment: dopts.alignment,
 		Fname:     dopts.name,
 		opts:      dopts,
 	}

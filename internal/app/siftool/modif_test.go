@@ -39,27 +39,37 @@ func TestApp_Add(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		opts    AddOptions
-		wantErr error
+		name     string
+		data     []byte
+		dataType sif.Datatype
+		opts     []sif.DescriptorInputOpt
+		wantErr  error
 	}{
 		{
-			name: "DataPartition",
-			opts: AddOptions{
-				Datatype: sif.DataPartition,
-				Parttype: sif.PartPrimSys,
-				Partfs:   sif.FsSquash,
-				Partarch: sif.HdrArch386,
-				Fp:       bytes.NewBuffer([]byte{0xde, 0xad, 0xbe, 0xef}),
+			name:     "DataPartition",
+			data:     []byte{0xde, 0xad, 0xbe, 0xef},
+			dataType: sif.DataPartition,
+			opts: []sif.DescriptorInputOpt{
+				sif.OptPartitionMetadata(sif.FsSquash, sif.PartPrimSys, "386"),
 			},
 		},
 		{
-			name: "DataSignature",
-			opts: AddOptions{
-				Datatype:   sif.DataSignature,
-				Signhash:   sif.HashSHA256,
-				Signentity: "12045C8C0B1004D058DE4BEDA20C27EE7FF7BA84",
-				Fp:         bytes.NewBuffer([]byte{0xde, 0xad, 0xbe, 0xef}),
+			name:     "DataSignature",
+			data:     []byte{0xde, 0xad, 0xbe, 0xef},
+			dataType: sif.DataSignature,
+			opts: []sif.DescriptorInputOpt{
+				sif.OptSignatureMetadata(sif.HashSHA256, [...]byte{
+					0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
+					0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,
+				}),
+			},
+		},
+		{
+			name:     "CryptoMessage",
+			data:     []byte{0xde, 0xad, 0xbe, 0xef},
+			dataType: sif.DataCryptoMessage,
+			opts: []sif.DescriptorInputOpt{
+				sif.OptCryptoMessageMetadata(sif.FormatOpenPGP, sif.MessageClearSignature),
 			},
 		},
 	}
@@ -76,7 +86,8 @@ func TestApp_Add(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if got, want := a.Add(tf.Name(), tt.opts), tt.wantErr; !errors.Is(got, want) {
+			data := bytes.NewReader(tt.data)
+			if got, want := a.Add(tf.Name(), tt.dataType, data, tt.opts...), tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
 		})
@@ -100,11 +111,8 @@ func TestApp_Del(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	opts := AddOptions{
-		Datatype: sif.DataGeneric,
-		Fp:       bytes.NewBuffer([]byte{0xde, 0xad, 0xbe, 0xef}),
-	}
-	if err := a.Add(tf.Name(), opts); err != nil {
+	err = a.Add(tf.Name(), sif.DataGeneric, bytes.NewReader([]byte{0xde, 0xad, 0xbe, 0xef}))
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -130,14 +138,10 @@ func TestApp_Setprim(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	opts := AddOptions{
-		Datatype: sif.DataPartition,
-		Parttype: sif.PartSystem,
-		Partfs:   sif.FsSquash,
-		Partarch: sif.HdrArch386,
-		Fp:       bytes.NewBuffer([]byte{0xde, 0xad, 0xbe, 0xef}),
-	}
-	if err := a.Add(tf.Name(), opts); err != nil {
+	err = a.Add(tf.Name(), sif.DataPartition, bytes.NewReader([]byte{0xde, 0xad, 0xbe, 0xef}),
+		sif.OptPartitionMetadata(sif.FsSquash, sif.PartSystem, "386"),
+	)
+	if err != nil {
 		t.Fatal(err)
 	}
 
