@@ -51,30 +51,30 @@ func (d *Descriptor) setExtra(extra []byte) {
 }
 
 // GetDataType returns the type of data object.
-func (d *Descriptor) GetDataType() Datatype { return d.Datatype }
+func (d Descriptor) GetDataType() Datatype { return d.Datatype }
 
 // GetID returns the data object ID of d.
-func (d *Descriptor) GetID() uint32 { return d.ID }
+func (d Descriptor) GetID() uint32 { return d.ID }
 
 // GetGroupID returns the data object group ID of d, or zero if d is not part of a data object
 // group.
-func (d *Descriptor) GetGroupID() uint32 { return d.Groupid &^ DescrGroupMask }
+func (d Descriptor) GetGroupID() uint32 { return d.Groupid &^ DescrGroupMask }
 
 // GetLinkedID returns the object/group ID d is linked to, or zero if d does not contain a linked
 // ID. If isGroup is true, the returned id is an object group ID. Otherwise, the returned id is a
 // data object ID.
-func (d *Descriptor) GetLinkedID() (id uint32, isGroup bool) {
+func (d Descriptor) GetLinkedID() (id uint32, isGroup bool) {
 	return d.Link &^ DescrGroupMask, d.Link&DescrGroupMask == DescrGroupMask
 }
 
 // GetSize returns the data object size.
-func (d *Descriptor) GetSize() int64 { return d.Filelen }
+func (d Descriptor) GetSize() int64 { return d.Filelen }
 
 // GetName returns the name tag associated with the descriptor. Analogous to file name.
-func (d *Descriptor) GetName() string { return strings.TrimRight(string(d.Name[:]), "\000") }
+func (d Descriptor) GetName() string { return strings.TrimRight(string(d.Name[:]), "\000") }
 
 // GetFsType extracts the Fstype field from the Extra field of a Partition Descriptor.
-func (d *Descriptor) GetFsType() (Fstype, error) {
+func (d Descriptor) GetFsType() (Fstype, error) {
 	if d.Datatype != DataPartition {
 		return -1, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
 	}
@@ -89,7 +89,7 @@ func (d *Descriptor) GetFsType() (Fstype, error) {
 }
 
 // GetPartType extracts the Parttype field from the Extra field of a Partition Descriptor.
-func (d *Descriptor) GetPartType() (Parttype, error) {
+func (d Descriptor) GetPartType() (Parttype, error) {
 	if d.Datatype != DataPartition {
 		return -1, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
 	}
@@ -104,7 +104,7 @@ func (d *Descriptor) GetPartType() (Parttype, error) {
 }
 
 // GetArch extracts the Arch field from the Extra field of a Partition Descriptor.
-func (d *Descriptor) GetArch() ([hdrArchLen]byte, error) {
+func (d Descriptor) GetArch() ([hdrArchLen]byte, error) {
 	if d.Datatype != DataPartition {
 		return [hdrArchLen]byte{}, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
 	}
@@ -119,7 +119,7 @@ func (d *Descriptor) GetArch() ([hdrArchLen]byte, error) {
 }
 
 // GetHashType extracts the Hashtype field from the Extra field of a Signature Descriptor.
-func (d *Descriptor) GetHashType() (Hashtype, error) {
+func (d Descriptor) GetHashType() (Hashtype, error) {
 	if d.Datatype != DataSignature {
 		return -1, fmt.Errorf("expected DataSignature, got %v", d.Datatype)
 	}
@@ -134,7 +134,7 @@ func (d *Descriptor) GetHashType() (Hashtype, error) {
 }
 
 // GetEntity extracts the signing entity field from the Extra field of a Signature Descriptor.
-func (d *Descriptor) GetEntity() ([]byte, error) {
+func (d Descriptor) GetEntity() ([]byte, error) {
 	if d.Datatype != DataSignature {
 		return nil, fmt.Errorf("expected DataSignature, got %v", d.Datatype)
 	}
@@ -149,7 +149,7 @@ func (d *Descriptor) GetEntity() ([]byte, error) {
 }
 
 // GetEntityString returns the string version of the stored entity.
-func (d *Descriptor) GetEntityString() (string, error) {
+func (d Descriptor) GetEntityString() (string, error) {
 	fingerprint, err := d.GetEntity()
 	if err != nil {
 		return "", err
@@ -159,7 +159,7 @@ func (d *Descriptor) GetEntityString() (string, error) {
 }
 
 // GetFormatType extracts the Formattype field from the Extra field of a Cryptographic Message Descriptor.
-func (d *Descriptor) GetFormatType() (Formattype, error) {
+func (d Descriptor) GetFormatType() (Formattype, error) {
 	if d.Datatype != DataCryptoMessage {
 		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", d.Datatype)
 	}
@@ -174,7 +174,7 @@ func (d *Descriptor) GetFormatType() (Formattype, error) {
 }
 
 // GetMessageType extracts the Messagetype field from the Extra field of a Cryptographic Message Descriptor.
-func (d *Descriptor) GetMessageType() (Messagetype, error) {
+func (d Descriptor) GetMessageType() (Messagetype, error) {
 	if d.Datatype != DataCryptoMessage {
 		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", d.Datatype)
 	}
@@ -189,7 +189,7 @@ func (d *Descriptor) GetMessageType() (Messagetype, error) {
 }
 
 // GetData returns the data object associated with descriptor d from f.
-func (d *Descriptor) GetData(f *FileImage) ([]byte, error) {
+func (d Descriptor) GetData(f *FileImage) ([]byte, error) {
 	b := make([]byte, d.Filelen)
 	if _, err := io.ReadFull(d.GetReader(f), b); err != nil {
 		return nil, err
@@ -198,12 +198,12 @@ func (d *Descriptor) GetData(f *FileImage) ([]byte, error) {
 }
 
 // GetReader returns a io.Reader that reads the data object associated with descriptor d from f.
-func (d *Descriptor) GetReader(f *FileImage) io.Reader {
+func (d Descriptor) GetReader(f *FileImage) io.Reader {
 	return io.NewSectionReader(f.fp, d.Fileoff, d.Filelen)
 }
 
 // GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from d.
-func (d *Descriptor) GetIntegrityReader(relativeID uint32) io.Reader {
+func (d Descriptor) GetIntegrityReader(relativeID uint32) io.Reader {
 	fields := []interface{}{
 		d.Datatype,
 		d.Used,
