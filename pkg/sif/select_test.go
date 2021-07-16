@@ -84,7 +84,7 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 			fns: []DescriptorSelectorFunc{
 				WithGroupID(0),
 			},
-			wantErr: errInvalidGroupID,
+			wantErr: ErrInvalidGroupID,
 		},
 		{
 			name: "LinkedID",
@@ -98,7 +98,7 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 			fns: []DescriptorSelectorFunc{
 				WithLinkedID(0),
 			},
-			wantErr: errInvalidObjectID,
+			wantErr: ErrInvalidObjectID,
 		},
 		{
 			name: "LinkedGroupID",
@@ -112,7 +112,7 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 			fns: []DescriptorSelectorFunc{
 				WithLinkedGroupID(0),
 			},
-			wantErr: errInvalidGroupID,
+			wantErr: ErrInvalidGroupID,
 		},
 	}
 	for _, tt := range tests {
@@ -192,7 +192,7 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 			fns: []DescriptorSelectorFunc{
 				WithID(0),
 			},
-			wantErr: errInvalidObjectID,
+			wantErr: ErrInvalidObjectID,
 		},
 		{
 			name: "MultipleObjectsFound",

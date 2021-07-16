@@ -16,10 +16,11 @@ var ErrObjectNotFound = errors.New("object not found")
 // ErrMultipleObjectsFound is the error returned when multiple data objects are found.
 var ErrMultipleObjectsFound = errors.New("multiple objects found")
 
-var (
-	errInvalidObjectID = errors.New("invalid object ID")
-	errInvalidGroupID  = errors.New("invalid group ID")
-)
+// ErrInvalidObjectID is the error returned when an invalid object ID is supplied.
+var ErrInvalidObjectID = errors.New("invalid object ID")
+
+// ErrInvalidGroupID is the error returned when an invalid group ID is supplied.
+var ErrInvalidGroupID = errors.New("invalid group ID")
 
 // DescriptorSelectorFunc returns true if d matches, and false otherwise.
 type DescriptorSelectorFunc func(d Descriptor) (bool, error)
@@ -35,7 +36,7 @@ func WithDataType(dt Datatype) DescriptorSelectorFunc {
 func WithID(id uint32) DescriptorSelectorFunc {
 	return func(d Descriptor) (bool, error) {
 		if id == 0 {
-			return false, errInvalidObjectID
+			return false, ErrInvalidObjectID
 		}
 		return d.GetID() == id, nil
 	}
@@ -52,7 +53,7 @@ func WithNoGroup() DescriptorSelectorFunc {
 func WithGroupID(groupID uint32) DescriptorSelectorFunc {
 	return func(d Descriptor) (bool, error) {
 		if groupID == 0 {
-			return false, errInvalidGroupID
+			return false, ErrInvalidGroupID
 		}
 		return d.GetGroupID() == groupID, nil
 	}
@@ -62,7 +63,7 @@ func WithGroupID(groupID uint32) DescriptorSelectorFunc {
 func WithLinkedID(id uint32) DescriptorSelectorFunc {
 	return func(d Descriptor) (bool, error) {
 		if id == 0 {
-			return false, errInvalidObjectID
+			return false, ErrInvalidObjectID
 		}
 		linkedID, isGroup := d.GetLinkedID()
 		return !isGroup && linkedID == id, nil
@@ -74,7 +75,7 @@ func WithLinkedID(id uint32) DescriptorSelectorFunc {
 func WithLinkedGroupID(groupID uint32) DescriptorSelectorFunc {
 	return func(d Descriptor) (bool, error) {
 		if groupID == 0 {
-			return false, errInvalidGroupID
+			return false, ErrInvalidGroupID
 		}
 		linkedID, isGroup := d.GetLinkedID()
 		return isGroup && linkedID == groupID, nil

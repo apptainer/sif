@@ -189,7 +189,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ods := make([]sif.Descriptor, len(tt.objectIDs))
 			for i, id := range tt.objectIDs {
-				od, err := getObject(tt.f, id)
+				od, err := tt.f.GetDescriptor(sif.WithID(id))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -475,7 +475,7 @@ func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			od, err := getObject(tt.f, tt.id)
+			od, err := tt.f.GetDescriptor(sif.WithID(tt.id))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -621,7 +621,7 @@ func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 				}
 			}
 
-			od, err := getObject(tt.f, tt.id)
+			od, err := tt.f.GetDescriptor(sif.WithID(tt.id))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -690,7 +690,7 @@ func TestNewVerifier(t *testing.T) {
 			name:    "InvalidGroupID",
 			fi:      &emptyImage,
 			opts:    []VerifierOpt{OptVerifyGroup(0)},
-			wantErr: errInvalidGroupID,
+			wantErr: sif.ErrInvalidGroupID,
 		},
 		{
 			name:    "GroupNotFound",
@@ -708,7 +708,7 @@ func TestNewVerifier(t *testing.T) {
 			name:    "InvalidObjectID",
 			fi:      &emptyImage,
 			opts:    []VerifierOpt{OptVerifyObject(0)},
-			wantErr: errInvalidObjectID,
+			wantErr: sif.ErrInvalidObjectID,
 		},
 		{
 			name:    "ObjectNotFound",

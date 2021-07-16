@@ -330,7 +330,7 @@ type legacyObjectVerifier struct {
 
 // newLegacyObjectVerifier constructs a new legacy object verifier.
 func newLegacyObjectVerifier(f *sif.FileImage, cb VerifyCallback, id uint32) (*legacyObjectVerifier, error) {
-	od, err := getObject(f, id)
+	od, err := f.GetDescriptor(sif.WithID(id))
 	if err != nil {
 		return nil, err
 	}
@@ -464,7 +464,7 @@ func OptVerifyWithKeyRing(kr openpgp.KeyRing) VerifierOpt {
 func OptVerifyGroup(groupID uint32) VerifierOpt {
 	return func(v *Verifier) error {
 		if groupID == 0 {
-			return errInvalidGroupID
+			return sif.ErrInvalidGroupID
 		}
 		v.groups = insertSorted(v.groups, groupID)
 		return nil
@@ -476,7 +476,7 @@ func OptVerifyGroup(groupID uint32) VerifierOpt {
 func OptVerifyObject(id uint32) VerifierOpt {
 	return func(v *Verifier) error {
 		if id == 0 {
-			return errInvalidObjectID
+			return sif.ErrInvalidObjectID
 		}
 		v.objects = insertSorted(v.objects, id)
 		return nil
@@ -533,7 +533,7 @@ func getTasks(f *sif.FileImage, cb VerifyCallback, groupIDs, objectIDs []uint32)
 	}
 
 	for _, id := range objectIDs {
-		od, err := getObject(f, id)
+		od, err := f.GetDescriptor(sif.WithID(id))
 		if err != nil {
 			return nil, err
 		}

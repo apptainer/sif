@@ -63,7 +63,7 @@ func optSignGroupObjects(ids ...uint32) groupSignerOpt {
 		}
 
 		for _, id := range ids {
-			od, err := getObject(gs.f, id)
+			od, err := gs.f.GetDescriptor(sif.WithID(id))
 			if err != nil {
 				return err
 			}
@@ -101,6 +101,10 @@ func optSignGroupSignatureConfig(c *packet.Config) groupSignerOpt {
 // optSignGroupMetadataHash(). To override the default PGP configuration for signature generation,
 // use optSignGroupSignatureConfig().
 func newGroupSigner(f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*groupSigner, error) {
+	if groupID == 0 {
+		return nil, sif.ErrInvalidGroupID
+	}
+
 	gs := groupSigner{
 		f:      f,
 		id:     groupID,
@@ -232,6 +236,10 @@ func OptSignObjects(ids ...uint32) SignerOpt {
 		var groupIDs []uint32
 
 		for _, id := range ids {
+			if id == 0 {
+				return sif.ErrInvalidObjectID
+			}
+
 			// Ignore duplicate IDs.
 			if _, ok := idMap[id]; ok {
 				continue
@@ -239,7 +247,7 @@ func OptSignObjects(ids ...uint32) SignerOpt {
 			idMap[id] = true
 
 			// Get descriptor.
-			od, err := getObject(s.f, id)
+			od, err := s.f.GetDescriptor(sif.WithID(id))
 			if err != nil {
 				return err
 			}
