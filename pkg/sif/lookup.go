@@ -67,10 +67,10 @@ func GetGoArch(sifarch string) (goarch string) {
 }
 
 // GetFromDescrID searches for a descriptor with.
-func (fimg *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
+func (f *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
 	match := -1
 
-	for i, v := range fimg.descrArr {
+	for i, v := range f.descrArr {
 		if !v.Used {
 			continue
 		}
@@ -86,22 +86,22 @@ func (fimg *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
 		return nil, -1, ErrNotFound
 	}
 
-	return &fimg.descrArr[match], match, nil
+	return &f.descrArr[match], match, nil
 }
 
 // GetPartFromGroup searches for partition descriptors inside a specific group.
-func (fimg *FileImage) GetPartFromGroup(groupid uint32) ([]*Descriptor, []int, error) {
+func (f *FileImage) GetPartFromGroup(groupid uint32) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
 	var count int
 
-	for i, v := range fimg.descrArr {
+	for i, v := range f.descrArr {
 		if !v.Used {
 			continue
 		}
 		if v.Datatype == DataPartition && v.Groupid == groupid {
 			indexes = append(indexes, i)
-			descrs = append(descrs, &fimg.descrArr[i])
+			descrs = append(descrs, &f.descrArr[i])
 			count++
 		}
 	}
@@ -114,18 +114,18 @@ func (fimg *FileImage) GetPartFromGroup(groupid uint32) ([]*Descriptor, []int, e
 }
 
 // GetSignFromGroup searches for signature descriptors inside a specific group.
-func (fimg *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, error) {
+func (f *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
 	var count int
 
-	for i, v := range fimg.descrArr {
+	for i, v := range f.descrArr {
 		if !v.Used {
 			continue
 		}
 		if v.Datatype == DataSignature && v.Groupid == groupid {
 			indexes = append(indexes, i)
-			descrs = append(descrs, &fimg.descrArr[i])
+			descrs = append(descrs, &f.descrArr[i])
 			count++
 		}
 	}
@@ -138,17 +138,17 @@ func (fimg *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, e
 }
 
 // GetLinkedDescrsByType searches for descriptors that point to "id", only returns the specified type.
-func (fimg *FileImage) GetLinkedDescrsByType(id uint32, dataType Datatype) ([]*Descriptor, []int, error) {
+func (f *FileImage) GetLinkedDescrsByType(id uint32, dataType Datatype) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
 
-	for i, v := range fimg.descrArr {
+	for i, v := range f.descrArr {
 		if !v.Used {
 			continue
 		}
 		if v.Datatype == dataType && v.Link == id {
 			indexes = append(indexes, i)
-			descrs = append(descrs, &fimg.descrArr[i])
+			descrs = append(descrs, &f.descrArr[i])
 		}
 	}
 
@@ -160,18 +160,18 @@ func (fimg *FileImage) GetLinkedDescrsByType(id uint32, dataType Datatype) ([]*D
 }
 
 // GetFromLinkedDescr searches for descriptors that point to "id".
-func (fimg *FileImage) GetFromLinkedDescr(id uint32) ([]*Descriptor, []int, error) {
+func (f *FileImage) GetFromLinkedDescr(id uint32) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
 	var count int
 
-	for i, v := range fimg.descrArr {
+	for i, v := range f.descrArr {
 		if !v.Used {
 			continue
 		}
 		if v.Link == id {
 			indexes = append(indexes, i)
-			descrs = append(descrs, &fimg.descrArr[i])
+			descrs = append(descrs, &f.descrArr[i])
 			count++
 		}
 	}
@@ -184,12 +184,12 @@ func (fimg *FileImage) GetFromLinkedDescr(id uint32) ([]*Descriptor, []int, erro
 }
 
 // GetFromDescr searches for descriptors comparing all non-nil fields of a provided descriptor.
-func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, error) {
+func (f *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
 	var indexes []int
 	var count int
 
-	for i, v := range fimg.descrArr {
+	for i, v := range f.descrArr {
 		if !v.Used {
 			continue
 		} else {
@@ -225,7 +225,7 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 			}
 
 			indexes = append(indexes, i)
-			descrs = append(descrs, &fimg.descrArr[i])
+			descrs = append(descrs, &f.descrArr[i])
 			count++
 		}
 	}
@@ -239,11 +239,11 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 
 // GetPartPrimSys returns the primary system partition if present. There should
 // be only one primary system partition in a SIF file.
-func (fimg *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
+func (f *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
 	var descr *Descriptor
 	index := -1
 
-	for i, v := range fimg.descrArr {
+	for i, v := range f.descrArr {
 		if !v.Used {
 			continue
 		}
@@ -257,7 +257,7 @@ func (fimg *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
 					return nil, -1, ErrMultValues
 				}
 				index = i
-				descr = &fimg.descrArr[i]
+				descr = &f.descrArr[i]
 			}
 		}
 	}

@@ -139,10 +139,10 @@ func LoadContainerReader(b *bytes.Reader) (fimg FileImage, err error) {
 }
 
 // UnloadContainer closes the SIF container file and free associated resources if needed.
-func (fimg *FileImage) UnloadContainer() (err error) {
+func (f *FileImage) UnloadContainer() (err error) {
 	// if SIF data comes from file, not a slice buffer (see LoadContainer() variants)
-	if fimg.fp != nil {
-		if err = fimg.fp.Close(); err != nil {
+	if f.fp != nil {
+		if err = f.fp.Close(); err != nil {
 			return fmt.Errorf("closing SIF file failed, corrupted: don't use: %s", err)
 		}
 	}

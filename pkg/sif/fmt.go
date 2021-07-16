@@ -14,11 +14,11 @@ import (
 // FmtDescrList formats the output of a list of all active descriptors from a SIF file.
 //
 // Deprecated: FmtDescrList will be removed in a future release.
-func (fimg *FileImage) FmtDescrList() string {
+func (f *FileImage) FmtDescrList() string {
 	s := fmt.Sprintf("%-4s %-8s %-8s %-26s %s\n", "ID", "|GROUP", "|LINK", "|SIF POSITION (start-end)", "|TYPE")
 	s += fmt.Sprintln("------------------------------------------------------------------------------")
 
-	for _, v := range fimg.descrArr {
+	for _, v := range f.descrArr {
 		if !v.Used {
 			continue
 		} else {
@@ -66,10 +66,10 @@ func (fimg *FileImage) FmtDescrList() string {
 // FmtDescrInfo formats the output of detailed info about a descriptor from a SIF file.
 //
 // Deprecated: FmtDescrInfo will be removed in a future release.
-func (fimg *FileImage) FmtDescrInfo(id uint32) string {
+func (f *FileImage) FmtDescrInfo(id uint32) string {
 	var s string
 
-	for i, v := range fimg.descrArr {
+	for i, v := range f.descrArr {
 		if !v.Used {
 			continue
 		} else if v.ID == id {
