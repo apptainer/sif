@@ -231,9 +231,12 @@ func TestDescriptor_GetHashType(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	sigs, _, err := fimg.GetSignFromGroup(DescrDefaultGroup)
+	sigs, err := fimg.GetDescriptors(
+		WithDataType(DataSignature),
+		WithGroupID(1),
+	)
 	if err != nil {
-		t.Error("fimg.GetSignFromGroup(DescrDefaultGroup): should have found descriptor:", err)
+		t.Fatalf("failed to get descriptors: %v", err)
 	}
 
 	if len(sigs) != 1 {
@@ -264,9 +267,12 @@ func TestDescriptor_GetEntity(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	sigs, _, err := fimg.GetSignFromGroup(DescrDefaultGroup)
+	sigs, err := fimg.GetDescriptors(
+		WithDataType(DataSignature),
+		WithGroupID(1),
+	)
 	if err != nil {
-		t.Error("fimg.GetSignFromGroup(DescrDefaultGroup): should have found descriptor:", err)
+		t.Fatalf("failed to get descriptors: %v", err)
 	}
 
 	if len(sigs) != 1 {
@@ -297,9 +303,12 @@ func TestDescriptor_GetEntityString(t *testing.T) {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	sigs, _, err := fimg.GetSignFromGroup(DescrDefaultGroup)
+	sigs, err := fimg.GetDescriptors(
+		WithDataType(DataSignature),
+		WithGroupID(1),
+	)
 	if err != nil {
-		t.Error("fimg.GetSignFromGroup(DescrDefaultGroup): should have found descriptor:", err)
+		t.Fatalf("failed to get descriptors: %v", err)
 	}
 
 	if len(sigs) != 1 {

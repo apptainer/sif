@@ -42,24 +42,6 @@ func TestGetFromDescrID(t *testing.T) {
 	}
 }
 
-func TestGetSignFromGroup(t *testing.T) {
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
-	}
-
-	_, _, err = fimg.GetSignFromGroup(DescrDefaultGroup)
-	if err != nil {
-		t.Error("fimg.GetSignFromGroup(DescrDefaultGroup): should have found descriptor:", err)
-	}
-
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
-	}
-}
-
 func TestGetLinkedDescrsByType(t *testing.T) {
 	// load the test container
 	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)

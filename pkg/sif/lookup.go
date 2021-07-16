@@ -88,30 +88,6 @@ func (f *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
 	return &f.descrArr[match], match, nil
 }
 
-// GetSignFromGroup searches for signature descriptors inside a specific group.
-func (f *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, error) {
-	var descrs []*Descriptor
-	var indexes []int
-	var count int
-
-	for i, v := range f.descrArr {
-		if !v.Used {
-			continue
-		}
-		if v.Datatype == DataSignature && v.Groupid == groupid {
-			indexes = append(indexes, i)
-			descrs = append(descrs, &f.descrArr[i])
-			count++
-		}
-	}
-
-	if count == 0 {
-		return nil, nil, ErrNotFound
-	}
-
-	return descrs, indexes, nil
-}
-
 // GetLinkedDescrsByType searches for descriptors that point to "id", only returns the specified type.
 func (f *FileImage) GetLinkedDescrsByType(id uint32, dataType Datatype) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
