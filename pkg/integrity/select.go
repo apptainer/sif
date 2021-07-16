@@ -110,37 +110,43 @@ func (e *SignatureNotFoundError) Is(target error) bool {
 // getObjectSignatures returns all descriptors in f that contain signature objects linked to the
 // object with identifier id. If no such signatures are found, a SignatureNotFoundError is
 // returned.
-func getObjectSignatures(f *sif.FileImage, id uint32) ([]*sif.Descriptor, error) {
+func getObjectSignatures(f *sif.FileImage, id uint32) ([]sif.Descriptor, error) {
 	if id == 0 {
 		return nil, errInvalidObjectID
 	}
 
-	sigs, _, err := f.GetLinkedDescrsByType(id, sif.DataSignature)
-	if errors.Is(err, sif.ErrNotFound) {
-		err = &SignatureNotFoundError{ID: id}
+	sigs, err := f.GetDescriptors(
+		sif.WithDataType(sif.DataSignature),
+		sif.WithLinkedID(id),
+	)
+	if err != nil {
+		return nil, err
+	} else if len(sigs) == 0 {
+		return nil, &SignatureNotFoundError{ID: id}
 	}
-	return sigs, err
+	return sigs, nil
 }
 
 // getGroupSignatures returns descriptors in f that contain signature objects linked to the object
 // group with identifier groupID. If legacy is true, only legacy signatures are considered.
 // Otherwise, only non-legacy signatures are considered. If no such signatures are found, a
 // SignatureNotFoundError is returned.
-func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]*sif.Descriptor, error) {
+func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]sif.Descriptor, error) {
 	if groupID == 0 {
 		return nil, errInvalidGroupID
 	}
 
 	// Get list of signature blocks linked to group.
-	ods, _, err := f.GetLinkedDescrsByType(groupID|sif.DescrGroupMask, sif.DataSignature)
-	if errors.Is(err, sif.ErrNotFound) {
-		return nil, &SignatureNotFoundError{IsGroup: true, ID: groupID}
-	} else if err != nil {
+	ods, err := f.GetDescriptors(
+		sif.WithDataType(sif.DataSignature),
+		sif.WithLinkedGroupID(groupID),
+	)
+	if err != nil {
 		return nil, err
 	}
 
 	// Filter signatures based on legacy flag.
-	sigs := make([]*sif.Descriptor, 0, len(ods))
+	sigs := make([]sif.Descriptor, 0, len(ods))
 	for _, od := range ods {
 		b, err := od.GetData(f)
 		if err != nil {
@@ -200,7 +206,7 @@ func getGroupIDs(f *sif.FileImage) (groupIDs []uint32, err error) {
 }
 
 // getFingerprints returns a sorted list of unique fingerprints contained in sigs.
-func getFingerprints(sigs []*sif.Descriptor) ([][20]byte, error) {
+func getFingerprints(sigs []sif.Descriptor) ([][20]byte, error) {
 	fps := make([][20]byte, 0, len(sigs))
 
 	for _, sig := range sigs {

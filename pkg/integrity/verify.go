@@ -127,7 +127,7 @@ func (v *groupVerifier) fingerprints() ([][20]byte, error) {
 // If verification of the SIF global header fails, ErrHeaderIntegrity is returned. If verification
 // of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
 // data object fails, a ObjectIntegrityError is returned.
-func (v *groupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (imageMetadata, []uint32, *openpgp.Entity, error) { // nolint:lll
+func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) (imageMetadata, []uint32, *openpgp.Entity, error) { // nolint:lll
 	b, err := sig.GetData(v.f)
 	if err != nil {
 		return imageMetadata{}, nil, nil, err
@@ -240,7 +240,7 @@ func (v *legacyGroupVerifier) fingerprints() ([][20]byte, error) {
 // If an invalid signature is encountered, a SignatureNotValidError is returned.
 //
 // If verification of a data object fails, a ObjectIntegrityError is returned.
-func (v *legacyGroupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
+func (v *legacyGroupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
 	b, err := sig.GetData(v.f)
 	if err != nil {
 		return nil, err
@@ -354,7 +354,7 @@ func (v *legacyObjectVerifier) fingerprints() ([][20]byte, error) {
 // If an invalid signature is encountered, a SignatureNotValidError is returned.
 //
 // If verification of a data object fails, a ObjectIntegrityError is returned.
-func (v *legacyObjectVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
+func (v *legacyObjectVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
 	b, err := sig.GetData(v.f)
 	if err != nil {
 		return nil, err

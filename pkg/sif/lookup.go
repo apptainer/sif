@@ -88,28 +88,6 @@ func (f *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
 	return &f.descrArr[match], match, nil
 }
 
-// GetLinkedDescrsByType searches for descriptors that point to "id", only returns the specified type.
-func (f *FileImage) GetLinkedDescrsByType(id uint32, dataType Datatype) ([]*Descriptor, []int, error) {
-	var descrs []*Descriptor
-	var indexes []int
-
-	for i, v := range f.descrArr {
-		if !v.Used {
-			continue
-		}
-		if v.Datatype == dataType && v.Link == id {
-			indexes = append(indexes, i)
-			descrs = append(descrs, &f.descrArr[i])
-		}
-	}
-
-	if len(descrs) == 0 {
-		return nil, nil, ErrNotFound
-	}
-
-	return descrs, indexes, nil
-}
-
 // GetPartPrimSys returns the primary system partition if present. There should
 // be only one primary system partition in a SIF file.
 func (f *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
