@@ -196,35 +196,35 @@ func writeHeader(fimg *FileImage) error {
 
 // createOpts accumulates container creation options.
 type createOpts struct {
-	ID         uuid.UUID
-	InputDescr []DescriptorInput
-	GetTime    func() time.Time
+	id  uuid.UUID
+	dis []DescriptorInput
+	t   time.Time
 }
 
 // CreateOpt are used to specify container creation options.
 type CreateOpt func(*createOpts) error
 
-// WithID specifies id as the unique ID.
-func WithID(id string) CreateOpt {
+// OptCreateWithID specifies id as the unique ID.
+func OptCreateWithID(id string) CreateOpt {
 	return func(co *createOpts) error {
 		id, err := uuid.Parse(id)
-		co.ID = id
+		co.id = id
 		return err
 	}
 }
 
-// WithDescriptors appends dis to the list of descriptors.
-func WithDescriptors(dis ...DescriptorInput) CreateOpt {
+// OptCreateWithDescriptors appends dis to the list of descriptors.
+func OptCreateWithDescriptors(dis ...DescriptorInput) CreateOpt {
 	return func(co *createOpts) error {
-		co.InputDescr = append(co.InputDescr, dis...)
+		co.dis = append(co.dis, dis...)
 		return nil
 	}
 }
 
-// WithTimeFunc specifies fn as the function to obtain timestamps.
-func WithTimeFunc(fn func() time.Time) CreateOpt {
+// OptCreateWithTime specifies t as the creation time.
+func OptCreateWithTime(t time.Time) CreateOpt {
 	return func(co *createOpts) error {
-		co.GetTime = fn
+		co.t = t
 		return nil
 	}
 }
@@ -237,8 +237,8 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 	}
 
 	co := createOpts{
-		ID:      id,
-		GetTime: time.Now,
+		id: id,
+		t:  time.Now(),
 	}
 
 	for _, opt := range opts {
@@ -246,8 +246,6 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 			return nil, err
 		}
 	}
-
-	t := co.GetTime()
 
 	f := &FileImage{}
 	f.descrArr = make([]Descriptor, DescrNumEntries)
@@ -257,9 +255,9 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 	copy(f.h.Magic[:], hdrMagic)
 	copy(f.h.Version[:], CurrentVersion.bytes())
 	copy(f.h.Arch[:], HdrArchUnknown)
-	f.h.ID = id
-	f.h.Ctime = t.Unix()
-	f.h.Mtime = t.Unix()
+	f.h.ID = co.id
+	f.h.Ctime = co.t.Unix()
+	f.h.Mtime = co.t.Unix()
 	f.h.Dfree = DescrNumEntries
 	f.h.Dtotal = DescrNumEntries
 	f.h.Descroff = DescrStartOffset
@@ -277,7 +275,7 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 		return nil, fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}
 
-	for _, v := range co.InputDescr {
+	for _, v := range co.dis {
 		if err := createDescriptor(f, v); err != nil {
 			return nil, err
 		}

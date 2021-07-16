@@ -120,7 +120,7 @@ func TestCreateContainer(t *testing.T) {
 	}
 
 	// test container creation with two partition input descriptors
-	if _, err := CreateContainer(f.Name(), WithDescriptors(definput, parinput)); err != nil {
+	if _, err := CreateContainer(f.Name(), OptCreateWithDescriptors(definput, parinput)); err != nil {
 		t.Errorf("failed to create container: %v", err)
 	}
 }
