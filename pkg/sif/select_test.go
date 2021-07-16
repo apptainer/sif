@@ -6,6 +6,8 @@
 package sif
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"testing"
 )
@@ -134,14 +136,28 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 }
 
 func TestFileImage_GetDescriptor(t *testing.T) {
+	extra := Partition{
+		Fstype:   FsSquash,
+		Parttype: PartPrimSys,
+	}
+	copy(extra.Arch[:], HdrArch386)
+
+	b := bytes.Buffer{}
+	if err := binary.Write(&b, binary.LittleEndian, extra); err != nil {
+		t.Fatal(err)
+	}
+
+	primPartDescr := Descriptor{
+		Datatype: DataPartition,
+		Used:     true,
+		ID:       1,
+		Groupid:  1 | DescrGroupMask,
+		Link:     DescrUnusedLink,
+	}
+	copy(primPartDescr.Extra[:], b.Bytes())
+
 	ds := []Descriptor{
-		{
-			Datatype: DataPartition,
-			Used:     true,
-			ID:       1,
-			Groupid:  1 | DescrGroupMask,
-			Link:     DescrUnusedLink,
-		},
+		primPartDescr,
 		{
 			Datatype: DataSignature,
 			Used:     true,
@@ -191,6 +207,13 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 				WithGroupID(2),
 			},
 			wantErr: ErrObjectNotFound,
+		},
+		{
+			name: "PartitionType",
+			fns: []DescriptorSelectorFunc{
+				WithPartitionType(PartPrimSys),
+			},
+			wantID: 1,
 		},
 	}
 	for _, tt := range tests {

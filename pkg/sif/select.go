@@ -81,6 +81,18 @@ func WithLinkedGroupID(groupID uint32) DescriptorSelectorFunc {
 	}
 }
 
+// WithPartitionType selects descriptors containing a partition of type pt.
+func WithPartitionType(pt Parttype) DescriptorSelectorFunc {
+	return func(d Descriptor) (bool, error) {
+		ptype, err := d.GetPartType()
+		if err != nil {
+			return false, nil
+		}
+
+		return ptype == pt, nil
+	}
+}
+
 // GetDescriptors returns a slice of in-use descriptors for which all selector funcs return true.
 func (f *FileImage) GetDescriptors(fns ...DescriptorSelectorFunc) ([]Descriptor, error) {
 	var ds []Descriptor

@@ -341,14 +341,10 @@ func TestSetPrimPart(t *testing.T) {
 			t.Error("fimg.SetPrimPart(...):", err)
 		}
 
-		if part, idx, err := fimg.GetPartPrimSys(); err != nil {
-			t.Error("fimg.GetPartPrimSys():", err)
-		} else if expected, actual := i, idx; actual != expected {
-			t.Errorf("after calling fimg.SetPrimPart(...), unexpected value from fimg.GetPartPrimSys(): expected=%d actual=%d",
-				expected, actual)
-		} else if expected, actual := fimg.descrArr[i].ID, part.ID; actual != expected {
-			t.Errorf("after calling fimg.SetPrimPart(...), unexpected value from fimg.GetPartPrimSys(): expected=%d actual=%d",
-				expected, actual)
+		if part, err := fimg.GetDescriptor(WithPartitionType(PartPrimSys)); err != nil {
+			t.Fatal(err)
+		} else if want, got := part.ID, fimg.descrArr[i].ID; got != want {
+			t.Errorf("got ID %v, want %v", got, want)
 		}
 	}
 }

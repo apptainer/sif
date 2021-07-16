@@ -54,35 +54,3 @@ func GetGoArch(sifarch string) (goarch string) {
 	}
 	return goarch
 }
-
-// GetPartPrimSys returns the primary system partition if present. There should
-// be only one primary system partition in a SIF file.
-func (f *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
-	var descr *Descriptor
-	index := -1
-
-	for i, v := range f.descrArr {
-		if !v.Used {
-			continue
-		}
-		if v.Datatype == DataPartition {
-			ptype, err := v.GetPartType()
-			if err != nil {
-				return nil, -1, err
-			}
-			if ptype == PartPrimSys {
-				if index != -1 {
-					return nil, -1, ErrMultipleObjectsFound
-				}
-				index = i
-				descr = &f.descrArr[i]
-			}
-		}
-	}
-
-	if index == -1 {
-		return nil, -1, ErrObjectNotFound
-	}
-
-	return descr, index, nil
-}

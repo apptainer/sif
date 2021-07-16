@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -324,8 +325,7 @@ func resetDescriptor(fimg *FileImage, index int) error {
 	// If we remove the primary partition, set the global header Arch field to HdrArchUnknown
 	// to indicate that the SIF file doesn't include a primary partition and no dependency
 	// on any architecture exists.
-	_, idx, _ := fimg.GetPartPrimSys()
-	if idx == index {
+	if pt, err := fimg.descrArr[index].GetPartType(); err == nil && pt == PartPrimSys {
 		fimg.primPartID = 0
 		copy(fimg.h.Arch[:], HdrArchUnknown)
 	}
@@ -533,8 +533,8 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 		return fmt.Errorf("partition must be of system type")
 	}
 
-	olddescr, _, err := f.GetPartPrimSys()
-	if err != nil && err != ErrObjectNotFound {
+	olddescr, err := f.getDescriptor(WithPartitionType(PartPrimSys))
+	if err != nil && !errors.Is(err, ErrObjectNotFound) {
 		return err
 	}
 
