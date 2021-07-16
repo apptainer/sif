@@ -241,8 +241,8 @@ func (v *legacyGroupVerifier) fingerprints() ([][20]byte, error) {
 //
 // If verification of a data object fails, a ObjectIntegrityError is returned.
 func (v *legacyGroupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
-	b := make([]byte, sig.Filelen)
-	if _, err := io.ReadFull(sig.GetReader(v.f), b); err != nil {
+	b, err := sig.GetData(v.f)
+	if err != nil {
 		return nil, err
 	}
 
@@ -355,8 +355,8 @@ func (v *legacyObjectVerifier) fingerprints() ([][20]byte, error) {
 //
 // If verification of a data object fails, a ObjectIntegrityError is returned.
 func (v *legacyObjectVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
-	b := make([]byte, sig.Filelen)
-	if _, err := io.ReadFull(sig.GetReader(v.f), b); err != nil {
+	b, err := sig.GetData(v.f)
+	if err != nil {
 		return nil, err
 	}
 
