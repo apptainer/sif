@@ -42,6 +42,28 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 		wantIDs []uint32
 	}{
 		{
+			name: "DataPartition",
+			fns: []DescriptorSelectorFunc{
+				WithDataType(DataPartition),
+			},
+			wantIDs: []uint32{1},
+		},
+		{
+			name: "DataSignature",
+			fns: []DescriptorSelectorFunc{
+				WithDataType(DataSignature),
+			},
+			wantIDs: []uint32{2, 3},
+		},
+		{
+			name: "DataSignatureGroupID",
+			fns: []DescriptorSelectorFunc{
+				WithDataType(DataSignature),
+				WithGroupID(1),
+			},
+			wantIDs: []uint32{2},
+		},
+		{
 			name: "NoGroupID",
 			fns: []DescriptorSelectorFunc{
 				WithNoGroup(),

@@ -12,6 +12,13 @@ var errInvalidGroupID = errors.New("invalid group ID")
 // DescriptorSelectorFunc returns true if d matches, and false otherwise.
 type DescriptorSelectorFunc func(d Descriptor) (bool, error)
 
+// WithDataType selects descriptors that have data type dt.
+func WithDataType(dt Datatype) DescriptorSelectorFunc {
+	return func(d Descriptor) (bool, error) {
+		return d.GetDataType() == dt, nil
+	}
+}
+
 // WithNoGroup selects descriptors that are not contained within an object group.
 func WithNoGroup() DescriptorSelectorFunc {
 	return func(d Descriptor) (bool, error) {

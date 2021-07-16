@@ -88,30 +88,6 @@ func (f *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
 	return &f.descrArr[match], match, nil
 }
 
-// GetPartFromGroup searches for partition descriptors inside a specific group.
-func (f *FileImage) GetPartFromGroup(groupid uint32) ([]*Descriptor, []int, error) {
-	var descrs []*Descriptor
-	var indexes []int
-	var count int
-
-	for i, v := range f.descrArr {
-		if !v.Used {
-			continue
-		}
-		if v.Datatype == DataPartition && v.Groupid == groupid {
-			indexes = append(indexes, i)
-			descrs = append(descrs, &f.descrArr[i])
-			count++
-		}
-	}
-
-	if count == 0 {
-		return nil, nil, ErrNotFound
-	}
-
-	return descrs, indexes, nil
-}
-
 // GetSignFromGroup searches for signature descriptors inside a specific group.
 func (f *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
