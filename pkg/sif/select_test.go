@@ -78,9 +78,37 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 			wantIDs: []uint32{1, 2},
 		},
 		{
-			name: "InvalidGroupID",
+			name: "GroupIDInvalidGroupID",
 			fns: []DescriptorSelectorFunc{
 				WithGroupID(0),
+			},
+			wantErr: errInvalidGroupID,
+		},
+		{
+			name: "LinkedID",
+			fns: []DescriptorSelectorFunc{
+				WithLinkedID(1),
+			},
+			wantIDs: []uint32{2},
+		},
+		{
+			name: "LinkedIDInvalidObjectID",
+			fns: []DescriptorSelectorFunc{
+				WithLinkedID(0),
+			},
+			wantErr: errInvalidObjectID,
+		},
+		{
+			name: "LinkedGroupID",
+			fns: []DescriptorSelectorFunc{
+				WithLinkedGroupID(1),
+			},
+			wantIDs: []uint32{3},
+		},
+		{
+			name: "LinkedGroupIDInvalidGroupID",
+			fns: []DescriptorSelectorFunc{
+				WithLinkedGroupID(0),
 			},
 			wantErr: errInvalidGroupID,
 		},

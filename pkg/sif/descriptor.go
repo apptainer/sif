@@ -60,6 +60,13 @@ func (d *Descriptor) GetID() uint32 { return d.ID }
 // group.
 func (d *Descriptor) GetGroupID() uint32 { return d.Groupid &^ DescrGroupMask }
 
+// GetLinkedID returns the object/group ID d is linked to, or zero if d does not contain a linked
+// ID. If isGroup is true, the returned id is an object group ID. Otherwise, the returned id is a
+// data object ID.
+func (d *Descriptor) GetLinkedID() (id uint32, isGroup bool) {
+	return d.Link &^ DescrGroupMask, d.Link&DescrGroupMask == DescrGroupMask
+}
+
 // GetSize returns the data object size.
 func (d *Descriptor) GetSize() int64 { return d.Filelen }
 

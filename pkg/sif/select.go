@@ -7,7 +7,10 @@ package sif
 
 import "errors"
 
-var errInvalidGroupID = errors.New("invalid group ID")
+var (
+	errInvalidObjectID = errors.New("invalid object ID")
+	errInvalidGroupID  = errors.New("invalid group ID")
+)
 
 // DescriptorSelectorFunc returns true if d matches, and false otherwise.
 type DescriptorSelectorFunc func(d Descriptor) (bool, error)
@@ -33,6 +36,29 @@ func WithGroupID(groupID uint32) DescriptorSelectorFunc {
 			return false, errInvalidGroupID
 		}
 		return d.GetGroupID() == groupID, nil
+	}
+}
+
+// WithLinkedID selects descriptors that are linked to the data object with specified ID.
+func WithLinkedID(id uint32) DescriptorSelectorFunc {
+	return func(d Descriptor) (bool, error) {
+		if id == 0 {
+			return false, errInvalidObjectID
+		}
+		linkedID, isGroup := d.GetLinkedID()
+		return !isGroup && linkedID == id, nil
+	}
+}
+
+// WithLinkedGroupID selects descriptors that are linked to the data object group with specified
+// ID.
+func WithLinkedGroupID(groupID uint32) DescriptorSelectorFunc {
+	return func(d Descriptor) (bool, error) {
+		if groupID == 0 {
+			return false, errInvalidGroupID
+		}
+		linkedID, isGroup := d.GetLinkedID()
+		return isGroup && linkedID == groupID, nil
 	}
 }
 

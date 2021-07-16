@@ -106,36 +106,6 @@ func TestGetLinkedDescrsByType(t *testing.T) {
 	}
 }
 
-func TestGetFromLinkedDescr(t *testing.T) {
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
-	}
-
-	parts, err := fimg.GetDescriptors(
-		WithDataType(DataPartition),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
-	}
-
-	if len(parts) != 1 {
-		t.Error("multiple partitions found where expecting 1")
-	}
-
-	_, _, err = fimg.GetFromLinkedDescr(parts[0].ID)
-	if err != nil {
-		t.Error("fimg.GetFromLinkedDescr(parts[0].ID): should have found descriptor:", err)
-	}
-
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
-	}
-}
-
 func TestGetSIFArch(t *testing.T) {
 	if GetSIFArch("386") != HdrArch386 {
 		t.Error(GetSIFArch("386") != HdrArch386)
