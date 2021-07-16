@@ -5,7 +5,16 @@
 
 package sif
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
+
+// ErrObjectNotFound is the error returned when a data object is not found.
+var ErrObjectNotFound = errors.New("object not found")
+
+// ErrMultipleObjectsFound is the error returned when multiple data objects are found.
+var ErrMultipleObjectsFound = errors.New("multiple objects found")
 
 var (
 	errInvalidObjectID = errors.New("invalid object ID")
@@ -19,6 +28,16 @@ type DescriptorSelectorFunc func(d Descriptor) (bool, error)
 func WithDataType(dt Datatype) DescriptorSelectorFunc {
 	return func(d Descriptor) (bool, error) {
 		return d.GetDataType() == dt, nil
+	}
+}
+
+// WithID selects descriptors with a matching ID.
+func WithID(id uint32) DescriptorSelectorFunc {
+	return func(d Descriptor) (bool, error) {
+		if id == 0 {
+			return false, errInvalidObjectID
+		}
+		return d.GetID() == id, nil
 	}
 }
 
@@ -70,8 +89,43 @@ func (f *FileImage) GetDescriptors(fns ...DescriptorSelectorFunc) ([]Descriptor,
 		ds = append(ds, *d)
 		return nil
 	})
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
 
-	return ds, err
+	return ds, nil
+}
+
+// getDescriptor returns a pointer to the in-use descriptor selected by fns. If no descriptor is
+// selected by fns, ErrObjectNotFound is returned. If multiple descriptors are selected by fns,
+// ErrMultipleObjectsFound is returned.
+func (f *FileImage) getDescriptor(fns ...DescriptorSelectorFunc) (*Descriptor, error) {
+	var d *Descriptor
+
+	err := f.withDescriptors(multiSelectorFunc(fns...), func(found *Descriptor) error {
+		if d != nil {
+			return ErrMultipleObjectsFound
+		}
+		d = found
+		return nil
+	})
+
+	if err == nil && d == nil {
+		err = ErrObjectNotFound
+	}
+
+	return d, err
+}
+
+// GetDescriptor returns the in-use descriptor selected by fns. If no descriptor is selected by
+// fns, an error wrapping ErrObjectNotFound is returned. If multiple descriptors are selected by
+// fns, an error wrapping ErrMultipleObjectsFound is returned.
+func (f *FileImage) GetDescriptor(fns ...DescriptorSelectorFunc) (Descriptor, error) {
+	d, err := f.getDescriptor(fns...)
+	if err != nil {
+		return Descriptor{}, fmt.Errorf("%w", err)
+	}
+	return *d, nil
 }
 
 // multiSelectorFunc returns a DescriptorSelectorFunc that selects a descriptor iff all of fns

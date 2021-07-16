@@ -15,12 +15,10 @@ import (
 )
 
 var (
-	errInvalidObjectID      = errors.New("invalid object ID")
-	errInvalidGroupID       = errors.New("invalid group ID")
-	errMultipleObjectsFound = errors.New("multiple objects found")
-	errObjectNotFound       = errors.New("object not found")
-	errGroupNotFound        = errors.New("group not found")
-	errNoGroupsFound        = errors.New("no groups found")
+	errInvalidObjectID = errors.New("invalid object ID")
+	errInvalidGroupID  = errors.New("invalid group ID")
+	errGroupNotFound   = errors.New("group not found")
+	errNoGroupsFound   = errors.New("no groups found")
 )
 
 // insertSorted inserts unique vals into the sorted slice s.
@@ -41,26 +39,13 @@ func insertSorted(s []uint32, vals ...uint32) []uint32 {
 	return s
 }
 
-// getObject returns the descriptor in f associated with the object with identifier id. If multiple
-// such objects are found, errMultipleObjectsFound is returned. If no such object is found,
-// errObjectNotFound is returned.
+// getObject returns the descriptor in f associated with the object with identifier id.
 func getObject(f *sif.FileImage, id uint32) (sif.Descriptor, error) {
 	if id == 0 {
 		return sif.Descriptor{}, errInvalidObjectID
 	}
 
-	od, _, err := f.GetFromDescrID(id)
-	if err != nil {
-		switch {
-		case errors.Is(err, sif.ErrMultValues):
-			return sif.Descriptor{}, errMultipleObjectsFound
-		case errors.Is(err, sif.ErrNotFound):
-			return sif.Descriptor{}, errObjectNotFound
-		default:
-			return sif.Descriptor{}, err
-		}
-	}
-	return *od, nil
+	return f.GetDescriptor(sif.WithID(id))
 }
 
 // getGroupObjects returns all descriptors in f that are contained in the object group with

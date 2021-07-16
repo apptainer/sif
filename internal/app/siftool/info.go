@@ -90,7 +90,7 @@ func (a *App) Info(path string, id uint32) error {
 // Dump extracts and outputs a data object from a SIF file.
 func (a *App) Dump(path string, id uint32) error {
 	return withFileImage(path, false, func(f *sif.FileImage) error {
-		d, _, err := f.GetFromDescrID(id)
+		d, err := f.GetDescriptor(sif.WithID(id))
 		if err != nil {
 			return err
 		}

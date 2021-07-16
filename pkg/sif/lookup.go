@@ -7,16 +7,6 @@
 
 package sif
 
-import (
-	"errors"
-)
-
-// ErrNotFound is the code for when no search key is not found.
-var ErrNotFound = errors.New("no match found")
-
-// ErrMultValues is the code for when search key is not unique.
-var ErrMultValues = errors.New("lookup would return more than one match")
-
 // GetSIFArch returns the SIF arch code from go runtime arch code.
 func GetSIFArch(goarch string) (sifarch string) {
 	var ok bool
@@ -65,29 +55,6 @@ func GetGoArch(sifarch string) (goarch string) {
 	return goarch
 }
 
-// GetFromDescrID searches for a descriptor with.
-func (f *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
-	match := -1
-
-	for i, v := range f.descrArr {
-		if !v.Used {
-			continue
-		}
-		if v.ID == id {
-			if match != -1 {
-				return nil, -1, ErrMultValues
-			}
-			match = i
-		}
-	}
-
-	if match == -1 {
-		return nil, -1, ErrNotFound
-	}
-
-	return &f.descrArr[match], match, nil
-}
-
 // GetPartPrimSys returns the primary system partition if present. There should
 // be only one primary system partition in a SIF file.
 func (f *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
@@ -105,7 +72,7 @@ func (f *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
 			}
 			if ptype == PartPrimSys {
 				if index != -1 {
-					return nil, -1, ErrMultValues
+					return nil, -1, ErrMultipleObjectsFound
 				}
 				index = i
 				descr = &f.descrArr[i]
@@ -114,7 +81,7 @@ func (f *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
 	}
 
 	if index == -1 {
-		return nil, -1, ErrNotFound
+		return nil, -1, ErrObjectNotFound
 	}
 
 	return descr, index, nil

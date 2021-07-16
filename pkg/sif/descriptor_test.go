@@ -36,7 +36,7 @@ func TestDescriptor_GetData(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			// Get the signature block
-			descr, _, err := tt.fimg.GetFromDescrID(3)
+			descr, err := tt.fimg.GetDescriptor(WithID(3))
 			if err != nil {
 				t.Fatalf("failed to get descriptor: %v", err)
 			}
@@ -75,7 +75,7 @@ func TestDescriptor_GetReader(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			// Get the signature block
-			descr, _, err := tt.fimg.GetFromDescrID(3)
+			descr, err := tt.fimg.GetDescriptor(WithID(3))
 			if err != nil {
 				t.Fatalf("failed to get descriptor: %v", err)
 			}

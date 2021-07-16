@@ -133,6 +133,81 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 	}
 }
 
+func TestFileImage_GetDescriptor(t *testing.T) {
+	ds := []Descriptor{
+		{
+			Datatype: DataPartition,
+			Used:     true,
+			ID:       1,
+			Groupid:  1 | DescrGroupMask,
+			Link:     DescrUnusedLink,
+		},
+		{
+			Datatype: DataSignature,
+			Used:     true,
+			ID:       2,
+			Groupid:  1 | DescrGroupMask,
+			Link:     1,
+		},
+		{
+			Datatype: DataSignature,
+			Used:     true,
+			ID:       3,
+			Groupid:  DescrUnusedGroup,
+			Link:     1 | DescrGroupMask,
+		},
+	}
+
+	tests := []struct {
+		name    string
+		fns     []DescriptorSelectorFunc
+		wantErr error
+		wantID  uint32
+	}{
+		{
+			name: "ID",
+			fns: []DescriptorSelectorFunc{
+				WithID(1),
+			},
+			wantID: 1,
+		},
+		{
+			name: "InvalidObjectID",
+			fns: []DescriptorSelectorFunc{
+				WithID(0),
+			},
+			wantErr: errInvalidObjectID,
+		},
+		{
+			name: "MultipleObjectsFound",
+			fns: []DescriptorSelectorFunc{
+				WithGroupID(1),
+			},
+			wantErr: ErrMultipleObjectsFound,
+		},
+		{
+			name: "ObjectNotFound",
+			fns: []DescriptorSelectorFunc{
+				WithGroupID(2),
+			},
+			wantErr: ErrObjectNotFound,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fimg := &FileImage{descrArr: ds}
+
+			d, err := fimg.GetDescriptor(tt.fns...)
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+			if got, want := d.GetID(), tt.wantID; got != want {
+				t.Errorf("got ID %v, want %v", got, want)
+			}
+		})
+	}
+}
+
 func TestFileImage_WithDescriptors(t *testing.T) {
 	ds := []Descriptor{
 		{

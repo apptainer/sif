@@ -714,13 +714,13 @@ func TestNewVerifier(t *testing.T) {
 			name:    "ObjectNotFound",
 			fi:      &emptyImage,
 			opts:    []VerifierOpt{OptVerifyObject(1)},
-			wantErr: errObjectNotFound,
+			wantErr: sif.ErrObjectNotFound,
 		},
 		{
 			name:    "ObjectNotFoundLegacy",
 			fi:      &emptyImage,
 			opts:    []VerifierOpt{OptVerifyObject(1), OptVerifyLegacy()},
-			wantErr: errObjectNotFound,
+			wantErr: sif.ErrObjectNotFound,
 		},
 		{
 			name:       "OneGroupDefaults",

@@ -294,7 +294,7 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 	return f, nil
 }
 
-func zeroData(fimg *FileImage, descr *Descriptor) error {
+func zeroData(fimg *FileImage, descr Descriptor) error {
 	// first, move to data object offset
 	if _, err := fimg.fp.Seek(descr.Fileoff, io.SeekStart); err != nil {
 		return fmt.Errorf("seeking to data object offset: %s", err)
@@ -376,12 +376,12 @@ func (f *FileImage) AddObject(input DescriptorInput) error {
 }
 
 // descrIsLast return true if passed descriptor's object is the last in a SIF file.
-func objectIsLast(fimg *FileImage, descr *Descriptor) bool {
+func objectIsLast(fimg *FileImage, descr Descriptor) bool {
 	return fimg.size == descr.Fileoff+descr.Filelen
 }
 
 // compactAtDescr joins data objects leading and following "descr" by compacting a SIF file.
-func compactAtDescr(fimg *FileImage, descr *Descriptor) error {
+func compactAtDescr(fimg *FileImage, descr Descriptor) error {
 	var prev Descriptor
 
 	for _, v := range fimg.descrArr {
@@ -411,9 +411,17 @@ func compactAtDescr(fimg *FileImage, descr *Descriptor) error {
 // by flags: DelZero, to zero out the data region for security and DelCompact to
 // remove and shink the file compacting the unused area.
 func (f *FileImage) DeleteObject(id uint32, flags int) error {
-	descr, index, err := f.GetFromDescrID(id)
+	descr, err := f.GetDescriptor(WithID(id))
 	if err != nil {
 		return err
+	}
+
+	index := 0
+	for i, od := range f.descrArr {
+		if od.ID == id {
+			index = i
+			break
+		}
 	}
 
 	switch flags {
@@ -502,7 +510,7 @@ func (di *DescriptorInput) SetCryptoMsgExtra(format Formattype, message Messaget
 
 // SetPrimPart sets the specified system partition to be the primary one.
 func (f *FileImage) SetPrimPart(id uint32) error {
-	descr, _, err := f.GetFromDescrID(id)
+	descr, err := f.getDescriptor(WithID(id))
 	if err != nil {
 		return err
 	}
@@ -526,7 +534,7 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 	}
 
 	olddescr, _, err := f.GetPartPrimSys()
-	if err != nil && err != ErrNotFound {
+	if err != nil && err != ErrObjectNotFound {
 		return err
 	}
 

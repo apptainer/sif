@@ -53,7 +53,7 @@ func TestOptSignGroupObjects(t *testing.T) {
 			name:    "ObjectNotFound",
 			groupID: 1,
 			ids:     []uint32{4},
-			wantErr: errObjectNotFound,
+			wantErr: sif.ErrObjectNotFound,
 		},
 		{
 			name:    "Object1",
@@ -312,17 +312,17 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 	}
 	defer twoGroups.UnloadContainer() // nolint:errcheck
 
-	d1, _, err := twoGroups.GetFromDescrID(1)
+	d1, err := twoGroups.GetDescriptor(sif.WithID(1))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	d2, _, err := twoGroups.GetFromDescrID(2)
+	d2, err := twoGroups.GetDescriptor(sif.WithID(2))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	d3, _, err := twoGroups.GetFromDescrID(3)
+	d3, err := twoGroups.GetDescriptor(sif.WithID(3))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -346,7 +346,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []sif.Descriptor{*d1},
+				ods:       []sif.Descriptor{d1},
 				mdHash:    crypto.MD4,
 				sigConfig: &config,
 			},
@@ -358,7 +358,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []sif.Descriptor{*d1},
+				ods:       []sif.Descriptor{d1},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -370,7 +370,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []sif.Descriptor{*d1},
+				ods:       []sif.Descriptor{d1},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -381,7 +381,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []sif.Descriptor{*d2},
+				ods:       []sif.Descriptor{d2},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -392,7 +392,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []sif.Descriptor{*d1, *d2},
+				ods:       []sif.Descriptor{d1, d2},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -403,7 +403,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        2,
-				ods:       []sif.Descriptor{*d3},
+				ods:       []sif.Descriptor{d3},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -518,7 +518,7 @@ func TestOptSignObjects(t *testing.T) {
 			name:          "ObjectNotFound",
 			inputFileName: "empty.sif",
 			ids:           []uint32{1},
-			wantErr:       errObjectNotFound,
+			wantErr:       sif.ErrObjectNotFound,
 		},
 		{
 			name:             "Duplicates",
