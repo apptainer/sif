@@ -60,6 +60,9 @@ func (d *Descriptor) GetID() uint32 { return d.ID }
 // group.
 func (d *Descriptor) GetGroupID() uint32 { return d.Groupid &^ DescrGroupMask }
 
+// GetSize returns the data object size.
+func (d *Descriptor) GetSize() int64 { return d.Filelen }
+
 // GetName returns the name tag associated with the descriptor. Analogous to file name.
 func (d *Descriptor) GetName() string { return strings.TrimRight(string(d.Name[:]), "\000") }
 

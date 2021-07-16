@@ -95,7 +95,7 @@ func (a *App) Dump(path string, id uint32) error {
 			return err
 		}
 
-		_, err = io.CopyN(a.opts.out, d.GetReader(f), d.Filelen)
+		_, err = io.CopyN(a.opts.out, d.GetReader(f), d.GetSize())
 		return err
 	})
 }
