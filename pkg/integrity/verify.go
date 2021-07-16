@@ -597,15 +597,12 @@ func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 
 	// If "legacy all" mode selected, add all non-signature objects that are in a group.
 	if v.isLegacyAll {
-		err := f.WithDescriptors(func(od *sif.Descriptor) error {
+		f.WithDescriptors(func(od sif.Descriptor) bool {
 			if od.GetDataType() != sif.DataSignature && od.GetGroupID() != 0 {
 				v.objects = insertSorted(v.objects, od.GetID())
 			}
-			return nil
+			return false
 		})
-		if err != nil {
-			return nil, fmt.Errorf("integrity: %w", err)
-		}
 	}
 
 	// If no verification tasks specified, add one per object group
