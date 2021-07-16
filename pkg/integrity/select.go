@@ -44,44 +44,35 @@ func insertSorted(s []uint32, vals ...uint32) []uint32 {
 // getObject returns the descriptor in f associated with the object with identifier id. If multiple
 // such objects are found, errMultipleObjectsFound is returned. If no such object is found,
 // errObjectNotFound is returned.
-func getObject(f *sif.FileImage, id uint32) (*sif.Descriptor, error) {
+func getObject(f *sif.FileImage, id uint32) (sif.Descriptor, error) {
 	if id == 0 {
-		return nil, errInvalidObjectID
+		return sif.Descriptor{}, errInvalidObjectID
 	}
 
 	od, _, err := f.GetFromDescrID(id)
-	switch {
-	case errors.Is(err, sif.ErrMultValues):
-		err = errMultipleObjectsFound
-	case errors.Is(err, sif.ErrNotFound):
-		err = errObjectNotFound
+	if err != nil {
+		switch {
+		case errors.Is(err, sif.ErrMultValues):
+			return sif.Descriptor{}, errMultipleObjectsFound
+		case errors.Is(err, sif.ErrNotFound):
+			return sif.Descriptor{}, errObjectNotFound
+		default:
+			return sif.Descriptor{}, err
+		}
 	}
-	return od, err
+	return *od, nil
 }
 
 // getGroupObjects returns all descriptors in f that are contained in the object group with
 // identifier groupID. If no such object group is found, errGroupNotFound is returned.
-func getGroupObjects(f *sif.FileImage, groupID uint32) ([]*sif.Descriptor, error) {
+func getGroupObjects(f *sif.FileImage, groupID uint32) ([]sif.Descriptor, error) {
 	if groupID == 0 {
 		return nil, errInvalidGroupID
 	}
 
-	ods, _, err := f.GetFromDescr(sif.Descriptor{
-		Groupid: groupID | sif.DescrGroupMask,
-	})
-	if errors.Is(err, sif.ErrNotFound) {
+	ods, err := f.GetDescriptors(sif.WithGroupID(groupID))
+	if err == nil && len(ods) == 0 {
 		err = errGroupNotFound
-	}
-	return ods, err
-}
-
-// getNonGroupObjects returns all descriptors in f that are not contained within an object group.
-func getNonGroupObjects(f *sif.FileImage) ([]*sif.Descriptor, error) {
-	ods, _, err := f.GetFromDescr(sif.Descriptor{
-		Groupid: sif.DescrUnusedGroup,
-	})
-	if errors.Is(err, sif.ErrNotFound) {
-		err = nil
 	}
 	return ods, err
 }

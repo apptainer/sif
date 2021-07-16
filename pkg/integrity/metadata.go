@@ -134,7 +134,7 @@ func (om *objectMetadata) populateAbsoluteID(minID uint32) {
 //
 // If the data object descriptor does not match, a DescriptorIntegrityError is returned. If the
 // data object does not match, a ObjectIntegrityError is returned.
-func (om objectMetadata) matches(f *sif.FileImage, od *sif.Descriptor) error {
+func (om objectMetadata) matches(f *sif.FileImage, od sif.Descriptor) error {
 	if ok, err := om.DescriptorDigest.matches(od.GetIntegrityReader(om.RelativeID)); err != nil {
 		return err
 	} else if !ok {
@@ -163,7 +163,7 @@ type imageMetadata struct {
 
 // getImageMetadata returns populated imageMetadata for object descriptors ods in f, using hash
 // algorithm h.
-func getImageMetadata(f *sif.FileImage, minID uint32, ods []*sif.Descriptor, h crypto.Hash) (imageMetadata, error) {
+func getImageMetadata(f *sif.FileImage, minID uint32, ods []sif.Descriptor, h crypto.Hash) (imageMetadata, error) {
 	im := imageMetadata{Version: metadataVersion1}
 
 	// Add header metadata.
@@ -203,7 +203,7 @@ func (im *imageMetadata) populateAbsoluteObjectIDs(minID uint32) {
 
 // objectIDsMatch verifies the object IDs described by ods match exactly the object IDs described
 // by im.
-func (im imageMetadata) objectIDsMatch(ods []*sif.Descriptor) error {
+func (im imageMetadata) objectIDsMatch(ods []sif.Descriptor) error {
 	ids := make(map[uint32]bool)
 	for _, om := range im.Objects {
 		ids[om.id] = false
@@ -242,7 +242,7 @@ func (im imageMetadata) metadataForObject(id uint32) (objectMetadata, error) {
 // If the SIF global header does not match, ErrHeaderIntegrity is returned. If the data object
 // descriptor does not match, a DescriptorIntegrityError is returned. If the data object does not
 // match, a ObjectIntegrityError is returned.
-func (im imageMetadata) matches(f *sif.FileImage, ods []*sif.Descriptor) ([]uint32, error) {
+func (im imageMetadata) matches(f *sif.FileImage, ods []sif.Descriptor) ([]uint32, error) {
 	verified := make([]uint32, 0, len(ods))
 
 	// Verify header metadata.

@@ -8,7 +8,6 @@
 package sif
 
 import (
-	"bytes"
 	"errors"
 )
 
@@ -170,60 +169,6 @@ func (f *FileImage) GetFromLinkedDescr(id uint32) ([]*Descriptor, []int, error) 
 			continue
 		}
 		if v.Link == id {
-			indexes = append(indexes, i)
-			descrs = append(descrs, &f.descrArr[i])
-			count++
-		}
-	}
-
-	if count == 0 {
-		return nil, nil, ErrNotFound
-	}
-
-	return descrs, indexes, nil
-}
-
-// GetFromDescr searches for descriptors comparing all non-nil fields of a provided descriptor.
-func (f *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, error) {
-	var descrs []*Descriptor
-	var indexes []int
-	var count int
-
-	for i, v := range f.descrArr {
-		if !v.Used {
-			continue
-		} else {
-			if descr.Datatype != 0 && descr.Datatype != v.Datatype {
-				continue
-			}
-			if descr.ID != 0 && descr.ID != v.ID {
-				continue
-			}
-			if descr.Groupid != 0 && descr.Groupid != v.Groupid {
-				continue
-			}
-			if descr.Link != 0 && descr.Link != v.Link {
-				continue
-			}
-			if descr.Fileoff != 0 && descr.Fileoff != v.Fileoff {
-				continue
-			}
-			if descr.Filelen != 0 && descr.Filelen != v.Filelen {
-				continue
-			}
-			if descr.Storelen != 0 && descr.Storelen != v.Storelen {
-				continue
-			}
-			if descr.Ctime != 0 && descr.Ctime != v.Ctime {
-				continue
-			}
-			if descr.Mtime != 0 && descr.Mtime != v.Mtime {
-				continue
-			}
-			if descr.Name[0] != 0 && !bytes.Equal(descr.Name[:], v.Name[:]) {
-				continue
-			}
-
 			indexes = append(indexes, i)
 			descrs = append(descrs, &f.descrArr[i])
 			count++

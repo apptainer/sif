@@ -187,7 +187,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			ods := make([]*sif.Descriptor, len(tt.objectIDs))
+			ods := make([]sif.Descriptor, len(tt.objectIDs))
 			for i, id := range tt.objectIDs {
 				od, err := getObject(tt.f, id)
 				if err != nil {

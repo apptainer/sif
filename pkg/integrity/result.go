@@ -49,10 +49,10 @@ func (r result) Error() error {
 }
 
 type legacyResult struct {
-	signature uint32            // ID of signature object.
-	ods       []*sif.Descriptor // Descriptors of signed objects.
-	e         *openpgp.Entity   // Signing entity.
-	err       error             // Verify error (nil if successful).
+	signature uint32           // ID of signature object.
+	ods       []sif.Descriptor // Descriptors of signed objects.
+	e         *openpgp.Entity  // Signing entity.
+	err       error            // Verify error (nil if successful).
 }
 
 // Signature returns the ID of the signature object associated with the result.

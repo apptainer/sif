@@ -6,8 +6,82 @@
 package sif
 
 import (
+	"errors"
 	"testing"
 )
+
+func TestFileImage_GetDescriptors(t *testing.T) {
+	ds := []Descriptor{
+		{
+			Datatype: DataPartition,
+			Used:     true,
+			ID:       1,
+			Groupid:  1 | DescrGroupMask,
+			Link:     DescrUnusedLink,
+		},
+		{
+			Datatype: DataSignature,
+			Used:     true,
+			ID:       2,
+			Groupid:  1 | DescrGroupMask,
+			Link:     1,
+		},
+		{
+			Datatype: DataSignature,
+			Used:     true,
+			ID:       3,
+			Groupid:  DescrUnusedGroup,
+			Link:     1 | DescrGroupMask,
+		},
+	}
+
+	tests := []struct {
+		name    string
+		fns     []DescriptorSelectorFunc
+		wantErr error
+		wantIDs []uint32
+	}{
+		{
+			name: "NoGroupID",
+			fns: []DescriptorSelectorFunc{
+				WithNoGroup(),
+			},
+			wantIDs: []uint32{3},
+		},
+		{
+			name: "GroupID",
+			fns: []DescriptorSelectorFunc{
+				WithGroupID(1),
+			},
+			wantIDs: []uint32{1, 2},
+		},
+		{
+			name: "InvalidGroupID",
+			fns: []DescriptorSelectorFunc{
+				WithGroupID(0),
+			},
+			wantErr: errInvalidGroupID,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fimg := &FileImage{descrArr: ds}
+
+			ds, err := fimg.GetDescriptors(tt.fns...)
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+			if got, want := len(ds), len(tt.wantIDs); got != want {
+				t.Errorf("got %v IDs, want %v", got, want)
+			}
+			for i := range ds {
+				if got, want := ds[i].GetID(), tt.wantIDs[i]; got != want {
+					t.Errorf("got ID %v, want %v", got, want)
+				}
+			}
+		})
+	}
+}
 
 func TestFileImage_WithDescriptors(t *testing.T) {
 	ds := []Descriptor{

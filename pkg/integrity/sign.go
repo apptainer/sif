@@ -44,12 +44,12 @@ func sifHashType(h crypto.Hash) sif.Hashtype {
 }
 
 type groupSigner struct {
-	f         *sif.FileImage    // SIF image to sign.
-	id        uint32            // Group ID.
-	ods       []*sif.Descriptor // Descriptors of object(s) to sign.
-	mdHash    crypto.Hash       // Hash type for metadata.
-	sigConfig *packet.Config    // Configuration for signature.
-	sigHash   sif.Hashtype      // SIF hash type for signature.
+	f         *sif.FileImage   // SIF image to sign.
+	id        uint32           // Group ID.
+	ods       []sif.Descriptor // Descriptors of object(s) to sign.
+	mdHash    crypto.Hash      // Hash type for metadata.
+	sigConfig *packet.Config   // Configuration for signature.
+	sigHash   sif.Hashtype     // SIF hash type for signature.
 }
 
 // groupSignerOpt are used to configure gs.
@@ -135,7 +135,7 @@ func newGroupSigner(f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*
 }
 
 // addObject adds od to the list of object descriptors to be signed.
-func (gs *groupSigner) addObject(od *sif.Descriptor) error {
+func (gs *groupSigner) addObject(od sif.Descriptor) error {
 	if groupID := od.GetGroupID(); groupID != gs.id {
 		return fmt.Errorf("%w (%v)", errUnexpectedGroupID, groupID)
 	}
@@ -145,7 +145,7 @@ func (gs *groupSigner) addObject(od *sif.Descriptor) error {
 	if i < len(gs.ods) && gs.ods[i].GetID() == od.GetID() {
 		return nil
 	}
-	gs.ods = append(gs.ods, nil)
+	gs.ods = append(gs.ods, sif.Descriptor{})
 	copy(gs.ods[i+1:], gs.ods[i:])
 	gs.ods[i] = od
 

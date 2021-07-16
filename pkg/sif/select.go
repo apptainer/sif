@@ -7,8 +7,52 @@ package sif
 
 import "errors"
 
+var errInvalidGroupID = errors.New("invalid group ID")
+
 // DescriptorSelectorFunc returns true if d matches, and false otherwise.
 type DescriptorSelectorFunc func(d Descriptor) (bool, error)
+
+// WithNoGroup selects descriptors that are not contained within an object group.
+func WithNoGroup() DescriptorSelectorFunc {
+	return func(d Descriptor) (bool, error) {
+		return d.GetGroupID() == 0, nil
+	}
+}
+
+// WithGroupID returns a selector func that selects descriptors with a matching groupID.
+func WithGroupID(groupID uint32) DescriptorSelectorFunc {
+	return func(d Descriptor) (bool, error) {
+		if groupID == 0 {
+			return false, errInvalidGroupID
+		}
+		return d.GetGroupID() == groupID, nil
+	}
+}
+
+// GetDescriptors returns a slice of in-use descriptors for which all selector funcs return true.
+func (f *FileImage) GetDescriptors(fns ...DescriptorSelectorFunc) ([]Descriptor, error) {
+	var ds []Descriptor
+
+	err := f.withDescriptors(multiSelectorFunc(fns...), func(d *Descriptor) error {
+		ds = append(ds, *d)
+		return nil
+	})
+
+	return ds, err
+}
+
+// multiSelectorFunc returns a DescriptorSelectorFunc that selects a descriptor iff all of fns
+// select the descriptor.
+func multiSelectorFunc(fns ...DescriptorSelectorFunc) DescriptorSelectorFunc {
+	return func(d Descriptor) (bool, error) {
+		for _, fn := range fns {
+			if ok, err := fn(d); !ok || err != nil {
+				return ok, err
+			}
+		}
+		return true, nil
+	}
+}
 
 // withDescriptors calls onMatchFn with each in-use descriptor in f for which selectFn returns
 // true. If selectFn or onMatchFn return a non-nil error, the iteration halts, and the error is

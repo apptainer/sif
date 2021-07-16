@@ -83,16 +83,16 @@ type VerifyResult interface {
 type VerifyCallback func(r VerifyResult) (ignoreError bool)
 
 type groupVerifier struct {
-	f        *sif.FileImage    // SIF image to verify.
-	cb       VerifyCallback    // Verification callback.
-	groupID  uint32            // Object group ID.
-	ods      []*sif.Descriptor // Object descriptors.
-	subsetOK bool              // If true, permit ods to be a subset of the objects in signatures.
+	f        *sif.FileImage   // SIF image to verify.
+	cb       VerifyCallback   // Verification callback.
+	groupID  uint32           // Object group ID.
+	ods      []sif.Descriptor // Object descriptors.
+	subsetOK bool             // If true, permit ods to be a subset of the objects in signatures.
 }
 
 // newGroupVerifier constructs a new group verifier, optionally limited to objects described by
 // ods. If no descriptors are supplied, verify all objects in group.
-func newGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32, ods ...*sif.Descriptor) (*groupVerifier, error) { // nolint:lll
+func newGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32, ods ...sif.Descriptor) (*groupVerifier, error) { // nolint:lll
 	v := groupVerifier{f: f, cb: cb, groupID: groupID, ods: ods}
 
 	if len(ods) == 0 {
@@ -208,10 +208,10 @@ func (v *groupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 }
 
 type legacyGroupVerifier struct {
-	f       *sif.FileImage    // SIF image to verify.
-	cb      VerifyCallback    // Verification callback.
-	groupID uint32            // Object group ID.
-	ods     []*sif.Descriptor // Object descriptors.
+	f       *sif.FileImage   // SIF image to verify.
+	cb      VerifyCallback   // Verification callback.
+	groupID uint32           // Object group ID.
+	ods     []sif.Descriptor // Object descriptors.
 }
 
 // newLegacyGroupVerifier constructs a new legacy group verifier.
@@ -323,9 +323,9 @@ func (v *legacyGroupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 }
 
 type legacyObjectVerifier struct {
-	f  *sif.FileImage  // SIF image to verify.
-	cb VerifyCallback  // Verification callback.
-	od *sif.Descriptor // Object descriptor.
+	f  *sif.FileImage // SIF image to verify.
+	cb VerifyCallback // Verification callback.
+	od sif.Descriptor // Object descriptor.
 }
 
 // newLegacyObjectVerifier constructs a new legacy object verifier.
@@ -415,7 +415,7 @@ func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 
 		// Call verify callback, if applicable.
 		if v.cb != nil {
-			r := legacyResult{signature: sig.GetID(), ods: []*sif.Descriptor{v.od}, e: e, err: err}
+			r := legacyResult{signature: sig.GetID(), ods: []sif.Descriptor{v.od}, e: e, err: err}
 			if ignoreError := v.cb(r); ignoreError {
 				err = nil
 			}
@@ -706,7 +706,7 @@ func (v *Verifier) Verify() error {
 	}
 
 	// All non-signature objects must be contained in an object group.
-	ods, err := getNonGroupObjects(v.f)
+	ods, err := v.f.GetDescriptors(sif.WithNoGroup())
 	if err != nil {
 		return fmt.Errorf("integrity: %w", err)
 	}

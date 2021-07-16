@@ -346,7 +346,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []*sif.Descriptor{d1},
+				ods:       []sif.Descriptor{*d1},
 				mdHash:    crypto.MD4,
 				sigConfig: &config,
 			},
@@ -358,7 +358,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []*sif.Descriptor{d1},
+				ods:       []sif.Descriptor{*d1},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -370,7 +370,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []*sif.Descriptor{d1},
+				ods:       []sif.Descriptor{*d1},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -381,7 +381,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []*sif.Descriptor{d2},
+				ods:       []sif.Descriptor{*d2},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -392,7 +392,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []*sif.Descriptor{d1, d2},
+				ods:       []sif.Descriptor{*d1, *d2},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -403,7 +403,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        2,
-				ods:       []*sif.Descriptor{d3},
+				ods:       []sif.Descriptor{*d3},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},

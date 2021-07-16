@@ -137,20 +137,20 @@ func TestGetImageMetadata(t *testing.T) {
 	tests := []struct {
 		name    string
 		minID   uint32
-		ods     []*sif.Descriptor
+		ods     []sif.Descriptor
 		hash    crypto.Hash
 		wantErr error
 	}{
 		{name: "HashUnavailable", hash: crypto.MD4, wantErr: errHashUnavailable},
 		{name: "HashUnsupported", hash: crypto.MD5, wantErr: errHashUnsupported},
-		{name: "MinimumIDInvalid", minID: 2, ods: []*sif.Descriptor{od1}, hash: crypto.SHA1, wantErr: errMinimumIDInvalid},
-		{name: "Object1", minID: 1, ods: []*sif.Descriptor{od1}, hash: crypto.SHA1},
-		{name: "Object2", minID: 1, ods: []*sif.Descriptor{od2}, hash: crypto.SHA1},
-		{name: "SHA1", minID: 1, ods: []*sif.Descriptor{od1, od2}, hash: crypto.SHA1},
-		{name: "SHA224", minID: 1, ods: []*sif.Descriptor{od1, od2}, hash: crypto.SHA224},
-		{name: "SHA256", minID: 1, ods: []*sif.Descriptor{od1, od2}, hash: crypto.SHA256},
-		{name: "SHA384", minID: 1, ods: []*sif.Descriptor{od1, od2}, hash: crypto.SHA384},
-		{name: "SHA512", minID: 1, ods: []*sif.Descriptor{od1, od2}, hash: crypto.SHA512},
+		{name: "MinimumIDInvalid", minID: 2, ods: []sif.Descriptor{*od1}, hash: crypto.SHA1, wantErr: errMinimumIDInvalid},
+		{name: "Object1", minID: 1, ods: []sif.Descriptor{*od1}, hash: crypto.SHA1},
+		{name: "Object2", minID: 1, ods: []sif.Descriptor{*od2}, hash: crypto.SHA1},
+		{name: "SHA1", minID: 1, ods: []sif.Descriptor{*od1, *od2}, hash: crypto.SHA1},
+		{name: "SHA224", minID: 1, ods: []sif.Descriptor{*od1, *od2}, hash: crypto.SHA224},
+		{name: "SHA256", minID: 1, ods: []sif.Descriptor{*od1, *od2}, hash: crypto.SHA256},
+		{name: "SHA384", minID: 1, ods: []sif.Descriptor{*od1, *od2}, hash: crypto.SHA384},
+		{name: "SHA512", minID: 1, ods: []sif.Descriptor{*od1, *od2}, hash: crypto.SHA512},
 	}
 
 	for _, tt := range tests {
