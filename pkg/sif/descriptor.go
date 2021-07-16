@@ -10,6 +10,7 @@ package sif
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -34,20 +35,62 @@ type Descriptor struct {
 	Extra [DescrMaxPrivLen]byte // big enough for extra data below
 }
 
-// setName sets the byte array field "Name" to the value of string "name".
-func (d *Descriptor) setName(name string) {
-	copy(d.Name[:], name)
-	for i := len(name); i < len(d.Name); i++ {
-		d.Name[i] = 0
-	}
+// partition represents the SIF partition data object descriptor.
+type partition struct {
+	Fstype   Fstype
+	Parttype Parttype
+	Arch     [hdrArchLen]byte // arch the image is built for
 }
 
-// setExtra sets the extra byte array to a provided byte array.
-func (d *Descriptor) setExtra(extra []byte) {
-	copy(d.Extra[:], extra)
-	for i := len(extra); i < len(d.Extra); i++ {
+// signature represents the SIF signature data object descriptor.
+type signature struct {
+	Hashtype Hashtype
+	Entity   [DescrEntityLen]byte
+}
+
+// cryptoMessage represents the SIF crypto message object descriptor.
+type cryptoMessage struct {
+	Formattype  Formattype
+	Messagetype Messagetype
+}
+
+var errNameTooLarge = errors.New("name value too large")
+
+// setName encodes name into the name field of d.
+func (d *Descriptor) setName(name string) error {
+	if len(name) > len(d.Name) {
+		return errNameTooLarge
+	}
+
+	for i := copy(d.Name[:], name); i < len(d.Name); i++ {
+		d.Name[i] = 0
+	}
+
+	return nil
+}
+
+var errExtraTooLarge = errors.New("extra value too large")
+
+// setExtra encodes v into the extra field of d.
+func (d *Descriptor) setExtra(v interface{}) error {
+	if v == nil {
+		return nil
+	}
+
+	if binary.Size(v) > len(d.Extra) {
+		return errExtraTooLarge
+	}
+
+	b := new(bytes.Buffer)
+	if err := binary.Write(b, binary.LittleEndian, v); err != nil {
+		return err
+	}
+
+	for i := copy(d.Extra[:], b.Bytes()); i < len(d.Extra); i++ {
 		d.Extra[i] = 0
 	}
+
+	return nil
 }
 
 // GetDataType returns the type of data object.
@@ -79,7 +122,7 @@ func (d Descriptor) GetFsType() (Fstype, error) {
 		return -1, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
 	}
 
-	var pinfo Partition
+	var pinfo partition
 	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
 		return -1, fmt.Errorf("while extracting Partition extra info: %s", err)
@@ -94,7 +137,7 @@ func (d Descriptor) GetPartType() (Parttype, error) {
 		return -1, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
 	}
 
-	var pinfo Partition
+	var pinfo partition
 	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
 		return -1, fmt.Errorf("while extracting Partition extra info: %s", err)
@@ -109,7 +152,7 @@ func (d Descriptor) GetArch() ([hdrArchLen]byte, error) {
 		return [hdrArchLen]byte{}, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
 	}
 
-	var pinfo Partition
+	var pinfo partition
 	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
 		return [hdrArchLen]byte{}, fmt.Errorf("while extracting Partition extra info: %s", err)
@@ -124,7 +167,7 @@ func (d Descriptor) GetHashType() (Hashtype, error) {
 		return -1, fmt.Errorf("expected DataSignature, got %v", d.Datatype)
 	}
 
-	var sinfo Signature
+	var sinfo signature
 	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &sinfo); err != nil {
 		return -1, fmt.Errorf("while extracting Signature extra info: %s", err)
@@ -139,7 +182,7 @@ func (d Descriptor) GetEntity() ([]byte, error) {
 		return nil, fmt.Errorf("expected DataSignature, got %v", d.Datatype)
 	}
 
-	var sinfo Signature
+	var sinfo signature
 	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &sinfo); err != nil {
 		return nil, fmt.Errorf("while extracting Signature extra info: %s", err)
@@ -164,7 +207,7 @@ func (d Descriptor) GetFormatType() (Formattype, error) {
 		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", d.Datatype)
 	}
 
-	var cinfo CryptoMessage
+	var cinfo cryptoMessage
 	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &cinfo); err != nil {
 		return -1, fmt.Errorf("while extracting Crypto extra info: %s", err)
@@ -179,7 +222,7 @@ func (d Descriptor) GetMessageType() (Messagetype, error) {
 		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", d.Datatype)
 	}
 
-	var cinfo CryptoMessage
+	var cinfo cryptoMessage
 	b := bytes.NewReader(d.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &cinfo); err != nil {
 		return -1, fmt.Errorf("while extracting Crypto extra info: %s", err)

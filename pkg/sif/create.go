@@ -8,7 +8,6 @@
 package sif
 
 import (
-	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
@@ -75,8 +74,12 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 	descr.Mtime = time.Now().Unix()
 	descr.UID = 0
 	descr.GID = 0
-	descr.setName(path.Base(input.Fname))
-	descr.setExtra(input.Extra.Bytes())
+	if err := descr.setName(path.Base(input.Fname)); err != nil {
+		return err
+	}
+	if err := descr.setExtra(input.opts.extra); err != nil {
+		return err
+	}
 
 	// Check that none or only 1 primary partition is ever set
 	if descr.Datatype == DataPartition {
@@ -119,7 +122,9 @@ func writeDataObject(fimg *FileImage, index int, input DescriptorInput) error {
 			// coming in from os.Stdin (pipe)
 			descr := &fimg.descrArr[index]
 			descr.Filelen = n
-			descr.setName("pipe" + fmt.Sprint(index+1))
+			if err := descr.setName("pipe" + fmt.Sprint(index+1)); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -485,44 +490,36 @@ func (f *FileImage) DeleteObject(id uint32, flags int) error {
 
 // SetPartExtra serializes the partition and fs type info into a binary buffer.
 func (di *DescriptorInput) SetPartExtra(fs Fstype, part Parttype, arch string) error {
-	extra := Partition{
-		Fstype:   fs,
-		Parttype: part,
-	}
 	if arch == HdrArchUnknown {
 		return fmt.Errorf("architecture not supported: %v", arch)
 	}
-	copy(extra.Arch[:], arch)
 
-	// serialize the partition data for integration with the base descriptor input
-	return binary.Write(&di.Extra, binary.LittleEndian, extra)
+	p := partition{
+		Fstype:   fs,
+		Parttype: part,
+	}
+	copy(p.Arch[:], arch)
+
+	di.opts.extra = p
+
+	return nil
 }
 
 // SetSignExtra serializes the hash type and the entity info into a binary buffer.
 func (di *DescriptorInput) SetSignExtra(hash Hashtype, entity string) error {
-	extra := Signature{
-		Hashtype: hash,
-	}
-
 	h, err := hex.DecodeString(entity)
 	if err != nil {
 		return err
 	}
-	copy(extra.Entity[:], h)
 
-	// serialize the signature data for integration with the base descriptor input
-	return binary.Write(&di.Extra, binary.LittleEndian, extra)
-}
-
-// SetCryptoMsgExtra serializes the message format and type info into a binary buffer.
-func (di *DescriptorInput) SetCryptoMsgExtra(format Formattype, message Messagetype) error {
-	extra := CryptoMessage{
-		Formattype:  format,
-		Messagetype: message,
+	s := signature{
+		Hashtype: hash,
 	}
+	copy(s.Entity[:], h)
 
-	// serialize the message data for integration with the base descriptor input
-	return binary.Write(&di.Extra, binary.LittleEndian, extra)
+	di.opts.extra = s
+
+	return nil
 }
 
 // SetPrimPart sets the specified system partition to be the primary one.
@@ -568,17 +565,15 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 	copy(f.h.Arch[:], arch[:])
 	f.primPartID = descr.ID
 
-	extra := Partition{
+	extra := partition{
 		Fstype:   fs,
 		Parttype: PartPrimSys,
 	}
 	copy(extra.Arch[:], arch[:])
 
-	var extrabuf bytes.Buffer
-	if err := binary.Write(&extrabuf, binary.LittleEndian, extra); err != nil {
+	if err := descr.setExtra(extra); err != nil {
 		return err
 	}
-	descr.setExtra(extrabuf.Bytes())
 
 	if olddescr != nil {
 		oldfs, err := olddescr.GetFsType()
@@ -590,17 +585,15 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 			return nil
 		}
 
-		oldextra := Partition{
+		oldextra := partition{
 			Fstype:   oldfs,
 			Parttype: PartSystem,
 		}
 		copy(oldextra.Arch[:], oldarch[:])
 
-		var oldextrabuf bytes.Buffer
-		if err := binary.Write(&oldextrabuf, binary.LittleEndian, oldextra); err != nil {
+		if err := olddescr.setExtra(oldextra); err != nil {
 			return err
 		}
-		olddescr.setExtra(oldextrabuf.Bytes())
 	}
 
 	// write down the descriptor array

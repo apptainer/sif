@@ -10,7 +10,7 @@ import (
 	"encoding/binary"
 	"io"
 	"os"
-	"runtime"
+	"path/filepath"
 	"testing"
 )
 
@@ -73,55 +73,30 @@ func TestCreateContainer(t *testing.T) {
 		t.Errorf("failed to unload container: %v", err)
 	}
 
-	// data we need to create a definition file descriptor
-	definput := DescriptorInput{
-		Datatype: DataDeffile,
-		Groupid:  DescrDefaultGroup,
-		Link:     DescrUnusedLink,
-		Fname:    "testdata/busybox.def",
-	}
-
-	// open up the data object file for this descriptor
-	defHandle, err := os.Open(definput.Fname)
+	defHandle, err := os.Open(filepath.Join("testdata", "busybox.def"))
 	if err != nil {
-		t.Errorf("CreateContainer(cinfo): read data object file: %s", err)
+		t.Fatal(err)
 	}
 	defer defHandle.Close()
 
-	definput.Fp = defHandle
-
-	fi, err := defHandle.Stat()
+	definput, err := NewDescriptorInput(DataDeffile, defHandle, OptGroupID(1))
 	if err != nil {
-		t.Errorf("CreateContainer(cinfo): can't stat definition file: %s", err)
+		t.Fatal(err)
 	}
-	definput.Size = fi.Size()
 
-	// data we need to create a system partition descriptor
-	parinput := DescriptorInput{
-		Datatype:  DataPartition,
-		Groupid:   DescrDefaultGroup,
-		Link:      DescrUnusedLink,
-		Fname:     "testdata/busybox.squash",
-		Alignment: 1048576, // Test an aggressive alignment requirement
-	}
-	// open up the data object file for this descriptor
-	partHandle, err := os.Open(parinput.Fname)
+	partHandle, err := os.Open(filepath.Join("testdata", "busybox.squash"))
 	if err != nil {
-		t.Errorf("CreateContainer(cinfo): read data object file: %s", err)
+		t.Fatal(err)
 	}
 	defer partHandle.Close()
 
-	parinput.Fp = partHandle
-
-	fi, err = partHandle.Stat()
+	parinput, err := NewDescriptorInput(DataPartition, partHandle,
+		OptGroupID(1),
+		OptObjectAlignment(1048576), // Test an aggressive alignment requirement
+		OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
+	)
 	if err != nil {
-		t.Errorf("CreateContainer(cinfo): can't stat partition file: %s", err)
-	}
-	parinput.Size = fi.Size()
-
-	err = parinput.SetPartExtra(FsSquash, PartPrimSys, GetSIFArch(runtime.GOARCH))
-	if err != nil {
-		t.Errorf("CreateContainer(cinfo): can't set extra info: %s", err)
+		t.Fatal(err)
 	}
 
 	// test container creation with two partition input descriptors
@@ -146,40 +121,25 @@ func TestAddDelObject(t *testing.T) {
 	testObjContainer := f.Name()
 
 	// data we need to create a dummy labels descriptor
-	labinput := DescriptorInput{
-		Datatype: DataLabels,
-		Groupid:  DescrDefaultGroup,
-		Link:     DescrUnusedLink,
-		Fname:    "dummyLabels",
-		Data:     []byte{'L', 'A', 'B', 'E', 'L'},
+	labinput, err := NewDescriptorInput(DataLabels, bytes.NewBufferString("LABEL"),
+		OptGroupID(1),
+	)
+	if err != nil {
+		t.Fatal(err)
 	}
-	labinput.Size = int64(binary.Size(labinput.Data))
 
 	// data we need to create a system partition descriptor
-	parinput := DescriptorInput{
-		Datatype: DataPartition,
-		Groupid:  DescrDefaultGroup,
-		Link:     DescrUnusedLink,
-		Fname:    "testdata/busybox.squash",
-	}
-	// open up the data object file for this descriptor
-	partHandle, err := os.Open(parinput.Fname)
+	partHandle, err := os.Open(filepath.Join("testdata", "busybox.squash"))
 	if err != nil {
-		t.Errorf("os.Open(parinput.Fname): unable to read data object file: %s", err)
+		t.Fatal(err)
 	}
 	defer partHandle.Close()
-
-	parinput.Fp = partHandle
-
-	fi, err := partHandle.Stat()
+	parinput, err := NewDescriptorInput(DataPartition, partHandle,
+		OptGroupID(1),
+		OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
+	)
 	if err != nil {
-		t.Errorf("CreateContainer(cinfo): can't stat partition file: %s", err)
-	}
-	parinput.Size = fi.Size()
-
-	err = parinput.SetPartExtra(FsSquash, PartPrimSys, GetSIFArch(runtime.GOARCH))
-	if err != nil {
-		t.Errorf("CreateContainer(cinfo): can't stat partition file: %s", err)
+		t.Fatal(err)
 	}
 
 	// copy a test container, so we dont modify the existing container
@@ -240,16 +200,10 @@ func TestAddDelObject(t *testing.T) {
 }
 
 func TestAddObjectPipe(t *testing.T) {
-	// the code treats a DescriptorInput with a non-nil Fp field and
-	// a Size == 0 field as a "pipe"
 	payload := []byte("0123456789")
-	input := DescriptorInput{
-		Datatype: DataGeneric,
-		Groupid:  DescrDefaultGroup,
-		Link:     DescrUnusedLink,
-		Fname:    "generic",
-		Fp:       bytes.NewBuffer(payload),
-		Size:     0,
+	input, err := NewDescriptorInput(DataGeneric, bytes.NewReader(payload), OptGroupID(1))
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	fimg := &FileImage{
@@ -297,27 +251,19 @@ func TestAddObjectPipe(t *testing.T) {
 }
 
 func TestSetPrimPart(t *testing.T) {
-	// the code treats a DescriptorInput with a non-nil Fp field and
-	// a Size == 0 field as a "pipe"
 	payload := []byte("0123456789")
-	inputs := []DescriptorInput{
-		{
-			Datatype: DataPartition,
-			Groupid:  DescrDefaultGroup,
-			Link:     DescrUnusedLink,
-			Fname:    "generic",
-			Fp:       bytes.NewBuffer(payload),
-			Size:     0,
-		},
-		{
-			Datatype: DataPartition,
-			Groupid:  DescrDefaultGroup,
-			Link:     DescrUnusedLink,
-			Fname:    "generic",
-			Fp:       bytes.NewBuffer(payload),
-			Size:     0,
-		},
+
+	di1, err := NewDescriptorInput(DataPartition, bytes.NewReader(payload), OptGroupID(1))
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	di2, err := NewDescriptorInput(DataPartition, bytes.NewReader(payload), OptGroupID(1))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	inputs := []DescriptorInput{di1, di2}
 
 	fimg := &FileImage{
 		h: header{
@@ -333,15 +279,13 @@ func TestSetPrimPart(t *testing.T) {
 			t.Fatalf("fimg.AddObject(...): %s", err)
 		}
 
-		partition := Partition{
+		p := partition{
 			Fstype:   FsRaw,
 			Parttype: PartSystem,
 		}
-		buffer := bytes.Buffer{}
-		if err := binary.Write(&buffer, binary.LittleEndian, partition); err != nil {
-			t.Fatalf("while serializing partition info: %s", err)
+		if err := fimg.descrArr[i].setExtra(p); err != nil {
+			t.Fatal(err)
 		}
-		fimg.descrArr[i].setExtra(buffer.Bytes())
 	}
 
 	// the first pass tests that the primary partition can be set;

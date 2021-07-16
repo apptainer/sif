@@ -316,40 +316,6 @@ const (
 	DelCompact            // free the space used by data object
 )
 
-// Deffile represents the SIF definition-file data object descriptor.
-type Deffile struct{}
-
-// Labels represents the SIF JSON-labels data object descriptor.
-type Labels struct{}
-
-// Envvar represents the SIF envvar data object descriptor.
-type Envvar struct{}
-
-// Partition represents the SIF partition data object descriptor.
-type Partition struct {
-	Fstype   Fstype
-	Parttype Parttype
-	Arch     [hdrArchLen]byte // arch the image is built for
-}
-
-// Signature represents the SIF signature data object descriptor.
-type Signature struct {
-	Hashtype Hashtype
-	Entity   [DescrEntityLen]byte
-}
-
-// GenericJSON represents the SIF generic JSON meta-data data object descriptor.
-type GenericJSON struct{}
-
-// Generic represents the SIF generic data object descriptor.
-type Generic struct{}
-
-// CryptoMessage represents the SIF crypto message object descriptor.
-type CryptoMessage struct {
-	Formattype  Formattype
-	Messagetype Messagetype
-}
-
 // header describes a loaded SIF file.
 type header struct {
 	Launch [hdrLaunchLen]byte // #! shell execution line
@@ -448,22 +414,4 @@ func (f *FileImage) DataSectionSize() uint64 { return uint64(f.h.Datalen) }
 // header of the image.
 func (f *FileImage) GetHeaderIntegrityReader() io.Reader {
 	return f.h.GetIntegrityReader()
-}
-
-// DescriptorInput describes the common info needed to create a data object descriptor.
-type DescriptorInput struct {
-	Datatype  Datatype // datatype being harvested for new descriptor
-	Groupid   uint32   // group to be set for new descriptor
-	Link      uint32   // link to be set for new descriptor
-	Size      int64    // size of the data object for the new descriptor
-	Alignment int      // Align requirement for data object
-
-	Fname string    // file containing data associated with the new descriptor
-	Fp    io.Reader // file pointer to opened 'fname'
-	Data  []byte    // loaded data from file
-
-	Image *FileImage  // loaded SIF file in memory
-	Descr *Descriptor // created end result descriptor
-
-	Extra bytes.Buffer // where specific input type store their data
 }
