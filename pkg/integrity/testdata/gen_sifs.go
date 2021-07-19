@@ -6,6 +6,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -40,39 +41,33 @@ func generateImages() error {
 		return err
 	}
 
-	partSystemGroup1 := sif.DescriptorInput{
-		Datatype: sif.DataPartition,
-		Groupid:  sif.DescrGroupMask | 1,
-		Size:     4,
-		Data:     []byte{0xfa, 0xce, 0xfe, 0xed},
-	}
-	if err := partSystemGroup1.SetPartExtra(sif.FsRaw, sif.PartSystem, sif.HdrArch386); err != nil {
-		return err
+	partSystemGroup1 := func() (sif.DescriptorInput, error) {
+		return sif.NewDescriptorInput(sif.DataPartition,
+			bytes.NewReader([]byte{0xfa, 0xce, 0xfe, 0xed}),
+			sif.OptGroupID(1),
+			sif.OptPartitionMetadata(sif.FsRaw, sif.PartSystem, "386"),
+		)
 	}
 
-	partPrimSysGroup1 := sif.DescriptorInput{
-		Datatype: sif.DataPartition,
-		Groupid:  sif.DescrGroupMask | 1,
-		Size:     4,
-		Data:     []byte{0xde, 0xad, 0xbe, 0xef},
-	}
-	if err := partPrimSysGroup1.SetPartExtra(sif.FsSquash, sif.PartPrimSys, sif.HdrArch386); err != nil {
-		return err
+	partPrimSysGroup1 := func() (sif.DescriptorInput, error) {
+		return sif.NewDescriptorInput(sif.DataPartition,
+			bytes.NewReader([]byte{0xde, 0xad, 0xbe, 0xef}),
+			sif.OptGroupID(1),
+			sif.OptPartitionMetadata(sif.FsSquash, sif.PartPrimSys, "386"),
+		)
 	}
 
-	partSystemGroup2 := sif.DescriptorInput{
-		Datatype: sif.DataPartition,
-		Groupid:  sif.DescrGroupMask | 2,
-		Size:     4,
-		Data:     []byte{0xba, 0xdd, 0xca, 0xfe},
-	}
-	if err := partSystemGroup2.SetPartExtra(sif.FsExt3, sif.PartSystem, sif.HdrArchAMD64); err != nil {
-		return err
+	partSystemGroup2 := func() (sif.DescriptorInput, error) {
+		return sif.NewDescriptorInput(sif.DataPartition,
+			bytes.NewReader([]byte{0xba, 0xdd, 0xca, 0xfe}),
+			sif.OptGroupID(2),
+			sif.OptPartitionMetadata(sif.FsSquash, sif.PartSystem, "amd64"),
+		)
 	}
 
 	images := []struct {
 		path     string
-		dis      []sif.DescriptorInput
+		diFns    []func() (sif.DescriptorInput, error)
 		sign     bool
 		signOpts []integrity.SignerOpt
 	}{
@@ -84,14 +79,14 @@ func generateImages() error {
 		// Images with two partitions in one group.
 		{
 			path: "one-group.sif",
-			dis: []sif.DescriptorInput{
+			diFns: []func() (sif.DescriptorInput, error){
 				partSystemGroup1,
 				partPrimSysGroup1,
 			},
 		},
 		{
 			path: "one-group-signed.sif",
-			dis: []sif.DescriptorInput{
+			diFns: []func() (sif.DescriptorInput, error){
 				partSystemGroup1,
 				partPrimSysGroup1,
 			},
@@ -104,7 +99,7 @@ func generateImages() error {
 		// Images with three partitions in two groups.
 		{
 			path: "two-groups.sif",
-			dis: []sif.DescriptorInput{
+			diFns: []func() (sif.DescriptorInput, error){
 				partSystemGroup1,
 				partPrimSysGroup1,
 				partSystemGroup2,
@@ -112,7 +107,7 @@ func generateImages() error {
 		},
 		{
 			path: "two-groups-signed.sif",
-			dis: []sif.DescriptorInput{
+			diFns: []func() (sif.DescriptorInput, error){
 				partSystemGroup1,
 				partPrimSysGroup1,
 				partSystemGroup2,
@@ -125,9 +120,18 @@ func generateImages() error {
 	}
 
 	for _, image := range images {
+		dis := make([]sif.DescriptorInput, 0, len(image.diFns))
+		for _, fn := range image.diFns {
+			di, err := fn()
+			if err != nil {
+				return err
+			}
+			dis = append(dis, di)
+		}
+
 		path := filepath.Join("images", image.path)
 
-		f, err := sif.CreateContainer(path, sif.OptCreateWithDescriptors(image.dis...))
+		f, err := sif.CreateContainer(path, sif.OptCreateWithDescriptors(dis...))
 		if err != nil {
 			return err
 		}

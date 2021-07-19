@@ -179,7 +179,6 @@ type DescriptorInput struct {
 
 	alignment int
 	Fp        io.Reader
-	Data      []byte
 
 	opts descriptorOpts
 }

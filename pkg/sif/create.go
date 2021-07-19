@@ -105,26 +105,19 @@ func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err erro
 
 // Write new data object to the SIF file.
 func writeDataObject(fimg *FileImage, index int, input DescriptorInput) error {
-	// if we have bytes in input.data use that instead of an input file
-	if input.Data != nil {
-		if _, err := fimg.fp.Write(input.Data); err != nil {
-			return fmt.Errorf("copying data object data to SIF file: %s", err)
-		}
-	} else {
-		n, err := io.Copy(fimg.fp, input.Fp)
-		if err != nil {
-			return fmt.Errorf("copying data object file to SIF file: %s", err)
-		}
-		if n != input.Size && input.Size != 0 {
-			return fmt.Errorf("short write while copying to SIF file")
-		}
-		if input.Size == 0 {
-			// coming in from os.Stdin (pipe)
-			descr := &fimg.descrArr[index]
-			descr.Filelen = n
-			if err := descr.setName("pipe" + fmt.Sprint(index+1)); err != nil {
-				return err
-			}
+	n, err := io.Copy(fimg.fp, input.Fp)
+	if err != nil {
+		return fmt.Errorf("copying data object file to SIF file: %s", err)
+	}
+	if n != input.Size && input.Size != 0 {
+		return fmt.Errorf("short write while copying to SIF file")
+	}
+	if input.Size == 0 {
+		// coming in from os.Stdin (pipe)
+		descr := &fimg.descrArr[index]
+		descr.Filelen = n
+		if err := descr.setName("pipe" + fmt.Sprint(index+1)); err != nil {
+			return err
 		}
 	}
 
@@ -484,23 +477,6 @@ func (f *FileImage) DeleteObject(id uint32, flags int) error {
 	if err := f.fp.Sync(); err != nil {
 		return fmt.Errorf("while sync'ing deleted data object to SIF file: %s", err)
 	}
-
-	return nil
-}
-
-// SetPartExtra serializes the partition and fs type info into a binary buffer.
-func (di *DescriptorInput) SetPartExtra(fs Fstype, part Parttype, arch string) error {
-	if arch == HdrArchUnknown {
-		return fmt.Errorf("architecture not supported: %v", arch)
-	}
-
-	p := partition{
-		Fstype:   fs,
-		Parttype: part,
-	}
-	copy(p.Arch[:], arch)
-
-	di.opts.extra = p
 
 	return nil
 }
