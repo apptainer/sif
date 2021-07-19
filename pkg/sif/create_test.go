@@ -64,8 +64,13 @@ func TestCreateContainer(t *testing.T) {
 	f.Close()
 
 	// test container creation without any input descriptors
-	if _, err := CreateContainer(f.Name()); err != nil {
-		t.Errorf("failed to create container: %v", err)
+	fimg, err := CreateContainer(f.Name())
+	if err != nil {
+		t.Fatalf("failed to create container: %v", err)
+	}
+
+	if err := fimg.UnloadContainer(); err != nil {
+		t.Errorf("failed to unload container: %v", err)
 	}
 
 	// data we need to create a definition file descriptor
@@ -120,8 +125,13 @@ func TestCreateContainer(t *testing.T) {
 	}
 
 	// test container creation with two partition input descriptors
-	if _, err := CreateContainer(f.Name(), OptCreateWithDescriptors(definput, parinput)); err != nil {
-		t.Errorf("failed to create container: %v", err)
+	fimg, err = CreateContainer(f.Name(), OptCreateWithDescriptors(definput, parinput))
+	if err != nil {
+		t.Fatalf("failed to create container: %v", err)
+	}
+
+	if err := fimg.UnloadContainer(); err != nil {
+		t.Errorf("failed to unload container: %v", err)
 	}
 }
 

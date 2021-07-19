@@ -16,11 +16,6 @@ import (
 	"golang.org/x/crypto/openpgp"
 )
 
-func createImage(path string, dis []sif.DescriptorInput) error {
-	_, err := sif.CreateContainer(path, sif.WithDescriptors(dis...))
-	return err
-}
-
 func getEntity() (*openpgp.Entity, error) {
 	f, err := os.Open(filepath.Join("keys", "private.asc"))
 	if err != nil {
@@ -132,18 +127,18 @@ func generateImages() error {
 	for _, image := range images {
 		path := filepath.Join("images", image.path)
 
-		if err := createImage(path, image.dis); err != nil {
-			return err
-		}
-
-		f, err := sif.LoadContainer(path, false)
+		f, err := sif.CreateContainer(path, sif.OptCreateWithDescriptors(image.dis...))
 		if err != nil {
 			return err
 		}
-		defer f.UnloadContainer() // nolint:errcheck
+		defer func() {
+			if err := f.UnloadContainer(); err != nil {
+				log.Printf("failed to unload container: %v", err)
+			}
+		}()
 
 		if image.sign {
-			s, err := integrity.NewSigner(&f, image.signOpts...)
+			s, err := integrity.NewSigner(f, image.signOpts...)
 			if err != nil {
 				return err
 			}

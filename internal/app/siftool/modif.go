@@ -16,8 +16,12 @@ import (
 
 // New creates a new empty SIF file.
 func (*App) New(path string) error {
-	_, err := sif.CreateContainer(path)
-	return err
+	f, err := sif.CreateContainer(path)
+	if err != nil {
+		return err
+	}
+
+	return f.UnloadContainer()
 }
 
 // AddOptions contains the options when adding a section to a SIF file.

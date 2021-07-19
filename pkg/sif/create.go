@@ -230,8 +230,54 @@ func OptCreateWithTime(t time.Time) CreateOpt {
 	}
 }
 
+// createContainer creates a new SIF container file in fp, according to opts.
+func createContainer(fp ReadWriter, co createOpts) (*FileImage, error) {
+	h := header{
+		ID:       co.id,
+		Ctime:    co.t.Unix(),
+		Mtime:    co.t.Unix(),
+		Dfree:    DescrNumEntries,
+		Dtotal:   DescrNumEntries,
+		Descroff: DescrStartOffset,
+		Dataoff:  DataStartOffset,
+	}
+	copy(h.Launch[:], hdrLaunch)
+	copy(h.Magic[:], hdrMagic)
+	copy(h.Version[:], CurrentVersion.bytes())
+	copy(h.Arch[:], HdrArchUnknown)
+
+	f := &FileImage{
+		h:        h,
+		fp:       fp,
+		descrArr: make([]Descriptor, DescrNumEntries),
+	}
+
+	if _, err := f.fp.Seek(DataStartOffset, io.SeekStart); err != nil {
+		return nil, err
+	}
+
+	for _, v := range co.dis {
+		if err := createDescriptor(f, v); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := writeDescriptors(f); err != nil {
+		return nil, err
+	}
+
+	if err := writeHeader(f); err != nil {
+		return nil, err
+	}
+
+	return f, nil
+}
+
 // CreateContainer creates a new SIF container file at path, according to opts.
-func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
+//
+// On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
+// are released.
+func CreateContainer(path string, opts ...CreateOpt) (f *FileImage, err error) {
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -244,54 +290,25 @@ func CreateContainer(path string, opts ...CreateOpt) (*FileImage, error) {
 
 	for _, opt := range opts {
 		if err := opt(&co); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w", err)
 		}
 	}
 
-	f := &FileImage{}
-	f.descrArr = make([]Descriptor, DescrNumEntries)
-
-	// Prepare a fresh global header
-	copy(f.h.Launch[:], hdrLaunch)
-	copy(f.h.Magic[:], hdrMagic)
-	copy(f.h.Version[:], CurrentVersion.bytes())
-	copy(f.h.Arch[:], HdrArchUnknown)
-	f.h.ID = co.id
-	f.h.Ctime = co.t.Unix()
-	f.h.Mtime = co.t.Unix()
-	f.h.Dfree = DescrNumEntries
-	f.h.Dtotal = DescrNumEntries
-	f.h.Descroff = DescrStartOffset
-	f.h.Dataoff = DataStartOffset
-
-	// Create container file
-	f.fp, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
+	fp, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
 	if err != nil {
-		return nil, fmt.Errorf("container file creation failed: %s", err)
+		return nil, fmt.Errorf("%w", err)
 	}
-	defer f.fp.Close()
-
-	// set file pointer to start of data section */
-	if _, err = f.fp.Seek(DataStartOffset, io.SeekStart); err != nil {
-		return nil, fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
-	}
-
-	for _, v := range co.dis {
-		if err := createDescriptor(f, v); err != nil {
-			return nil, err
+	defer func() {
+		if err != nil {
+			fp.Close()
+			os.Remove(fp.Name())
 		}
-	}
+	}()
 
-	// Write down the descriptor array
-	if err := writeDescriptors(f); err != nil {
-		return nil, err
+	f, err = createContainer(fp, co)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
 	}
-
-	// Write down global header to file
-	if err := writeHeader(f); err != nil {
-		return nil, err
-	}
-
 	return f, nil
 }
 
