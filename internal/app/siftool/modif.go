@@ -30,8 +30,12 @@ func New(path string) error {
 		ID:         id,
 	}
 
-	_, err = sif.CreateContainer(cinfo)
-	return err
+	fimg, err := sif.CreateContainer(cinfo)
+	if err != nil {
+		return err
+	}
+
+	return fimg.UnloadContainer()
 }
 
 // AddOptions contains the options when adding a section to a SIF file.
