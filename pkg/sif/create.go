@@ -9,12 +9,10 @@ package sif
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"time"
 
 	"github.com/google/uuid"
@@ -47,39 +45,27 @@ func setFileOffNA(fimg *FileImage, alignment int) (int64, error) {
 }
 
 // Fill all of the fields of a Descriptor.
-func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err error) {
+func fillDescriptor(fimg *FileImage, index int, di DescriptorInput) (err error) {
 	descr := &fimg.descrArr[index]
+
+	descr.ID = uint32(index) + 1
+	descr.Used = true
+
+	if err := di.fillDescriptor(descr); err != nil {
+		return err
+	}
 
 	curoff, err := fimg.fp.Seek(0, io.SeekCurrent)
 	if err != nil {
 		return fmt.Errorf("while file pointer look at: %s", err)
 	}
 
-	descr.Datatype = input.Datatype
-	descr.ID = uint32(index) + 1
-	descr.Used = true
-	descr.Groupid = input.Groupid
-	descr.Link = input.Link
-	align := os.Getpagesize()
-	if input.alignment != 0 {
-		align = input.alignment
-	}
-	descr.Fileoff, err = setFileOffNA(fimg, align)
+	descr.Fileoff, err = setFileOffNA(fimg, di.alignment)
 	if err != nil {
 		return
 	}
-	descr.Filelen = input.Size
+	descr.Filelen = di.Size
 	descr.Storelen = descr.Fileoff + descr.Filelen - curoff
-	descr.Ctime = time.Now().Unix()
-	descr.Mtime = time.Now().Unix()
-	descr.UID = 0
-	descr.GID = 0
-	if err := descr.setName(path.Base(input.Fname)); err != nil {
-		return err
-	}
-	if err := descr.setExtra(input.opts.extra); err != nil {
-		return err
-	}
 
 	// Check that none or only 1 primary partition is ever set
 	if descr.Datatype == DataPartition {
@@ -477,23 +463,6 @@ func (f *FileImage) DeleteObject(id uint32, flags int) error {
 	if err := f.fp.Sync(); err != nil {
 		return fmt.Errorf("while sync'ing deleted data object to SIF file: %s", err)
 	}
-
-	return nil
-}
-
-// SetSignExtra serializes the hash type and the entity info into a binary buffer.
-func (di *DescriptorInput) SetSignExtra(hash Hashtype, entity string) error {
-	h, err := hex.DecodeString(entity)
-	if err != nil {
-		return err
-	}
-
-	s := signature{
-		Hashtype: hash,
-	}
-	copy(s.Entity[:], h)
-
-	di.opts.extra = s
 
 	return nil
 }

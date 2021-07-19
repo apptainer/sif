@@ -8,7 +8,6 @@ package integrity
 import (
 	"crypto"
 	"errors"
-	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -420,22 +419,46 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			}
 
 			if err == nil {
-				if got, want := di.Datatype, sif.DataSignature; got != want {
+				tf, err := os.CreateTemp("", "*")
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer os.Remove(tf.Name())
+				tf.Close()
+
+				fi, err := sif.CreateContainer(tf.Name(),
+					sif.OptCreateWithDescriptors(di),
+				)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				od, err := fi.GetDescriptor(sif.WithID(1))
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if got, want := od.GetDataType(), sif.DataSignature; got != want {
 					t.Errorf("got data type %v, want %v", got, want)
 				}
 
-				if got, want := di.Groupid, uint32(sif.DescrUnusedGroup); got != want {
+				if got, want := od.GetGroupID(), uint32(0); got != want {
 					t.Errorf("got group ID %v, want %v", got, want)
 				}
 
-				if got, want := di.Link, sif.DescrGroupMask|tt.gs.id; got != want {
-					t.Errorf("got link %v, want %v", got, want)
+				id, isGroup := od.GetLinkedID()
+				if got, want := isGroup, true; got != want {
+					t.Errorf("got link isGroup %v, want %v", got, want)
+				}
+				if got, want := id, tt.gs.id; got != want {
+					t.Errorf("got linked id %v, want %v", got, want)
 				}
 
-				b := make([]byte, di.Size)
-				if _, err := io.ReadFull(di.Fp, b); err != nil {
+				b, err := od.GetData(fi)
+				if err != nil {
 					t.Fatal(err)
 				}
+
 				g := goldie.New(t, goldie.WithTestNameForDir(true))
 				g.Assert(t, tt.name, b)
 			}

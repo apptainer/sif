@@ -8,7 +8,6 @@ package integrity
 import (
 	"bytes"
 	"crypto"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
@@ -177,18 +176,10 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 	}
 
 	// Prepare SIF data object descriptor.
-	di := sif.DescriptorInput{
-		Datatype: sif.DataSignature,
-		Groupid:  sif.DescrUnusedGroup,
-		Link:     sif.DescrGroupMask | gs.id,
-		Size:     int64(b.Len()),
-		Fp:       &b,
-	}
-	if err := di.SetSignExtra(gs.sigHash, hex.EncodeToString(e.PrimaryKey.Fingerprint[:])); err != nil {
-		return sif.DescriptorInput{}, fmt.Errorf("failed to set signature metadata: %w", err)
-	}
-
-	return di, nil
+	return sif.NewDescriptorInput(sif.DataSignature, &b,
+		sif.OptLinkedGroupID(gs.id),
+		sif.OptSignatureMetadata(gs.sigHash, e.PrimaryKey.Fingerprint),
+	)
 }
 
 // Signer describes a SIF image signer.
