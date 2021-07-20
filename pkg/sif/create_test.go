@@ -199,57 +199,6 @@ func TestAddDelObject(t *testing.T) {
 	}
 }
 
-func TestAddObjectPipe(t *testing.T) {
-	payload := []byte("0123456789")
-	input, err := NewDescriptorInput(DataGeneric, bytes.NewReader(payload), OptGroupID(1))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	fimg := &FileImage{
-		h: header{
-			Dfree:  1,
-			Dtotal: 1,
-		},
-		fp:       &mockSifReadWriter{},
-		descrArr: make([]Descriptor, 1),
-	}
-
-	if err := fimg.AddObject(input); err != nil {
-		t.Errorf("fimg.AddObject(...): %s", err)
-	}
-
-	if expected, actual := int64(0), fimg.h.Dfree; actual != expected {
-		t.Errorf("after calling fimg.AddObject(...), unexpected value in fimg.Header.Dfree: expected=%d actual=%d",
-			expected, actual)
-	}
-
-	if expected, actual := "pipe1", fimg.descrArr[0].GetName(); actual != expected {
-		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].GetName(): expected=%s actual=%s",
-			expected, actual)
-	}
-
-	if expected, actual := int64(len(payload)), fimg.descrArr[0].Filelen; actual != expected {
-		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Filelen: expected=%d actual=%d",
-			expected, actual)
-	}
-
-	if expected, actual := input.Datatype, fimg.descrArr[0].Datatype; actual != expected {
-		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Datatype: expected=%d actual=%d",
-			expected, actual)
-	}
-
-	if expected, actual := input.Groupid, fimg.descrArr[0].Groupid; actual != expected {
-		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Groupid: expected=%d actual=%d",
-			expected, actual)
-	}
-
-	if expected, actual := input.Link, fimg.descrArr[0].Link; actual != expected {
-		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Groupid: expected=%d actual=%d",
-			expected, actual)
-	}
-}
-
 func TestSetPrimPart(t *testing.T) {
 	payload := []byte("0123456789")
 

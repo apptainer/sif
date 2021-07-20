@@ -171,15 +171,8 @@ func OptSignatureMetadata(ht Hashtype, fp [20]byte) DescriptorInputOpt {
 
 // DescriptorInput describes a new data object.
 type DescriptorInput struct {
-	Datatype Datatype
-	Groupid  uint32
-	Link     uint32
-	Size     int64
-	Fname    string
-
-	alignment int
-	Fp        io.Reader
-
+	dt   Datatype
+	fp   io.Reader
 	opts descriptorOpts
 }
 
@@ -210,13 +203,9 @@ func NewDescriptorInput(t Datatype, r io.Reader, opts ...DescriptorInputOpt) (De
 	}
 
 	di := DescriptorInput{
-		Datatype:  t,
-		Fp:        r,
-		Groupid:   dopts.groupID | DescrGroupMask,
-		Link:      dopts.linkID,
-		alignment: dopts.alignment,
-		Fname:     dopts.name,
-		opts:      dopts,
+		dt:   t,
+		fp:   r,
+		opts: dopts,
 	}
 
 	return di, nil
@@ -224,7 +213,7 @@ func NewDescriptorInput(t Datatype, r io.Reader, opts ...DescriptorInputOpt) (De
 
 // fillDescriptor fills d according to di.
 func (di DescriptorInput) fillDescriptor(d *Descriptor) error {
-	d.Datatype = di.Datatype
+	d.Datatype = di.dt
 	d.Groupid = di.opts.groupID | DescrGroupMask
 	d.Link = di.opts.linkID
 	d.Ctime = di.opts.t.UTC().Unix()
