@@ -133,16 +133,16 @@ func OptPartitionMetadata(fs FSType, pt PartType, arch string) DescriptorInputOp
 			return &unexpectedDataTypeError{got, want}
 		}
 
-		sifarch := GetSIFArch(arch)
-		if sifarch == HdrArchUnknown {
+		sifarch := getSIFArch(arch)
+		if sifarch == hdrArchUnknown {
 			return fmt.Errorf("unknown architecture: %v", arch)
 		}
 
 		p := partition{
 			Fstype:   fs,
 			Parttype: pt,
+			Arch:     sifarch,
 		}
-		copy(p.Arch[:], sifarch)
 
 		opts.extra = p
 		return nil

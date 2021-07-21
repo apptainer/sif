@@ -99,7 +99,6 @@ const (
 	hdrMagic      = "SIF_MAGIC"
 	hdrMagicLen   = 10 // len("SIF_MAGIC")
 	hdrVersionLen = 3  // len("99")
-	hdrArchLen    = 3  // len("99")
 )
 
 // SpecVersion specifies a SIF specification version.
@@ -115,22 +114,6 @@ const (
 
 // CurrentVersion specifies the current SIF specification version.
 const CurrentVersion = version01
-
-// SIF architecture values.
-const (
-	HdrArchUnknown  = "00" // Undefined/Unsupported arch
-	HdrArch386      = "01" // 386 (i[3-6]86) arch code
-	HdrArchAMD64    = "02" // AMD64 arch code
-	HdrArchARM      = "03" // ARM arch code
-	HdrArchARM64    = "04" // AARCH64 arch code
-	HdrArchPPC64    = "05" // PowerPC 64 arch code
-	HdrArchPPC64le  = "06" // PowerPC 64 little-endian arch code
-	HdrArchMIPS     = "07" // MIPS arch code
-	HdrArchMIPSle   = "08" // MIPS little-endian arch code
-	HdrArchMIPS64   = "09" // MIPS64 arch code
-	HdrArchMIPS64le = "10" // MIPS64 little-endian arch code
-	HdrArchS390x    = "11" // IBM s390x arch code
-)
 
 const (
 	DescrNumEntries   = 48                 // the default total number of available descriptors
@@ -322,7 +305,7 @@ type header struct {
 
 	Magic   [hdrMagicLen]byte   // look for "SIF_MAGIC"
 	Version [hdrVersionLen]byte // SIF version
-	Arch    [hdrArchLen]byte    // arch the primary partition is built for
+	Arch    archType            // arch the primary partition is built for
 	ID      uuid.UUID           // image unique identifier
 
 	Ctime int64 // image creation time
@@ -381,7 +364,7 @@ func (f *FileImage) LaunchScript() string { return trimZeroBytes(f.h.Launch[:]) 
 func (f *FileImage) Version() string { return trimZeroBytes(f.h.Version[:]) }
 
 // PrimaryArch returns the primary CPU architecture of the image.
-func (f *FileImage) PrimaryArch() string { return GetGoArch(trimZeroBytes(f.h.Arch[:])) }
+func (f *FileImage) PrimaryArch() string { return f.h.Arch.GoArch() }
 
 // ID returns the ID of the image.
 func (f *FileImage) ID() string { return f.h.ID.String() }

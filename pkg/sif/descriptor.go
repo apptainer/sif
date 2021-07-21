@@ -44,7 +44,7 @@ type rawDescriptor struct {
 type partition struct {
 	Fstype   FSType
 	Parttype PartType
-	Arch     [hdrArchLen]byte // arch the image is built for
+	Arch     archType
 }
 
 // signature represents the SIF signature data object descriptor.
@@ -134,7 +134,7 @@ func (d rawDescriptor) GetPartitionMetadata() (fs FSType, pt PartType, arch stri
 		return 0, 0, "", fmt.Errorf("%w", err)
 	}
 
-	return p.Fstype, p.Parttype, GetGoArch(trimZeroBytes(p.Arch[:])), nil
+	return p.Fstype, p.Parttype, p.Arch.GoArch(), nil
 }
 
 // isPartitionOfType returns true if d is a partition data object of type pt.

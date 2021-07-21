@@ -145,8 +145,8 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 	p := partition{
 		Fstype:   FsSquash,
 		Parttype: PartPrimSys,
+		Arch:     hdrArch386,
 	}
-	copy(p.Arch[:], HdrArch386)
 
 	if err := primPartDescr.setExtra(p); err != nil {
 		t.Fatal(err)

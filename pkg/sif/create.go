@@ -163,6 +163,7 @@ func OptCreateWithTime(t time.Time) CreateOpt {
 // createContainer creates a new SIF container file in fp, according to opts.
 func createContainer(fp ReadWriter, co createOpts) (*FileImage, error) {
 	h := header{
+		Arch:     hdrArchUnknown,
 		ID:       co.id,
 		Ctime:    co.t.Unix(),
 		Mtime:    co.t.Unix(),
@@ -174,7 +175,6 @@ func createContainer(fp ReadWriter, co createOpts) (*FileImage, error) {
 	copy(h.Launch[:], hdrLaunch)
 	copy(h.Magic[:], hdrMagic)
 	copy(h.Version[:], CurrentVersion.bytes())
-	copy(h.Arch[:], HdrArchUnknown)
 
 	f := &FileImage{
 		h:        h,
@@ -274,7 +274,7 @@ func resetDescriptor(fimg *FileImage, index int) error {
 	// on any architecture exists.
 	if fimg.descrArr[index].isPartitionOfType(PartPrimSys) {
 		fimg.primPartID = 0
-		copy(fimg.h.Arch[:], HdrArchUnknown)
+		fimg.h.Arch = hdrArchUnknown
 	}
 
 	offset := fimg.h.Descroff + int64(index)*int64(binary.Size(fimg.descrArr[0]))
@@ -443,7 +443,7 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 		return err
 	}
 
-	copy(f.h.Arch[:], GetSIFArch(arch))
+	f.h.Arch = getSIFArch(arch)
 	f.primPartID = descr.ID
 
 	extra := partition{
@@ -465,8 +465,8 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 		oldextra := partition{
 			Fstype:   oldfs,
 			Parttype: PartSystem,
+			Arch:     getSIFArch(oldarch),
 		}
-		copy(oldextra.Arch[:], GetSIFArch(oldarch))
 
 		if err := olddescr.setExtra(oldextra); err != nil {
 			return err

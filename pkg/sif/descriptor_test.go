@@ -126,8 +126,8 @@ func TestDescriptor_GetPartitionMetadata(t *testing.T) {
 	p := partition{
 		Fstype:   FsSquash,
 		Parttype: PartPrimSys,
+		Arch:     hdrArch386,
 	}
-	copy(p.Arch[:], HdrArch386)
 
 	rd := rawDescriptor{
 		Datatype: DataPartition,

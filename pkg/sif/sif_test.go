@@ -15,6 +15,7 @@ import (
 
 func TestHeader_GetIntegrityReader(t *testing.T) {
 	h := header{
+		Arch:  hdrArchAMD64,
 		ID:    uuid.UUID{0xb2, 0x65, 0x9d, 0x4e, 0xbd, 0x50, 0x4e, 0xa5, 0xbd, 0x17, 0xee, 0xc5, 0xe5, 0x4f, 0x91, 0x8e},
 		Ctime: 1504657553,
 		Mtime: 1504657653,
@@ -22,7 +23,6 @@ func TestHeader_GetIntegrityReader(t *testing.T) {
 	copy(h.Launch[:], hdrLaunch)
 	copy(h.Magic[:], hdrMagic)
 	copy(h.Version[:], CurrentVersion.bytes())
-	copy(h.Arch[:], HdrArchAMD64)
 
 	tests := []struct {
 		name    string
@@ -41,7 +41,7 @@ func TestHeader_GetIntegrityReader(t *testing.T) {
 			return h
 		}},
 		{"Arch", func(h header) header {
-			copy(h.Arch[:], HdrArchS390x)
+			h.Arch = hdrArchS390x
 			return h
 		}},
 		{"ID", func(h header) header {
