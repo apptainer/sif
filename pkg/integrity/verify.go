@@ -148,11 +148,11 @@ func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) 
 	im.populateAbsoluteObjectIDs(minID)
 
 	// Ensure signing entity matches fingerprint in descriptor.
-	fp, err := sig.GetEntity()
+	_, fp, err := sig.GetSignatureMetadata()
 	if err != nil {
 		return im, nil, e, err
 	}
-	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:20]) {
+	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:]) {
 		return im, nil, e, errFingerprintMismatch
 	}
 
@@ -253,18 +253,12 @@ func (v *legacyGroupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.Key
 	}
 
 	// Ensure signing entity matches fingerprint in descriptor.
-	fp, err := sig.GetEntity()
+	ht, fp, err := sig.GetSignatureMetadata()
 	if err != nil {
 		return e, err
 	}
-	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:20]) {
+	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:]) {
 		return e, errFingerprintMismatch
-	}
-
-	// Determine hash type.
-	ht, err := sig.GetHashType()
-	if err != nil {
-		return e, err
 	}
 
 	// Obtain digest from plaintext.
@@ -367,18 +361,12 @@ func (v *legacyObjectVerifier) verifySignature(sig sif.Descriptor, kr openpgp.Ke
 	}
 
 	// Ensure signing entity matches fingerprint in descriptor.
-	fp, err := sig.GetEntity()
+	ht, fp, err := sig.GetSignatureMetadata()
 	if err != nil {
 		return e, err
 	}
-	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:20]) {
+	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:]) {
 		return e, errFingerprintMismatch
-	}
-
-	// Determine hash type.
-	ht, err := sig.GetHashType()
-	if err != nil {
-		return e, err
 	}
 
 	// Obtain digest from plaintext.

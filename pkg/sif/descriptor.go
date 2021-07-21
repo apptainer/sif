@@ -146,44 +146,22 @@ func (d rawDescriptor) isPartitionOfType(pt PartType) bool {
 	return t == pt
 }
 
-// GetHashType extracts the Hashtype field from the Extra field of a Signature Descriptor.
-func (d rawDescriptor) GetHashType() (HashType, error) {
-	if d.Datatype != DataSignature {
-		return -1, fmt.Errorf("expected DataSignature, got %v", d.Datatype)
+// GetSignatureMetadata gets metadata for a signature data object.
+func (d rawDescriptor) GetSignatureMetadata() (ht HashType, fp [20]byte, err error) {
+	if got, want := d.Datatype, DataSignature; got != want {
+		return ht, fp, &unexpectedDataTypeError{got, want}
 	}
 
-	var sinfo signature
+	var s signature
+
 	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &sinfo); err != nil {
-		return -1, fmt.Errorf("while extracting Signature extra info: %s", err)
+	if err := binary.Read(b, binary.LittleEndian, &s); err != nil {
+		return ht, fp, fmt.Errorf("%w", err)
 	}
 
-	return sinfo.Hashtype, nil
-}
+	copy(fp[:], s.Entity[:])
 
-// GetEntity extracts the signing entity field from the Extra field of a Signature Descriptor.
-func (d rawDescriptor) GetEntity() ([]byte, error) {
-	if d.Datatype != DataSignature {
-		return nil, fmt.Errorf("expected DataSignature, got %v", d.Datatype)
-	}
-
-	var sinfo signature
-	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &sinfo); err != nil {
-		return nil, fmt.Errorf("while extracting Signature extra info: %s", err)
-	}
-
-	return sinfo.Entity[:], nil
-}
-
-// GetEntityString returns the string version of the stored entity.
-func (d rawDescriptor) GetEntityString() (string, error) {
-	fingerprint, err := d.GetEntity()
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%0X", fingerprint[:20]), nil
+	return s.Hashtype, fp, nil
 }
 
 // GetFormatType extracts the Formattype field from the Extra field of a Cryptographic Message Descriptor.

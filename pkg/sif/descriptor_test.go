@@ -185,109 +185,64 @@ func TestDescriptor_GetPartitionMetadata(t *testing.T) {
 	}
 }
 
-func TestDescriptor_GetHashType(t *testing.T) {
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
+func TestDescriptor_GetSignatureMetadata(t *testing.T) {
+	s := signature{
+		Hashtype: HashSHA384,
+	}
+	copy(s.Entity[:], []byte{
+		0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
+		0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,
+	})
+
+	rd := rawDescriptor{
+		Datatype: DataSignature,
+	}
+	if err := rd.setExtra(s); err != nil {
+		t.Fatal(err)
 	}
 
-	sigs, err := fimg.GetDescriptors(
-		WithDataType(DataSignature),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
+	tests := []struct {
+		name    string
+		rd      rawDescriptor
+		wantHT  HashType
+		wantFP  [20]byte
+		wantErr error
+	}{
+		{
+			name: "UnexpectedDataType",
+			rd: rawDescriptor{
+				Datatype: DataGeneric,
+			},
+			wantErr: &unexpectedDataTypeError{DataGeneric, DataSignature},
+		},
+		{
+			name:   "OK",
+			rd:     rd,
+			wantHT: HashSHA384,
+			wantFP: [...]byte{
+				0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
+				0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,
+			},
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ht, fp, err := tt.rd.GetSignatureMetadata()
 
-	if len(sigs) != 1 {
-		t.Error("multiple signatures found where expecting 1")
-	}
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
 
-	hashtype, err := sigs[0].GetHashType()
-	if err != nil {
-		t.Error("sigs[0].GetHashType()", err)
-	}
+			if err == nil {
+				if got, want := ht, tt.wantHT; got != want {
+					t.Fatalf("got hash type %v, want %v", got, want)
+				}
 
-	if hashtype != HashSHA384 {
-		t.Error("sig.GetHashType() should have returned 'HashSHA384'")
-	}
-
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
-	}
-}
-
-func TestDescriptor_GetEntity(t *testing.T) {
-	expected := []byte{159, 43, 108, 54, 217, 153, 163, 233, 28, 179, 16, 71, 32, 103, 21, 144, 193, 45, 66, 34}
-
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
-	}
-
-	sigs, err := fimg.GetDescriptors(
-		WithDataType(DataSignature),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
-	}
-
-	if len(sigs) != 1 {
-		t.Error("multiple signatures found where expecting 1")
-	}
-
-	entity, err := sigs[0].GetEntity()
-	if err != nil {
-		t.Error("sigs[0].GetEntity()", err)
-	}
-
-	if bytes.Equal(expected, entity[:len(expected)]) == false {
-		t.Error("sig.GetEntity(): didn't get the expected entity, got:", entity[:len(expected)])
-	}
-
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
-	}
-}
-
-func TestDescriptor_GetEntityString(t *testing.T) {
-	expected := "9F2B6C36D999A3E91CB3104720671590C12D4222"
-
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
-	}
-
-	sigs, err := fimg.GetDescriptors(
-		WithDataType(DataSignature),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
-	}
-
-	if len(sigs) != 1 {
-		t.Error("multiple signatures found where expecting 1")
-	}
-
-	entity, err := sigs[0].GetEntityString()
-	if err != nil {
-		t.Error("sigs[0].GetEntityString()", err)
-	}
-
-	if expected != entity {
-		t.Error("sig.GetEntityString(): didn't get the expected entity")
-	}
-
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
+				if got, want := fp[:], tt.wantFP[:]; !bytes.Equal(got, want) {
+					t.Fatalf("got entity %v, want %v", got, want)
+				}
+			}
+		})
 	}
 }
 

@@ -171,14 +171,10 @@ func getFingerprints(sigs []sif.Descriptor) ([][20]byte, error) {
 	fps := make([][20]byte, 0, len(sigs))
 
 	for _, sig := range sigs {
-		e, err := sig.GetEntity()
+		_, fp, err := sig.GetSignatureMetadata()
 		if err != nil {
 			return nil, err
 		}
-
-		// Extract fingerprint from entity.
-		var fp [20]byte
-		copy(fp[:], e)
 
 		// Check if fingerprint is already in list.
 		i := sort.Search(len(fps), func(i int) bool {
