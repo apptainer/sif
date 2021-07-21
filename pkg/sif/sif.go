@@ -367,11 +367,11 @@ type ReadWriter interface {
 
 // FileImage describes the representation of a SIF file in memory.
 type FileImage struct {
-	h          header       // the loaded SIF global header
-	fp         ReadWriter   // file pointer of opened SIF file
-	size       int64        // file size of the opened SIF file
-	descrArr   []Descriptor // slice of loaded descriptors from SIF file
-	primPartID uint32       // ID of primary system partition if present
+	h          header          // the loaded SIF global header
+	fp         ReadWriter      // file pointer of opened SIF file
+	size       int64           // file size of the opened SIF file
+	descrArr   []rawDescriptor // slice of loaded descriptors from SIF file
+	primPartID uint32          // ID of primary system partition if present
 }
 
 // LaunchScript returns the image launch script.

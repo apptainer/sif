@@ -11,7 +11,7 @@ import (
 )
 
 func TestFileImage_GetDescriptors(t *testing.T) {
-	ds := []Descriptor{
+	ds := []rawDescriptor{
 		{
 			Datatype: DataPartition,
 			Used:     true,
@@ -134,7 +134,7 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 }
 
 func TestFileImage_GetDescriptor(t *testing.T) {
-	primPartDescr := Descriptor{
+	primPartDescr := rawDescriptor{
 		Datatype: DataPartition,
 		Used:     true,
 		ID:       1,
@@ -152,7 +152,7 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ds := []Descriptor{
+	ds := []rawDescriptor{
 		primPartDescr,
 		{
 			Datatype: DataSignature,
@@ -228,7 +228,7 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 }
 
 func TestFileImage_WithDescriptors(t *testing.T) {
-	ds := []Descriptor{
+	ds := []rawDescriptor{
 		{
 			Datatype: DataPartition,
 			Used:     true,

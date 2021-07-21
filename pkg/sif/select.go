@@ -98,8 +98,8 @@ func WithPartitionType(pt Parttype) DescriptorSelectorFunc {
 func (f *FileImage) GetDescriptors(fns ...DescriptorSelectorFunc) ([]Descriptor, error) {
 	var ds []Descriptor
 
-	err := f.withDescriptors(multiSelectorFunc(fns...), func(d *Descriptor) error {
-		ds = append(ds, *d)
+	err := f.withDescriptors(multiSelectorFunc(fns...), func(d *rawDescriptor) error {
+		ds = append(ds, Descriptor{*d})
 		return nil
 	})
 	if err != nil {
@@ -112,10 +112,10 @@ func (f *FileImage) GetDescriptors(fns ...DescriptorSelectorFunc) ([]Descriptor,
 // getDescriptor returns a pointer to the in-use descriptor selected by fns. If no descriptor is
 // selected by fns, ErrObjectNotFound is returned. If multiple descriptors are selected by fns,
 // ErrMultipleObjectsFound is returned.
-func (f *FileImage) getDescriptor(fns ...DescriptorSelectorFunc) (*Descriptor, error) {
-	var d *Descriptor
+func (f *FileImage) getDescriptor(fns ...DescriptorSelectorFunc) (*rawDescriptor, error) {
+	var d *rawDescriptor
 
-	err := f.withDescriptors(multiSelectorFunc(fns...), func(found *Descriptor) error {
+	err := f.withDescriptors(multiSelectorFunc(fns...), func(found *rawDescriptor) error {
 		if d != nil {
 			return ErrMultipleObjectsFound
 		}
@@ -138,7 +138,7 @@ func (f *FileImage) GetDescriptor(fns ...DescriptorSelectorFunc) (Descriptor, er
 	if err != nil {
 		return Descriptor{}, fmt.Errorf("%w", err)
 	}
-	return *d, nil
+	return Descriptor{*d}, nil
 }
 
 // multiSelectorFunc returns a DescriptorSelectorFunc that selects a descriptor iff all of fns
@@ -157,13 +157,13 @@ func multiSelectorFunc(fns ...DescriptorSelectorFunc) DescriptorSelectorFunc {
 // withDescriptors calls onMatchFn with each in-use descriptor in f for which selectFn returns
 // true. If selectFn or onMatchFn return a non-nil error, the iteration halts, and the error is
 // returned to the caller.
-func (f *FileImage) withDescriptors(selectFn DescriptorSelectorFunc, onMatchFn func(*Descriptor) error) error {
+func (f *FileImage) withDescriptors(selectFn DescriptorSelectorFunc, onMatchFn func(*rawDescriptor) error) error {
 	for i, d := range f.descrArr {
 		if !d.Used {
 			continue
 		}
 
-		if ok, err := selectFn(f.descrArr[i]); err != nil {
+		if ok, err := selectFn(Descriptor{f.descrArr[i]}); err != nil {
 			return err
 		} else if !ok {
 			continue
@@ -179,7 +179,7 @@ func (f *FileImage) withDescriptors(selectFn DescriptorSelectorFunc, onMatchFn f
 
 // abortOnMatch is a semantic convenience function that always returns a non-nil error, which can
 // be used as a no-op matchFn.
-func abortOnMatch(*Descriptor) error { return errors.New("") }
+func abortOnMatch(*rawDescriptor) error { return errors.New("") }
 
 // WithDescriptors calls fn with each in-use descriptor in f, until fn returns true.
 func (f *FileImage) WithDescriptors(fn func(d Descriptor) bool) {

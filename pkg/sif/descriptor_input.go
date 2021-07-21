@@ -212,7 +212,7 @@ func NewDescriptorInput(t Datatype, r io.Reader, opts ...DescriptorInputOpt) (De
 }
 
 // fillDescriptor fills d according to di.
-func (di DescriptorInput) fillDescriptor(d *Descriptor) error {
+func (di DescriptorInput) fillDescriptor(d *rawDescriptor) error {
 	d.Datatype = di.dt
 	d.Groupid = di.opts.groupID | DescrGroupMask
 	d.Link = di.opts.linkID

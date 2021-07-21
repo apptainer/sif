@@ -44,7 +44,7 @@ func TestNextAligned(t *testing.T) {
 
 func TestDataStructs(t *testing.T) {
 	var h header
-	var descr Descriptor
+	var descr rawDescriptor
 
 	if hdrlen := binary.Size(h); hdrlen != headerLen {
 		t.Errorf("expecting global header size of %d, got %d", headerLen, hdrlen)
@@ -220,7 +220,7 @@ func TestSetPrimPart(t *testing.T) {
 			Dtotal: int64(len(inputs)),
 		},
 		fp:       &mockSifReadWriter{},
-		descrArr: make([]Descriptor, len(inputs)),
+		descrArr: make([]rawDescriptor, len(inputs)),
 	}
 
 	for i := range inputs {

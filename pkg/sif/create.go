@@ -31,7 +31,7 @@ func nextAligned(offset int64, alignment int) int64 {
 }
 
 // writeDataObject writes the data object described by di to ws, recording details in d.
-func writeDataObject(ws io.WriteSeeker, di DescriptorInput, d *Descriptor) error {
+func writeDataObject(ws io.WriteSeeker, di DescriptorInput, d *rawDescriptor) error {
 	if err := di.fillDescriptor(d); err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func writeDataObject(ws io.WriteSeeker, di DescriptorInput, d *Descriptor) error
 // writeDataObject locates a free descriptor in f, writes the data object described by di to
 // backing storage, recording data object details in the descriptor.
 func (f *FileImage) writeDataObject(di DescriptorInput) error {
-	var d *Descriptor
+	var d *rawDescriptor
 
 	for i, od := range f.descrArr {
 		if !od.Used {
@@ -179,7 +179,7 @@ func createContainer(fp ReadWriter, co createOpts) (*FileImage, error) {
 	f := &FileImage{
 		h:        h,
 		fp:       fp,
-		descrArr: make([]Descriptor, DescrNumEntries),
+		descrArr: make([]rawDescriptor, DescrNumEntries),
 	}
 
 	if _, err := f.fp.Seek(DataStartOffset, io.SeekStart); err != nil {
@@ -242,7 +242,7 @@ func CreateContainer(path string, opts ...CreateOpt) (f *FileImage, err error) {
 	return f, nil
 }
 
-func zeroData(fimg *FileImage, descr Descriptor) error {
+func zeroData(fimg *FileImage, descr *rawDescriptor) error {
 	// first, move to data object offset
 	if _, err := fimg.fp.Seek(descr.Fileoff, io.SeekStart); err != nil {
 		return fmt.Errorf("seeking to data object offset: %s", err)
@@ -284,7 +284,7 @@ func resetDescriptor(fimg *FileImage, index int) error {
 		return fmt.Errorf("seeking to descriptor: %s", err)
 	}
 
-	var emptyDesc Descriptor
+	var emptyDesc rawDescriptor
 	if err := binary.Write(fimg.fp, binary.LittleEndian, emptyDesc); err != nil {
 		return fmt.Errorf("binary writing empty descriptor: %s", err)
 	}
@@ -323,13 +323,13 @@ func (f *FileImage) AddObject(input DescriptorInput) error {
 }
 
 // descrIsLast return true if passed descriptor's object is the last in a SIF file.
-func objectIsLast(fimg *FileImage, descr Descriptor) bool {
+func objectIsLast(fimg *FileImage, descr *rawDescriptor) bool {
 	return fimg.size == descr.Fileoff+descr.Filelen
 }
 
 // compactAtDescr joins data objects leading and following "descr" by compacting a SIF file.
-func compactAtDescr(fimg *FileImage, descr Descriptor) error {
-	var prev Descriptor
+func compactAtDescr(fimg *FileImage, descr *rawDescriptor) error {
+	var prev rawDescriptor
 
 	for _, v := range fimg.descrArr {
 		if !v.Used || v.ID == descr.ID {
@@ -358,7 +358,7 @@ func compactAtDescr(fimg *FileImage, descr Descriptor) error {
 // by flags: DelZero, to zero out the data region for security and DelCompact to
 // remove and shink the file compacting the unused area.
 func (f *FileImage) DeleteObject(id uint32, flags int) error {
-	descr, err := f.GetDescriptor(WithID(id))
+	descr, err := f.getDescriptor(WithID(id))
 	if err != nil {
 		return err
 	}

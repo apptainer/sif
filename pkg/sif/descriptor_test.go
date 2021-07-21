@@ -331,7 +331,7 @@ func TestDescriptor_GetEntityString(t *testing.T) {
 }
 
 func TestDescriptor_GetIntegrityReader(t *testing.T) {
-	d := Descriptor{
+	d := rawDescriptor{
 		Datatype: DataDeffile,
 		Used:     true,
 		ID:       1,
@@ -345,19 +345,19 @@ func TestDescriptor_GetIntegrityReader(t *testing.T) {
 	tests := []struct {
 		name       string
 		relativeID uint32
-		modFunc    func(*Descriptor)
+		modFunc    func(*rawDescriptor)
 	}{
 		{
 			name:    "Datatype",
-			modFunc: func(od *Descriptor) { od.Datatype = DataEnvVar },
+			modFunc: func(od *rawDescriptor) { od.Datatype = DataEnvVar },
 		},
 		{
 			name:    "Used",
-			modFunc: func(od *Descriptor) { od.Used = !od.Used },
+			modFunc: func(od *rawDescriptor) { od.Used = !od.Used },
 		},
 		{
 			name:    "ID",
-			modFunc: func(od *Descriptor) { od.ID++ },
+			modFunc: func(od *rawDescriptor) { od.ID++ },
 		},
 		{
 			name:       "RelativeID",
@@ -365,47 +365,47 @@ func TestDescriptor_GetIntegrityReader(t *testing.T) {
 		},
 		{
 			name:    "Groupid",
-			modFunc: func(od *Descriptor) { od.Groupid++ },
+			modFunc: func(od *rawDescriptor) { od.Groupid++ },
 		},
 		{
 			name:    "Link",
-			modFunc: func(od *Descriptor) { od.Link++ },
+			modFunc: func(od *rawDescriptor) { od.Link++ },
 		},
 		{
 			name:    "Fileoff",
-			modFunc: func(od *Descriptor) { od.Fileoff++ },
+			modFunc: func(od *rawDescriptor) { od.Fileoff++ },
 		},
 		{
 			name:    "Filelen",
-			modFunc: func(od *Descriptor) { od.Filelen++ },
+			modFunc: func(od *rawDescriptor) { od.Filelen++ },
 		},
 		{
 			name:    "Storelen",
-			modFunc: func(od *Descriptor) { od.Storelen++ },
+			modFunc: func(od *rawDescriptor) { od.Storelen++ },
 		},
 		{
 			name:    "Ctime",
-			modFunc: func(od *Descriptor) { od.Ctime++ },
+			modFunc: func(od *rawDescriptor) { od.Ctime++ },
 		},
 		{
 			name:    "Mtime",
-			modFunc: func(od *Descriptor) { od.Mtime++ },
+			modFunc: func(od *rawDescriptor) { od.Mtime++ },
 		},
 		{
 			name:    "UID",
-			modFunc: func(od *Descriptor) { od.UID++ },
+			modFunc: func(od *rawDescriptor) { od.UID++ },
 		},
 		{
 			name:    "GID",
-			modFunc: func(od *Descriptor) { od.GID++ },
+			modFunc: func(od *rawDescriptor) { od.GID++ },
 		},
 		{
 			name:    "Name",
-			modFunc: func(od *Descriptor) { copy(od.Name[:], "BAD_NAME") },
+			modFunc: func(od *rawDescriptor) { copy(od.Name[:], "BAD_NAME") },
 		},
 		{
 			name:    "Extra",
-			modFunc: func(od *Descriptor) { copy(od.Extra[:], "BAD_EXTRA") },
+			modFunc: func(od *rawDescriptor) { copy(od.Extra[:], "BAD_EXTRA") },
 		},
 	}
 

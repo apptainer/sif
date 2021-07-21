@@ -32,7 +32,7 @@ func readHeader(r io.ReaderAt, fimg *FileImage) error {
 // Read the descriptors from r and populate fimg.DescrArr.
 func readDescriptors(r io.ReaderAt, fimg *FileImage) error {
 	// Initialize descriptor array (slice) and read them all from file
-	fimg.descrArr = make([]Descriptor, fimg.h.Dtotal)
+	fimg.descrArr = make([]rawDescriptor, fimg.h.Dtotal)
 	if err := readBinaryAt(r, fimg.h.Descroff, &fimg.descrArr); err != nil {
 		fimg.descrArr = nil
 		return fmt.Errorf("reading descriptor array from container file: %s", err)
