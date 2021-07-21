@@ -121,49 +121,29 @@ func (d rawDescriptor) GetSize() int64 { return d.Filelen }
 // GetName returns the name tag associated with the descriptor. Analogous to file name.
 func (d rawDescriptor) GetName() string { return strings.TrimRight(string(d.Name[:]), "\000") }
 
-// GetFsType extracts the Fstype field from the Extra field of a Partition Descriptor.
-func (d rawDescriptor) GetFsType() (FSType, error) {
-	if d.Datatype != DataPartition {
-		return -1, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
+// GetPartitionMetadata gets metadata for a partition data object.
+func (d rawDescriptor) GetPartitionMetadata() (fs FSType, pt PartType, arch string, err error) {
+	if got, want := d.Datatype, DataPartition; got != want {
+		return 0, 0, "", &unexpectedDataTypeError{got, want}
 	}
 
-	var pinfo partition
+	var p partition
+
 	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
-		return -1, fmt.Errorf("while extracting Partition extra info: %s", err)
+	if err := binary.Read(b, binary.LittleEndian, &p); err != nil {
+		return 0, 0, "", fmt.Errorf("%w", err)
 	}
 
-	return pinfo.Fstype, nil
+	return p.Fstype, p.Parttype, GetGoArch(trimZeroBytes(p.Arch[:])), nil
 }
 
-// GetPartType extracts the Parttype field from the Extra field of a Partition Descriptor.
-func (d rawDescriptor) GetPartType() (PartType, error) {
-	if d.Datatype != DataPartition {
-		return -1, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
+// isPartitionOfType returns true if d is a partition data object of type pt.
+func (d rawDescriptor) isPartitionOfType(pt PartType) bool {
+	_, t, _, err := d.GetPartitionMetadata()
+	if err != nil {
+		return false
 	}
-
-	var pinfo partition
-	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
-		return -1, fmt.Errorf("while extracting Partition extra info: %s", err)
-	}
-
-	return pinfo.Parttype, nil
-}
-
-// GetArch extracts the Arch field from the Extra field of a Partition Descriptor.
-func (d rawDescriptor) GetArch() ([hdrArchLen]byte, error) {
-	if d.Datatype != DataPartition {
-		return [hdrArchLen]byte{}, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
-	}
-
-	var pinfo partition
-	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
-		return [hdrArchLen]byte{}, fmt.Errorf("while extracting Partition extra info: %s", err)
-	}
-
-	return pinfo.Arch, nil
+	return t == pt
 }
 
 // GetHashType extracts the Hashtype field from the Extra field of a Signature Descriptor.

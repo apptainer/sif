@@ -272,7 +272,7 @@ func resetDescriptor(fimg *FileImage, index int) error {
 	// If we remove the primary partition, set the global header Arch field to HdrArchUnknown
 	// to indicate that the SIF file doesn't include a primary partition and no dependency
 	// on any architecture exists.
-	if pt, err := fimg.descrArr[index].GetPartType(); err == nil && pt == PartPrimSys {
+	if fimg.descrArr[index].isPartitionOfType(PartPrimSys) {
 		fimg.primPartID = 0
 		copy(fimg.h.Arch[:], HdrArchUnknown)
 	}
@@ -424,17 +424,17 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 		return fmt.Errorf("not a volume partition")
 	}
 
-	ptype, err := descr.GetPartType()
+	fs, pt, arch, err := descr.GetPartitionMetadata()
 	if err != nil {
 		return err
 	}
 
 	// if already primary system partition, nothing to do
-	if ptype == PartPrimSys {
+	if pt == PartPrimSys {
 		return nil
 	}
 
-	if ptype != PartSystem {
+	if pt != PartSystem {
 		return fmt.Errorf("partition must be of system type")
 	}
 
@@ -443,44 +443,30 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 		return err
 	}
 
-	fs, err := descr.GetFsType()
-	if err != nil {
-		return nil
-	}
-
-	arch, err := descr.GetArch()
-	if err != nil {
-		return err
-	}
-
-	copy(f.h.Arch[:], arch[:])
+	copy(f.h.Arch[:], GetSIFArch(arch))
 	f.primPartID = descr.ID
 
 	extra := partition{
 		Fstype:   fs,
 		Parttype: PartPrimSys,
 	}
-	copy(extra.Arch[:], arch[:])
+	copy(extra.Arch[:], arch)
 
 	if err := descr.setExtra(extra); err != nil {
 		return err
 	}
 
 	if olddescr != nil {
-		oldfs, err := olddescr.GetFsType()
+		oldfs, _, oldarch, err := olddescr.GetPartitionMetadata()
 		if err != nil {
-			return nil
-		}
-		oldarch, err := olddescr.GetArch()
-		if err != nil {
-			return nil
+			return err
 		}
 
 		oldextra := partition{
 			Fstype:   oldfs,
 			Parttype: PartSystem,
 		}
-		copy(oldextra.Arch[:], oldarch[:])
+		copy(oldextra.Arch[:], GetSIFArch(oldarch))
 
 		if err := olddescr.setExtra(oldextra); err != nil {
 			return err

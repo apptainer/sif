@@ -7,6 +7,7 @@ package sif
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"path/filepath"
 	"testing"
@@ -121,106 +122,66 @@ func TestDescriptor_GetName(t *testing.T) {
 	}
 }
 
-func TestDescriptor_GetFsType(t *testing.T) {
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
+func TestDescriptor_GetPartitionMetadata(t *testing.T) {
+	p := partition{
+		Fstype:   FsSquash,
+		Parttype: PartPrimSys,
+	}
+	copy(p.Arch[:], HdrArch386)
+
+	rd := rawDescriptor{
+		Datatype: DataPartition,
+	}
+	if err := rd.setExtra(p); err != nil {
+		t.Fatal(err)
 	}
 
-	parts, err := fimg.GetDescriptors(
-		WithDataType(DataPartition),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
+	tests := []struct {
+		name     string
+		rd       rawDescriptor
+		p        partition
+		wantFS   FSType
+		wantPart PartType
+		wantArch string
+		wantErr  error
+	}{
+		{
+			name: "UnexpectedDataType",
+			rd: rawDescriptor{
+				Datatype: DataGeneric,
+			},
+			wantErr: &unexpectedDataTypeError{DataGeneric, DataPartition},
+		},
+		{
+			name:     "PartPrimSys",
+			rd:       rd,
+			wantFS:   FsSquash,
+			wantPart: PartPrimSys,
+			wantArch: "386",
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fs, part, arch, err := tt.rd.GetPartitionMetadata()
 
-	if len(parts) != 1 {
-		t.Error("multiple partitions found where expecting 1")
-	}
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
 
-	fstype, err := parts[0].GetFsType()
-	if err != nil {
-		t.Error("parts[0].GetFsType()", err)
-	}
+			if err == nil {
+				if got, want := fs, tt.wantFS; got != want {
+					t.Fatalf("got filesystem type %v, want %v", got, want)
+				}
 
-	if fstype != FsSquash {
-		t.Error("part.GetFsType() should have returned 'FsSquash'")
-	}
+				if got, want := part, tt.wantPart; got != want {
+					t.Fatalf("got partition type %v, want %v", got, want)
+				}
 
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
-	}
-}
-
-func TestDescriptor_GetPartType(t *testing.T) {
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
-	}
-
-	parts, err := fimg.GetDescriptors(
-		WithDataType(DataPartition),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
-	}
-
-	if len(parts) != 1 {
-		t.Error("multiple partitions found where expecting 1")
-	}
-
-	parttype, err := parts[0].GetPartType()
-	if err != nil {
-		t.Error("parts[0].GetPartType()", err)
-	}
-
-	if parttype != PartPrimSys {
-		t.Error("part.GetPartType() should have returned 'PartPrimSys'")
-	}
-
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
-	}
-}
-
-func TestDescriptor_GetArch(t *testing.T) {
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
-	}
-
-	parts, err := fimg.GetDescriptors(
-		WithDataType(DataPartition),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
-	}
-
-	if len(parts) != 1 {
-		t.Error("multiple partitions found where expecting 1")
-	}
-
-	arch, err := parts[0].GetArch()
-	if err != nil {
-		t.Error("parts[0].GetArch()", err)
-	}
-
-	if trimZeroBytes(arch[:]) != HdrArchAMD64 {
-		t.Logf("|%s|%s|\n", arch[:hdrArchLen-1], HdrArchAMD64)
-		t.Error("part.GetArch() should have returned 'HdrArchAMD64':", err)
-	}
-
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
+				if got, want := arch, tt.wantArch; got != want {
+					t.Fatalf("got architecture %v, want %v", got, want)
+				}
+			}
+		})
 	}
 }
 

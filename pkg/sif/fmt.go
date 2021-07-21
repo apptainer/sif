@@ -43,10 +43,8 @@ func (f *FileImage) FmtDescrList() string {
 
 			switch v.Datatype {
 			case DataPartition:
-				f, _ := v.GetFsType()
-				p, _ := v.GetPartType()
-				a, _ := v.GetArch()
-				s += fmt.Sprintf("|%s (%s/%s/%s)\n", v.Datatype, f, p, GetGoArch(trimZeroBytes(a[:])))
+				f, p, a, _ := v.GetPartitionMetadata()
+				s += fmt.Sprintf("|%s (%s/%s/%s)\n", v.Datatype, f, p, a)
 			case DataSignature:
 				h, _ := v.GetHashType()
 				s += fmt.Sprintf("|%s (%s)\n", v.Datatype, h)
@@ -98,12 +96,10 @@ func (f *FileImage) FmtDescrInfo(id uint32) string {
 			s += fmt.Sprintln("  Name:     ", trimZeroBytes(v.Name[:]))
 			switch v.Datatype {
 			case DataPartition:
-				f, _ := v.GetFsType()
-				p, _ := v.GetPartType()
-				a, _ := v.GetArch()
+				f, p, a, _ := v.GetPartitionMetadata()
 				s += fmt.Sprintln("  Fstype:   ", f)
 				s += fmt.Sprintln("  Parttype: ", p)
-				s += fmt.Sprintln("  Arch:     ", GetGoArch(trimZeroBytes(a[:])))
+				s += fmt.Sprintln("  Arch:     ", a)
 			case DataSignature:
 				h, _ := v.GetHashType()
 				e, _ := v.GetEntityString()
