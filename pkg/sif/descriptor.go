@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 )
 
 // Descriptor represents the SIF descriptor type.
@@ -115,8 +116,17 @@ func (d rawDescriptor) GetLinkedID() (id uint32, isGroup bool) {
 	return d.Link &^ DescrGroupMask, d.Link&DescrGroupMask == DescrGroupMask
 }
 
+// GetOffset returns the offset of the data object.
+func (d rawDescriptor) GetOffset() int64 { return d.Fileoff }
+
 // GetSize returns the data object size.
 func (d rawDescriptor) GetSize() int64 { return d.Filelen }
+
+// CreatedAt returns the creation time of the data object.
+func (d rawDescriptor) CreatedAt() time.Time { return time.Unix(d.Ctime, 0).UTC() }
+
+// ModifiedAt returns the modification time of the data object.
+func (d rawDescriptor) ModifiedAt() time.Time { return time.Unix(d.Mtime, 0).UTC() }
 
 // GetName returns the name tag associated with the descriptor. Analogous to file name.
 func (d rawDescriptor) GetName() string { return strings.TrimRight(string(d.Name[:]), "\000") }
