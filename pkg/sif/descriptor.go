@@ -23,7 +23,7 @@ type Descriptor struct {
 
 // rawDescriptor represents the on-disk descriptor type.
 type rawDescriptor struct {
-	Datatype Datatype // informs of descriptor type
+	Datatype DataType // informs of descriptor type
 	Used     bool     // is the descriptor in use
 	ID       uint32   // a unique id for this data object
 	Groupid  uint32   // object group this data object is related to
@@ -42,21 +42,21 @@ type rawDescriptor struct {
 
 // partition represents the SIF partition data object descriptor.
 type partition struct {
-	Fstype   Fstype
-	Parttype Parttype
+	Fstype   FSType
+	Parttype PartType
 	Arch     [hdrArchLen]byte // arch the image is built for
 }
 
 // signature represents the SIF signature data object descriptor.
 type signature struct {
-	Hashtype Hashtype
+	Hashtype HashType
 	Entity   [DescrEntityLen]byte
 }
 
 // cryptoMessage represents the SIF crypto message object descriptor.
 type cryptoMessage struct {
-	Formattype  Formattype
-	Messagetype Messagetype
+	Formattype  FormatType
+	Messagetype MessageType
 }
 
 var errNameTooLarge = errors.New("name value too large")
@@ -99,7 +99,7 @@ func (d *rawDescriptor) setExtra(v interface{}) error {
 }
 
 // GetDataType returns the type of data object.
-func (d rawDescriptor) GetDataType() Datatype { return d.Datatype }
+func (d rawDescriptor) GetDataType() DataType { return d.Datatype }
 
 // GetID returns the data object ID of d.
 func (d rawDescriptor) GetID() uint32 { return d.ID }
@@ -122,7 +122,7 @@ func (d rawDescriptor) GetSize() int64 { return d.Filelen }
 func (d rawDescriptor) GetName() string { return strings.TrimRight(string(d.Name[:]), "\000") }
 
 // GetFsType extracts the Fstype field from the Extra field of a Partition Descriptor.
-func (d rawDescriptor) GetFsType() (Fstype, error) {
+func (d rawDescriptor) GetFsType() (FSType, error) {
 	if d.Datatype != DataPartition {
 		return -1, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
 	}
@@ -137,7 +137,7 @@ func (d rawDescriptor) GetFsType() (Fstype, error) {
 }
 
 // GetPartType extracts the Parttype field from the Extra field of a Partition Descriptor.
-func (d rawDescriptor) GetPartType() (Parttype, error) {
+func (d rawDescriptor) GetPartType() (PartType, error) {
 	if d.Datatype != DataPartition {
 		return -1, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
 	}
@@ -167,7 +167,7 @@ func (d rawDescriptor) GetArch() ([hdrArchLen]byte, error) {
 }
 
 // GetHashType extracts the Hashtype field from the Extra field of a Signature Descriptor.
-func (d rawDescriptor) GetHashType() (Hashtype, error) {
+func (d rawDescriptor) GetHashType() (HashType, error) {
 	if d.Datatype != DataSignature {
 		return -1, fmt.Errorf("expected DataSignature, got %v", d.Datatype)
 	}
@@ -207,7 +207,7 @@ func (d rawDescriptor) GetEntityString() (string, error) {
 }
 
 // GetFormatType extracts the Formattype field from the Extra field of a Cryptographic Message Descriptor.
-func (d rawDescriptor) GetFormatType() (Formattype, error) {
+func (d rawDescriptor) GetFormatType() (FormatType, error) {
 	if d.Datatype != DataCryptoMessage {
 		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", d.Datatype)
 	}
@@ -222,7 +222,7 @@ func (d rawDescriptor) GetFormatType() (Formattype, error) {
 }
 
 // GetMessageType extracts the Messagetype field from the Extra field of a Cryptographic Message Descriptor.
-func (d rawDescriptor) GetMessageType() (Messagetype, error) {
+func (d rawDescriptor) GetMessageType() (MessageType, error) {
 	if d.Datatype != DataCryptoMessage {
 		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", d.Datatype)
 	}

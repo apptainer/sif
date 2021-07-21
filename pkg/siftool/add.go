@@ -81,7 +81,7 @@ func addFlags(fs *pflag.FlagSet) {
 }
 
 // getDataType returns the data type corresponding to input.
-func getDataType() (sif.Datatype, error) {
+func getDataType() (sif.DataType, error) {
 	switch *dataType {
 	case 1:
 		return sif.DataDeffile, nil
@@ -133,7 +133,7 @@ func getArch() string {
 	}
 }
 
-func getOptions(dt sif.Datatype, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, error) {
+func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, error) {
 	var opts []sif.DescriptorInputOpt
 
 	if fs.Changed("groupid") {
@@ -158,7 +158,7 @@ func getOptions(dt sif.Datatype, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, e
 		}
 
 		opts = append(opts,
-			sif.OptPartitionMetadata(sif.Fstype(*partFS), sif.Parttype(*partType), getArch()),
+			sif.OptPartitionMetadata(sif.FSType(*partFS), sif.PartType(*partType), getArch()),
 		)
 	}
 
@@ -174,7 +174,7 @@ func getOptions(dt sif.Datatype, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, e
 		}
 		copy(fp[:], b)
 
-		opts = append(opts, sif.OptSignatureMetadata(sif.Hashtype(*signHash), fp))
+		opts = append(opts, sif.OptSignatureMetadata(sif.HashType(*signHash), fp))
 	}
 
 	return opts, nil

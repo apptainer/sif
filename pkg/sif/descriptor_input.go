@@ -23,11 +23,11 @@ type descriptorOpts struct {
 }
 
 // DescriptorInputOpt are used to specify data object options.
-type DescriptorInputOpt func(Datatype, *descriptorOpts) error
+type DescriptorInputOpt func(DataType, *descriptorOpts) error
 
 // OptGroupID specifies groupID as data object group ID.
 func OptGroupID(groupID uint32) DescriptorInputOpt {
-	return func(_ Datatype, opts *descriptorOpts) error {
+	return func(_ DataType, opts *descriptorOpts) error {
 		if groupID == 0 {
 			return ErrInvalidGroupID
 		}
@@ -39,7 +39,7 @@ func OptGroupID(groupID uint32) DescriptorInputOpt {
 // OptLinkedID specifies that the data object is linked to the data object group with the specified
 // ID.
 func OptLinkedID(id uint32) DescriptorInputOpt {
-	return func(_ Datatype, opts *descriptorOpts) error {
+	return func(_ DataType, opts *descriptorOpts) error {
 		if id == 0 {
 			return ErrInvalidObjectID
 		}
@@ -51,7 +51,7 @@ func OptLinkedID(id uint32) DescriptorInputOpt {
 // OptLinkedGroupID specifies that the data object is linked to the data object group with the
 // specified groupID.
 func OptLinkedGroupID(groupID uint32) DescriptorInputOpt {
-	return func(_ Datatype, opts *descriptorOpts) error {
+	return func(_ DataType, opts *descriptorOpts) error {
 		if groupID == 0 {
 			return ErrInvalidGroupID
 		}
@@ -62,7 +62,7 @@ func OptLinkedGroupID(groupID uint32) DescriptorInputOpt {
 
 // OptObjectAlignment specifies n as the data alignment requirement.
 func OptObjectAlignment(n int) DescriptorInputOpt {
-	return func(_ Datatype, opts *descriptorOpts) error {
+	return func(_ DataType, opts *descriptorOpts) error {
 		opts.alignment = n
 		return nil
 	}
@@ -70,7 +70,7 @@ func OptObjectAlignment(n int) DescriptorInputOpt {
 
 // OptObjectName specifies name as the data object name.
 func OptObjectName(name string) DescriptorInputOpt {
-	return func(_ Datatype, opts *descriptorOpts) error {
+	return func(_ DataType, opts *descriptorOpts) error {
 		opts.name = name
 		return nil
 	}
@@ -78,15 +78,15 @@ func OptObjectName(name string) DescriptorInputOpt {
 
 // OptObjectTime specifies t as the dat object creation time.
 func OptObjectTime(t time.Time) DescriptorInputOpt {
-	return func(_ Datatype, opts *descriptorOpts) error {
+	return func(_ DataType, opts *descriptorOpts) error {
 		opts.t = t
 		return nil
 	}
 }
 
 type unexpectedDataTypeError struct {
-	got  Datatype
-	want Datatype
+	got  DataType
+	want DataType
 }
 
 func (e *unexpectedDataTypeError) Error() string {
@@ -106,8 +106,8 @@ func (e *unexpectedDataTypeError) Is(target error) bool {
 // to ft, and the message type is set to mt.
 //
 // If this option is applied to a data object with an incompatible type, an error is returned.
-func OptCryptoMessageMetadata(ft Formattype, mt Messagetype) DescriptorInputOpt {
-	return func(t Datatype, opts *descriptorOpts) error {
+func OptCryptoMessageMetadata(ft FormatType, mt MessageType) DescriptorInputOpt {
+	return func(t DataType, opts *descriptorOpts) error {
 		if got, want := t, DataCryptoMessage; got != want {
 			return &unexpectedDataTypeError{got, want}
 		}
@@ -127,8 +127,8 @@ func OptCryptoMessageMetadata(ft Formattype, mt Messagetype) DescriptorInputOpt 
 // should be the architecture as represented by the Go runtime.
 //
 // If this option is applied to a data object with an incompatible type, an error is returned.
-func OptPartitionMetadata(fs Fstype, pt Parttype, arch string) DescriptorInputOpt {
-	return func(t Datatype, opts *descriptorOpts) error {
+func OptPartitionMetadata(fs FSType, pt PartType, arch string) DescriptorInputOpt {
+	return func(t DataType, opts *descriptorOpts) error {
 		if got, want := t, DataPartition; got != want {
 			return &unexpectedDataTypeError{got, want}
 		}
@@ -153,8 +153,8 @@ func OptPartitionMetadata(fs Fstype, pt Parttype, arch string) DescriptorInputOp
 // the signing entity fingerprint is set to fp.
 //
 // If this option is applied to a data object with an incompatible type, an error is returned.
-func OptSignatureMetadata(ht Hashtype, fp [20]byte) DescriptorInputOpt {
-	return func(t Datatype, opts *descriptorOpts) error {
+func OptSignatureMetadata(ht HashType, fp [20]byte) DescriptorInputOpt {
+	return func(t DataType, opts *descriptorOpts) error {
 		if got, want := t, DataSignature; got != want {
 			return &unexpectedDataTypeError{got, want}
 		}
@@ -171,7 +171,7 @@ func OptSignatureMetadata(ht Hashtype, fp [20]byte) DescriptorInputOpt {
 
 // DescriptorInput describes a new data object.
 type DescriptorInput struct {
-	dt   Datatype
+	dt   DataType
 	fp   io.Reader
 	opts descriptorOpts
 }
@@ -190,7 +190,7 @@ type DescriptorInput struct {
 // override this behavior, consider using OptObjectAlignment.
 //
 // By default, no name is set for data object. To set a name, use OptObjectName.
-func NewDescriptorInput(t Datatype, r io.Reader, opts ...DescriptorInputOpt) (DescriptorInput, error) {
+func NewDescriptorInput(t DataType, r io.Reader, opts ...DescriptorInputOpt) (DescriptorInput, error) {
 	dopts := descriptorOpts{
 		alignment: os.Getpagesize(),
 		t:         time.Now(),

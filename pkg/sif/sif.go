@@ -145,12 +145,12 @@ const (
 	DataStartOffset   = 32768              // where data object start after descriptors
 )
 
-// Datatype represents the different SIF data object types stored in the image.
-type Datatype int32
+// DataType represents the different SIF data object types stored in the image.
+type DataType int32
 
 // List of supported SIF data types.
 const (
-	DataDeffile       Datatype = iota + 0x4001 // definition file data object
+	DataDeffile       DataType = iota + 0x4001 // definition file data object
 	DataEnvVar                                 // environment variables data object
 	DataLabels                                 // JSON labels data object
 	DataPartition                              // file system data object
@@ -161,7 +161,7 @@ const (
 )
 
 // String returns a human-readable representation of t.
-func (t Datatype) String() string {
+func (t DataType) String() string {
 	switch t {
 	case DataDeffile:
 		return "Def.FILE"
@@ -183,12 +183,12 @@ func (t Datatype) String() string {
 	return "Unknown"
 }
 
-// Fstype represents the different SIF file system types found in partition data objects.
-type Fstype int32
+// FSType represents the different SIF file system types found in partition data objects.
+type FSType int32
 
 // List of supported file systems.
 const (
-	FsSquash            Fstype = iota + 1 // Squashfs file system, RDONLY
+	FsSquash            FSType = iota + 1 // Squashfs file system, RDONLY
 	FsExt3                                // EXT3 file system, RDWR (deprecated)
 	FsImmuObj                             // immutable data object archive
 	FsRaw                                 // raw data
@@ -196,7 +196,7 @@ const (
 )
 
 // String returns a human-readable representation of t.
-func (t Fstype) String() string {
+func (t FSType) String() string {
 	switch t {
 	case FsSquash:
 		return "Squashfs"
@@ -212,19 +212,19 @@ func (t Fstype) String() string {
 	return "Unknown"
 }
 
-// Parttype represents the different SIF container partition types (system and data).
-type Parttype int32
+// PartType represents the different SIF container partition types (system and data).
+type PartType int32
 
 // List of supported partition types.
 const (
-	PartSystem  Parttype = iota + 1 // partition hosts an operating system
+	PartSystem  PartType = iota + 1 // partition hosts an operating system
 	PartPrimSys                     // partition hosts the primary operating system
 	PartData                        // partition hosts data only
 	PartOverlay                     // partition hosts an overlay
 )
 
 // String returns a human-readable representation of t.
-func (t Parttype) String() string {
+func (t PartType) String() string {
 	switch t {
 	case PartSystem:
 		return "System"
@@ -238,12 +238,12 @@ func (t Parttype) String() string {
 	return "Unknown"
 }
 
-// Hashtype represents the different SIF hashing function types used to fingerprint data objects.
-type Hashtype int32
+// HashType represents the different SIF hashing function types used to fingerprint data objects.
+type HashType int32
 
 // List of supported hash functions.
 const (
-	HashSHA256 Hashtype = iota + 1
+	HashSHA256 HashType = iota + 1
 	HashSHA384
 	HashSHA512
 	HashBLAKE2S
@@ -251,7 +251,7 @@ const (
 )
 
 // String returns a human-readable representation of t.
-func (t Hashtype) String() string {
+func (t HashType) String() string {
 	switch t {
 	case HashSHA256:
 		return "SHA256"
@@ -267,17 +267,17 @@ func (t Hashtype) String() string {
 	return "Unknown"
 }
 
-// Formattype represents the different formats used to store cryptographic message objects.
-type Formattype int32
+// FormatType represents the different formats used to store cryptographic message objects.
+type FormatType int32
 
 // List of supported cryptographic message formats.
 const (
-	FormatOpenPGP Formattype = iota + 1
+	FormatOpenPGP FormatType = iota + 1
 	FormatPEM
 )
 
 // String returns a human-readable representation of t.
-func (t Formattype) String() string {
+func (t FormatType) String() string {
 	switch t {
 	case FormatOpenPGP:
 		return "OpenPGP"
@@ -287,20 +287,20 @@ func (t Formattype) String() string {
 	return "Unknown"
 }
 
-// Messagetype represents the different messages stored within cryptographic message objects.
-type Messagetype int32
+// MessageType represents the different messages stored within cryptographic message objects.
+type MessageType int32
 
 // List of supported cryptographic message formats.
 const (
 	// openPGP formatted messages.
-	MessageClearSignature Messagetype = 0x100
+	MessageClearSignature MessageType = 0x100
 
 	// PEM formatted messages.
-	MessageRSAOAEP Messagetype = 0x200
+	MessageRSAOAEP MessageType = 0x200
 )
 
 // String returns a human-readable representation of t.
-func (t Messagetype) String() string {
+func (t MessageType) String() string {
 	switch t {
 	case MessageClearSignature:
 		return "Clear Signature"

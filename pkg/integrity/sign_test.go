@@ -115,7 +115,7 @@ func TestNewGroupSigner(t *testing.T) {
 		wantErr     error
 		wantObjects []uint32
 		wantMDHash  crypto.Hash
-		wantSigHash sif.Hashtype
+		wantSigHash sif.HashType
 	}{
 		{
 			name:    "InvalidGroupID",

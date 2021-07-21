@@ -75,7 +75,7 @@ func newDigestReader(h crypto.Hash, r io.Reader) (digest, error) {
 }
 
 // hashType converts ht into a crypto.Hash value.
-func hashType(ht sif.Hashtype) (crypto.Hash, error) {
+func hashType(ht sif.HashType) (crypto.Hash, error) {
 	switch ht {
 	case sif.HashSHA256:
 		return crypto.SHA256, nil
@@ -95,7 +95,7 @@ func hashType(ht sif.Hashtype) (crypto.Hash, error) {
 //
 // 	SIFHASH:
 //  2f0b3dca0ec42683d306338f68689aba29cdb83625b8cc0b8a789f8de92342495a6264b0c134e706630636bf90c6f331
-func newLegacyDigest(ht sif.Hashtype, b []byte) (digest, error) {
+func newLegacyDigest(ht sif.HashType, b []byte) (digest, error) {
 	b = bytes.TrimPrefix(b, []byte("SIFHASH:\n"))
 	b = bytes.TrimSuffix(b, []byte("\n"))
 

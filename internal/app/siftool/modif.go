@@ -25,7 +25,7 @@ func (*App) New(path string) error {
 }
 
 // Add adds a data object to a SIF file.
-func (*App) Add(path string, t sif.Datatype, r io.Reader, opts ...sif.DescriptorInputOpt) error {
+func (*App) Add(path string, t sif.DataType, r io.Reader, opts ...sif.DescriptorInputOpt) error {
 	return withFileImage(path, true, func(f *sif.FileImage) error {
 		input, err := sif.NewDescriptorInput(t, r, opts...)
 		if err != nil {

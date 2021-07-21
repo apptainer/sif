@@ -26,7 +26,7 @@ var ErrInvalidGroupID = errors.New("invalid group ID")
 type DescriptorSelectorFunc func(d Descriptor) (bool, error)
 
 // WithDataType selects descriptors that have data type dt.
-func WithDataType(dt Datatype) DescriptorSelectorFunc {
+func WithDataType(dt DataType) DescriptorSelectorFunc {
 	return func(d Descriptor) (bool, error) {
 		return d.GetDataType() == dt, nil
 	}
@@ -83,7 +83,7 @@ func WithLinkedGroupID(groupID uint32) DescriptorSelectorFunc {
 }
 
 // WithPartitionType selects descriptors containing a partition of type pt.
-func WithPartitionType(pt Parttype) DescriptorSelectorFunc {
+func WithPartitionType(pt PartType) DescriptorSelectorFunc {
 	return func(d Descriptor) (bool, error) {
 		ptype, err := d.GetPartType()
 		if err != nil {

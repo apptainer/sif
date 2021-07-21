@@ -26,7 +26,7 @@ var (
 // ErrNoKeyMaterial is the error returned when no key material was provided.
 var ErrNoKeyMaterial = errors.New("key material not provided")
 
-func sifHashType(h crypto.Hash) sif.Hashtype {
+func sifHashType(h crypto.Hash) sif.HashType {
 	switch h {
 	case crypto.SHA256:
 		return sif.HashSHA256
@@ -48,7 +48,7 @@ type groupSigner struct {
 	ods       []sif.Descriptor // Descriptors of object(s) to sign.
 	mdHash    crypto.Hash      // Hash type for metadata.
 	sigConfig *packet.Config   // Configuration for signature.
-	sigHash   sif.Hashtype     // SIF hash type for signature.
+	sigHash   sif.HashType     // SIF hash type for signature.
 }
 
 // groupSignerOpt are used to configure gs.

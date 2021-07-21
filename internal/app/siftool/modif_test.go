@@ -41,7 +41,7 @@ func TestApp_Add(t *testing.T) {
 	tests := []struct {
 		name     string
 		data     []byte
-		dataType sif.Datatype
+		dataType sif.DataType
 		opts     []sif.DescriptorInputOpt
 		wantErr  error
 	}{

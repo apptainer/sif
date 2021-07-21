@@ -27,7 +27,7 @@ func TestNewDescriptorInput(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		t       Datatype
+		t       DataType
 		opts    []DescriptorInputOpt
 		wantErr error
 	}{

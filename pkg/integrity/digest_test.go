@@ -23,7 +23,7 @@ import (
 func TestNewLegacyDigest(t *testing.T) {
 	tests := []struct {
 		name       string
-		ht         sif.Hashtype
+		ht         sif.HashType
 		text       string
 		wantError  error
 		wantDigest digest
