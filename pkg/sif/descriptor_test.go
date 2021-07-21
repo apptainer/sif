@@ -246,6 +246,61 @@ func TestDescriptor_GetSignatureMetadata(t *testing.T) {
 	}
 }
 
+func TestDescriptor_GetCryptoMessageMetadata(t *testing.T) {
+	m := cryptoMessage{
+		Formattype:  FormatOpenPGP,
+		Messagetype: MessageClearSignature,
+	}
+
+	rd := rawDescriptor{
+		Datatype: DataCryptoMessage,
+	}
+	if err := rd.setExtra(m); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name    string
+		rd      rawDescriptor
+		wantFT  FormatType
+		wantMT  MessageType
+		wantErr error
+	}{
+		{
+			name: "UnexpectedDataType",
+			rd: rawDescriptor{
+				Datatype: DataGeneric,
+			},
+			wantErr: &unexpectedDataTypeError{DataGeneric, DataCryptoMessage},
+		},
+		{
+			name:   "OK",
+			rd:     rd,
+			wantFT: FormatOpenPGP,
+			wantMT: MessageClearSignature,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ft, mt, err := tt.rd.GetCryptoMessageMetadata()
+
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+
+			if err == nil {
+				if got, want := ft, tt.wantFT; got != want {
+					t.Fatalf("got format type %v, want %v", got, want)
+				}
+
+				if got, want := mt, tt.wantMT; got != want {
+					t.Fatalf("got message type %v, want %v", got, want)
+				}
+			}
+		})
+	}
+}
+
 func TestDescriptor_GetIntegrityReader(t *testing.T) {
 	d := rawDescriptor{
 		Datatype: DataDeffile,

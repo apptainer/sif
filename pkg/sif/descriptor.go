@@ -164,34 +164,20 @@ func (d rawDescriptor) GetSignatureMetadata() (ht HashType, fp [20]byte, err err
 	return s.Hashtype, fp, nil
 }
 
-// GetFormatType extracts the Formattype field from the Extra field of a Cryptographic Message Descriptor.
-func (d rawDescriptor) GetFormatType() (FormatType, error) {
-	if d.Datatype != DataCryptoMessage {
-		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", d.Datatype)
+// GetCryptoMessageMetadata gets metadata for a crypto message data object.
+func (d rawDescriptor) GetCryptoMessageMetadata() (FormatType, MessageType, error) {
+	if got, want := d.Datatype, DataCryptoMessage; got != want {
+		return 0, 0, &unexpectedDataTypeError{got, want}
 	}
 
-	var cinfo cryptoMessage
+	var m cryptoMessage
+
 	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &cinfo); err != nil {
-		return -1, fmt.Errorf("while extracting Crypto extra info: %s", err)
+	if err := binary.Read(b, binary.LittleEndian, &m); err != nil {
+		return 0, 0, fmt.Errorf("%w", err)
 	}
 
-	return cinfo.Formattype, nil
-}
-
-// GetMessageType extracts the Messagetype field from the Extra field of a Cryptographic Message Descriptor.
-func (d rawDescriptor) GetMessageType() (MessageType, error) {
-	if d.Datatype != DataCryptoMessage {
-		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", d.Datatype)
-	}
-
-	var cinfo cryptoMessage
-	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &cinfo); err != nil {
-		return -1, fmt.Errorf("while extracting Crypto extra info: %s", err)
-	}
-
-	return cinfo.Messagetype, nil
+	return m.Formattype, m.Messagetype, nil
 }
 
 // GetData returns the data object associated with descriptor d from f.

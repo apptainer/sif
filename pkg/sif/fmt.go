@@ -49,8 +49,7 @@ func (f *FileImage) FmtDescrList() string {
 				h, _, _ := v.GetSignatureMetadata()
 				s += fmt.Sprintf("|%s (%s)\n", v.Datatype, h)
 			case DataCryptoMessage:
-				f, _ := v.GetFormatType()
-				m, _ := v.GetMessageType()
+				f, m, _ := v.GetCryptoMessageMetadata()
 				s += fmt.Sprintf("|%s (%s/%s)\n", v.Datatype, f, m)
 			default:
 				s += fmt.Sprintf("|%s\n", v.Datatype)
@@ -105,8 +104,7 @@ func (f *FileImage) FmtDescrInfo(id uint32) string {
 				s += fmt.Sprintln("  Hashtype: ", h)
 				s += fmt.Sprintln("  Entity:   ", fmt.Sprintf("%X", fp))
 			case DataCryptoMessage:
-				f, _ := v.GetFormatType()
-				m, _ := v.GetMessageType()
+				f, m, _ := v.GetCryptoMessageMetadata()
 				s += fmt.Sprintln("  Fmttype:  ", f)
 				s += fmt.Sprintln("  Msgtype:  ", m)
 			}
