@@ -71,22 +71,6 @@ func (m *mockSifReadWriter) Close() error {
 	return nil
 }
 
-func (m *mockSifReadWriter) Read(b []byte) (n int, err error) {
-	if m.closed {
-		return 0, os.ErrInvalid
-	}
-
-	if m.pos >= int64(len(m.buf)) {
-		return 0, io.EOF
-	}
-
-	n = copy(b, m.buf[m.pos:])
-
-	m.pos += int64(n)
-
-	return n, err
-}
-
 func (m *mockSifReadWriter) ReadAt(b []byte, off int64) (n int, err error) {
 	if m.closed {
 		return 0, os.ErrInvalid
@@ -167,7 +151,7 @@ func TestLoadContainerFpMock(t *testing.T) {
 	// very dumb buffer. This specific test could be exteded to test
 	// for more error conditions as it would be possible to report
 	// errors from cases where it would be otherwise hard to do so
-	// (e.g. Seek, Read, Sync or Truncate reporting errors).
+	// (e.g. Seek, ReadAt, Sync or Truncate reporting errors).
 
 	// Load a valid SIF file to test the happy path.
 	content, err := ioutil.ReadFile("testdata/testcontainer2.sif")

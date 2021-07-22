@@ -337,11 +337,11 @@ func (h header) GetIntegrityReader() io.Reader {
 // ReadWriter describes the operations needed to support reading and
 // writing SIF files.
 type ReadWriter interface {
-	io.ReadWriteSeeker
 	io.ReaderAt
+	io.WriteSeeker
 	io.Closer
 	Sync() error
-	Truncate(size int64) error
+	Truncate(int64) error
 }
 
 // FileImage describes the representation of a SIF file in memory.
