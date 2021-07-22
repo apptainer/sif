@@ -153,18 +153,18 @@ func multiSelectorFunc(fns ...DescriptorSelectorFunc) DescriptorSelectorFunc {
 // true. If selectFn or onMatchFn return a non-nil error, the iteration halts, and the error is
 // returned to the caller.
 func (f *FileImage) withDescriptors(selectFn DescriptorSelectorFunc, onMatchFn func(*rawDescriptor) error) error {
-	for i, d := range f.descrArr {
+	for i, d := range f.rds {
 		if !d.Used {
 			continue
 		}
 
-		if ok, err := selectFn(Descriptor{f.descrArr[i]}); err != nil {
+		if ok, err := selectFn(Descriptor{f.rds[i]}); err != nil {
 			return err
 		} else if !ok {
 			continue
 		}
 
-		if err := onMatchFn(&f.descrArr[i]); err != nil {
+		if err := onMatchFn(&f.rds[i]); err != nil {
 			return err
 		}
 	}

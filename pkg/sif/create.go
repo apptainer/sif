@@ -49,7 +49,7 @@ func writeDataObject(ws io.WriteSeeker, di DescriptorInput, d *rawDescriptor) er
 	}
 
 	// Write the data object.
-	n, err := io.Copy(ws, di.fp)
+	n, err := io.Copy(ws, di.r)
 	if err != nil {
 		return err
 	}
@@ -67,9 +67,9 @@ func writeDataObject(ws io.WriteSeeker, di DescriptorInput, d *rawDescriptor) er
 func (f *FileImage) writeDataObject(di DescriptorInput) error {
 	var d *rawDescriptor
 
-	for i, od := range f.descrArr {
+	for i, od := range f.rds {
 		if !od.Used {
-			d = &f.descrArr[i]
+			d = &f.rds[i]
 			d.ID = uint32(i) + 1
 			break
 		}
@@ -90,7 +90,7 @@ func (f *FileImage) writeDataObject(di DescriptorInput) error {
 		f.h.Arch = p.Arch
 	}
 
-	if err := writeDataObject(f.fp, di, d); err != nil {
+	if err := writeDataObject(f.rw, di, d); err != nil {
 		return err
 	}
 
@@ -102,27 +102,27 @@ func (f *FileImage) writeDataObject(di DescriptorInput) error {
 
 // writeDescriptors writes the descriptors in f to backing storage.
 func (f *FileImage) writeDescriptors() error {
-	if _, err := f.fp.Seek(DescrStartOffset, io.SeekStart); err != nil {
+	if _, err := f.rw.Seek(DescrStartOffset, io.SeekStart); err != nil {
 		return err
 	}
 
-	for _, v := range f.descrArr {
-		if err := binary.Write(f.fp, binary.LittleEndian, v); err != nil {
+	for _, v := range f.rds {
+		if err := binary.Write(f.rw, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
-	f.h.Descrlen = int64(binary.Size(f.descrArr))
+	f.h.Descrlen = int64(binary.Size(f.rds))
 
 	return nil
 }
 
 // writeHeader writes the the global header in f to backing storage.
 func (f *FileImage) writeHeader() error {
-	if _, err := f.fp.Seek(0, io.SeekStart); err != nil {
+	if _, err := f.rw.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
 
-	return binary.Write(f.fp, binary.LittleEndian, f.h)
+	return binary.Write(f.rw, binary.LittleEndian, f.h)
 }
 
 // createOpts accumulates container creation options.
@@ -161,7 +161,7 @@ func OptCreateWithTime(t time.Time) CreateOpt {
 }
 
 // createContainer creates a new SIF container file in fp, according to opts.
-func createContainer(fp ReadWriter, co createOpts) (*FileImage, error) {
+func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 	h := header{
 		Arch:     hdrArchUnknown,
 		ID:       co.id,
@@ -177,12 +177,12 @@ func createContainer(fp ReadWriter, co createOpts) (*FileImage, error) {
 	copy(h.Version[:], CurrentVersion.bytes())
 
 	f := &FileImage{
-		h:        h,
-		fp:       fp,
-		descrArr: make([]rawDescriptor, DescrNumEntries),
+		h:   h,
+		rw:  rw,
+		rds: make([]rawDescriptor, DescrNumEntries),
 	}
 
-	if _, err := f.fp.Seek(DataStartOffset, io.SeekStart); err != nil {
+	if _, err := f.rw.Seek(DataStartOffset, io.SeekStart); err != nil {
 		return nil, err
 	}
 
@@ -244,7 +244,7 @@ func CreateContainer(path string, opts ...CreateOpt) (f *FileImage, err error) {
 
 func zeroData(fimg *FileImage, descr *rawDescriptor) error {
 	// first, move to data object offset
-	if _, err := fimg.fp.Seek(descr.Fileoff, io.SeekStart); err != nil {
+	if _, err := fimg.rw.Seek(descr.Fileoff, io.SeekStart); err != nil {
 		return fmt.Errorf("seeking to data object offset: %s", err)
 	}
 
@@ -256,7 +256,7 @@ func zeroData(fimg *FileImage, descr *rawDescriptor) error {
 			upbound = n
 		}
 
-		if _, err := fimg.fp.Write(zero[:upbound]); err != nil {
+		if _, err := fimg.rw.Write(zero[:upbound]); err != nil {
 			return fmt.Errorf("writing 0's to data object")
 		}
 		n -= 4096
@@ -272,20 +272,20 @@ func resetDescriptor(fimg *FileImage, index int) error {
 	// If we remove the primary partition, set the global header Arch field to HdrArchUnknown
 	// to indicate that the SIF file doesn't include a primary partition and no dependency
 	// on any architecture exists.
-	if fimg.descrArr[index].isPartitionOfType(PartPrimSys) {
+	if fimg.rds[index].isPartitionOfType(PartPrimSys) {
 		fimg.primPartID = 0
 		fimg.h.Arch = hdrArchUnknown
 	}
 
-	offset := fimg.h.Descroff + int64(index)*int64(binary.Size(fimg.descrArr[0]))
+	offset := fimg.h.Descroff + int64(index)*int64(binary.Size(fimg.rds[0]))
 
 	// first, move to descriptor offset
-	if _, err := fimg.fp.Seek(offset, io.SeekStart); err != nil {
+	if _, err := fimg.rw.Seek(offset, io.SeekStart); err != nil {
 		return fmt.Errorf("seeking to descriptor: %s", err)
 	}
 
 	var emptyDesc rawDescriptor
-	if err := binary.Write(fimg.fp, binary.LittleEndian, emptyDesc); err != nil {
+	if err := binary.Write(fimg.rw, binary.LittleEndian, emptyDesc); err != nil {
 		return fmt.Errorf("binary writing empty descriptor: %s", err)
 	}
 
@@ -295,7 +295,7 @@ func resetDescriptor(fimg *FileImage, index int) error {
 // AddObject add a new data object and its descriptor into the specified SIF file.
 func (f *FileImage) AddObject(input DescriptorInput) error {
 	// set file pointer to the end of data section
-	if _, err := f.fp.Seek(f.h.Dataoff+f.h.Datalen, io.SeekStart); err != nil {
+	if _, err := f.rw.Seek(f.h.Dataoff+f.h.Datalen, io.SeekStart); err != nil {
 		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}
 
@@ -331,7 +331,7 @@ func objectIsLast(f *FileImage, d *rawDescriptor) bool {
 func compactAtDescr(fimg *FileImage, descr *rawDescriptor) error {
 	var prev rawDescriptor
 
-	for _, v := range fimg.descrArr {
+	for _, v := range fimg.rds {
 		if !v.Used || v.ID == descr.ID {
 			continue
 		}
@@ -341,11 +341,11 @@ func compactAtDescr(fimg *FileImage, descr *rawDescriptor) error {
 	}
 	// make sure it's not the only used descriptor first
 	if prev.Used {
-		if err := fimg.fp.Truncate(prev.Fileoff + prev.Filelen); err != nil {
+		if err := fimg.rw.Truncate(prev.Fileoff + prev.Filelen); err != nil {
 			return err
 		}
 	} else {
-		if err := fimg.fp.Truncate(descr.Fileoff); err != nil {
+		if err := fimg.rw.Truncate(descr.Fileoff); err != nil {
 			return err
 		}
 	}
@@ -364,7 +364,7 @@ func (f *FileImage) DeleteObject(id uint32, flags int) error {
 	}
 
 	index := 0
-	for i, od := range f.descrArr {
+	for i, od := range f.rds {
 		if od.ID == id {
 			index = i
 			break

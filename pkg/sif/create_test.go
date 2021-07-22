@@ -219,8 +219,8 @@ func TestSetPrimPart(t *testing.T) {
 			Dfree:  int64(len(inputs)),
 			Dtotal: int64(len(inputs)),
 		},
-		fp:       &mockSifReadWriter{},
-		descrArr: make([]rawDescriptor, len(inputs)),
+		rw:  &mockSifReadWriter{},
+		rds: make([]rawDescriptor, len(inputs)),
 	}
 
 	for i := range inputs {
@@ -232,7 +232,7 @@ func TestSetPrimPart(t *testing.T) {
 			Fstype:   FsRaw,
 			Parttype: PartSystem,
 		}
-		if err := fimg.descrArr[i].setExtra(p); err != nil {
+		if err := fimg.rds[i].setExtra(p); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -240,13 +240,13 @@ func TestSetPrimPart(t *testing.T) {
 	// the first pass tests that the primary partition can be set;
 	// the second pass tests that the primary can be changed.
 	for i := range inputs {
-		if err := fimg.SetPrimPart(fimg.descrArr[i].ID); err != nil {
+		if err := fimg.SetPrimPart(fimg.rds[i].ID); err != nil {
 			t.Error("fimg.SetPrimPart(...):", err)
 		}
 
 		if part, err := fimg.GetDescriptor(WithPartitionType(PartPrimSys)); err != nil {
 			t.Fatal(err)
-		} else if want, got := part.ID, fimg.descrArr[i].ID; got != want {
+		} else if want, got := part.ID, fimg.rds[i].ID; got != want {
 			t.Errorf("got ID %v, want %v", got, want)
 		}
 	}

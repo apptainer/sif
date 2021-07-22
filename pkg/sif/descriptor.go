@@ -201,7 +201,7 @@ func (d rawDescriptor) GetData(f *FileImage) ([]byte, error) {
 
 // GetReader returns a io.Reader that reads the data object associated with descriptor d from f.
 func (d rawDescriptor) GetReader(f *FileImage) io.Reader {
-	return io.NewSectionReader(f.fp, d.Fileoff, d.Filelen)
+	return io.NewSectionReader(f.rw, d.Fileoff, d.Filelen)
 }
 
 // GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from d.

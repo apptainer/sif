@@ -115,7 +115,7 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fimg := &FileImage{descrArr: ds}
+			fimg := &FileImage{rds: ds}
 
 			ds, err := fimg.GetDescriptors(tt.fns...)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
@@ -214,7 +214,7 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fimg := &FileImage{descrArr: ds}
+			fimg := &FileImage{rds: ds}
 
 			d, err := fimg.GetDescriptor(tt.fns...)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
@@ -281,7 +281,7 @@ func TestFileImage_WithDescriptors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &FileImage{descrArr: ds}
+			f := &FileImage{rds: ds}
 
 			f.WithDescriptors(tt.fn(t))
 		})

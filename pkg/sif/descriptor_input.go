@@ -172,7 +172,7 @@ func OptSignatureMetadata(ht HashType, fp [20]byte) DescriptorInputOpt {
 // DescriptorInput describes a new data object.
 type DescriptorInput struct {
 	dt   DataType
-	fp   io.Reader
+	r    io.Reader
 	opts descriptorOpts
 }
 
@@ -204,7 +204,7 @@ func NewDescriptorInput(t DataType, r io.Reader, opts ...DescriptorInputOpt) (De
 
 	di := DescriptorInput{
 		dt:   t,
-		fp:   r,
+		r:    r,
 		opts: dopts,
 	}
 
