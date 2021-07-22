@@ -39,7 +39,7 @@ func (*App) Add(path string, t sif.DataType, r io.Reader, opts ...sif.Descriptor
 // Del deletes a specified object descriptor and data from the SIF file.
 func (*App) Del(path string, id uint32) error {
 	return withFileImage(path, true, func(f *sif.FileImage) error {
-		return f.DeleteObject(id, 0)
+		return f.DeleteObject(id)
 	})
 }
 

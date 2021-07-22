@@ -353,12 +353,45 @@ func compactAtDescr(fimg *FileImage, descr *rawDescriptor) error {
 	return nil
 }
 
-// DeleteObject removes data from a SIF file referred to by id. The descriptor for the
-// data object is free'd and can be reused later. There's currently 2 clean mode specified
-// by flags: DelZero, to zero out the data region for security and DelCompact to
-// remove and shink the file compacting the unused area.
-func (f *FileImage) DeleteObject(id uint32, flags int) error {
-	descr, err := f.getDescriptor(WithID(id))
+// deleteOpts accumulates object deletion options.
+type deleteOpts struct {
+	zero    bool
+	compact bool
+}
+
+// DeleteOpt are used to specify object deletion options.
+type DeleteOpt func(*deleteOpts) error
+
+// OptDeleteZero specifies whether the deleted object should be zeroed.
+func OptDeleteZero(b bool) DeleteOpt {
+	return func(do *deleteOpts) error {
+		do.zero = b
+		return nil
+	}
+}
+
+// OptDeleteCompact specifies whether the image should be compacted following object deletion.
+func OptDeleteCompact(b bool) DeleteOpt {
+	return func(do *deleteOpts) error {
+		do.compact = b
+		return nil
+	}
+}
+
+// DeleteObject deletes the data object with id, according to opts.
+//
+// To zero the data region of the deleted object, use OptDeleteZero. To compact the file following
+// object deletion, use OptDeleteCompact.
+func (f *FileImage) DeleteObject(id uint32, opts ...DeleteOpt) error {
+	do := deleteOpts{}
+
+	for _, opt := range opts {
+		if err := opt(&do); err != nil {
+			return err
+		}
+	}
+
+	d, err := f.getDescriptor(WithID(id))
 	if err != nil {
 		return err
 	}
@@ -371,32 +404,25 @@ func (f *FileImage) DeleteObject(id uint32, flags int) error {
 		}
 	}
 
-	switch flags {
-	case DelZero:
-		if err = zeroData(f, descr); err != nil {
+	if do.zero {
+		if err := zeroData(f, d); err != nil {
 			return err
-		}
-	case DelCompact:
-		if objectIsLast(f, descr) {
-			if err = compactAtDescr(f, descr); err != nil {
-				return err
-			}
-		} else {
-			return fmt.Errorf("method (DelCompact) not implemented yet")
-		}
-	default:
-		if objectIsLast(f, descr) {
-			if err = compactAtDescr(f, descr); err != nil {
-				return err
-			}
 		}
 	}
 
-	// update some global header fields from deleting this descriptor
+	if do.compact {
+		if objectIsLast(f, d) {
+			if err := compactAtDescr(f, d); err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("compact not implemented yet")
+		}
+	}
+
 	f.h.Dfree++
 	f.h.Mtime = time.Now().Unix()
 
-	// zero out the unused descriptor
 	if err = resetDescriptor(f, index); err != nil {
 		return err
 	}

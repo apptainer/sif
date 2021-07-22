@@ -267,12 +267,6 @@ func (t MessageType) String() string {
 	return "Unknown"
 }
 
-// SIF data object deletion strategies.
-const (
-	DelZero    = iota + 1 // zero the data object bytes
-	DelCompact            // free the space used by data object
-)
-
 // header describes a loaded SIF file.
 type header struct {
 	Launch [hdrLaunchLen]byte // #! shell execution line
