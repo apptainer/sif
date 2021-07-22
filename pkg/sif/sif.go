@@ -7,13 +7,6 @@
 
 // Package sif implements data structures and routines to create
 // and access SIF files.
-// 	- sif.go contains the data definition the file format.
-//	- create.go implements the core functionality for the creation of
-//	  of new SIF files.
-//	- load.go implements the core functionality for the loading of
-//	  existing SIF files.
-//	- lookup.go mostly implements search/lookup and printing routines
-//	  and access to specific descriptor/data found in SIF container files.
 //
 // Layout of a SIF file (example):
 //
