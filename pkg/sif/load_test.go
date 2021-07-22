@@ -62,22 +62,13 @@ func TestLoadContainerFp(t *testing.T) {
 
 type mockSifReadWriter struct {
 	buf    []byte
-	name   string
 	pos    int64
 	closed bool
-}
-
-func (m *mockSifReadWriter) Name() string {
-	return m.name
 }
 
 func (m *mockSifReadWriter) Close() error {
 	m.closed = true
 	return nil
-}
-
-func (m *mockSifReadWriter) Fd() uintptr {
-	return ^uintptr(0)
 }
 
 func (m *mockSifReadWriter) Read(b []byte) (n int, err error) {
@@ -185,8 +176,7 @@ func TestLoadContainerFpMock(t *testing.T) {
 	}
 
 	fp := &mockSifReadWriter{
-		buf:  content,
-		name: "mockSifReadWriter",
+		buf: content,
 	}
 
 	fimg, err := LoadContainerFp(fp, true)
@@ -212,8 +202,7 @@ func TestLoadContainerInvalidMagic(t *testing.T) {
 	copy(content[hdrLaunchLen:hdrLaunchLen+hdrMagicLen], "SIF_MAGIX")
 
 	fp := &mockSifReadWriter{
-		buf:  content,
-		name: "invalid_magic",
+		buf: content,
 	}
 
 	fimg, err := LoadContainerFp(fp, true)

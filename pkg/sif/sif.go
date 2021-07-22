@@ -340,8 +340,6 @@ type ReadWriter interface {
 	io.ReadWriteSeeker
 	io.ReaderAt
 	io.Closer
-	Name() string
-	Fd() uintptr
 	Sync() error
 	Truncate(size int64) error
 }
