@@ -56,7 +56,7 @@ func OptLinkedGroupID(groupID uint32) DescriptorInputOpt {
 		if groupID == 0 {
 			return ErrInvalidGroupID
 		}
-		opts.linkID = groupID | DescrGroupMask
+		opts.linkID = groupID | descrGroupMask
 		return nil
 	}
 }
@@ -232,7 +232,7 @@ func NewDescriptorInput(t DataType, r io.Reader, opts ...DescriptorInputOpt) (De
 // fillDescriptor fills d according to di.
 func (di DescriptorInput) fillDescriptor(d *rawDescriptor) error {
 	d.Datatype = di.dt
-	d.Groupid = di.opts.groupID | DescrGroupMask
+	d.Groupid = di.opts.groupID | descrGroupMask
 	d.Link = di.opts.linkID
 	d.Ctime = di.opts.t.UTC().Unix()
 	d.Mtime = di.opts.t.UTC().Unix()

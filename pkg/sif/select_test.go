@@ -16,22 +16,22 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 			Datatype: DataPartition,
 			Used:     true,
 			ID:       1,
-			Groupid:  1 | DescrGroupMask,
-			Link:     DescrUnusedLink,
+			Groupid:  1 | descrGroupMask,
+			Link:     descrUnusedLink,
 		},
 		{
 			Datatype: DataSignature,
 			Used:     true,
 			ID:       2,
-			Groupid:  1 | DescrGroupMask,
+			Groupid:  1 | descrGroupMask,
 			Link:     1,
 		},
 		{
 			Datatype: DataSignature,
 			Used:     true,
 			ID:       3,
-			Groupid:  DescrUnusedGroup,
-			Link:     1 | DescrGroupMask,
+			Groupid:  descrUnusedGroup,
+			Link:     1 | descrGroupMask,
 		},
 	}
 
@@ -138,8 +138,8 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 		Datatype: DataPartition,
 		Used:     true,
 		ID:       1,
-		Groupid:  1 | DescrGroupMask,
-		Link:     DescrUnusedLink,
+		Groupid:  1 | descrGroupMask,
+		Link:     descrUnusedLink,
 	}
 
 	p := partition{
@@ -158,15 +158,15 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 			Datatype: DataSignature,
 			Used:     true,
 			ID:       2,
-			Groupid:  1 | DescrGroupMask,
+			Groupid:  1 | descrGroupMask,
 			Link:     1,
 		},
 		{
 			Datatype: DataSignature,
 			Used:     true,
 			ID:       3,
-			Groupid:  DescrUnusedGroup,
-			Link:     1 | DescrGroupMask,
+			Groupid:  descrUnusedGroup,
+			Link:     1 | descrGroupMask,
 		},
 	}
 
@@ -233,22 +233,22 @@ func TestFileImage_WithDescriptors(t *testing.T) {
 			Datatype: DataPartition,
 			Used:     true,
 			ID:       1,
-			Groupid:  1 | DescrGroupMask,
-			Link:     DescrUnusedLink,
+			Groupid:  1 | descrGroupMask,
+			Link:     descrUnusedLink,
 		},
 		{
 			Datatype: DataSignature,
 			Used:     true,
 			ID:       2,
-			Groupid:  DescrUnusedGroup,
-			Link:     1 | DescrGroupMask,
+			Groupid:  descrUnusedGroup,
+			Link:     1 | descrGroupMask,
 		},
 		{
 			Datatype: DataSignature,
 			Used:     false,
 			ID:       3,
-			Groupid:  DescrUnusedGroup,
-			Link:     DescrUnusedLink,
+			Groupid:  descrUnusedGroup,
+			Link:     descrUnusedLink,
 		},
 	}
 

@@ -293,7 +293,7 @@ func TestDescriptor_GetIntegrityReader(t *testing.T) {
 		Datatype: DataDeffile,
 		Used:     true,
 		ID:       1,
-		Groupid:  DescrGroupMask | 1,
+		Groupid:  descrGroupMask | 1,
 		Ctime:    1504657553,
 		Mtime:    1504657553,
 	}

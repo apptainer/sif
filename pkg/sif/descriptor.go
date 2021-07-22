@@ -38,8 +38,8 @@ type rawDescriptor struct {
 	Mtime int64                 // last modification time
 	UID   int64                 // Deprecated: UID exists for historical compatibility and should not be used.
 	GID   int64                 // Deprecated: GID exists for historical compatibility and should not be used.
-	Name  [DescrNameLen]byte    // descriptor name (string identifier)
-	Extra [DescrMaxPrivLen]byte // big enough for extra data below
+	Name  [descrNameLen]byte    // descriptor name (string identifier)
+	Extra [descrMaxPrivLen]byte // big enough for extra data below
 }
 
 // partition represents the SIF partition data object descriptor.
@@ -52,7 +52,7 @@ type partition struct {
 // signature represents the SIF signature data object descriptor.
 type signature struct {
 	Hashtype hashType
-	Entity   [DescrEntityLen]byte
+	Entity   [descrEntityLen]byte
 }
 
 // cryptoMessage represents the SIF crypto message object descriptor.
@@ -108,13 +108,13 @@ func (d rawDescriptor) GetID() uint32 { return d.ID }
 
 // GetGroupID returns the data object group ID of d, or zero if d is not part of a data object
 // group.
-func (d rawDescriptor) GetGroupID() uint32 { return d.Groupid &^ DescrGroupMask }
+func (d rawDescriptor) GetGroupID() uint32 { return d.Groupid &^ descrGroupMask }
 
 // GetLinkedID returns the object/group ID d is linked to, or zero if d does not contain a linked
 // ID. If isGroup is true, the returned id is an object group ID. Otherwise, the returned id is a
 // data object ID.
 func (d rawDescriptor) GetLinkedID() (id uint32, isGroup bool) {
-	return d.Link &^ DescrGroupMask, d.Link&DescrGroupMask == DescrGroupMask
+	return d.Link &^ descrGroupMask, d.Link&descrGroupMask == descrGroupMask
 }
 
 // GetOffset returns the offset of the data object.

@@ -102,7 +102,7 @@ func (f *FileImage) writeDataObject(di DescriptorInput) error {
 
 // writeDescriptors writes the descriptors in f to backing storage.
 func (f *FileImage) writeDescriptors() error {
-	if _, err := f.rw.Seek(DescrStartOffset, io.SeekStart); err != nil {
+	if _, err := f.rw.Seek(descrStartOffset, io.SeekStart); err != nil {
 		return err
 	}
 
@@ -167,10 +167,10 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 		ID:       co.id,
 		Ctime:    co.t.Unix(),
 		Mtime:    co.t.Unix(),
-		Dfree:    DescrNumEntries,
-		Dtotal:   DescrNumEntries,
-		Descroff: DescrStartOffset,
-		Dataoff:  DataStartOffset,
+		Dfree:    descrNumEntries,
+		Dtotal:   descrNumEntries,
+		Descroff: descrStartOffset,
+		Dataoff:  dataStartOffset,
 	}
 	copy(h.Launch[:], hdrLaunch)
 	copy(h.Magic[:], hdrMagic)
@@ -179,10 +179,10 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 	f := &FileImage{
 		h:   h,
 		rw:  rw,
-		rds: make([]rawDescriptor, DescrNumEntries),
+		rds: make([]rawDescriptor, descrNumEntries),
 	}
 
-	if _, err := f.rw.Seek(DataStartOffset, io.SeekStart); err != nil {
+	if _, err := f.rw.Seek(dataStartOffset, io.SeekStart); err != nil {
 		return nil, err
 	}
 
