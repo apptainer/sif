@@ -38,5 +38,5 @@ Flags:
                               example: 433FE984155206BD962725E20E8713472A879943
       --signhash int32      the signature hash used (with -datatype 5-Signature)
                             [NEEDED, no default]:
-                              1-SHA256,    2-SHA384,    3-SHA512,
-                              4-BLAKE2S,   5-BLAKE2B
+                              1-SHA256,      2-SHA384,      3-SHA512,
+                              4-BLAKE2s_256, 5-BLAKE2b_256

@@ -8,6 +8,7 @@
 package siftool
 
 import (
+	"crypto"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -69,8 +70,8 @@ func addFlags(fs *pflag.FlagSet) {
   10-mips64le, 11-s390x`)
 	signHash = fs.Int32("signhash", 0, `the signature hash used (with -datatype 5-Signature)
 [NEEDED, no default]:
-  1-SHA256,    2-SHA384,    3-SHA512,
-  4-BLAKE2S,   5-BLAKE2B`)
+  1-SHA256,      2-SHA384,      3-SHA512,
+  4-BLAKE2s_256, 5-BLAKE2b_256`)
 	signEntity = fs.String("signentity", "", `the entity that signs (with -datatype 5-Signature)
 [NEEDED, no default]:
   example: 433FE984155206BD962725E20E8713472A879943`)
@@ -133,6 +134,23 @@ func getArch() string {
 	}
 }
 
+func getHashType() (crypto.Hash, error) {
+	switch *signHash {
+	case 1:
+		return crypto.SHA256, nil
+	case 2:
+		return crypto.SHA384, nil
+	case 3:
+		return crypto.SHA512, nil
+	case 4:
+		return crypto.BLAKE2s_256, nil
+	case 5:
+		return crypto.BLAKE2b_256, nil
+	default:
+		return 0, fmt.Errorf("invalid hash type: %v", *signHash)
+	}
+}
+
 func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, error) {
 	var opts []sif.DescriptorInputOpt
 
@@ -168,13 +186,18 @@ func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, e
 			return nil, fmt.Errorf("failed to decode signing entity fingerprint: %w", err)
 		}
 
+		ht, err := getHashType()
+		if err != nil {
+			return nil, err
+		}
+
 		var fp [20]byte
 		if got, want := len(b), len(fp); got != want {
 			return nil, fmt.Errorf("invalid signing entity fingerprint length: got %v, want %v", got, want)
 		}
 		copy(fp[:], b)
 
-		opts = append(opts, sif.OptSignatureMetadata(sif.HashType(*signHash), fp))
+		opts = append(opts, sif.OptSignatureMetadata(ht, fp))
 	}
 
 	return opts, nil

@@ -124,7 +124,7 @@ func TestNewGroupSigner(t *testing.T) {
 		wantErr     error
 		wantObjects []uint32
 		wantMDHash  crypto.Hash
-		wantSigHash sif.HashType
+		wantSigHash crypto.Hash
 	}{
 		{
 			name:    "InvalidGroupID",
@@ -151,7 +151,7 @@ func TestNewGroupSigner(t *testing.T) {
 			groupID:     1,
 			wantObjects: []uint32{1, 2},
 			wantMDHash:  crypto.SHA256,
-			wantSigHash: sif.HashSHA256,
+			wantSigHash: crypto.SHA256,
 		},
 		{
 			name:        "Group2",
@@ -159,7 +159,7 @@ func TestNewGroupSigner(t *testing.T) {
 			groupID:     2,
 			wantObjects: []uint32{3},
 			wantMDHash:  crypto.SHA256,
-			wantSigHash: sif.HashSHA256,
+			wantSigHash: crypto.SHA256,
 		},
 		{
 			name:        "OptSignGroupObject1",
@@ -168,7 +168,7 @@ func TestNewGroupSigner(t *testing.T) {
 			opts:        []groupSignerOpt{optSignGroupObjects(1)},
 			wantObjects: []uint32{1},
 			wantMDHash:  crypto.SHA256,
-			wantSigHash: sif.HashSHA256,
+			wantSigHash: crypto.SHA256,
 		},
 		{
 			name:        "OptSignGroupObject2",
@@ -177,7 +177,7 @@ func TestNewGroupSigner(t *testing.T) {
 			opts:        []groupSignerOpt{optSignGroupObjects(2)},
 			wantObjects: []uint32{2},
 			wantMDHash:  crypto.SHA256,
-			wantSigHash: sif.HashSHA256,
+			wantSigHash: crypto.SHA256,
 		},
 		{
 			name:        "OptSignGroupObject3",
@@ -186,7 +186,7 @@ func TestNewGroupSigner(t *testing.T) {
 			opts:        []groupSignerOpt{optSignGroupObjects(3)},
 			wantObjects: []uint32{3},
 			wantMDHash:  crypto.SHA256,
-			wantSigHash: sif.HashSHA256,
+			wantSigHash: crypto.SHA256,
 		},
 		{
 			name:        "OptSignGroupMetadataHash",
@@ -195,7 +195,7 @@ func TestNewGroupSigner(t *testing.T) {
 			opts:        []groupSignerOpt{optSignGroupMetadataHash(crypto.SHA1)},
 			wantObjects: []uint32{1, 2},
 			wantMDHash:  crypto.SHA1,
-			wantSigHash: sif.HashSHA256,
+			wantSigHash: crypto.SHA256,
 		},
 		{
 			name:    "OptSignGroupSignatureConfigSHA256",
@@ -206,7 +206,7 @@ func TestNewGroupSigner(t *testing.T) {
 			})},
 			wantObjects: []uint32{1, 2},
 			wantMDHash:  crypto.SHA256,
-			wantSigHash: sif.HashSHA256,
+			wantSigHash: crypto.SHA256,
 		},
 		{
 			name:    "OptSignGroupSignatureConfigSHA384",
@@ -217,7 +217,7 @@ func TestNewGroupSigner(t *testing.T) {
 			})},
 			wantObjects: []uint32{1, 2},
 			wantMDHash:  crypto.SHA256,
-			wantSigHash: sif.HashSHA384,
+			wantSigHash: crypto.SHA384,
 		},
 		{
 			name:    "OptSignGroupSignatureConfigSHA512",
@@ -228,7 +228,7 @@ func TestNewGroupSigner(t *testing.T) {
 			})},
 			wantObjects: []uint32{1, 2},
 			wantMDHash:  crypto.SHA256,
-			wantSigHash: sif.HashSHA512,
+			wantSigHash: crypto.SHA512,
 		},
 		{
 			name:    "OptSignGroupSignatureConfigBLAKE2s_256",
@@ -239,7 +239,7 @@ func TestNewGroupSigner(t *testing.T) {
 			})},
 			wantObjects: []uint32{1, 2},
 			wantMDHash:  crypto.SHA256,
-			wantSigHash: sif.HashBLAKE2S,
+			wantSigHash: crypto.BLAKE2s_256,
 		},
 		{
 			name:    "OptSignGroupSignatureConfigBLAKE2b_256",
@@ -250,7 +250,7 @@ func TestNewGroupSigner(t *testing.T) {
 			})},
 			wantObjects: []uint32{1, 2},
 			wantMDHash:  crypto.SHA256,
-			wantSigHash: sif.HashBLAKE2B,
+			wantSigHash: crypto.BLAKE2b_256,
 		},
 		{
 			name:    "OptSignGroupSignatureConfigBLAKE2b_384",
@@ -261,7 +261,7 @@ func TestNewGroupSigner(t *testing.T) {
 			})},
 			wantObjects: []uint32{1, 2},
 			wantMDHash:  crypto.SHA256,
-			wantSigHash: sif.HashBLAKE2B,
+			wantSigHash: crypto.BLAKE2b_384,
 		},
 		{
 			name:    "OptSignGroupSignatureConfigBLAKE2b_512",
@@ -272,7 +272,7 @@ func TestNewGroupSigner(t *testing.T) {
 			})},
 			wantObjects: []uint32{1, 2},
 			wantMDHash:  crypto.SHA256,
-			wantSigHash: sif.HashBLAKE2B,
+			wantSigHash: crypto.BLAKE2b_512,
 		},
 	}
 

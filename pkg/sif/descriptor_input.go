@@ -6,6 +6,7 @@
 package sif
 
 import (
+	"crypto"
 	"fmt"
 	"io"
 	"os"
@@ -149,18 +150,35 @@ func OptPartitionMetadata(fs FSType, pt PartType, arch string) DescriptorInputOp
 	}
 }
 
-// OptSignatureMetadata sets metadata for a signature data object. The hash type is set to t, and
+// sifHashType converts h into a HashType.
+func sifHashType(h crypto.Hash) HashType {
+	switch h {
+	case crypto.SHA256:
+		return HashSHA256
+	case crypto.SHA384:
+		return HashSHA384
+	case crypto.SHA512:
+		return HashSHA512
+	case crypto.BLAKE2s_256:
+		return HashBLAKE2S
+	case crypto.BLAKE2b_256:
+		return HashBLAKE2B
+	}
+	return 0
+}
+
+// OptSignatureMetadata sets metadata for a signature data object. The hash type is set to ht, and
 // the signing entity fingerprint is set to fp.
 //
 // If this option is applied to a data object with an incompatible type, an error is returned.
-func OptSignatureMetadata(ht HashType, fp [20]byte) DescriptorInputOpt {
+func OptSignatureMetadata(ht crypto.Hash, fp [20]byte) DescriptorInputOpt {
 	return func(t DataType, opts *descriptorOpts) error {
 		if got, want := t, DataSignature; got != want {
 			return &unexpectedDataTypeError{got, want}
 		}
 
 		s := signature{
-			Hashtype: ht,
+			Hashtype: sifHashType(ht),
 		}
 		copy(s.Entity[:], fp[:])
 

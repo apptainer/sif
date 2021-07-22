@@ -26,29 +26,13 @@ var (
 // ErrNoKeyMaterial is the error returned when no key material was provided.
 var ErrNoKeyMaterial = errors.New("key material not provided")
 
-func sifHashType(h crypto.Hash) sif.HashType {
-	switch h {
-	case crypto.SHA256:
-		return sif.HashSHA256
-	case crypto.SHA384:
-		return sif.HashSHA384
-	case crypto.SHA512:
-		return sif.HashSHA512
-	case crypto.BLAKE2s_256:
-		return sif.HashBLAKE2S
-	case crypto.BLAKE2b_256, crypto.BLAKE2b_384, crypto.BLAKE2b_512:
-		return sif.HashBLAKE2B
-	}
-	return 0
-}
-
 type groupSigner struct {
 	f         *sif.FileImage   // SIF image to sign.
 	id        uint32           // Group ID.
 	ods       []sif.Descriptor // Descriptors of object(s) to sign.
 	mdHash    crypto.Hash      // Hash type for metadata.
 	sigConfig *packet.Config   // Configuration for signature.
-	sigHash   sif.HashType     // SIF hash type for signature.
+	sigHash   crypto.Hash      // Hash type for signature.
 }
 
 // groupSignerOpt are used to configure gs.
@@ -131,8 +115,8 @@ func newGroupSigner(f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*
 		}
 	}
 
-	// Populate SIF hash type.
-	gs.sigHash = sifHashType(gs.sigConfig.Hash())
+	// Populate hash type.
+	gs.sigHash = gs.sigConfig.Hash()
 
 	return &gs, nil
 }

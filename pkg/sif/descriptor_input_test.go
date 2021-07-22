@@ -7,6 +7,7 @@ package sif
 
 import (
 	"bytes"
+	"crypto"
 	"encoding/binary"
 	"errors"
 	"testing"
@@ -138,7 +139,7 @@ func TestNewDescriptorInput(t *testing.T) {
 			name: "OptSignatureMetadataUnexpectedDataType",
 			t:    DataGeneric,
 			opts: []DescriptorInputOpt{
-				OptSignatureMetadata(HashSHA256, fp),
+				OptSignatureMetadata(crypto.SHA256, fp),
 			},
 			wantErr: &unexpectedDataTypeError{DataGeneric, DataSignature},
 		},
@@ -146,7 +147,7 @@ func TestNewDescriptorInput(t *testing.T) {
 			name: "OptSignatureMetadata",
 			t:    DataSignature,
 			opts: []DescriptorInputOpt{
-				OptSignatureMetadata(HashSHA256, fp),
+				OptSignatureMetadata(crypto.SHA256, fp),
 				OptObjectTime(testTime),
 			},
 		},

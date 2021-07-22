@@ -7,6 +7,7 @@ package sif
 
 import (
 	"bytes"
+	"crypto"
 	"errors"
 	"io"
 	"os"
@@ -190,7 +191,7 @@ func TestDescriptor_GetSignatureMetadata(t *testing.T) {
 	tests := []struct {
 		name    string
 		rd      rawDescriptor
-		wantHT  HashType
+		wantHT  crypto.Hash
 		wantFP  [20]byte
 		wantErr error
 	}{
@@ -204,7 +205,7 @@ func TestDescriptor_GetSignatureMetadata(t *testing.T) {
 		{
 			name:   "OK",
 			rd:     rd,
-			wantHT: HashSHA384,
+			wantHT: crypto.SHA384,
 			wantFP: [...]byte{
 				0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
 				0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,

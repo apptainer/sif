@@ -48,6 +48,8 @@ func makeTestSIF(t *testing.T, withDataObject bool) string {
 }
 
 func runCommand(t *testing.T, cmd *cobra.Command, args []string) {
+	t.Helper()
+
 	var out, err bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetErr(&err)
