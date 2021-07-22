@@ -310,16 +310,8 @@ func (f *FileImage) AddObject(input DescriptorInput) error {
 	}
 
 	f.h.Mtime = time.Now().Unix()
-	// write down global header to file
-	if err := f.writeHeader(); err != nil {
-		return err
-	}
 
-	if err := f.fp.Sync(); err != nil {
-		return fmt.Errorf("while sync'ing new data object to SIF file: %s", err)
-	}
-
-	return nil
+	return f.writeHeader()
 }
 
 // descrIsLast return true if passed descriptor's object is the last in a SIF file.
@@ -409,16 +401,7 @@ func (f *FileImage) DeleteObject(id uint32, flags int) error {
 		return err
 	}
 
-	// update global header
-	if err = f.writeHeader(); err != nil {
-		return err
-	}
-
-	if err := f.fp.Sync(); err != nil {
-		return fmt.Errorf("while sync'ing deleted data object to SIF file: %s", err)
-	}
-
-	return nil
+	return f.writeHeader()
 }
 
 // SetPrimPart sets the specified system partition to be the primary one.
@@ -487,14 +470,6 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 	}
 
 	f.h.Mtime = time.Now().Unix()
-	// write down global header to file
-	if err := f.writeHeader(); err != nil {
-		return err
-	}
 
-	if err := f.fp.Sync(); err != nil {
-		return fmt.Errorf("while sync'ing new data object to SIF file: %s", err)
-	}
-
-	return nil
+	return f.writeHeader()
 }

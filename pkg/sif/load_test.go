@@ -101,10 +101,6 @@ func (m *mockSifReadWriter) Seek(offset int64, whence int) (ret int64, err error
 	return ret, err
 }
 
-func (m *mockSifReadWriter) Sync() error {
-	return nil
-}
-
 func (m *mockSifReadWriter) Truncate(size int64) error {
 	m.pos = 0
 	return nil
@@ -133,7 +129,7 @@ func TestLoadContainerFpMock(t *testing.T) {
 	// very dumb buffer. This specific test could be exteded to test
 	// for more error conditions as it would be possible to report
 	// errors from cases where it would be otherwise hard to do so
-	// (e.g. Seek, ReadAt, Sync or Truncate reporting errors).
+	// (e.g. Seek, ReadAt or Truncate reporting errors).
 
 	// Load a valid SIF file to test the happy path.
 	content, err := ioutil.ReadFile("testdata/testcontainer2.sif")
