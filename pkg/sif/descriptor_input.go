@@ -151,18 +151,18 @@ func OptPartitionMetadata(fs FSType, pt PartType, arch string) DescriptorInputOp
 }
 
 // sifHashType converts h into a HashType.
-func sifHashType(h crypto.Hash) HashType {
+func sifHashType(h crypto.Hash) hashType {
 	switch h {
 	case crypto.SHA256:
-		return HashSHA256
+		return hashSHA256
 	case crypto.SHA384:
-		return HashSHA384
+		return hashSHA384
 	case crypto.SHA512:
-		return HashSHA512
+		return hashSHA512
 	case crypto.BLAKE2s_256:
-		return HashBLAKE2S
+		return hashBLAKE2S
 	case crypto.BLAKE2b_256:
-		return HashBLAKE2B
+		return hashBLAKE2B
 	}
 	return 0
 }

@@ -174,7 +174,7 @@ func TestDescriptor_GetPartitionMetadata(t *testing.T) {
 
 func TestDescriptor_GetSignatureMetadata(t *testing.T) {
 	s := signature{
-		Hashtype: HashSHA384,
+		Hashtype: hashSHA384,
 	}
 	copy(s.Entity[:], []byte{
 		0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,

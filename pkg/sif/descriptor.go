@@ -51,7 +51,7 @@ type partition struct {
 
 // signature represents the SIF signature data object descriptor.
 type signature struct {
-	Hashtype HashType
+	Hashtype hashType
 	Entity   [DescrEntityLen]byte
 }
 
@@ -160,17 +160,17 @@ func (d rawDescriptor) isPartitionOfType(pt PartType) bool {
 var errHashUnsupported = errors.New("hash algorithm unsupported")
 
 // getHashType converts ht into a crypto.Hash.
-func getHashType(ht HashType) (crypto.Hash, error) {
+func getHashType(ht hashType) (crypto.Hash, error) {
 	switch ht {
-	case HashSHA256:
+	case hashSHA256:
 		return crypto.SHA256, nil
-	case HashSHA384:
+	case hashSHA384:
 		return crypto.SHA384, nil
-	case HashSHA512:
+	case hashSHA512:
 		return crypto.SHA512, nil
-	case HashBLAKE2S:
+	case hashBLAKE2S:
 		return crypto.BLAKE2s_256, nil
-	case HashBLAKE2B:
+	case hashBLAKE2B:
 		return crypto.BLAKE2b_256, nil
 	}
 	return 0, errHashUnsupported

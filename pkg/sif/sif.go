@@ -220,34 +220,17 @@ func (t PartType) String() string {
 	return "Unknown"
 }
 
-// HashType represents the different SIF hashing function types used to fingerprint data objects.
-type HashType int32
+// hashType represents the different SIF hashing function types used to fingerprint data objects.
+type hashType int32
 
 // List of supported hash functions.
 const (
-	HashSHA256 HashType = iota + 1
-	HashSHA384
-	HashSHA512
-	HashBLAKE2S
-	HashBLAKE2B
+	hashSHA256 hashType = iota + 1
+	hashSHA384
+	hashSHA512
+	hashBLAKE2S
+	hashBLAKE2B
 )
-
-// String returns a human-readable representation of t.
-func (t HashType) String() string {
-	switch t {
-	case HashSHA256:
-		return "SHA256"
-	case HashSHA384:
-		return "SHA384"
-	case HashSHA512:
-		return "SHA512"
-	case HashBLAKE2S:
-		return "BLAKE2S"
-	case HashBLAKE2B:
-		return "BLAKE2B"
-	}
-	return "Unknown"
-}
 
 // FormatType represents the different formats used to store cryptographic message objects.
 type FormatType int32
