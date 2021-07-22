@@ -73,19 +73,32 @@ func (m *mockSifReadWriter) ReadAt(b []byte, off int64) (n int, err error) {
 	return copy(b, m.buf[off:]), nil
 }
 
+func (m *mockSifReadWriter) Write(b []byte) (n int, err error) {
+	if len(b) > cap(m.buf[m.pos:]) {
+		buf := make([]byte, m.pos, m.pos+int64(len(b)))
+		copy(buf, m.buf)
+		m.buf = buf
+	}
+
+	n = copy(m.buf[m.pos:cap(m.buf)], b)
+
+	m.pos += int64(n)
+
+	m.buf = m.buf[:m.pos]
+
+	return n, err
+}
+
 func (m *mockSifReadWriter) Seek(offset int64, whence int) (ret int64, err error) {
 	sz := int64(len(m.buf))
 
 	switch whence {
-	case 0:
+	case io.SeekStart:
 		ret = offset
-
-	case 1:
+	case io.SeekCurrent:
 		ret = offset + m.pos
-
-	case 2:
+	case io.SeekEnd:
 		ret = offset + sz
-
 	default:
 		return 0, os.ErrInvalid
 	}
@@ -101,25 +114,9 @@ func (m *mockSifReadWriter) Seek(offset int64, whence int) (ret int64, err error
 	return ret, err
 }
 
-func (m *mockSifReadWriter) Truncate(size int64) error {
-	m.pos = 0
+func (m *mockSifReadWriter) Truncate(n int64) error {
+	m.pos = n
 	return nil
-}
-
-func (m *mockSifReadWriter) Write(b []byte) (n int, err error) {
-	if len(b) > cap(m.buf[m.pos:]) {
-		buf := make([]byte, m.pos, m.pos+int64(len(b)))
-		copy(buf, m.buf)
-		m.buf = buf
-	}
-
-	n = copy(m.buf[m.pos:cap(m.buf)], b)
-
-	m.pos += int64(n)
-
-	m.buf = m.buf[:m.pos]
-
-	return n, err
 }
 
 func TestLoadContainerFpMock(t *testing.T) {
