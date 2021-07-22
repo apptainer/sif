@@ -8,6 +8,7 @@ package integrity
 import (
 	"errors"
 	"io"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -18,13 +19,19 @@ import (
 )
 
 func TestGroupVerifier_fingerprints(t *testing.T) {
-	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	oneGroupImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
-	oneGroupSignedImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed.sif"), true)
+	oneGroupSignedImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group-signed.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,12 +48,12 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 	}{
 		{
 			name:    "Unsigned",
-			f:       &oneGroupImage,
+			f:       oneGroupImage,
 			groupID: 1,
 		},
 		{
 			name:    "Signed",
-			f:       &oneGroupSignedImage,
+			f:       oneGroupSignedImage,
 			groupID: 1,
 			wantFPs: [][20]byte{e.PrimaryKey.Fingerprint},
 		},
@@ -74,13 +81,19 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 }
 
 func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
-	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	oneGroupImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
-	oneGroupSignedImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed.sif"), true)
+	oneGroupSignedImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group-signed.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +120,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 	}{
 		{
 			name:      "SignatureNotFound",
-			f:         &oneGroupImage,
+			f:         oneGroupImage,
 			groupID:   1,
 			objectIDs: []uint32{1, 2},
 			kr:        kr,
@@ -115,7 +128,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 		},
 		{
 			name:      "SignedObjectNotFound",
-			f:         &oneGroupSignedImage,
+			f:         oneGroupSignedImage,
 			groupID:   1,
 			objectIDs: []uint32{1},
 			kr:        kr,
@@ -123,7 +136,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 		},
 		{
 			name:      "UnknownIssuer",
-			f:         &oneGroupSignedImage,
+			f:         oneGroupSignedImage,
 			groupID:   1,
 			objectIDs: []uint32{1, 2},
 			kr:        openpgp.EntityList{},
@@ -131,7 +144,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 		},
 		{
 			name:            "IgnoreError",
-			f:               &oneGroupSignedImage,
+			f:               oneGroupSignedImage,
 			testCallback:    true,
 			ignoreError:     true,
 			groupID:         1,
@@ -144,14 +157,14 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 		},
 		{
 			name:      "OneGroupSigned",
-			f:         &oneGroupSignedImage,
+			f:         oneGroupSignedImage,
 			groupID:   1,
 			objectIDs: []uint32{1, 2},
 			kr:        kr,
 		},
 		{
 			name:            "OneGroupSignedWithCallback",
-			f:               &oneGroupSignedImage,
+			f:               oneGroupSignedImage,
 			testCallback:    true,
 			groupID:         1,
 			objectIDs:       []uint32{1, 2},
@@ -163,7 +176,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 		},
 		{
 			name:      "OneGroupSignedSubset",
-			f:         &oneGroupSignedImage,
+			f:         oneGroupSignedImage,
 			groupID:   1,
 			objectIDs: []uint32{1},
 			subsetOK:  true,
@@ -171,7 +184,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 		},
 		{
 			name:            "OneGroupSignedSubsetWithCallback",
-			f:               &oneGroupSignedImage,
+			f:               oneGroupSignedImage,
 			testCallback:    true,
 			groupID:         1,
 			objectIDs:       []uint32{1},
@@ -240,13 +253,19 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 }
 
 func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
-	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	oneGroupImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
-	oneGroupImageSigned, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed-legacy-group.sif"), true) // nolint:lll
+	oneGroupImageSigned, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group-signed-legacy-group.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,12 +282,12 @@ func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
 	}{
 		{
 			name: "Unsigned",
-			f:    &oneGroupImage,
+			f:    oneGroupImage,
 			id:   1,
 		},
 		{
 			name:    "Signed",
-			f:       &oneGroupImageSigned,
+			f:       oneGroupImageSigned,
 			id:      1,
 			wantFPs: [][20]byte{e.PrimaryKey.Fingerprint},
 		},
@@ -296,13 +315,19 @@ func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
 }
 
 func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
-	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	oneGroupImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
-	oneGroupSignedImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed-legacy-group.sif"), true) // nolint:lll
+	oneGroupSignedImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group-signed-legacy-group.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -327,21 +352,21 @@ func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
 	}{
 		{
 			name:    "SignatureNotFound",
-			f:       &oneGroupImage,
+			f:       oneGroupImage,
 			groupID: 1,
 			kr:      kr,
 			wantErr: &SignatureNotFoundError{},
 		},
 		{
 			name:    "UnknownIssuer",
-			f:       &oneGroupSignedImage,
+			f:       oneGroupSignedImage,
 			groupID: 1,
 			kr:      openpgp.EntityList{},
 			wantErr: pgperrors.ErrUnknownIssuer,
 		},
 		{
 			name:            "IgnoreError",
-			f:               &oneGroupSignedImage,
+			f:               oneGroupSignedImage,
 			testCallback:    true,
 			ignoreError:     true,
 			groupID:         1,
@@ -353,13 +378,13 @@ func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
 		},
 		{
 			name:    "OneGroupSigned",
-			f:       &oneGroupSignedImage,
+			f:       oneGroupSignedImage,
 			groupID: 1,
 			kr:      kr,
 		},
 		{
 			name:            "OneGroupSignedWithCallback",
-			f:               &oneGroupSignedImage,
+			f:               oneGroupSignedImage,
 			testCallback:    true,
 			groupID:         1,
 			kr:              kr,
@@ -370,13 +395,13 @@ func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
 		},
 		{
 			name:    "OneGroupSignedSubset",
-			f:       &oneGroupSignedImage,
+			f:       oneGroupSignedImage,
 			groupID: 1,
 			kr:      kr,
 		},
 		{
 			name:            "OneGroupSignedSubsetWithCallback",
-			f:               &oneGroupSignedImage,
+			f:               oneGroupSignedImage,
 			testCallback:    true,
 			groupID:         1,
 			kr:              kr,
@@ -438,13 +463,19 @@ func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
 }
 
 func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
-	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	oneGroupImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
-	oneGroupImageSigned, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed-legacy-all.sif"), true) // nolint:lll
+	oneGroupImageSigned, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group-signed-legacy-all.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -461,12 +492,12 @@ func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 	}{
 		{
 			name: "Unsigned",
-			f:    &oneGroupImage,
+			f:    oneGroupImage,
 			id:   1,
 		},
 		{
 			name:    "Signed",
-			f:       &oneGroupImageSigned,
+			f:       oneGroupImageSigned,
 			id:      1,
 			wantFPs: [][20]byte{e.PrimaryKey.Fingerprint},
 		},
@@ -499,13 +530,19 @@ func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 }
 
 func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
-	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	oneGroupImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
-	oneGroupSignedImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed-legacy-all.sif"), true) // nolint:lll
+	oneGroupSignedImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group-signed-legacy-all.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -530,21 +567,21 @@ func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 	}{
 		{
 			name:    "SignatureNotFound",
-			f:       &oneGroupImage,
+			f:       oneGroupImage,
 			id:      1,
 			kr:      kr,
 			wantErr: &SignatureNotFoundError{},
 		},
 		{
 			name:    "UnknownIssuer",
-			f:       &oneGroupSignedImage,
+			f:       oneGroupSignedImage,
 			id:      1,
 			kr:      openpgp.EntityList{},
 			wantErr: pgperrors.ErrUnknownIssuer,
 		},
 		{
 			name:            "IgnoreError",
-			f:               &oneGroupSignedImage,
+			f:               oneGroupSignedImage,
 			testCallback:    true,
 			ignoreError:     true,
 			id:              1,
@@ -556,13 +593,13 @@ func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 		},
 		{
 			name: "OneGroupSigned",
-			f:    &oneGroupSignedImage,
+			f:    oneGroupSignedImage,
 			id:   1,
 			kr:   kr,
 		},
 		{
 			name:            "OneGroupSignedWithCallback",
-			f:               &oneGroupSignedImage,
+			f:               oneGroupSignedImage,
 			testCallback:    true,
 			id:              1,
 			kr:              kr,
@@ -573,13 +610,13 @@ func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 		},
 		{
 			name: "OneGroupSignedSubset",
-			f:    &oneGroupSignedImage,
+			f:    oneGroupSignedImage,
 			id:   1,
 			kr:   kr,
 		},
 		{
 			name:            "OneGroupSignedSubsetWithCallback",
-			f:               &oneGroupSignedImage,
+			f:               oneGroupSignedImage,
 			testCallback:    true,
 			id:              1,
 			kr:              kr,
@@ -640,19 +677,28 @@ func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 }
 
 func TestNewVerifier(t *testing.T) {
-	emptyImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "empty.sif"), true)
+	emptyImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "empty.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer emptyImage.UnloadContainer() // nolint:errcheck
 
-	oneGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	oneGroupImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
-	twoGroupImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "two-groups.sif"), true)
+	twoGroupImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "two-groups.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -682,63 +728,63 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name:    "NoGroupsFound",
-			fi:      &emptyImage,
+			fi:      emptyImage,
 			opts:    []VerifierOpt{},
 			wantErr: errNoGroupsFound,
 		},
 		{
 			name:    "InvalidGroupID",
-			fi:      &emptyImage,
+			fi:      emptyImage,
 			opts:    []VerifierOpt{OptVerifyGroup(0)},
 			wantErr: sif.ErrInvalidGroupID,
 		},
 		{
 			name:    "GroupNotFound",
-			fi:      &emptyImage,
+			fi:      emptyImage,
 			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(1)},
 			wantErr: errGroupNotFound,
 		},
 		{
 			name:    "GroupNotFoundLegacy",
-			fi:      &emptyImage,
+			fi:      emptyImage,
 			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(1), OptVerifyLegacy()},
 			wantErr: errGroupNotFound,
 		},
 		{
 			name:    "InvalidObjectID",
-			fi:      &emptyImage,
+			fi:      emptyImage,
 			opts:    []VerifierOpt{OptVerifyObject(0)},
 			wantErr: sif.ErrInvalidObjectID,
 		},
 		{
 			name:    "ObjectNotFound",
-			fi:      &emptyImage,
+			fi:      emptyImage,
 			opts:    []VerifierOpt{OptVerifyObject(1)},
 			wantErr: sif.ErrObjectNotFound,
 		},
 		{
 			name:    "ObjectNotFoundLegacy",
-			fi:      &emptyImage,
+			fi:      emptyImage,
 			opts:    []VerifierOpt{OptVerifyObject(1), OptVerifyLegacy()},
 			wantErr: sif.ErrObjectNotFound,
 		},
 		{
 			name:       "OneGroupDefaults",
-			fi:         &oneGroupImage,
+			fi:         oneGroupImage,
 			opts:       []VerifierOpt{},
 			wantGroups: []uint32{1},
 			wantTasks:  1,
 		},
 		{
 			name:       "TwoGroupDefaults",
-			fi:         &twoGroupImage,
+			fi:         twoGroupImage,
 			opts:       []VerifierOpt{},
 			wantGroups: []uint32{1, 2},
 			wantTasks:  2,
 		},
 		{
 			name:        "OptVerifyWithKeyRing",
-			fi:          &twoGroupImage,
+			fi:          twoGroupImage,
 			opts:        []VerifierOpt{OptVerifyWithKeyRing(kr)},
 			wantKeyring: kr,
 			wantGroups:  []uint32{1, 2},
@@ -746,70 +792,70 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name:       "OptVerifyGroupDuplicate",
-			fi:         &twoGroupImage,
+			fi:         twoGroupImage,
 			opts:       []VerifierOpt{OptVerifyGroup(1), OptVerifyGroup(1)},
 			wantGroups: []uint32{1},
 			wantTasks:  1,
 		},
 		{
 			name:       "OptVerifyGroup1",
-			fi:         &twoGroupImage,
+			fi:         twoGroupImage,
 			opts:       []VerifierOpt{OptVerifyGroup(1)},
 			wantGroups: []uint32{1},
 			wantTasks:  1,
 		},
 		{
 			name:       "OptVerifyGroup2",
-			fi:         &twoGroupImage,
+			fi:         twoGroupImage,
 			opts:       []VerifierOpt{OptVerifyGroup(2)},
 			wantGroups: []uint32{2},
 			wantTasks:  1,
 		},
 		{
 			name:       "OptVerifyGroups",
-			fi:         &twoGroupImage,
+			fi:         twoGroupImage,
 			opts:       []VerifierOpt{OptVerifyGroup(1), OptVerifyGroup(2)},
 			wantGroups: []uint32{1, 2},
 			wantTasks:  2,
 		},
 		{
 			name:        "OptVerifyObjectDuplicate",
-			fi:          &twoGroupImage,
+			fi:          twoGroupImage,
 			opts:        []VerifierOpt{OptVerifyObject(1), OptVerifyObject(1)},
 			wantObjects: []uint32{1},
 			wantTasks:   1,
 		},
 		{
 			name:        "OptVerifyObject1",
-			fi:          &twoGroupImage,
+			fi:          twoGroupImage,
 			opts:        []VerifierOpt{OptVerifyObject(1)},
 			wantObjects: []uint32{1},
 			wantTasks:   1,
 		},
 		{
 			name:        "OptVerifyObject2",
-			fi:          &twoGroupImage,
+			fi:          twoGroupImage,
 			opts:        []VerifierOpt{OptVerifyObject(2)},
 			wantObjects: []uint32{2},
 			wantTasks:   1,
 		},
 		{
 			name:        "OptVerifyObject3",
-			fi:          &twoGroupImage,
+			fi:          twoGroupImage,
 			opts:        []VerifierOpt{OptVerifyObject(3)},
 			wantObjects: []uint32{3},
 			wantTasks:   1,
 		},
 		{
 			name:        "OptVerifyObjects",
-			fi:          &twoGroupImage,
+			fi:          twoGroupImage,
 			opts:        []VerifierOpt{OptVerifyObject(1), OptVerifyObject(2), OptVerifyObject(3)},
 			wantObjects: []uint32{1, 2, 3},
 			wantTasks:   3,
 		},
 		{
 			name:       "OptVerifyLegacy",
-			fi:         &twoGroupImage,
+			fi:         twoGroupImage,
 			opts:       []VerifierOpt{OptVerifyLegacy()},
 			wantGroups: []uint32{1, 2},
 			wantLegacy: true,
@@ -817,7 +863,7 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name:       "OptVerifyLegacyGroup1",
-			fi:         &twoGroupImage,
+			fi:         twoGroupImage,
 			opts:       []VerifierOpt{OptVerifyLegacy(), OptVerifyGroup(1)},
 			wantGroups: []uint32{1},
 			wantLegacy: true,
@@ -825,7 +871,7 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name:        "OptVerifyLegacyObject1",
-			fi:          &twoGroupImage,
+			fi:          twoGroupImage,
 			opts:        []VerifierOpt{OptVerifyLegacy(), OptVerifyObject(1)},
 			wantObjects: []uint32{1},
 			wantLegacy:  true,
@@ -833,7 +879,7 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name:          "OptVerifyLegacyAll",
-			fi:            &twoGroupImage,
+			fi:            twoGroupImage,
 			opts:          []VerifierOpt{OptVerifyLegacyAll()},
 			wantObjects:   []uint32{1, 2, 3},
 			wantLegacy:    true,
@@ -842,7 +888,7 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name:         "OptVerifyCallback",
-			fi:           &twoGroupImage,
+			fi:           twoGroupImage,
 			opts:         []VerifierOpt{OptVerifyCallback(cb)},
 			wantGroups:   []uint32{1, 2},
 			wantCallback: true,
@@ -1083,7 +1129,10 @@ func TestVerifier_AllSignedBy(t *testing.T) {
 }
 
 func TestVerifier_Verify(t *testing.T) {
-	oneGroupSignedImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group-signed.sif"), true)
+	oneGroupSignedImage, err := sif.LoadContainerFromPath(
+		filepath.Join("testdata", "images", "one-group-signed.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1100,20 +1149,20 @@ func TestVerifier_Verify(t *testing.T) {
 	}{
 		{
 			name:    "ErrNoKeyMaterial",
-			f:       &oneGroupSignedImage,
+			f:       oneGroupSignedImage,
 			tasks:   []verifyTask{mockVerifier{}},
 			wantErr: ErrNoKeyMaterial,
 		},
 		{
 			name:    "EOF",
-			f:       &oneGroupSignedImage,
+			f:       oneGroupSignedImage,
 			kr:      kr,
 			tasks:   []verifyTask{mockVerifier{err: io.EOF}},
 			wantErr: io.EOF,
 		},
 		{
 			name:  "OK",
-			f:     &oneGroupSignedImage,
+			f:     oneGroupSignedImage,
 			kr:    kr,
 			tasks: []verifyTask{mockVerifier{}},
 		},

@@ -58,77 +58,91 @@ func isValidSif(f *FileImage) error {
 	return nil
 }
 
-// LoadContainer is responsible for loading a SIF container file. It takes
-// the container file name, and whether the file is opened as read-only
-// as arguments.
-func LoadContainer(filename string, rdonly bool) (FileImage, error) {
-	mode := os.O_RDWR // open SIF read-write when adding and removing data objects
-	if rdonly {
-		mode = os.O_RDONLY // open SIF rdonly if mounting immutable partitions or inspecting the image
+// loadContainer loads a SIF image from rw.
+func loadContainer(rw ReadWriter) (*FileImage, error) {
+	f := FileImage{rw: rw}
+
+	if err := readHeader(rw, &f); err != nil {
+		return nil, err
 	}
 
-	f, err := os.OpenFile(filename, mode, 0)
-	if err != nil {
-		return FileImage{}, fmt.Errorf("opening(%s) container file: %v", modeToStr(mode), err)
+	if err := isValidSif(&f); err != nil {
+		return nil, err
 	}
 
-	fimg, err := LoadContainerFp(f, rdonly)
-	if err != nil {
-		_ = f.Close()
-		return FileImage{}, err
+	if err := readDescriptors(rw, &f); err != nil {
+		return nil, err
 	}
 
-	return fimg, nil
+	return &f, nil
 }
 
-// LoadContainerFp is responsible for loading a SIF container file. It takes
-// a ReadWriter pointing to an opened file, and whether the file is opened as
-// read-only for arguments.
-func LoadContainerFp(fp ReadWriter, rdonly bool) (fimg FileImage, err error) {
-	if fp == nil {
-		return fimg, fmt.Errorf("provided fp for file is invalid")
-	}
-	fimg.rw = fp
-
-	// read global header from SIF file
-	if err = readHeader(fp, &fimg); err != nil {
-		return
-	}
-
-	// validate global header
-	if err = isValidSif(&fimg); err != nil {
-		return
-	}
-
-	// read descriptor array from SIF file
-	if err = readDescriptors(fp, &fimg); err != nil {
-		return
-	}
-
-	return fimg, nil
+// loadOpts accumulates container loading options.
+type loadOpts struct {
+	flag int
 }
 
-// LoadContainerReader is responsible for processing SIF data from a byte stream
-// and extract various components like the global header, descriptors and even
-// perhaps data, depending on how much is read from the source.
-func LoadContainerReader(b *bytes.Reader) (fimg FileImage, err error) {
-	// read global header from SIF file
-	if err = readHeader(b, &fimg); err != nil {
-		return
+// LoadOpt are used to specify container loading options.
+type LoadOpt func(*loadOpts) error
+
+// OptLoadWithFlag specifies flag (os.O_RDONLY etc.) to be used when opening the container file.
+func OptLoadWithFlag(flag int) LoadOpt {
+	return func(lo *loadOpts) error {
+		lo.flag = flag
+		return nil
+	}
+}
+
+// LoadContainerFromPath loads a new SIF container from path, according to opts.
+//
+// On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
+// are released.
+//
+// By default, the file is opened for read and write access. To change this behavior, consider
+// using OptLoadWithFlag.
+func LoadContainerFromPath(path string, opts ...LoadOpt) (*FileImage, error) {
+	lo := loadOpts{
+		flag: os.O_RDWR,
 	}
 
-	// validate global header
-	if err = isValidSif(&fimg); err != nil {
-		return
+	for _, opt := range opts {
+		if err := opt(&lo); err != nil {
+			return nil, fmt.Errorf("%w", err)
+		}
 	}
 
-	// in the case where the reader buffer doesn't include descriptor data, we
-	// don't return an error and DescrArr will be set to nil
-	if readErr := readDescriptors(b, &fimg); readErr != nil {
-		fmt.Println("Error reading descriptors: ", readErr)
+	fp, err := os.OpenFile(path, lo.flag, 0)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
 	}
 
-	return fimg, err
+	f, err := loadContainer(fp)
+	if err != nil {
+		fp.Close()
+
+		return nil, fmt.Errorf("%w", err)
+	}
+	return f, nil
+}
+
+// LoadContainer loads a new SIF container from rw, according to opts.
+//
+// On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
+// are released.
+func LoadContainer(rw ReadWriter, opts ...LoadOpt) (*FileImage, error) {
+	lo := loadOpts{}
+
+	for _, opt := range opts {
+		if err := opt(&lo); err != nil {
+			return nil, fmt.Errorf("%w", err)
+		}
+	}
+
+	f, err := loadContainer(rw)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+	return f, nil
 }
 
 // UnloadContainer unloads f, releasing associated resources.
@@ -143,14 +157,4 @@ func (f *FileImage) UnloadContainer() error {
 
 func trimZeroBytes(str []byte) string {
 	return string(bytes.TrimRight(str, "\x00"))
-}
-
-func modeToStr(mode int) string {
-	switch mode {
-	case os.O_RDONLY:
-		return "RDONLY"
-	case os.O_RDWR:
-		return "RDWR"
-	}
-	return ""
 }

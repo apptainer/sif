@@ -153,7 +153,7 @@ func TestAddDelObject(t *testing.T) {
 	//
 
 	// load the test container
-	fimg, err := LoadContainer(testObjContainer, false)
+	fimg, err := LoadContainerFromPath(testObjContainer)
 	if err != nil {
 		t.Errorf("failed to load test container: %s: %s", testObjContainer, err)
 	}
@@ -178,7 +178,7 @@ func TestAddDelObject(t *testing.T) {
 	//
 
 	// load the test container
-	fimg, err = LoadContainer(testObjContainer, false)
+	fimg, err = LoadContainerFromPath(testObjContainer)
 	if err != nil {
 		t.Errorf("failed to load test container: %s: %s", testObjContainer, err)
 	}

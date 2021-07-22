@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -16,91 +17,76 @@ import (
 )
 
 func TestDescriptor_GetData(t *testing.T) {
-	bufferedImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
+	f, err := LoadContainerFromPath(
+		filepath.Join("testdata", "testcontainer2.sif"),
+		OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatalf("failed to load container: %v", err)
 	}
 	defer func() {
-		if err := bufferedImage.UnloadContainer(); err != nil {
+		if err := f.UnloadContainer(); err != nil {
 			t.Error(err)
 		}
 	}()
 
-	tests := []struct {
-		name string
-		fimg *FileImage
-	}{
-		{"Buffered", &bufferedImage},
+	// Get the signature block
+	descr, err := f.GetDescriptor(WithID(3))
+	if err != nil {
+		t.Fatalf("failed to get descriptor: %v", err)
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			// Get the signature block
-			descr, err := tt.fimg.GetDescriptor(WithID(3))
-			if err != nil {
-				t.Fatalf("failed to get descriptor: %v", err)
-			}
+	b, err := descr.GetData(f)
+	if err != nil {
+		t.Fatalf("failed to get data: %v", err)
+	}
 
-			b, err := descr.GetData(tt.fimg)
-			if err != nil {
-				t.Fatalf("failed to get data: %v", err)
-			}
-
-			if got, want := string(b[5:10]), "BEGIN"; got != want {
-				t.Errorf("got data %#v, want %#v", got, want)
-			}
-		})
+	if got, want := string(b[5:10]), "BEGIN"; got != want {
+		t.Errorf("got data %#v, want %#v", got, want)
 	}
 }
 
 func TestDescriptor_GetReader(t *testing.T) {
-	bufferedImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
+	f, err := LoadContainerFromPath(
+		filepath.Join("testdata", "testcontainer2.sif"),
+		OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatalf("failed to load container: %v", err)
 	}
 	defer func() {
-		if err := bufferedImage.UnloadContainer(); err != nil {
+		if err := f.UnloadContainer(); err != nil {
 			t.Error(err)
 		}
 	}()
 
-	tests := []struct {
-		name string
-		fimg *FileImage
-	}{
-		{"Buffered", &bufferedImage},
+	// Get the signature block
+	descr, err := f.GetDescriptor(WithID(3))
+	if err != nil {
+		t.Fatalf("failed to get descriptor: %v", err)
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			// Get the signature block
-			descr, err := tt.fimg.GetDescriptor(WithID(3))
-			if err != nil {
-				t.Fatalf("failed to get descriptor: %v", err)
-			}
-
-			// Read data via Reader and validate data.
-			b := make([]byte, descr.Filelen)
-			if _, err := io.ReadFull(descr.GetReader(tt.fimg), b); err != nil {
-				t.Fatalf("failed to read: %v", err)
-			}
-			if got, want := string(b[5:10]), "BEGIN"; got != want {
-				t.Errorf("got data %#v, want %#v", got, want)
-			}
-		})
+	// Read data via Reader and validate data.
+	b := make([]byte, descr.Filelen)
+	if _, err := io.ReadFull(descr.GetReader(f), b); err != nil {
+		t.Fatalf("failed to read: %v", err)
+	}
+	if got, want := string(b[5:10]), "BEGIN"; got != want {
+		t.Errorf("got data %#v, want %#v", got, want)
 	}
 }
 
 func TestDescriptor_GetName(t *testing.T) {
 	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
+	f, err := LoadContainerFromPath(
+		filepath.Join("testdata", "testcontainer2.sif"),
+		OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
 
-	parts, err := fimg.GetDescriptors(
+	parts, err := f.GetDescriptors(
 		WithDataType(DataPartition),
 		WithGroupID(1),
 	)
@@ -117,7 +103,7 @@ func TestDescriptor_GetName(t *testing.T) {
 	}
 
 	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
+	if err = f.UnloadContainer(); err != nil {
 		t.Error("UnloadContainer(fimg):", err)
 	}
 }

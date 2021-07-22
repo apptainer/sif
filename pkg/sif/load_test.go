@@ -6,15 +6,18 @@
 package sif
 
 import (
-	"bytes"
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
 func TestLoadContainer(t *testing.T) {
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
+	fimg, err := LoadContainerFromPath(
+		filepath.Join("testdata", "testcontainer2.sif"),
+		OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
 	}
@@ -48,7 +51,7 @@ func TestLoadContainerFp(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			fimg, err := LoadContainerFp(fp, true)
+			fimg, err := LoadContainer(fp, OptLoadWithFlag(os.O_RDONLY))
 			if err != nil {
 				t.Error("LoadContainerFp(fp, true):", err)
 			}
@@ -134,11 +137,11 @@ func TestLoadContainerFpMock(t *testing.T) {
 		t.Error(`ioutil.ReadFile("testdata/testcontainer2.sif"):`, err)
 	}
 
-	fp := &mockSifReadWriter{
+	rw := &mockSifReadWriter{
 		buf: content,
 	}
 
-	fimg, err := LoadContainerFp(fp, true)
+	fimg, err := LoadContainer(rw, OptLoadWithFlag(os.O_RDONLY))
 	if err != nil {
 		t.Error("LoadContainerFp(fp, true):", err)
 	}
@@ -160,46 +163,16 @@ func TestLoadContainerInvalidMagic(t *testing.T) {
 	// byte, as this would catch off-by-one errors in the code.
 	copy(content[hdrLaunchLen:hdrLaunchLen+hdrMagicLen], "SIF_MAGIX")
 
-	fp := &mockSifReadWriter{
+	rw := &mockSifReadWriter{
 		buf: content,
 	}
 
-	fimg, err := LoadContainerFp(fp, true)
+	fimg, err := LoadContainer(rw, OptLoadWithFlag(os.O_RDONLY))
 	if err == nil {
 		// unload the container in case it's loaded, ignore
 		// any errors
 		_ = fimg.UnloadContainer()
 		t.Errorf(`LoadContainerFp(fp, true) did not report an error for a container with invalid magic.`)
-	}
-}
-
-func TestLoadContainerReader(t *testing.T) {
-	content, err := ioutil.ReadFile("testdata/testcontainer2.sif")
-	if err != nil {
-		t.Error(`ioutil.ReadFile("testdata/testcontainer2.sif"):`, err)
-	}
-
-	// short read on the descriptor list, make sure it still work
-	// and that DescrArr is set to nil (since not complete)
-	r := bytes.NewReader(content[:31768])
-	fimg, err := LoadContainerReader(r)
-	if err != nil || fimg.rds != nil {
-		t.Error(`LoadContainerReader(buf):`, err)
-	}
-
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error(`fimg.UnloadContainer():`, err)
-	}
-
-	// this buffer is big enough to include header + complete DescrArr
-	r = bytes.NewReader(content[:32768])
-	fimg, err = LoadContainerReader(r)
-	if err != nil {
-		t.Error(`LoadContainerReader(buf):`, err)
-	}
-
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error(`fimg.UnloadContainer():`, err)
 	}
 }
 

@@ -160,7 +160,7 @@ func OptCreateWithTime(t time.Time) CreateOpt {
 	}
 }
 
-// createContainer creates a new SIF container file in fp, according to opts.
+// createContainer creates a new SIF container file in rw, according to opts.
 func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 	h := header{
 		Arch:     hdrArchUnknown,

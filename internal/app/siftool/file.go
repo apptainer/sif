@@ -6,12 +6,19 @@
 package siftool
 
 import (
+	"os"
+
 	"github.com/hpcng/sif/v2/pkg/sif"
 )
 
 // withFileImage calls fn with a FileImage loaded from path.
 func withFileImage(path string, writable bool, fn func(*sif.FileImage) error) (err error) {
-	f, err := sif.LoadContainer(path, !writable)
+	flag := os.O_RDONLY
+	if writable {
+		flag = os.O_RDWR
+	}
+
+	f, err := sif.LoadContainerFromPath(path, sif.OptLoadWithFlag(flag))
 	if err != nil {
 		return err
 	}
@@ -21,5 +28,5 @@ func withFileImage(path string, writable bool, fn func(*sif.FileImage) error) (e
 		}
 	}()
 
-	return fn(&f)
+	return fn(f)
 }
