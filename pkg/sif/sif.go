@@ -86,7 +86,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -343,7 +342,6 @@ type ReadWriter interface {
 	io.Closer
 	Name() string
 	Fd() uintptr
-	Stat() (os.FileInfo, error)
 	Sync() error
 	Truncate(size int64) error
 }
@@ -352,7 +350,6 @@ type ReadWriter interface {
 type FileImage struct {
 	h          header          // the loaded SIF global header
 	fp         ReadWriter      // file pointer of opened SIF file
-	size       int64           // file size of the opened SIF file
 	descrArr   []rawDescriptor // slice of loaded descriptors from SIF file
 	primPartID uint32          // ID of primary system partition if present
 }

@@ -90,12 +90,6 @@ func LoadContainerFp(fp ReadWriter, rdonly bool) (fimg FileImage, err error) {
 	}
 	fimg.fp = fp
 
-	info, err := fimg.fp.Stat()
-	if err != nil {
-		return fimg, err
-	}
-	fimg.size = info.Size()
-
 	// read global header from SIF file
 	if err = readHeader(fp, &fimg); err != nil {
 		return

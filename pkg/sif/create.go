@@ -323,8 +323,16 @@ func (f *FileImage) AddObject(input DescriptorInput) error {
 }
 
 // descrIsLast return true if passed descriptor's object is the last in a SIF file.
-func objectIsLast(fimg *FileImage, descr *rawDescriptor) bool {
-	return fimg.size == descr.Fileoff+descr.Filelen
+func objectIsLast(f *FileImage, d *rawDescriptor) bool {
+	isLast := true
+
+	end := d.GetOffset() + d.GetSize()
+	f.WithDescriptors(func(d Descriptor) bool {
+		isLast = d.GetOffset()+d.GetSize() <= end
+		return !isLast
+	})
+
+	return isLast
 }
 
 // compactAtDescr joins data objects leading and following "descr" by compacting a SIF file.

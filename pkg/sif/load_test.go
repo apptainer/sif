@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
-	"time"
 )
 
 func TestLoadContainer(t *testing.T) {
@@ -59,36 +58,6 @@ func TestLoadContainerFp(t *testing.T) {
 			}
 		})
 	}
-}
-
-type mockFileInfo struct {
-	name string
-	size int64
-	time time.Time
-}
-
-func (m *mockFileInfo) Name() string {
-	return m.name
-}
-
-func (m *mockFileInfo) Size() int64 {
-	return m.size
-}
-
-func (m *mockFileInfo) Mode() os.FileMode {
-	return 0o644
-}
-
-func (m *mockFileInfo) ModTime() time.Time {
-	return m.time
-}
-
-func (m *mockFileInfo) IsDir() bool {
-	return false
-}
-
-func (m *mockFileInfo) Sys() interface{} {
-	return nil
 }
 
 type mockSifReadWriter struct {
@@ -169,10 +138,6 @@ func (m *mockSifReadWriter) Seek(offset int64, whence int) (ret int64, err error
 	m.pos = ret
 
 	return ret, err
-}
-
-func (m *mockSifReadWriter) Stat() (os.FileInfo, error) {
-	return &mockFileInfo{name: m.name, size: int64(len(m.buf)), time: time.Unix(0, 0)}, nil
 }
 
 func (m *mockSifReadWriter) Sync() error {
