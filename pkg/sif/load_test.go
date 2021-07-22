@@ -61,21 +61,11 @@ func TestLoadContainerFp(t *testing.T) {
 }
 
 type mockSifReadWriter struct {
-	buf    []byte
-	pos    int64
-	closed bool
-}
-
-func (m *mockSifReadWriter) Close() error {
-	m.closed = true
-	return nil
+	buf []byte
+	pos int64
 }
 
 func (m *mockSifReadWriter) ReadAt(b []byte, off int64) (n int, err error) {
-	if m.closed {
-		return 0, os.ErrInvalid
-	}
-
 	if off >= int64(len(m.buf)) {
 		return 0, io.EOF
 	}
@@ -84,10 +74,6 @@ func (m *mockSifReadWriter) ReadAt(b []byte, off int64) (n int, err error) {
 }
 
 func (m *mockSifReadWriter) Seek(offset int64, whence int) (ret int64, err error) {
-	if m.closed {
-		return 0, os.ErrInvalid
-	}
-
 	sz := int64(len(m.buf))
 
 	switch whence {
@@ -125,10 +111,6 @@ func (m *mockSifReadWriter) Truncate(size int64) error {
 }
 
 func (m *mockSifReadWriter) Write(b []byte) (n int, err error) {
-	if m.closed {
-		return 0, os.ErrInvalid
-	}
-
 	if len(b) > cap(m.buf[m.pos:]) {
 		buf := make([]byte, m.pos, m.pos+int64(len(b)))
 		copy(buf, m.buf)

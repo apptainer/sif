@@ -339,7 +339,6 @@ func (h header) GetIntegrityReader() io.Reader {
 type ReadWriter interface {
 	io.ReaderAt
 	io.WriteSeeker
-	io.Closer
 	Sync() error
 	Truncate(int64) error
 }
