@@ -63,65 +63,6 @@ func TestLoadContainerFp(t *testing.T) {
 	}
 }
 
-type mockSifReadWriter struct {
-	buf []byte
-	pos int64
-}
-
-func (m *mockSifReadWriter) ReadAt(b []byte, off int64) (n int, err error) {
-	if off >= int64(len(m.buf)) {
-		return 0, io.EOF
-	}
-
-	return copy(b, m.buf[off:]), nil
-}
-
-func (m *mockSifReadWriter) Write(b []byte) (n int, err error) {
-	if len(b) > cap(m.buf[m.pos:]) {
-		buf := make([]byte, m.pos, m.pos+int64(len(b)))
-		copy(buf, m.buf)
-		m.buf = buf
-	}
-
-	n = copy(m.buf[m.pos:cap(m.buf)], b)
-
-	m.pos += int64(n)
-
-	m.buf = m.buf[:m.pos]
-
-	return n, err
-}
-
-func (m *mockSifReadWriter) Seek(offset int64, whence int) (ret int64, err error) {
-	sz := int64(len(m.buf))
-
-	switch whence {
-	case io.SeekStart:
-		ret = offset
-	case io.SeekCurrent:
-		ret = offset + m.pos
-	case io.SeekEnd:
-		ret = offset + sz
-	default:
-		return 0, os.ErrInvalid
-	}
-
-	if ret < 0 {
-		ret = 0
-	} else if ret > sz {
-		ret = sz
-	}
-
-	m.pos = ret
-
-	return ret, err
-}
-
-func (m *mockSifReadWriter) Truncate(n int64) error {
-	m.pos = n
-	return nil
-}
-
 func TestLoadContainerFpMock(t *testing.T) {
 	// This test is using mockSifReadWriter to verify that the code
 	// is not making assumptions regading the behavior of the
@@ -137,9 +78,7 @@ func TestLoadContainerFpMock(t *testing.T) {
 		t.Error(`ioutil.ReadFile("testdata/testcontainer2.sif"):`, err)
 	}
 
-	rw := &mockSifReadWriter{
-		buf: content,
-	}
+	rw := NewBuffer(content)
 
 	fimg, err := LoadContainer(rw, OptLoadWithFlag(os.O_RDONLY))
 	if err != nil {
@@ -163,9 +102,7 @@ func TestLoadContainerInvalidMagic(t *testing.T) {
 	// byte, as this would catch off-by-one errors in the code.
 	copy(content[hdrLaunchLen:hdrLaunchLen+hdrMagicLen], "SIF_MAGIX")
 
-	rw := &mockSifReadWriter{
-		buf: content,
-	}
+	rw := NewBuffer(content)
 
 	fimg, err := LoadContainer(rw, OptLoadWithFlag(os.O_RDONLY))
 	if err == nil {

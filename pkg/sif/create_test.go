@@ -219,7 +219,7 @@ func TestSetPrimPart(t *testing.T) {
 			Dfree:  int64(len(inputs)),
 			Dtotal: int64(len(inputs)),
 		},
-		rw:  &mockSifReadWriter{},
+		rw:  &Buffer{},
 		rds: make([]rawDescriptor, len(inputs)),
 	}
 
