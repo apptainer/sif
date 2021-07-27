@@ -19,15 +19,15 @@ import (
 )
 
 // readableSize returns the size in human readable format.
-func readableSize(size uint64) string {
-	if size < 1024 {
+func readableSize(size int64) string {
+	if -1024 < size && size < 1024 {
 		return fmt.Sprintf("%d B", size)
 	}
 
 	units := "KMGTPE"
 
 	div, exp := uint64(1024), 0
-	for n := size / 1024; (n >= 1024) && (exp < len(units)-1); n /= 1024 {
+	for n := size / 1024; (n <= -1024) || (1024 <= n); n /= 1024 {
 		div *= 1024
 		exp++
 	}

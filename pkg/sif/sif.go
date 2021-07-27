@@ -331,22 +331,22 @@ func (f *FileImage) CreatedAt() time.Time { return time.Unix(f.h.Ctime, 0).UTC()
 func (f *FileImage) ModifiedAt() time.Time { return time.Unix(f.h.Mtime, 0).UTC() }
 
 // DescriptorsFree returns the number of free descriptors in the image.
-func (f *FileImage) DescriptorsFree() uint64 { return uint64(f.h.Dfree) }
+func (f *FileImage) DescriptorsFree() int64 { return f.h.Dfree }
 
 // DescriptorsTotal returns the total number of descriptors in the image.
-func (f *FileImage) DescriptorsTotal() uint64 { return uint64(f.h.Dtotal) }
+func (f *FileImage) DescriptorsTotal() int64 { return f.h.Dtotal }
 
 // DescriptorsOffset returns the offset (in bytes) of the descriptors section in the image.
-func (f *FileImage) DescriptorsOffset() uint64 { return uint64(f.h.Descroff) }
+func (f *FileImage) DescriptorsOffset() int64 { return f.h.Descroff }
 
 // DescriptorsSize returns the size (in bytes) of the descriptors section in the image.
-func (f *FileImage) DescriptorsSize() uint64 { return uint64(f.h.Descrlen) }
+func (f *FileImage) DescriptorsSize() int64 { return f.h.Descrlen }
 
 // DataOffset returns the offset (in bytes) of the data section in the image.
-func (f *FileImage) DataOffset() uint64 { return uint64(f.h.Dataoff) }
+func (f *FileImage) DataOffset() int64 { return f.h.Dataoff }
 
 // DataSize returns the size (in bytes) of the data section in the image.
-func (f *FileImage) DataSize() uint64 { return uint64(f.h.Datalen) }
+func (f *FileImage) DataSize() int64 { return f.h.Datalen }
 
 // GetHeaderIntegrityReader returns an io.Reader that reads the integrity-protected fields from the
 // header of the image.

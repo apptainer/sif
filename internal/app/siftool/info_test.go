@@ -19,7 +19,7 @@ var corpus = filepath.Join("..", "..", "..", "pkg", "integrity", "testdata", "im
 func Test_readableSize(t *testing.T) {
 	tests := []struct {
 		name string
-		size uint64
+		size int64
 		want string
 	}{
 		{
