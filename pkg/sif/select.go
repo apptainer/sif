@@ -85,7 +85,7 @@ func WithLinkedGroupID(groupID uint32) DescriptorSelectorFunc {
 // WithPartitionType selects descriptors containing a partition of type pt.
 func WithPartitionType(pt PartType) DescriptorSelectorFunc {
 	return func(d Descriptor) (bool, error) {
-		return d.isPartitionOfType(pt), nil
+		return d.raw.isPartitionOfType(pt), nil
 	}
 }
 

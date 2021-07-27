@@ -38,7 +38,7 @@ func readDescriptors(r io.ReaderAt, fimg *FileImage) error {
 		return fmt.Errorf("reading descriptor array from container file: %s", err)
 	}
 
-	if d, err := fimg.GetDescriptor(WithPartitionType(PartPrimSys)); err == nil {
+	if d, err := fimg.getDescriptor(WithPartitionType(PartPrimSys)); err == nil {
 		fimg.primPartID = d.ID
 	}
 

@@ -68,7 +68,7 @@ func TestDescriptor_GetReader(t *testing.T) {
 	}
 
 	// Read data via Reader and validate data.
-	b := make([]byte, descr.Filelen)
+	b := make([]byte, descr.GetSize())
 	if _, err := io.ReadFull(descr.GetReader(f), b); err != nil {
 		t.Fatalf("failed to read: %v", err)
 	}
@@ -149,7 +149,9 @@ func TestDescriptor_GetPartitionMetadata(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs, part, arch, err := tt.rd.GetPartitionMetadata()
+			d := Descriptor{raw: tt.rd}
+
+			fs, part, arch, err := d.GetPartitionMetadata()
 
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
@@ -214,7 +216,9 @@ func TestDescriptor_GetSignatureMetadata(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ht, fp, err := tt.rd.GetSignatureMetadata()
+			d := Descriptor{raw: tt.rd}
+
+			ht, fp, err := d.GetSignatureMetadata()
 
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
@@ -269,7 +273,9 @@ func TestDescriptor_GetCryptoMessageMetadata(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ft, mt, err := tt.rd.GetCryptoMessageMetadata()
+			d := Descriptor{raw: tt.rd}
+
+			ft, mt, err := d.GetCryptoMessageMetadata()
 
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
@@ -289,7 +295,7 @@ func TestDescriptor_GetCryptoMessageMetadata(t *testing.T) {
 }
 
 func TestDescriptor_GetIntegrityReader(t *testing.T) {
-	d := rawDescriptor{
+	rd := rawDescriptor{
 		Datatype: DataDeffile,
 		Used:     true,
 		ID:       1,
@@ -297,8 +303,8 @@ func TestDescriptor_GetIntegrityReader(t *testing.T) {
 		Ctime:    1504657553,
 		Mtime:    1504657553,
 	}
-	copy(d.Name[:], "GOOD_NAME")
-	copy(d.Extra[:], "GOOD_EXTRA")
+	copy(rd.Name[:], "GOOD_NAME")
+	copy(rd.Extra[:], "GOOD_EXTRA")
 
 	tests := []struct {
 		name       string
@@ -370,9 +376,9 @@ func TestDescriptor_GetIntegrityReader(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			d := d
+			d := Descriptor{raw: rd}
 			if tt.modFunc != nil {
-				tt.modFunc(&d)
+				tt.modFunc(&d.raw)
 			}
 
 			b := bytes.Buffer{}

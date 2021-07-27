@@ -244,7 +244,7 @@ func TestSetPrimPart(t *testing.T) {
 			t.Error("fimg.SetPrimPart(...):", err)
 		}
 
-		if part, err := fimg.GetDescriptor(WithPartitionType(PartPrimSys)); err != nil {
+		if part, err := fimg.getDescriptor(WithPartitionType(PartPrimSys)); err != nil {
 			t.Fatal(err)
 		} else if want, got := part.ID, fimg.rds[i].ID; got != want {
 			t.Errorf("got ID %v, want %v", got, want)

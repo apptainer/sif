@@ -318,7 +318,7 @@ func (f *FileImage) AddObject(input DescriptorInput) error {
 func objectIsLast(f *FileImage, d *rawDescriptor) bool {
 	isLast := true
 
-	end := d.GetOffset() + d.GetSize()
+	end := d.Fileoff + d.Filelen
 	f.WithDescriptors(func(d Descriptor) bool {
 		isLast = d.GetOffset()+d.GetSize() <= end
 		return !isLast
@@ -441,7 +441,7 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 		return fmt.Errorf("not a volume partition")
 	}
 
-	fs, pt, arch, err := descr.GetPartitionMetadata()
+	fs, pt, arch, err := descr.getPartitionMetadata()
 	if err != nil {
 		return err
 	}
@@ -474,7 +474,7 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 	}
 
 	if olddescr != nil {
-		oldfs, _, oldarch, err := olddescr.GetPartitionMetadata()
+		oldfs, _, oldarch, err := olddescr.getPartitionMetadata()
 		if err != nil {
 			return err
 		}

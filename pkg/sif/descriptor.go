@@ -18,11 +18,6 @@ import (
 	"time"
 )
 
-// Descriptor represents the SIF descriptor type.
-type Descriptor struct {
-	rawDescriptor
-}
-
 // rawDescriptor represents the on-disk descriptor type.
 type rawDescriptor struct {
 	Datatype DataType // informs of descriptor type
@@ -100,40 +95,8 @@ func (d *rawDescriptor) setExtra(v interface{}) error {
 	return nil
 }
 
-// GetDataType returns the type of data object.
-func (d rawDescriptor) GetDataType() DataType { return d.Datatype }
-
-// GetID returns the data object ID of d.
-func (d rawDescriptor) GetID() uint32 { return d.ID }
-
-// GetGroupID returns the data object group ID of d, or zero if d is not part of a data object
-// group.
-func (d rawDescriptor) GetGroupID() uint32 { return d.Groupid &^ descrGroupMask }
-
-// GetLinkedID returns the object/group ID d is linked to, or zero if d does not contain a linked
-// ID. If isGroup is true, the returned id is an object group ID. Otherwise, the returned id is a
-// data object ID.
-func (d rawDescriptor) GetLinkedID() (id uint32, isGroup bool) {
-	return d.Link &^ descrGroupMask, d.Link&descrGroupMask == descrGroupMask
-}
-
-// GetOffset returns the offset of the data object.
-func (d rawDescriptor) GetOffset() int64 { return d.Fileoff }
-
-// GetSize returns the data object size.
-func (d rawDescriptor) GetSize() int64 { return d.Filelen }
-
-// CreatedAt returns the creation time of the data object.
-func (d rawDescriptor) CreatedAt() time.Time { return time.Unix(d.Ctime, 0).UTC() }
-
-// ModifiedAt returns the modification time of the data object.
-func (d rawDescriptor) ModifiedAt() time.Time { return time.Unix(d.Mtime, 0).UTC() }
-
-// GetName returns the name tag associated with the descriptor. Analogous to file name.
-func (d rawDescriptor) GetName() string { return strings.TrimRight(string(d.Name[:]), "\000") }
-
-// GetPartitionMetadata gets metadata for a partition data object.
-func (d rawDescriptor) GetPartitionMetadata() (fs FSType, pt PartType, arch string, err error) {
+// getPartitionMetadata gets metadata for a partition data object.
+func (d rawDescriptor) getPartitionMetadata() (fs FSType, pt PartType, arch string, err error) {
 	if got, want := d.Datatype, DataPartition; got != want {
 		return 0, 0, "", &unexpectedDataTypeError{got, want}
 	}
@@ -150,11 +113,53 @@ func (d rawDescriptor) GetPartitionMetadata() (fs FSType, pt PartType, arch stri
 
 // isPartitionOfType returns true if d is a partition data object of type pt.
 func (d rawDescriptor) isPartitionOfType(pt PartType) bool {
-	_, t, _, err := d.GetPartitionMetadata()
+	_, t, _, err := d.getPartitionMetadata()
 	if err != nil {
 		return false
 	}
 	return t == pt
+}
+
+// Descriptor represents the SIF descriptor type.
+type Descriptor struct {
+	raw rawDescriptor
+}
+
+// GetDataType returns the type of data object.
+func (d Descriptor) GetDataType() DataType { return d.raw.Datatype }
+
+// GetID returns the data object ID of d.
+func (d Descriptor) GetID() uint32 { return d.raw.ID }
+
+// GetGroupID returns the data object group ID of d, or zero if d is not part of a data object
+// group.
+func (d Descriptor) GetGroupID() uint32 { return d.raw.Groupid &^ descrGroupMask }
+
+// GetLinkedID returns the object/group ID d is linked to, or zero if d does not contain a linked
+// ID. If isGroup is true, the returned id is an object group ID. Otherwise, the returned id is a
+// data object ID.
+func (d Descriptor) GetLinkedID() (id uint32, isGroup bool) {
+	return d.raw.Link &^ descrGroupMask, d.raw.Link&descrGroupMask == descrGroupMask
+}
+
+// GetOffset returns the offset of the data object.
+func (d Descriptor) GetOffset() int64 { return d.raw.Fileoff }
+
+// GetSize returns the data object size.
+func (d Descriptor) GetSize() int64 { return d.raw.Filelen }
+
+// CreatedAt returns the creation time of the data object.
+func (d Descriptor) CreatedAt() time.Time { return time.Unix(d.raw.Ctime, 0).UTC() }
+
+// ModifiedAt returns the modification time of the data object.
+func (d Descriptor) ModifiedAt() time.Time { return time.Unix(d.raw.Mtime, 0).UTC() }
+
+// GetName returns the name tag associated with the descriptor. Analogous to file name.
+func (d Descriptor) GetName() string { return strings.TrimRight(string(d.raw.Name[:]), "\000") }
+
+// GetPartitionMetadata gets metadata for a partition data object.
+func (d Descriptor) GetPartitionMetadata() (fs FSType, pt PartType, arch string, err error) {
+	return d.raw.getPartitionMetadata()
 }
 
 var errHashUnsupported = errors.New("hash algorithm unsupported")
@@ -177,14 +182,14 @@ func getHashType(ht hashType) (crypto.Hash, error) {
 }
 
 // GetSignatureMetadata gets metadata for a signature data object.
-func (d rawDescriptor) GetSignatureMetadata() (ht crypto.Hash, fp [20]byte, err error) {
-	if got, want := d.Datatype, DataSignature; got != want {
+func (d Descriptor) GetSignatureMetadata() (ht crypto.Hash, fp [20]byte, err error) {
+	if got, want := d.raw.Datatype, DataSignature; got != want {
 		return ht, fp, &unexpectedDataTypeError{got, want}
 	}
 
 	var s signature
 
-	b := bytes.NewReader(d.Extra[:])
+	b := bytes.NewReader(d.raw.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &s); err != nil {
 		return ht, fp, fmt.Errorf("%w", err)
 	}
@@ -199,14 +204,14 @@ func (d rawDescriptor) GetSignatureMetadata() (ht crypto.Hash, fp [20]byte, err 
 }
 
 // GetCryptoMessageMetadata gets metadata for a crypto message data object.
-func (d rawDescriptor) GetCryptoMessageMetadata() (FormatType, MessageType, error) {
-	if got, want := d.Datatype, DataCryptoMessage; got != want {
+func (d Descriptor) GetCryptoMessageMetadata() (FormatType, MessageType, error) {
+	if got, want := d.raw.Datatype, DataCryptoMessage; got != want {
 		return 0, 0, &unexpectedDataTypeError{got, want}
 	}
 
 	var m cryptoMessage
 
-	b := bytes.NewReader(d.Extra[:])
+	b := bytes.NewReader(d.raw.Extra[:])
 	if err := binary.Read(b, binary.LittleEndian, &m); err != nil {
 		return 0, 0, fmt.Errorf("%w", err)
 	}
@@ -215,8 +220,8 @@ func (d rawDescriptor) GetCryptoMessageMetadata() (FormatType, MessageType, erro
 }
 
 // GetData returns the data object associated with descriptor d from f.
-func (d rawDescriptor) GetData(f *FileImage) ([]byte, error) {
-	b := make([]byte, d.Filelen)
+func (d Descriptor) GetData(f *FileImage) ([]byte, error) {
+	b := make([]byte, d.raw.Filelen)
 	if _, err := io.ReadFull(d.GetReader(f), b); err != nil {
 		return nil, err
 	}
@@ -224,21 +229,21 @@ func (d rawDescriptor) GetData(f *FileImage) ([]byte, error) {
 }
 
 // GetReader returns a io.Reader that reads the data object associated with descriptor d from f.
-func (d rawDescriptor) GetReader(f *FileImage) io.Reader {
-	return io.NewSectionReader(f.rw, d.Fileoff, d.Filelen)
+func (d Descriptor) GetReader(f *FileImage) io.Reader {
+	return io.NewSectionReader(f.rw, d.raw.Fileoff, d.raw.Filelen)
 }
 
 // GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from d.
-func (d rawDescriptor) GetIntegrityReader(relativeID uint32) io.Reader {
+func (d Descriptor) GetIntegrityReader(relativeID uint32) io.Reader {
 	fields := []interface{}{
-		d.Datatype,
-		d.Used,
+		d.raw.Datatype,
+		d.raw.Used,
 		relativeID,
-		d.Link,
-		d.Filelen,
-		d.Ctime,
-		d.UID,
-		d.GID,
+		d.raw.Link,
+		d.raw.Filelen,
+		d.raw.Ctime,
+		d.raw.UID,
+		d.raw.GID,
 	}
 
 	// Encode endian-sensitive fields.
@@ -251,7 +256,7 @@ func (d rawDescriptor) GetIntegrityReader(relativeID uint32) io.Reader {
 
 	return io.MultiReader(
 		&data,
-		bytes.NewReader(d.Name[:]),
-		bytes.NewReader(d.Extra[:]),
+		bytes.NewReader(d.raw.Name[:]),
+		bytes.NewReader(d.raw.Extra[:]),
 	)
 }

@@ -148,7 +148,7 @@ func writeInfo(w io.Writer, v sif.Descriptor) error {
 	fmt.Fprintln(tw, "  Ctime:\t", v.CreatedAt())
 	fmt.Fprintln(tw, "  Mtime:\t", v.ModifiedAt())
 	fmt.Fprintln(tw, "  Name:\t", v.GetName())
-	switch v.Datatype {
+	switch v.GetDataType() {
 	case sif.DataPartition:
 		fs, pt, arch, _ := v.GetPartitionMetadata()
 		fmt.Fprintln(tw, "  Fstype:\t", fs)
