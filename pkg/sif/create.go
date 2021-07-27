@@ -320,7 +320,7 @@ func objectIsLast(f *FileImage, d *rawDescriptor) bool {
 
 	end := d.Fileoff + d.Filelen
 	f.WithDescriptors(func(d Descriptor) bool {
-		isLast = d.GetOffset()+d.GetSize() <= end
+		isLast = d.Offset()+d.Size() <= end
 		return !isLast
 	})
 

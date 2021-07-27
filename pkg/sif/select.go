@@ -28,7 +28,7 @@ type DescriptorSelectorFunc func(d Descriptor) (bool, error)
 // WithDataType selects descriptors that have data type dt.
 func WithDataType(dt DataType) DescriptorSelectorFunc {
 	return func(d Descriptor) (bool, error) {
-		return d.GetDataType() == dt, nil
+		return d.DataType() == dt, nil
 	}
 }
 
@@ -38,14 +38,14 @@ func WithID(id uint32) DescriptorSelectorFunc {
 		if id == 0 {
 			return false, ErrInvalidObjectID
 		}
-		return d.GetID() == id, nil
+		return d.ID() == id, nil
 	}
 }
 
 // WithNoGroup selects descriptors that are not contained within an object group.
 func WithNoGroup() DescriptorSelectorFunc {
 	return func(d Descriptor) (bool, error) {
-		return d.GetGroupID() == 0, nil
+		return d.GroupID() == 0, nil
 	}
 }
 
@@ -55,7 +55,7 @@ func WithGroupID(groupID uint32) DescriptorSelectorFunc {
 		if groupID == 0 {
 			return false, ErrInvalidGroupID
 		}
-		return d.GetGroupID() == groupID, nil
+		return d.GroupID() == groupID, nil
 	}
 }
 
@@ -65,7 +65,7 @@ func WithLinkedID(id uint32) DescriptorSelectorFunc {
 		if id == 0 {
 			return false, ErrInvalidObjectID
 		}
-		linkedID, isGroup := d.GetLinkedID()
+		linkedID, isGroup := d.LinkedID()
 		return !isGroup && linkedID == id, nil
 	}
 }
@@ -77,7 +77,7 @@ func WithLinkedGroupID(groupID uint32) DescriptorSelectorFunc {
 		if groupID == 0 {
 			return false, ErrInvalidGroupID
 		}
-		linkedID, isGroup := d.GetLinkedID()
+		linkedID, isGroup := d.LinkedID()
 		return isGroup && linkedID == groupID, nil
 	}
 }

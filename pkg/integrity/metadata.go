@@ -138,13 +138,13 @@ func (om objectMetadata) matches(f *sif.FileImage, od sif.Descriptor) error {
 	if ok, err := om.DescriptorDigest.matches(od.GetIntegrityReader(om.RelativeID)); err != nil {
 		return err
 	} else if !ok {
-		return &DescriptorIntegrityError{ID: od.GetID()}
+		return &DescriptorIntegrityError{ID: od.ID()}
 	}
 
 	if ok, err := om.ObjectDigest.matches(od.GetReader(f)); err != nil {
 		return err
 	} else if !ok {
-		return &ObjectIntegrityError{ID: od.GetID()}
+		return &ObjectIntegrityError{ID: od.ID()}
 	}
 	return nil
 }
@@ -175,7 +175,7 @@ func getImageMetadata(f *sif.FileImage, minID uint32, ods []sif.Descriptor, h cr
 
 	// Add object descriptor/data metadata.
 	for _, od := range ods {
-		id := od.GetID()
+		id := od.ID()
 
 		if id < minID { // shouldn't really be possible...
 			return imageMetadata{}, errMinimumIDInvalid
@@ -211,7 +211,7 @@ func (im imageMetadata) objectIDsMatch(ods []sif.Descriptor) error {
 
 	// Check each object in ods exists in ids, and mark as seen.
 	for _, od := range ods {
-		id := od.GetID()
+		id := od.ID()
 		if _, ok := ids[id]; !ok {
 			return fmt.Errorf("object %d: %w", id, errObjectNotSigned)
 		}
@@ -252,7 +252,7 @@ func (im imageMetadata) matches(f *sif.FileImage, ods []sif.Descriptor) ([]uint3
 
 	// Verify data object metadata.
 	for _, od := range ods {
-		id := od.GetID()
+		id := od.ID()
 
 		om, err := im.metadataForObject(id)
 		if err != nil {

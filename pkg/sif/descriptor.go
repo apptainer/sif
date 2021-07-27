@@ -125,28 +125,28 @@ type Descriptor struct {
 	raw rawDescriptor
 }
 
-// GetDataType returns the type of data object.
-func (d Descriptor) GetDataType() DataType { return d.raw.Datatype }
+// DataType returns the type of data object.
+func (d Descriptor) DataType() DataType { return d.raw.Datatype }
 
-// GetID returns the data object ID of d.
-func (d Descriptor) GetID() uint32 { return d.raw.ID }
+// ID returns the data object ID of d.
+func (d Descriptor) ID() uint32 { return d.raw.ID }
 
-// GetGroupID returns the data object group ID of d, or zero if d is not part of a data object
+// GroupID returns the data object group ID of d, or zero if d is not part of a data object
 // group.
-func (d Descriptor) GetGroupID() uint32 { return d.raw.Groupid &^ descrGroupMask }
+func (d Descriptor) GroupID() uint32 { return d.raw.Groupid &^ descrGroupMask }
 
-// GetLinkedID returns the object/group ID d is linked to, or zero if d does not contain a linked
+// LinkedID returns the object/group ID d is linked to, or zero if d does not contain a linked
 // ID. If isGroup is true, the returned id is an object group ID. Otherwise, the returned id is a
 // data object ID.
-func (d Descriptor) GetLinkedID() (id uint32, isGroup bool) {
+func (d Descriptor) LinkedID() (id uint32, isGroup bool) {
 	return d.raw.Link &^ descrGroupMask, d.raw.Link&descrGroupMask == descrGroupMask
 }
 
-// GetOffset returns the offset of the data object.
-func (d Descriptor) GetOffset() int64 { return d.raw.Fileoff }
+// Offset returns the offset of the data object.
+func (d Descriptor) Offset() int64 { return d.raw.Fileoff }
 
-// GetSize returns the data object size.
-func (d Descriptor) GetSize() int64 { return d.raw.Filelen }
+// Size returns the data object size.
+func (d Descriptor) Size() int64 { return d.raw.Filelen }
 
 // CreatedAt returns the creation time of the data object.
 func (d Descriptor) CreatedAt() time.Time { return time.Unix(d.raw.Ctime, 0).UTC() }
@@ -154,11 +154,11 @@ func (d Descriptor) CreatedAt() time.Time { return time.Unix(d.raw.Ctime, 0).UTC
 // ModifiedAt returns the modification time of the data object.
 func (d Descriptor) ModifiedAt() time.Time { return time.Unix(d.raw.Mtime, 0).UTC() }
 
-// GetName returns the name tag associated with the descriptor. Analogous to file name.
-func (d Descriptor) GetName() string { return strings.TrimRight(string(d.raw.Name[:]), "\000") }
+// Name returns the name of the data object.
+func (d Descriptor) Name() string { return strings.TrimRight(string(d.raw.Name[:]), "\000") }
 
-// GetPartitionMetadata gets metadata for a partition data object.
-func (d Descriptor) GetPartitionMetadata() (fs FSType, pt PartType, arch string, err error) {
+// PartitionMetadata gets metadata for a partition data object.
+func (d Descriptor) PartitionMetadata() (fs FSType, pt PartType, arch string, err error) {
 	return d.raw.getPartitionMetadata()
 }
 
@@ -181,8 +181,8 @@ func getHashType(ht hashType) (crypto.Hash, error) {
 	return 0, errHashUnsupported
 }
 
-// GetSignatureMetadata gets metadata for a signature data object.
-func (d Descriptor) GetSignatureMetadata() (ht crypto.Hash, fp [20]byte, err error) {
+// SignatureMetadata gets metadata for a signature data object.
+func (d Descriptor) SignatureMetadata() (ht crypto.Hash, fp [20]byte, err error) {
 	if got, want := d.raw.Datatype, DataSignature; got != want {
 		return ht, fp, &unexpectedDataTypeError{got, want}
 	}
@@ -203,8 +203,8 @@ func (d Descriptor) GetSignatureMetadata() (ht crypto.Hash, fp [20]byte, err err
 	return ht, fp, nil
 }
 
-// GetCryptoMessageMetadata gets metadata for a crypto message data object.
-func (d Descriptor) GetCryptoMessageMetadata() (FormatType, MessageType, error) {
+// CryptoMessageMetadata gets metadata for a crypto message data object.
+func (d Descriptor) CryptoMessageMetadata() (FormatType, MessageType, error) {
 	if got, want := d.raw.Datatype, DataCryptoMessage; got != want {
 		return 0, 0, &unexpectedDataTypeError{got, want}
 	}

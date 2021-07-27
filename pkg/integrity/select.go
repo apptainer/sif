@@ -133,11 +133,11 @@ func getGroupMinObjectID(f *sif.FileImage, groupID uint32) (uint32, error) {
 	minID := ^uint32(0)
 
 	f.WithDescriptors(func(od sif.Descriptor) bool {
-		if od.GetGroupID() != groupID {
+		if od.GroupID() != groupID {
 			return false
 		}
 
-		if id := od.GetID(); id < minID {
+		if id := od.ID(); id < minID {
 			minID = id
 		}
 		return false
@@ -153,7 +153,7 @@ func getGroupMinObjectID(f *sif.FileImage, groupID uint32) (uint32, error) {
 // are present, errNoGroupsFound is returned.
 func getGroupIDs(f *sif.FileImage) (groupIDs []uint32, err error) {
 	f.WithDescriptors(func(od sif.Descriptor) bool {
-		if groupID := od.GetGroupID(); groupID != 0 {
+		if groupID := od.GroupID(); groupID != 0 {
 			groupIDs = insertSorted(groupIDs, groupID)
 		}
 		return false
@@ -171,7 +171,7 @@ func getFingerprints(sigs []sif.Descriptor) ([][20]byte, error) {
 	fps := make([][20]byte, 0, len(sigs))
 
 	for _, sig := range sigs {
-		_, fp, err := sig.GetSignatureMetadata()
+		_, fp, err := sig.SignatureMetadata()
 		if err != nil {
 			return nil, err
 		}

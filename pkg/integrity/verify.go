@@ -137,7 +137,7 @@ func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) 
 	var im imageMetadata
 	e, _, err := verifyAndDecodeJSON(b, &im, kr)
 	if err != nil {
-		return im, nil, e, &SignatureNotValidError{ID: sig.GetID(), Err: err}
+		return im, nil, e, &SignatureNotValidError{ID: sig.ID(), Err: err}
 	}
 
 	// Get minimum object ID in group, and use this to populate absolute object IDs in im.
@@ -148,7 +148,7 @@ func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) 
 	im.populateAbsoluteObjectIDs(minID)
 
 	// Ensure signing entity matches fingerprint in descriptor.
-	_, fp, err := sig.GetSignatureMetadata()
+	_, fp, err := sig.SignatureMetadata()
 	if err != nil {
 		return im, nil, e, err
 	}
@@ -193,7 +193,7 @@ func (v *groupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 
 		// Call verify callback, if applicable.
 		if v.cb != nil {
-			r := result{signature: sig.GetID(), im: im, verified: verified, e: e, err: err}
+			r := result{signature: sig.ID(), im: im, verified: verified, e: e, err: err}
 			if ignoreError := v.cb(r); ignoreError {
 				err = nil
 			}
@@ -249,11 +249,11 @@ func (v *legacyGroupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.Key
 	// Verify signature and decode plaintext.
 	e, b, _, err := verifyAndDecode(b, kr)
 	if err != nil {
-		return e, &SignatureNotValidError{ID: sig.GetID(), Err: err}
+		return e, &SignatureNotValidError{ID: sig.ID(), Err: err}
 	}
 
 	// Ensure signing entity matches fingerprint in descriptor.
-	ht, fp, err := sig.GetSignatureMetadata()
+	ht, fp, err := sig.SignatureMetadata()
 	if err != nil {
 		return e, err
 	}
@@ -302,7 +302,7 @@ func (v *legacyGroupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 
 		// Call verify callback, if applicable.
 		if v.cb != nil {
-			r := legacyResult{signature: sig.GetID(), ods: v.ods, e: e, err: err}
+			r := legacyResult{signature: sig.ID(), ods: v.ods, e: e, err: err}
 			if ignoreError := v.cb(r); ignoreError {
 				err = nil
 			}
@@ -334,7 +334,7 @@ func newLegacyObjectVerifier(f *sif.FileImage, cb VerifyCallback, id uint32) (*l
 // fingerprints returns a sorted list of unique fingerprints of entities that have signed the
 // objects specified by v.
 func (v *legacyObjectVerifier) fingerprints() ([][20]byte, error) {
-	sigs, err := getObjectSignatures(v.f, v.od.GetID())
+	sigs, err := getObjectSignatures(v.f, v.od.ID())
 	if errors.Is(err, &SignatureNotFoundError{}) {
 		return nil, nil
 	} else if err != nil {
@@ -357,11 +357,11 @@ func (v *legacyObjectVerifier) verifySignature(sig sif.Descriptor, kr openpgp.Ke
 	// Verify signature and decode plaintext.
 	e, b, _, err := verifyAndDecode(b, kr)
 	if err != nil {
-		return e, &SignatureNotValidError{ID: sig.GetID(), Err: err}
+		return e, &SignatureNotValidError{ID: sig.ID(), Err: err}
 	}
 
 	// Ensure signing entity matches fingerprint in descriptor.
-	ht, fp, err := sig.GetSignatureMetadata()
+	ht, fp, err := sig.SignatureMetadata()
 	if err != nil {
 		return e, err
 	}
@@ -379,7 +379,7 @@ func (v *legacyObjectVerifier) verifySignature(sig sif.Descriptor, kr openpgp.Ke
 	if ok, err := d.matches(v.od.GetReader(v.f)); err != nil {
 		return e, err
 	} else if !ok {
-		return e, &ObjectIntegrityError{ID: v.od.GetID()}
+		return e, &ObjectIntegrityError{ID: v.od.ID()}
 	}
 
 	return e, nil
@@ -393,7 +393,7 @@ func (v *legacyObjectVerifier) verifySignature(sig sif.Descriptor, kr openpgp.Ke
 // If verification of the data object fails, a ObjectIntegrityError is returned.
 func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 	// Obtain all signatures related to object.
-	sigs, err := getObjectSignatures(v.f, v.od.GetID())
+	sigs, err := getObjectSignatures(v.f, v.od.ID())
 	if err != nil {
 		return err
 	}
@@ -403,7 +403,7 @@ func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 
 		// Call verify callback, if applicable.
 		if v.cb != nil {
-			r := legacyResult{signature: sig.GetID(), ods: []sif.Descriptor{v.od}, e: e, err: err}
+			r := legacyResult{signature: sig.ID(), ods: []sif.Descriptor{v.od}, e: e, err: err}
 			if ignoreError := v.cb(r); ignoreError {
 				err = nil
 			}
@@ -526,7 +526,7 @@ func getTasks(f *sif.FileImage, cb VerifyCallback, groupIDs, objectIDs []uint32)
 			return nil, err
 		}
 
-		v, err := newGroupVerifier(f, cb, od.GetGroupID(), od)
+		v, err := newGroupVerifier(f, cb, od.GroupID(), od)
 		if err != nil {
 			return nil, err
 		}
@@ -586,8 +586,8 @@ func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 	// If "legacy all" mode selected, add all non-signature objects that are in a group.
 	if v.isLegacyAll {
 		f.WithDescriptors(func(od sif.Descriptor) bool {
-			if od.GetDataType() != sif.DataSignature && od.GetGroupID() != 0 {
-				v.objects = insertSorted(v.objects, od.GetID())
+			if od.DataType() != sif.DataSignature && od.GroupID() != 0 {
+				v.objects = insertSorted(v.objects, od.ID())
 			}
 			return false
 		})
@@ -699,7 +699,7 @@ func (v *Verifier) Verify() error {
 		return fmt.Errorf("integrity: %w", err)
 	}
 	for _, od := range ods {
-		if od.GetDataType() != sif.DataSignature {
+		if od.DataType() != sif.DataSignature {
 			return fmt.Errorf("integrity: %w", errNonGroupedObject)
 		}
 	}

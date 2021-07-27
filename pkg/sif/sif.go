@@ -336,17 +336,17 @@ func (f *FileImage) DescriptorsFree() uint64 { return uint64(f.h.Dfree) }
 // DescriptorsTotal returns the total number of descriptors in the image.
 func (f *FileImage) DescriptorsTotal() uint64 { return uint64(f.h.Dtotal) }
 
-// DescriptorSectionOffset returns the offset (in bytes) of the descriptors section in the image.
-func (f *FileImage) DescriptorSectionOffset() uint64 { return uint64(f.h.Descroff) }
+// DescriptorsOffset returns the offset (in bytes) of the descriptors section in the image.
+func (f *FileImage) DescriptorsOffset() uint64 { return uint64(f.h.Descroff) }
 
-// DescriptorSectionSize returns the size (in bytes) of the descriptors section in the image.
-func (f *FileImage) DescriptorSectionSize() uint64 { return uint64(f.h.Descrlen) }
+// DescriptorsSize returns the size (in bytes) of the descriptors section in the image.
+func (f *FileImage) DescriptorsSize() uint64 { return uint64(f.h.Descrlen) }
 
-// DataSectionOffset returns the offset (in bytes) of the data section in the image.
-func (f *FileImage) DataSectionOffset() uint64 { return uint64(f.h.Dataoff) }
+// DataOffset returns the offset (in bytes) of the data section in the image.
+func (f *FileImage) DataOffset() uint64 { return uint64(f.h.Dataoff) }
 
-// DataSectionSize returns the size (in bytes) of the data section in the image.
-func (f *FileImage) DataSectionSize() uint64 { return uint64(f.h.Datalen) }
+// DataSize returns the size (in bytes) of the data section in the image.
+func (f *FileImage) DataSize() uint64 { return uint64(f.h.Datalen) }
 
 // GetHeaderIntegrityReader returns an io.Reader that reads the integrity-protected fields from the
 // header of the image.

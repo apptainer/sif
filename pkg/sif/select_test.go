@@ -125,7 +125,7 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 				t.Errorf("got %v IDs, want %v", got, want)
 			}
 			for i := range ds {
-				if got, want := ds[i].GetID(), tt.wantIDs[i]; got != want {
+				if got, want := ds[i].ID(), tt.wantIDs[i]; got != want {
 					t.Errorf("got ID %v, want %v", got, want)
 				}
 			}
@@ -220,7 +220,7 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
-			if got, want := d.GetID(), tt.wantID; got != want {
+			if got, want := d.ID(), tt.wantID; got != want {
 				t.Errorf("got ID %v, want %v", got, want)
 			}
 		})
@@ -260,7 +260,7 @@ func TestFileImage_WithDescriptors(t *testing.T) {
 			name: "ReturnTrue",
 			fn: func(t *testing.T) func(d Descriptor) bool {
 				return func(d Descriptor) bool {
-					if id := d.GetID(); id > 1 {
+					if id := d.ID(); id > 1 {
 						t.Errorf("unexpected ID: %v", id)
 					}
 					return true
@@ -271,7 +271,7 @@ func TestFileImage_WithDescriptors(t *testing.T) {
 			name: "ReturnFalse",
 			fn: func(t *testing.T) func(d Descriptor) bool {
 				return func(d Descriptor) bool {
-					if id := d.GetID(); id > 2 {
+					if id := d.ID(); id > 2 {
 						t.Errorf("unexpected ID: %v", id)
 					}
 					return false

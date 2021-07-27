@@ -68,7 +68,7 @@ func TestDescriptor_GetReader(t *testing.T) {
 	}
 
 	// Read data via Reader and validate data.
-	b := make([]byte, descr.GetSize())
+	b := make([]byte, descr.Size())
 	if _, err := io.ReadFull(descr.GetReader(f), b); err != nil {
 		t.Fatalf("failed to read: %v", err)
 	}
@@ -99,7 +99,7 @@ func TestDescriptor_GetName(t *testing.T) {
 		t.Error("multiple partitions found where expecting 1")
 	}
 
-	if parts[0].GetName() != "busybox.squash" {
+	if parts[0].Name() != "busybox.squash" {
 		t.Error(`parts[0].GetName() != "busybox.squash"`)
 	}
 
@@ -151,7 +151,7 @@ func TestDescriptor_GetPartitionMetadata(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			d := Descriptor{raw: tt.rd}
 
-			fs, part, arch, err := d.GetPartitionMetadata()
+			fs, part, arch, err := d.PartitionMetadata()
 
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
@@ -218,7 +218,7 @@ func TestDescriptor_GetSignatureMetadata(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			d := Descriptor{raw: tt.rd}
 
-			ht, fp, err := d.GetSignatureMetadata()
+			ht, fp, err := d.SignatureMetadata()
 
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
@@ -275,7 +275,7 @@ func TestDescriptor_GetCryptoMessageMetadata(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			d := Descriptor{raw: tt.rd}
 
-			ft, mt, err := d.GetCryptoMessageMetadata()
+			ft, mt, err := d.CryptoMessageMetadata()
 
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
