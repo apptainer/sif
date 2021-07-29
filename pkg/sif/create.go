@@ -160,7 +160,7 @@ func OptCreateWithDescriptors(dis ...DescriptorInput) CreateOpt {
 	}
 }
 
-// OptCreateWithTime specifies t as the creation time.
+// OptCreateWithTime specifies t as the image creation time.
 func OptCreateWithTime(t time.Time) CreateOpt {
 	return func(co *createOpts) error {
 		co.t = t
