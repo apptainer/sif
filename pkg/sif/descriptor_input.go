@@ -26,6 +26,14 @@ type descriptorOpts struct {
 // DescriptorInputOpt are used to specify data object options.
 type DescriptorInputOpt func(DataType, *descriptorOpts) error
 
+// OptNoGroup specifies the data object is not contained within a data object group.
+func OptNoGroup() DescriptorInputOpt {
+	return func(_ DataType, opts *descriptorOpts) error {
+		opts.groupID = 0
+		return nil
+	}
+}
+
 // OptGroupID specifies groupID as data object group ID.
 func OptGroupID(groupID uint32) DescriptorInputOpt {
 	return func(_ DataType, opts *descriptorOpts) error {
@@ -201,8 +209,8 @@ type DescriptorInput struct {
 // data objects. Consider supplying options such as OptCryptoMessageMetadata, OptPartitionMetadata,
 // and OptSignatureMetadata for this purpose.
 //
-// By default, the data object will not be part of a data object group. To override this behavior,
-// use OptGroupID. To link this data object, use OptLinkedID or OptLinkedGroupID.
+// By default, the data object will be placed in data object group 1. To override this behavior,
+// use OptNoGroup or OptGroupID. To link this data object, use OptLinkedID or OptLinkedGroupID.
 //
 // By default, the data object will be aligned according to the system's memory page size. To
 // override this behavior, consider using OptObjectAlignment.
@@ -210,6 +218,7 @@ type DescriptorInput struct {
 // By default, no name is set for data object. To set a name, use OptObjectName.
 func NewDescriptorInput(t DataType, r io.Reader, opts ...DescriptorInputOpt) (DescriptorInput, error) {
 	dopts := descriptorOpts{
+		groupID:   1,
 		alignment: os.Getpagesize(),
 		t:         time.Now(),
 	}

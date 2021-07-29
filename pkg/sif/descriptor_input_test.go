@@ -40,6 +40,14 @@ func TestNewDescriptorInput(t *testing.T) {
 			},
 		},
 		{
+			name: "OptNoGroup",
+			t:    DataGeneric,
+			opts: []DescriptorInputOpt{
+				OptNoGroup(),
+				OptObjectTime(testTime),
+			},
+		},
+		{
 			name: "OptGroupIDInvalid",
 			t:    DataGeneric,
 			opts: []DescriptorInputOpt{
@@ -51,7 +59,7 @@ func TestNewDescriptorInput(t *testing.T) {
 			name: "OptGroupID",
 			t:    DataGeneric,
 			opts: []DescriptorInputOpt{
-				OptGroupID(1),
+				OptGroupID(2),
 				OptObjectTime(testTime),
 			},
 		},

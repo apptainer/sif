@@ -91,7 +91,6 @@ func TestCreateContainer(t *testing.T) {
 	defer partHandle.Close()
 
 	parinput, err := NewDescriptorInput(DataPartition, partHandle,
-		OptGroupID(1),
 		OptObjectAlignment(1048576), // Test an aggressive alignment requirement
 		OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
 	)
@@ -121,9 +120,7 @@ func TestAddDelObject(t *testing.T) {
 	testObjContainer := f.Name()
 
 	// data we need to create a dummy labels descriptor
-	labinput, err := NewDescriptorInput(DataLabels, bytes.NewBufferString("LABEL"),
-		OptGroupID(1),
-	)
+	labinput, err := NewDescriptorInput(DataLabels, bytes.NewBufferString("LABEL"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +132,6 @@ func TestAddDelObject(t *testing.T) {
 	}
 	defer partHandle.Close()
 	parinput, err := NewDescriptorInput(DataPartition, partHandle,
-		OptGroupID(1),
 		OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
 	)
 	if err != nil {
@@ -202,12 +198,12 @@ func TestAddDelObject(t *testing.T) {
 func TestSetPrimPart(t *testing.T) {
 	payload := []byte("0123456789")
 
-	di1, err := NewDescriptorInput(DataPartition, bytes.NewReader(payload), OptGroupID(1))
+	di1, err := NewDescriptorInput(DataPartition, bytes.NewReader(payload))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	di2, err := NewDescriptorInput(DataPartition, bytes.NewReader(payload), OptGroupID(1))
+	di2, err := NewDescriptorInput(DataPartition, bytes.NewReader(payload))
 	if err != nil {
 		t.Fatal(err)
 	}

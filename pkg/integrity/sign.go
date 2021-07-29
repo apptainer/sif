@@ -161,6 +161,7 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 
 	// Prepare SIF data object descriptor.
 	return sif.NewDescriptorInput(sif.DataSignature, &b,
+		sif.OptNoGroup(),
 		sif.OptLinkedGroupID(gs.id),
 		sif.OptSignatureMetadata(gs.sigHash, e.PrimaryKey.Fingerprint),
 	)

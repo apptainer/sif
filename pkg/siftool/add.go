@@ -154,7 +154,9 @@ func getHashType() (crypto.Hash, error) {
 func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, error) {
 	var opts []sif.DescriptorInputOpt
 
-	if fs.Changed("groupid") {
+	if *groupID == 0 {
+		opts = append(opts, sif.OptNoGroup())
+	} else {
 		opts = append(opts, sif.OptGroupID(*groupID))
 	}
 
