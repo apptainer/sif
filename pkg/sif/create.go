@@ -365,6 +365,7 @@ func compactAtDescr(fimg *FileImage, descr *rawDescriptor) error {
 type deleteOpts struct {
 	zero    bool
 	compact bool
+	t       time.Time
 }
 
 // DeleteOpt are used to specify object deletion options.
@@ -386,12 +387,25 @@ func OptDeleteCompact(b bool) DeleteOpt {
 	}
 }
 
+// OptDeleteWithTime specifies t as the image modification time.
+func OptDeleteWithTime(t time.Time) DeleteOpt {
+	return func(do *deleteOpts) error {
+		do.t = t
+		return nil
+	}
+}
+
 // DeleteObject deletes the data object with id, according to opts.
 //
 // To zero the data region of the deleted object, use OptDeleteZero. To compact the file following
 // object deletion, use OptDeleteCompact.
+//
+// By default, the image modification time is set to time.Now(). To override this, use
+// OptDeleteWithTime.
 func (f *FileImage) DeleteObject(id uint32, opts ...DeleteOpt) error {
-	do := deleteOpts{}
+	do := deleteOpts{
+		t: time.Now(),
+	}
 
 	for _, opt := range opts {
 		if err := opt(&do); err != nil {
@@ -429,7 +443,7 @@ func (f *FileImage) DeleteObject(id uint32, opts ...DeleteOpt) error {
 	}
 
 	f.h.Dfree++
-	f.h.Mtime = time.Now().Unix()
+	f.h.Mtime = do.t.Unix()
 
 	if err = resetDescriptor(f, index); err != nil {
 		return err

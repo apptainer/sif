@@ -188,7 +188,7 @@ func TestAddDelObject(t *testing.T) {
 	}
 
 	// test data object deletation
-	if err := fimg.DeleteObject(2, OptDeleteCompact(true)); err != nil {
+	if err := fimg.DeleteObject(2, OptDeleteCompact(true), OptDeleteWithTime(testTime)); err != nil {
 		t.Errorf("fimg.DeleteObject(2, DelZero): %s", err)
 	}
 
