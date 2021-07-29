@@ -56,20 +56,20 @@ func TestDataStructs(t *testing.T) {
 }
 
 func TestCreateContainer(t *testing.T) {
-	f, err := os.CreateTemp("", "sif-test-*")
+	tf, err := os.CreateTemp("", "sif-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(f.Name())
-	f.Close()
+	defer os.Remove(tf.Name())
+	defer tf.Close()
 
 	// test container creation without any input descriptors
-	fimg, err := CreateContainer(f.Name())
+	f, err := CreateContainer(tf)
 	if err != nil {
 		t.Fatalf("failed to create container: %v", err)
 	}
 
-	if err := fimg.UnloadContainer(); err != nil {
+	if err := f.UnloadContainer(); err != nil {
 		t.Errorf("failed to unload container: %v", err)
 	}
 
@@ -99,7 +99,7 @@ func TestCreateContainer(t *testing.T) {
 	}
 
 	// test container creation with two partition input descriptors
-	fimg, err = CreateContainer(f.Name(),
+	f, err = CreateContainerAtPath(tf.Name(),
 		OptCreateWithDescriptors(definput, parinput),
 		OptCreateWithTime(testTime),
 	)
@@ -107,7 +107,7 @@ func TestCreateContainer(t *testing.T) {
 		t.Fatalf("failed to create container: %v", err)
 	}
 
-	if err := fimg.UnloadContainer(); err != nil {
+	if err := f.UnloadContainer(); err != nil {
 		t.Errorf("failed to unload container: %v", err)
 	}
 }

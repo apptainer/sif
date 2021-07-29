@@ -436,9 +436,9 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 					t.Fatal(err)
 				}
 				defer os.Remove(tf.Name())
-				tf.Close()
+				defer tf.Close()
 
-				fi, err := sif.CreateContainer(tf.Name(),
+				fi, err := sif.CreateContainer(tf,
 					sif.OptCreateWithDescriptors(di),
 				)
 				if err != nil {

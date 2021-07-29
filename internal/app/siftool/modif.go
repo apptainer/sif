@@ -16,7 +16,7 @@ import (
 
 // New creates a new empty SIF file.
 func (*App) New(path string) error {
-	f, err := sif.CreateContainer(path)
+	f, err := sif.CreateContainerAtPath(path)
 	if err != nil {
 		return err
 	}

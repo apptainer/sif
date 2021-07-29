@@ -131,7 +131,7 @@ func generateImages() error {
 
 		path := filepath.Join("images", image.path)
 
-		f, err := sif.CreateContainer(path, sif.OptCreateWithDescriptors(dis...))
+		f, err := sif.CreateContainerAtPath(path, sif.OptCreateWithDescriptors(dis...))
 		if err != nil {
 			return err
 		}

@@ -212,11 +212,11 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 	return f, nil
 }
 
-// CreateContainer creates a new SIF container file at path, according to opts.
+// CreateContainer creates a new SIF container in rw, according to opts.
 //
 // On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
 // are released.
-func CreateContainer(path string, opts ...CreateOpt) (f *FileImage, err error) {
+func CreateContainer(rw ReadWriter, opts ...CreateOpt) (*FileImage, error) {
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -233,22 +233,29 @@ func CreateContainer(path string, opts ...CreateOpt) (f *FileImage, err error) {
 		}
 	}
 
-	fp, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
-	if err != nil {
-		return nil, fmt.Errorf("%w", err)
-	}
-	defer func() {
-		if err != nil {
-			fp.Close()
-			os.Remove(fp.Name())
-		}
-	}()
-
-	f, err = createContainer(fp, co)
+	f, err := createContainer(rw, co)
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
 	return f, nil
+}
+
+// CreateContainerAtPath creates a new SIF container file at path, according to opts.
+//
+// On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
+// are released.
+func CreateContainerAtPath(path string, opts ...CreateOpt) (*FileImage, error) {
+	fp, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	f, err := CreateContainer(fp, opts...)
+	if err != nil {
+		fp.Close()
+		os.Remove(fp.Name())
+	}
+	return f, err
 }
 
 func zeroData(fimg *FileImage, descr *rawDescriptor) error {
