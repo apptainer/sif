@@ -306,10 +306,10 @@ type ReadWriter interface {
 
 // FileImage describes the representation of a SIF file in memory.
 type FileImage struct {
-	h          header
-	rw         ReadWriter
-	rds        []rawDescriptor
-	primPartID uint32
+	rw ReadWriter // Backing storage for image.
+
+	h   header          // Raw global header from image.
+	rds []rawDescriptor // Raw descriptors from image.
 }
 
 // LaunchScript returns the image launch script.

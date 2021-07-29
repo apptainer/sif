@@ -82,10 +82,13 @@ func (f *FileImage) writeDataObject(di DescriptorInput) error {
 	// If this is a primary partition, verify there isn't another primary partition, and update the
 	// architecture in the global header.
 	if p, ok := di.opts.extra.(partition); ok && p.Parttype == PartPrimSys {
-		if f.primPartID != 0 {
+		ds, err := f.GetDescriptors(WithPartitionType(PartPrimSys))
+		if err != nil {
+			return err
+		}
+		if len(ds) > 0 {
 			return fmt.Errorf("only 1 FS data object may be a primary partition")
 		}
-		f.primPartID = d.ID
 
 		f.h.Arch = p.Arch
 	}
@@ -177,8 +180,8 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 	copy(h.Version[:], CurrentVersion.bytes())
 
 	f := &FileImage{
-		h:   h,
 		rw:  rw,
+		h:   h,
 		rds: make([]rawDescriptor, descrNumEntries),
 	}
 
@@ -273,7 +276,6 @@ func resetDescriptor(fimg *FileImage, index int) error {
 	// to indicate that the SIF file doesn't include a primary partition and no dependency
 	// on any architecture exists.
 	if fimg.rds[index].isPartitionOfType(PartPrimSys) {
-		fimg.primPartID = 0
 		fimg.h.Arch = hdrArchUnknown
 	}
 
@@ -461,7 +463,6 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 	}
 
 	f.h.Arch = getSIFArch(arch)
-	f.primPartID = descr.ID
 
 	extra := partition{
 		Fstype:   fs,

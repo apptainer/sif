@@ -15,36 +15,6 @@ import (
 	"os"
 )
 
-// readBinaryAt reads structured binary data from r at offset off into data.
-func readBinaryAt(r io.ReaderAt, off int64, data interface{}) error {
-	return binary.Read(io.NewSectionReader(r, off, int64(binary.Size(data))), binary.LittleEndian, data)
-}
-
-// Read the global header from r and populate fimg.Header.
-func readHeader(r io.ReaderAt, fimg *FileImage) error {
-	if err := readBinaryAt(r, 0, &fimg.h); err != nil {
-		return fmt.Errorf("reading global header from container file: %s", err)
-	}
-
-	return nil
-}
-
-// Read the descriptors from r and populate fimg.DescrArr.
-func readDescriptors(r io.ReaderAt, fimg *FileImage) error {
-	// Initialize descriptor array (slice) and read them all from file
-	fimg.rds = make([]rawDescriptor, fimg.h.Dtotal)
-	if err := readBinaryAt(r, fimg.h.Descroff, &fimg.rds); err != nil {
-		fimg.rds = nil
-		return fmt.Errorf("reading descriptor array from container file: %s", err)
-	}
-
-	if d, err := fimg.getDescriptor(WithPartitionType(PartPrimSys)); err == nil {
-		fimg.primPartID = d.ID
-	}
-
-	return nil
-}
-
 // isValidSif looks at key fields from the global header to assess SIF validity.
 func isValidSif(f *FileImage) error {
 	if got, want := trimZeroBytes(f.h.Magic[:]), hdrMagic; got != want {
@@ -62,16 +32,29 @@ func isValidSif(f *FileImage) error {
 func loadContainer(rw ReadWriter) (*FileImage, error) {
 	f := FileImage{rw: rw}
 
-	if err := readHeader(rw, &f); err != nil {
-		return nil, err
+	// Read global header.
+	err := binary.Read(
+		io.NewSectionReader(rw, 0, int64(binary.Size(f.h))),
+		binary.LittleEndian,
+		&f.h,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("reading global header: %w", err)
 	}
 
 	if err := isValidSif(&f); err != nil {
 		return nil, err
 	}
 
-	if err := readDescriptors(rw, &f); err != nil {
-		return nil, err
+	// Read descriptors.
+	f.rds = make([]rawDescriptor, f.h.Dtotal)
+	err = binary.Read(
+		io.NewSectionReader(rw, f.h.Descroff, f.h.Descrlen),
+		binary.LittleEndian,
+		&f.rds,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("reading descriptors: %w", err)
 	}
 
 	return &f, nil
