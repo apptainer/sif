@@ -300,8 +300,37 @@ func resetDescriptor(fimg *FileImage, index int) error {
 	return nil
 }
 
+// addOpts accumulates object add options.
+type addOpts struct {
+	t time.Time
+}
+
+// AddOpt are used to specify object add options.
+type AddOpt func(*addOpts) error
+
+// OptAddWithTime specifies t as the image modification time.
+func OptAddWithTime(t time.Time) AddOpt {
+	return func(ao *addOpts) error {
+		ao.t = t
+		return nil
+	}
+}
+
 // AddObject add a new data object and its descriptor into the specified SIF file.
-func (f *FileImage) AddObject(input DescriptorInput) error {
+//
+// By default, the image modification time is set to the data object creation time. To override
+// this, use OptAddWithTime.
+func (f *FileImage) AddObject(input DescriptorInput, opts ...AddOpt) error {
+	ao := addOpts{
+		t: input.opts.t,
+	}
+
+	for _, opt := range opts {
+		if err := opt(&ao); err != nil {
+			return err
+		}
+	}
+
 	// set file pointer to the end of data section
 	if _, err := f.rw.Seek(f.h.Dataoff+f.h.Datalen, io.SeekStart); err != nil {
 		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
@@ -317,7 +346,7 @@ func (f *FileImage) AddObject(input DescriptorInput) error {
 		return err
 	}
 
-	f.h.Mtime = time.Now().Unix()
+	f.h.Mtime = ao.t.Unix()
 
 	return f.writeHeader()
 }

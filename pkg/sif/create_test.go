@@ -163,7 +163,7 @@ func TestAddDelObject(t *testing.T) {
 	}
 
 	// add new data object 'DataPartition' to SIF file
-	if err = fimg.AddObject(parinput); err != nil {
+	if err = fimg.AddObject(parinput, OptAddWithTime(testTime)); err != nil {
 		t.Errorf("fimg.AddObject(): %s", err)
 	}
 
