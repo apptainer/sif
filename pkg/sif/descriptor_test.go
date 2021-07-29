@@ -376,14 +376,17 @@ func TestDescriptor_GetIntegrityReader(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			d := Descriptor{raw: rd}
+			d := Descriptor{
+				raw:        rd,
+				relativeID: tt.relativeID,
+			}
 			if tt.modFunc != nil {
 				tt.modFunc(&d.raw)
 			}
 
 			b := bytes.Buffer{}
 
-			if _, err := io.Copy(&b, d.GetIntegrityReader(tt.relativeID)); err != nil {
+			if _, err := io.Copy(&b, d.GetIntegrityReader()); err != nil {
 				t.Fatal(err)
 			}
 

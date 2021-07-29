@@ -238,11 +238,11 @@ func (d Descriptor) GetReader() io.Reader {
 }
 
 // GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from d.
-func (d Descriptor) GetIntegrityReader(relativeID uint32) io.Reader {
+func (d Descriptor) GetIntegrityReader() io.Reader {
 	fields := []interface{}{
 		d.raw.Datatype,
 		d.raw.Used,
-		relativeID,
+		d.relativeID,
 		d.raw.Link,
 		d.raw.Filelen,
 		d.raw.Ctime,

@@ -135,7 +135,7 @@ func (om *objectMetadata) populateAbsoluteID(minID uint32) {
 // If the data object descriptor does not match, a DescriptorIntegrityError is returned. If the
 // data object does not match, a ObjectIntegrityError is returned.
 func (om objectMetadata) matches(od sif.Descriptor) error {
-	if ok, err := om.DescriptorDigest.matches(od.GetIntegrityReader(om.RelativeID)); err != nil {
+	if ok, err := om.DescriptorDigest.matches(od.GetIntegrityReader()); err != nil {
 		return err
 	} else if !ok {
 		return &DescriptorIntegrityError{ID: od.ID()}
@@ -181,7 +181,7 @@ func getImageMetadata(f *sif.FileImage, minID uint32, ods []sif.Descriptor, h cr
 			return imageMetadata{}, errMinimumIDInvalid
 		}
 
-		om, err := getObjectMetadata(id-minID, od.GetIntegrityReader(id-minID), od.GetReader(), h)
+		om, err := getObjectMetadata(id-minID, od.GetIntegrityReader(), od.GetReader(), h)
 		if err != nil {
 			return imageMetadata{}, err
 		}
