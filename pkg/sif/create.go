@@ -93,6 +93,11 @@ func (f *FileImage) writeDataObject(di DescriptorInput) error {
 		f.h.Arch = p.Arch
 	}
 
+	// Update minimum object ID map.
+	if minID, ok := f.minIDs[d.Groupid]; !ok || d.ID < minID {
+		f.minIDs[d.Groupid] = d.ID
+	}
+
 	if err := writeDataObject(f.rw, di, d); err != nil {
 		return err
 	}
@@ -180,9 +185,10 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 	copy(h.Version[:], CurrentVersion.bytes())
 
 	f := &FileImage{
-		rw:  rw,
-		h:   h,
-		rds: make([]rawDescriptor, descrNumEntries),
+		rw:     rw,
+		h:      h,
+		rds:    make([]rawDescriptor, descrNumEntries),
+		minIDs: make(map[uint32]uint32),
 	}
 
 	if _, err := f.rw.Seek(dataStartOffset, io.SeekStart); err != nil {

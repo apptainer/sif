@@ -35,6 +35,10 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 		},
 	}
 
+	f := &FileImage{rds: ds}
+
+	f.populateMinIDs()
+
 	tests := []struct {
 		name    string
 		fns     []DescriptorSelectorFunc
@@ -115,14 +119,13 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fimg := &FileImage{rds: ds}
-
-			ds, err := fimg.GetDescriptors(tt.fns...)
+			ds, err := f.GetDescriptors(tt.fns...)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
+
 			if got, want := len(ds), len(tt.wantIDs); got != want {
-				t.Errorf("got %v IDs, want %v", got, want)
+				t.Fatalf("got %v IDs, want %v", got, want)
 			}
 			for i := range ds {
 				if got, want := ds[i].ID(), tt.wantIDs[i]; got != want {
@@ -170,6 +173,10 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 		},
 	}
 
+	f := &FileImage{rds: ds}
+
+	f.populateMinIDs()
+
 	tests := []struct {
 		name    string
 		fns     []DescriptorSelectorFunc
@@ -214,12 +221,11 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fimg := &FileImage{rds: ds}
-
-			d, err := fimg.GetDescriptor(tt.fns...)
+			d, err := f.GetDescriptor(tt.fns...)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
+
 			if got, want := d.ID(), tt.wantID; got != want {
 				t.Errorf("got ID %v, want %v", got, want)
 			}

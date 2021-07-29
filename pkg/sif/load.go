@@ -28,6 +28,17 @@ func isValidSif(f *FileImage) error {
 	return nil
 }
 
+// populateMinIDs populates the minIDs field of f.
+func (f *FileImage) populateMinIDs() {
+	f.minIDs = make(map[uint32]uint32)
+	f.WithDescriptors(func(d Descriptor) bool {
+		if minID, ok := f.minIDs[d.raw.Groupid]; !ok || d.ID() < minID {
+			f.minIDs[d.raw.Groupid] = d.ID()
+		}
+		return false
+	})
+}
+
 // loadContainer loads a SIF image from rw.
 func loadContainer(rw ReadWriter) (*FileImage, error) {
 	f := FileImage{rw: rw}
@@ -56,6 +67,8 @@ func loadContainer(rw ReadWriter) (*FileImage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("reading descriptors: %w", err)
 	}
+
+	f.populateMinIDs()
 
 	return &f, nil
 }

@@ -122,8 +122,11 @@ func (d rawDescriptor) isPartitionOfType(pt PartType) bool {
 
 // Descriptor represents the SIF descriptor type.
 type Descriptor struct {
-	raw rawDescriptor
-	r   io.ReaderAt
+	r io.ReaderAt // Backing storage.
+
+	raw rawDescriptor // Raw descriptor from image.
+
+	relativeID uint32 // ID relative to minimum ID of object group.
 }
 
 // DataType returns the type of data object.

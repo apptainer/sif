@@ -220,7 +220,8 @@ func TestSetPrimPart(t *testing.T) {
 			Dfree:  int64(len(inputs)),
 			Dtotal: int64(len(inputs)),
 		},
-		rds: make([]rawDescriptor, len(inputs)),
+		rds:    make([]rawDescriptor, len(inputs)),
+		minIDs: make(map[uint32]uint32),
 	}
 
 	for i := range inputs {
