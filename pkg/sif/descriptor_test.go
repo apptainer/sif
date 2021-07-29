@@ -37,7 +37,7 @@ func TestDescriptor_GetData(t *testing.T) {
 		t.Fatalf("failed to get descriptor: %v", err)
 	}
 
-	b, err := descr.GetData(f)
+	b, err := descr.GetData()
 	if err != nil {
 		t.Fatalf("failed to get data: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestDescriptor_GetReader(t *testing.T) {
 
 	// Read data via Reader and validate data.
 	b := make([]byte, descr.Size())
-	if _, err := io.ReadFull(descr.GetReader(f), b); err != nil {
+	if _, err := io.ReadFull(descr.GetReader(), b); err != nil {
 		t.Fatalf("failed to read: %v", err)
 	}
 	if got, want := string(b[5:10]), "BEGIN"; got != want {

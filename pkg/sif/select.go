@@ -89,12 +89,20 @@ func WithPartitionType(pt PartType) DescriptorSelectorFunc {
 	}
 }
 
+// descriptorFromRaw populates a Descriptor from rd.
+func (f *FileImage) descriptorFromRaw(rd *rawDescriptor) Descriptor {
+	return Descriptor{
+		raw: *rd,
+		r:   f.rw,
+	}
+}
+
 // GetDescriptors returns a slice of in-use descriptors for which all selector funcs return true.
 func (f *FileImage) GetDescriptors(fns ...DescriptorSelectorFunc) ([]Descriptor, error) {
 	var ds []Descriptor
 
 	err := f.withDescriptors(multiSelectorFunc(fns...), func(d *rawDescriptor) error {
-		ds = append(ds, Descriptor{*d})
+		ds = append(ds, f.descriptorFromRaw(d))
 		return nil
 	})
 	if err != nil {
@@ -133,7 +141,7 @@ func (f *FileImage) GetDescriptor(fns ...DescriptorSelectorFunc) (Descriptor, er
 	if err != nil {
 		return Descriptor{}, fmt.Errorf("%w", err)
 	}
-	return Descriptor{*d}, nil
+	return f.descriptorFromRaw(d), nil
 }
 
 // multiSelectorFunc returns a DescriptorSelectorFunc that selects a descriptor iff all of fns
@@ -158,7 +166,7 @@ func (f *FileImage) withDescriptors(selectFn DescriptorSelectorFunc, onMatchFn f
 			continue
 		}
 
-		if ok, err := selectFn(Descriptor{f.rds[i]}); err != nil {
+		if ok, err := selectFn(f.descriptorFromRaw(&f.rds[i])); err != nil {
 			return err
 		} else if !ok {
 			continue

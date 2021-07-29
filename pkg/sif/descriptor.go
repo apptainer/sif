@@ -123,6 +123,7 @@ func (d rawDescriptor) isPartitionOfType(pt PartType) bool {
 // Descriptor represents the SIF descriptor type.
 type Descriptor struct {
 	raw rawDescriptor
+	r   io.ReaderAt
 }
 
 // DataType returns the type of data object.
@@ -219,18 +220,18 @@ func (d Descriptor) CryptoMessageMetadata() (FormatType, MessageType, error) {
 	return m.Formattype, m.Messagetype, nil
 }
 
-// GetData returns the data object associated with descriptor d from f.
-func (d Descriptor) GetData(f *FileImage) ([]byte, error) {
+// GetData returns the data object associated with descriptor d.
+func (d Descriptor) GetData() ([]byte, error) {
 	b := make([]byte, d.raw.Filelen)
-	if _, err := io.ReadFull(d.GetReader(f), b); err != nil {
+	if _, err := io.ReadFull(d.GetReader(), b); err != nil {
 		return nil, err
 	}
 	return b, nil
 }
 
-// GetReader returns a io.Reader that reads the data object associated with descriptor d from f.
-func (d Descriptor) GetReader(f *FileImage) io.Reader {
-	return io.NewSectionReader(f.rw, d.raw.Fileoff, d.raw.Filelen)
+// GetReader returns a io.Reader that reads the data object associated with descriptor d.
+func (d Descriptor) GetReader() io.Reader {
+	return io.NewSectionReader(d.r, d.raw.Fileoff, d.raw.Filelen)
 }
 
 // GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from d.

@@ -466,7 +466,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 					t.Errorf("got linked id %v, want %v", got, want)
 				}
 
-				b, err := od.GetData(fi)
+				b, err := od.GetData()
 				if err != nil {
 					t.Fatal(err)
 				}

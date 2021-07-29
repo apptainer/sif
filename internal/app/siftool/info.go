@@ -187,7 +187,7 @@ func (a *App) Dump(path string, id uint32) error {
 			return err
 		}
 
-		_, err = io.CopyN(a.opts.out, d.GetReader(f), d.Size())
+		_, err = io.CopyN(a.opts.out, d.GetReader(), d.Size())
 		return err
 	})
 }

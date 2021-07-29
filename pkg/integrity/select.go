@@ -106,7 +106,7 @@ func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]sif.De
 		sif.WithDataType(sif.DataSignature),
 		sif.WithLinkedGroupID(groupID),
 		func(od sif.Descriptor) (bool, error) {
-			b, err := od.GetData(f)
+			b, err := od.GetData()
 			if err != nil {
 				return false, err
 			}

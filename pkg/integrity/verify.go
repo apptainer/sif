@@ -128,7 +128,7 @@ func (v *groupVerifier) fingerprints() ([][20]byte, error) {
 // of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
 // data object fails, a ObjectIntegrityError is returned.
 func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) (imageMetadata, []uint32, *openpgp.Entity, error) { // nolint:lll
-	b, err := sig.GetData(v.f)
+	b, err := sig.GetData()
 	if err != nil {
 		return imageMetadata{}, nil, nil, err
 	}
@@ -241,7 +241,7 @@ func (v *legacyGroupVerifier) fingerprints() ([][20]byte, error) {
 //
 // If verification of a data object fails, a ObjectIntegrityError is returned.
 func (v *legacyGroupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
-	b, err := sig.GetData(v.f)
+	b, err := sig.GetData()
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (v *legacyGroupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.Key
 	// Get reader covering all non-signature objects.
 	rs := make([]io.Reader, 0, len(v.ods))
 	for _, od := range v.ods {
-		rs = append(rs, od.GetReader(v.f))
+		rs = append(rs, od.GetReader())
 	}
 	r := io.MultiReader(rs...)
 
@@ -349,7 +349,7 @@ func (v *legacyObjectVerifier) fingerprints() ([][20]byte, error) {
 //
 // If verification of a data object fails, a ObjectIntegrityError is returned.
 func (v *legacyObjectVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
-	b, err := sig.GetData(v.f)
+	b, err := sig.GetData()
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +376,7 @@ func (v *legacyObjectVerifier) verifySignature(sig sif.Descriptor, kr openpgp.Ke
 	}
 
 	// Verify object integrity.
-	if ok, err := d.matches(v.od.GetReader(v.f)); err != nil {
+	if ok, err := d.matches(v.od.GetReader()); err != nil {
 		return e, err
 	} else if !ok {
 		return e, &ObjectIntegrityError{ID: v.od.ID()}
