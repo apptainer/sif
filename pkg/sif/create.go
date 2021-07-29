@@ -481,8 +481,37 @@ func (f *FileImage) DeleteObject(id uint32, opts ...DeleteOpt) error {
 	return f.writeHeader()
 }
 
+// setOpts accumulates object set options.
+type setOpts struct {
+	t time.Time
+}
+
+// SetOpt are used to specify object set options.
+type SetOpt func(*setOpts) error
+
+// OptSetWithTime specifies t as the image/object modification time.
+func OptSetWithTime(t time.Time) SetOpt {
+	return func(so *setOpts) error {
+		so.t = t
+		return nil
+	}
+}
+
 // SetPrimPart sets the specified system partition to be the primary one.
-func (f *FileImage) SetPrimPart(id uint32) error {
+//
+// By default, the image/object modification time is set to time.Now(). To override this, use
+// OptSetWithTime.
+func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
+	so := setOpts{
+		t: time.Now(),
+	}
+
+	for _, opt := range opts {
+		if err := opt(&so); err != nil {
+			return err
+		}
+	}
+
 	descr, err := f.getDescriptor(WithID(id))
 	if err != nil {
 		return err
@@ -545,7 +574,7 @@ func (f *FileImage) SetPrimPart(id uint32) error {
 		return err
 	}
 
-	f.h.Mtime = time.Now().Unix()
+	f.h.Mtime = so.t.Unix()
 
 	return f.writeHeader()
 }

@@ -240,7 +240,7 @@ func TestSetPrimPart(t *testing.T) {
 	// the first pass tests that the primary partition can be set;
 	// the second pass tests that the primary can be changed.
 	for i := range inputs {
-		if err := fimg.SetPrimPart(fimg.rds[i].ID); err != nil {
+		if err := fimg.SetPrimPart(fimg.rds[i].ID, OptSetWithTime(testTime)); err != nil {
 			t.Error("fimg.SetPrimPart(...):", err)
 		}
 
