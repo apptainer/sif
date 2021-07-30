@@ -320,3 +320,73 @@ func TestBuffer_Truncate(t *testing.T) {
 		})
 	}
 }
+
+func TestBuffer_Bytes(t *testing.T) {
+	tests := []struct {
+		name string
+		buf  []byte
+		want []byte
+	}{
+		{
+			name: "Nil",
+			buf:  nil,
+			want: nil,
+		},
+		{
+			name: "Empty",
+			buf:  []byte{},
+			want: []byte{},
+		},
+		{
+			name: "One",
+			buf:  []byte{0x01},
+			want: []byte{0x01},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := &Buffer{
+				buf: tt.buf,
+			}
+
+			if got, want := b.Bytes(), tt.want; !bytes.Equal(got, want) {
+				t.Errorf("got bytes %v, want %v", got, want)
+			}
+		})
+	}
+}
+
+func TestBuffer_Len(t *testing.T) {
+	tests := []struct {
+		name string
+		buf  []byte
+		want int64
+	}{
+		{
+			name: "Nil",
+			buf:  nil,
+			want: 0,
+		},
+		{
+			name: "Empty",
+			buf:  []byte{},
+			want: 0,
+		},
+		{
+			name: "One",
+			buf:  []byte{0x01},
+			want: 1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := &Buffer{
+				buf: tt.buf,
+			}
+
+			if got, want := b.Len(), tt.want; got != want {
+				t.Errorf("got length %v, want %v", got, want)
+			}
+		})
+	}
+}

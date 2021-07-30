@@ -94,3 +94,10 @@ func (b *Buffer) Truncate(n int64) error {
 	b.buf = b.buf[:n]
 	return nil
 }
+
+// Bytes returns the contents of the buffer. The slice is valid for use only until the next buffer
+// modification (that is, only until the next call to a method like ReadAt, Write, or Truncate).
+func (b *Buffer) Bytes() []byte { return b.buf }
+
+// Len returns the number of bytes in the buffer.
+func (b *Buffer) Len() int64 { return int64(len(b.buf)) }
