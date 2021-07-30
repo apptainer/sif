@@ -9,25 +9,60 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"runtime"
+	"text/tabwriter"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/hpcng/sif/v2/pkg/siftool"
 	"github.com/spf13/cobra"
 )
 
-var version = "unknown"
+var (
+	version = "unknown"
+	date    = ""
+	builtBy = ""
+	commit  = ""
+	state   = ""
+)
+
+func writeVersion(w io.Writer) error {
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	defer tw.Flush()
+
+	fmt.Fprintf(tw, "Version:\t%v\n", version)
+
+	if date != "" {
+		fmt.Fprintf(tw, "Built:\t%v\n", date)
+	}
+
+	if builtBy != "" {
+		fmt.Fprintf(tw, "By:\t%v\n", builtBy)
+	}
+
+	if commit != "" {
+		if state == "" {
+			fmt.Fprintf(tw, "Commit:\t%v\n", commit)
+		} else {
+			fmt.Fprintf(tw, "Commit:\t%v (%v)\n", commit, state)
+		}
+	}
+
+	fmt.Fprintf(tw, "Runtime:\t%v (%v/%v)\n", runtime.Version(), runtime.GOOS, runtime.GOARCH)
+	fmt.Fprintf(tw, "Spec:\t%v\n", sif.CurrentVersion)
+
+	return nil
+}
 
 func getVersion() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "Display version information",
-		Long:  "Display binary version and compatible SIF version(s).",
+		Long:  "Display binary version, build info and compatible SIF version(s).",
 		Args:  cobra.ExactArgs(0),
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Printf("siftool version %s %s/%s\n", version, runtime.GOOS, runtime.GOARCH)
-			cmd.Printf("SIF spec versions supported: <= %s\n", sif.CurrentVersion)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return writeVersion(cmd.OutOrStdout())
 		},
 		DisableFlagsInUseLine: true,
 	}
