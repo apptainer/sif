@@ -17,7 +17,7 @@ Unless otherwise noted, the SIF source files are distributed under the BSD-style
 To get the sif package to use directly from your programs:
 
 ```sh
-go get -u github.com/hpcng/sif/v2
+go get -d github.com/hpcng/sif/v2
 ```
 
 To get the siftool CLI program installed to `$(go env GOPATH)/bin` to manipulate SIF container files:
