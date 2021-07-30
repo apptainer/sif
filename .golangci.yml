@@ -1,3 +1,7 @@
+run:
+  build-tags:
+    - mage
+
 linters:
   disable-all: true
   enable:
