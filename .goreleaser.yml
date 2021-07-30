@@ -4,6 +4,7 @@ release:
   github:
     owner: sylabs
     name: sif
+  prerelease: auto
 
 builds:
   - binary: siftool
