@@ -50,3 +50,6 @@ jobs:
           files: cover.out
           flags: unittests
           name: codecov
+
+      - name: Test Release
+        run: curl -sL https://git.io/goreleaser | bash -s -- --snapshot --skip-publish
