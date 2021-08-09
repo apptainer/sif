@@ -223,8 +223,13 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 						t.Errorf("got signed %v, want %v", got, want)
 					}
 
-					if got, want := r.Verified(), tt.wantCBVerified; !reflect.DeepEqual(got, want) {
-						t.Errorf("got verified %v, want %v", got, want)
+					if got, want := len(r.Verified()), len(tt.wantCBVerified); got != want {
+						t.Fatalf("got %v verified objects, want %v", got, want)
+					}
+					for i, od := range r.Verified() {
+						if got, want := od.ID(), tt.wantCBVerified[i]; got != want {
+							t.Errorf("got verified ID %v, want %v", got, want)
+						}
 					}
 
 					if got, want := r.Entity(), tt.wantCBEntity; got != want {
@@ -431,8 +436,13 @@ func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
 						t.Errorf("got signed %v, want %v", got, want)
 					}
 
-					if got, want := r.Verified(), tt.wantCBVerified; !reflect.DeepEqual(got, want) {
-						t.Errorf("got verified %v, want %v", got, want)
+					if got, want := len(r.Verified()), len(tt.wantCBVerified); got != want {
+						t.Fatalf("got %v verified objects, want %v", got, want)
+					}
+					for i, od := range r.Verified() {
+						if got, want := od.ID(), tt.wantCBVerified[i]; got != want {
+							t.Errorf("got verified ID %v, want %v", got, want)
+						}
 					}
 
 					if got, want := r.Entity(), tt.wantCBEntity; got != want {
@@ -648,8 +658,13 @@ func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 						t.Errorf("got signed %v, want %v", got, want)
 					}
 
-					if got, want := r.Verified(), tt.wantCBVerified; !reflect.DeepEqual(got, want) {
-						t.Errorf("got verified %v, want %v", got, want)
+					if got, want := len(r.Verified()), len(tt.wantCBVerified); got != want {
+						t.Fatalf("got %v verified objects, want %v", got, want)
+					}
+					for i, od := range r.Verified() {
+						if got, want := od.ID(), tt.wantCBVerified[i]; got != want {
+							t.Errorf("got verified ID %v, want %v", got, want)
+						}
 					}
 
 					if got, want := r.Entity(), tt.wantCBEntity; got != want {

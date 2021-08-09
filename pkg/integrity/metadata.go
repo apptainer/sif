@@ -242,8 +242,8 @@ func (im imageMetadata) metadataForObject(id uint32) (objectMetadata, error) {
 // If the SIF global header does not match, ErrHeaderIntegrity is returned. If the data object
 // descriptor does not match, a DescriptorIntegrityError is returned. If the data object does not
 // match, a ObjectIntegrityError is returned.
-func (im imageMetadata) matches(f *sif.FileImage, ods []sif.Descriptor) ([]uint32, error) {
-	verified := make([]uint32, 0, len(ods))
+func (im imageMetadata) matches(f *sif.FileImage, ods []sif.Descriptor) ([]sif.Descriptor, error) {
+	verified := make([]sif.Descriptor, 0, len(ods))
 
 	// Verify header metadata.
 	if err := im.Header.matches(f.GetHeaderIntegrityReader()); err != nil {
@@ -252,9 +252,7 @@ func (im imageMetadata) matches(f *sif.FileImage, ods []sif.Descriptor) ([]uint3
 
 	// Verify data object metadata.
 	for _, od := range ods {
-		id := od.ID()
-
-		om, err := im.metadataForObject(id)
+		om, err := im.metadataForObject(od.ID())
 		if err != nil {
 			return verified, err
 		}
@@ -263,7 +261,7 @@ func (im imageMetadata) matches(f *sif.FileImage, ods []sif.Descriptor) ([]uint3
 			return verified, err
 		}
 
-		verified = append(verified, id)
+		verified = append(verified, od)
 	}
 
 	return verified, nil

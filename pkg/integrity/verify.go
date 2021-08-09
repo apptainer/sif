@@ -66,8 +66,8 @@ type VerifyResult interface {
 	// Signed returns the IDs of data objects that were signed.
 	Signed() []uint32
 
-	// Verified returns the IDs of data objects that were verified.
-	Verified() []uint32
+	// Verified returns the data objects that were verified.
+	Verified() []sif.Descriptor
 
 	// Entity returns the signing entity, or nil if the signing entity could not be determined.
 	Entity() *openpgp.Entity
@@ -127,7 +127,7 @@ func (v *groupVerifier) fingerprints() ([][20]byte, error) {
 // If verification of the SIF global header fails, ErrHeaderIntegrity is returned. If verification
 // of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
 // data object fails, a ObjectIntegrityError is returned.
-func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) (imageMetadata, []uint32, *openpgp.Entity, error) { // nolint:lll
+func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) (imageMetadata, []sif.Descriptor, *openpgp.Entity, error) { // nolint:lll
 	b, err := sig.GetData()
 	if err != nil {
 		return imageMetadata{}, nil, nil, err

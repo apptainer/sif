@@ -11,11 +11,11 @@ import (
 )
 
 type result struct {
-	signature sif.Descriptor  // Signature object.
-	im        imageMetadata   // Metadata from signature.
-	verified  []uint32        // IDs of verified objects.
-	e         *openpgp.Entity // Signing entity.
-	err       error           // Verify error (nil if successful).
+	signature sif.Descriptor   // Signature object.
+	im        imageMetadata    // Metadata from signature.
+	verified  []sif.Descriptor // Verified objects.
+	e         *openpgp.Entity  // Signing entity.
+	err       error            // Verify error (nil if successful).
 }
 
 // Signature returns the signature object associated with the result.
@@ -32,8 +32,8 @@ func (r result) Signed() []uint32 {
 	return ids
 }
 
-// Verified returns the IDs of data objects that were verified.
-func (r result) Verified() []uint32 {
+// Verified returns the data objects that were verified.
+func (r result) Verified() []sif.Descriptor {
 	return r.verified
 }
 
@@ -50,7 +50,7 @@ func (r result) Error() error {
 
 type legacyResult struct {
 	signature sif.Descriptor   // Signature object.
-	ods       []sif.Descriptor // Descriptors of signed objects.
+	ods       []sif.Descriptor // Signed objects.
 	e         *openpgp.Entity  // Signing entity.
 	err       error            // Verify error (nil if successful).
 }
@@ -63,18 +63,18 @@ func (r legacyResult) Signature() sif.Descriptor {
 // Signed returns the IDs of data objects that were signed.
 func (r legacyResult) Signed() []uint32 {
 	ids := make([]uint32, 0, len(r.ods))
-	for _, om := range r.ods {
-		ids = append(ids, om.ID())
+	for _, od := range r.ods {
+		ids = append(ids, od.ID())
 	}
 	return ids
 }
 
-// Verified returns the IDs of data objects that were verified.
-func (r legacyResult) Verified() []uint32 {
+// Verified returns the data objects that were verified.
+func (r legacyResult) Verified() []sif.Descriptor {
 	if r.err != nil {
 		return nil
 	}
-	return r.Signed()
+	return r.ods
 }
 
 // Entity returns the signing entity, or nil if the signing entity could not be determined.
