@@ -202,6 +202,9 @@ type DescriptorInput struct {
 	opts descriptorOpts
 }
 
+// DefaultObjectGroup is the default group that data objects are placed in.
+const DefaultObjectGroup = 1
+
 // NewDescriptorInput returns a DescriptorInput representing a data object of type t, with contents
 // read from r, configured according to opts.
 //
@@ -209,8 +212,9 @@ type DescriptorInput struct {
 // data objects. Consider supplying options such as OptCryptoMessageMetadata, OptPartitionMetadata,
 // and OptSignatureMetadata for this purpose.
 //
-// By default, the data object will be placed in data object group 1. To override this behavior,
-// use OptNoGroup or OptGroupID. To link this data object, use OptLinkedID or OptLinkedGroupID.
+// By default, the data object will be placed in the default data object group (1). To override
+// this behavior, use OptNoGroup or OptGroupID. To link this data object, use OptLinkedID or
+// OptLinkedGroupID.
 //
 // By default, the data object will be aligned according to the system's memory page size. To
 // override this behavior, consider using OptObjectAlignment.
@@ -218,7 +222,7 @@ type DescriptorInput struct {
 // By default, no name is set for data object. To set a name, use OptObjectName.
 func NewDescriptorInput(t DataType, r io.Reader, opts ...DescriptorInputOpt) (DescriptorInput, error) {
 	dopts := descriptorOpts{
-		groupID:   1,
+		groupID:   DefaultObjectGroup,
 		alignment: os.Getpagesize(),
 		t:         time.Now(),
 	}

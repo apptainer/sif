@@ -89,7 +89,7 @@ func TestDescriptor_GetName(t *testing.T) {
 
 	parts, err := f.GetDescriptors(
 		WithDataType(DataPartition),
-		WithGroupID(1),
+		WithGroupID(DefaultObjectGroup),
 	)
 	if err != nil {
 		t.Fatalf("failed to get descriptors: %v", err)
