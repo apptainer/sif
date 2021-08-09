@@ -211,9 +211,11 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 
 			// Test callback functionality, if requested.
 			var cb VerifyCallback
+
+			//nolint:dupl
 			if tt.testCallback {
 				cb = func(r VerifyResult) bool {
-					if got, want := r.Signature(), tt.wantCBSignature; got != want {
+					if got, want := r.Signature().ID(), tt.wantCBSignature; got != want {
 						t.Errorf("got signature %v, want %v", got, want)
 					}
 
@@ -417,9 +419,11 @@ func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test callback functionality, if requested.
 			var cb VerifyCallback
+
+			//nolint:dupl
 			if tt.testCallback {
 				cb = func(r VerifyResult) bool {
-					if got, want := r.Signature(), tt.wantCBSignature; got != want {
+					if got, want := r.Signature().ID(), tt.wantCBSignature; got != want {
 						t.Errorf("got signature %v, want %v", got, want)
 					}
 
@@ -632,9 +636,11 @@ func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test callback functionality, if requested.
 			var cb VerifyCallback
+
+			//nolint:dupl
 			if tt.testCallback {
 				cb = func(r VerifyResult) bool {
-					if got, want := r.Signature(), tt.wantCBSignature; got != want {
+					if got, want := r.Signature().ID(), tt.wantCBSignature; got != want {
 						t.Errorf("got signature %v, want %v", got, want)
 					}
 

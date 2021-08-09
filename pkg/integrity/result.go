@@ -11,15 +11,15 @@ import (
 )
 
 type result struct {
-	signature uint32          // ID of signature object.
+	signature sif.Descriptor  // Signature object.
 	im        imageMetadata   // Metadata from signature.
 	verified  []uint32        // IDs of verified objects.
 	e         *openpgp.Entity // Signing entity.
 	err       error           // Verify error (nil if successful).
 }
 
-// Signature returns the ID of the signature object associated with the result.
-func (r result) Signature() uint32 {
+// Signature returns the signature object associated with the result.
+func (r result) Signature() sif.Descriptor {
 	return r.signature
 }
 
@@ -49,14 +49,14 @@ func (r result) Error() error {
 }
 
 type legacyResult struct {
-	signature uint32           // ID of signature object.
+	signature sif.Descriptor   // Signature object.
 	ods       []sif.Descriptor // Descriptors of signed objects.
 	e         *openpgp.Entity  // Signing entity.
 	err       error            // Verify error (nil if successful).
 }
 
-// Signature returns the ID of the signature object associated with the result.
-func (r legacyResult) Signature() uint32 {
+// Signature returns the signature object associated with the result.
+func (r legacyResult) Signature() sif.Descriptor {
 	return r.signature
 }
 
