@@ -63,9 +63,6 @@ type VerifyResult interface {
 	// Signature returns the signature object associated with the result.
 	Signature() sif.Descriptor
 
-	// Signed returns the IDs of data objects that were signed.
-	Signed() []uint32
-
 	// Verified returns the data objects that were verified.
 	Verified() []sif.Descriptor
 

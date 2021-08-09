@@ -23,15 +23,6 @@ func (r result) Signature() sif.Descriptor {
 	return r.signature
 }
 
-// Signed returns the IDs of data objects that were signed.
-func (r result) Signed() []uint32 {
-	ids := make([]uint32, 0, len(r.im.Objects))
-	for _, om := range r.im.Objects {
-		ids = append(ids, om.id)
-	}
-	return ids
-}
-
 // Verified returns the data objects that were verified.
 func (r result) Verified() []sif.Descriptor {
 	return r.verified
@@ -58,15 +49,6 @@ type legacyResult struct {
 // Signature returns the signature object associated with the result.
 func (r legacyResult) Signature() sif.Descriptor {
 	return r.signature
-}
-
-// Signed returns the IDs of data objects that were signed.
-func (r legacyResult) Signed() []uint32 {
-	ids := make([]uint32, 0, len(r.ods))
-	for _, od := range r.ods {
-		ids = append(ids, od.ID())
-	}
-	return ids
 }
 
 // Verified returns the data objects that were verified.
