@@ -1,6 +1,6 @@
 # The Singularity Image Format (SIF)
 
-[![GoDoc](https://godoc.org/github.com/hpcng/sif?status.svg)](https://godoc.org/github.com/hpcng/sif)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/hpcng/sif?status.svg)](https://pkg.go.dev/github.com/hpcng/sif)
 [![Build Status](https://circleci.com/gh/hpcng/sif.svg?style=shield)](https://circleci.com/gh/hpcng/workflows/sif)
 [![Code Coverage](https://codecov.io/gh/hpcng/sif/branch/master/graph/badge.svg)](https://codecov.io/gh/hpcng/sif)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hpcng/sif)](https://goreportcard.com/report/github.com/hpcng/sif)
