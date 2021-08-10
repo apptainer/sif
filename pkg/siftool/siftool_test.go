@@ -6,6 +6,7 @@ package siftool
 
 import (
 	"bytes"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -19,7 +20,7 @@ import (
 var corpus = filepath.Join("..", "integrity", "testdata", "images")
 
 func makeTestSIF(t *testing.T, withDataObject bool) string {
-	tf, err := os.CreateTemp("", "sif-test-*")
+	tf, err := ioutil.TempFile("", "sif-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"crypto"
 	"errors"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -21,7 +22,7 @@ func TestApp_New(t *testing.T) {
 		t.Fatalf("failed to create app: %v", err)
 	}
 
-	tf, err := os.CreateTemp("", "sif-test-*")
+	tf, err := ioutil.TempFile("", "sif-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +77,7 @@ func TestApp_Add(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tf, err := os.CreateTemp("", "sif-test-*")
+			tf, err := ioutil.TempFile("", "sif-test-*")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -101,7 +102,7 @@ func TestApp_Del(t *testing.T) {
 		t.Fatalf("failed to create app: %v", err)
 	}
 
-	tf, err := os.CreateTemp("", "sif-test-*")
+	tf, err := ioutil.TempFile("", "sif-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +129,7 @@ func TestApp_Setprim(t *testing.T) {
 		t.Fatalf("failed to create app: %v", err)
 	}
 
-	tf, err := os.CreateTemp("", "sif-test-*")
+	tf, err := ioutil.TempFile("", "sif-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
