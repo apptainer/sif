@@ -33,6 +33,6 @@ This module aims to maintain support for the two most recent stable versions of 
 
 ## Contributing
 
-SIF and [SingularityCE](https://github.com/sylabs/singularity) are the work of many contributors. We appreciate your help!
+SIF and [Singularity](https://github.com/hpcng/singularity) are the work of many contributors. We appreciate your help!
 
 To contribute, please read the contribution guidelines found in the [CONTRIBUTING.md](CONTRIBUTING.md) file.
