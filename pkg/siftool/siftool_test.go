@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/hpcng/sif/v2/internal/app/siftool"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/sebdah/goldie/v2"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/sif/v2/internal/app/siftool"
-	"github.com/sylabs/sif/v2/pkg/sif"
 )
 
 var corpus = filepath.Join("..", "integrity", "testdata", "images")
