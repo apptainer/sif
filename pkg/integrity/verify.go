@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -58,6 +58,7 @@ func (e *SignatureNotValidError) Is(target error) bool {
 	return e.ID == t.ID || t.ID == 0
 }
 
+// VerifyResult is the interface that each verification result implements.
 type VerifyResult interface {
 	// Signature returns the ID of the signature object associated with the result.
 	Signature() uint32
@@ -127,9 +128,14 @@ func (v *groupVerifier) fingerprints() ([][20]byte, error) {
 // of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
 // data object fails, a ObjectIntegrityError is returned.
 func (v *groupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (imageMetadata, []uint32, *openpgp.Entity, error) { // nolint:lll
+	b := make([]byte, sig.Filelen)
+	if _, err := io.ReadFull(sig.GetReader(v.f), b); err != nil {
+		return imageMetadata{}, nil, nil, err
+	}
+
 	// Verify signature and decode image metadata.
 	var im imageMetadata
-	e, _, err := verifyAndDecodeJSON(sig.GetData(v.f), &im, kr)
+	e, _, err := verifyAndDecodeJSON(b, &im, kr)
 	if err != nil {
 		return im, nil, e, &SignatureNotValidError{ID: sig.ID, Err: err}
 	}
@@ -235,8 +241,13 @@ func (v *legacyGroupVerifier) fingerprints() ([][20]byte, error) {
 //
 // If verification of a data object fails, a ObjectIntegrityError is returned.
 func (v *legacyGroupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
+	b := make([]byte, sig.Filelen)
+	if _, err := io.ReadFull(sig.GetReader(v.f), b); err != nil {
+		return nil, err
+	}
+
 	// Verify signature and decode plaintext.
-	e, b, _, err := verifyAndDecode(sig.GetData(v.f), kr)
+	e, b, _, err := verifyAndDecode(b, kr)
 	if err != nil {
 		return e, &SignatureNotValidError{ID: sig.ID, Err: err}
 	}
@@ -265,7 +276,7 @@ func (v *legacyGroupVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.Ke
 	// Get reader covering all non-signature objects.
 	rs := make([]io.Reader, 0, len(v.ods))
 	for _, od := range v.ods {
-		rs = append(rs, od.GetReadSeeker(v.f))
+		rs = append(rs, od.GetReader(v.f))
 	}
 	r := io.MultiReader(rs...)
 
@@ -344,8 +355,13 @@ func (v *legacyObjectVerifier) fingerprints() ([][20]byte, error) {
 //
 // If verification of a data object fails, a ObjectIntegrityError is returned.
 func (v *legacyObjectVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
+	b := make([]byte, sig.Filelen)
+	if _, err := io.ReadFull(sig.GetReader(v.f), b); err != nil {
+		return nil, err
+	}
+
 	// Verify signature and decode plaintext.
-	e, b, _, err := verifyAndDecode(sig.GetData(v.f), kr)
+	e, b, _, err := verifyAndDecode(b, kr)
 	if err != nil {
 		return e, &SignatureNotValidError{ID: sig.ID, Err: err}
 	}
@@ -372,7 +388,7 @@ func (v *legacyObjectVerifier) verifySignature(sig *sif.Descriptor, kr openpgp.K
 	}
 
 	// Verify object integrity.
-	if ok, err := d.matches(v.od.GetReadSeeker(v.f)); err != nil {
+	if ok, err := d.matches(v.od.GetReader(v.f)); err != nil {
 		return e, err
 	} else if !ok {
 		return e, &ObjectIntegrityError{ID: v.od.ID}
@@ -505,7 +521,7 @@ func OptVerifyCallback(cb VerifyCallback) VerifierOpt {
 }
 
 // getTasks returns verification tasks corresponding to groupIDs and objectIDs.
-func getTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, objectIDs []uint32) ([]verifyTask, error) {
+func getTasks(f *sif.FileImage, cb VerifyCallback, groupIDs, objectIDs []uint32) ([]verifyTask, error) {
 	t := make([]verifyTask, 0, len(groupIDs)+len(objectIDs))
 
 	for _, groupID := range groupIDs {
@@ -533,7 +549,7 @@ func getTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, objectIDs 
 }
 
 // getLegacyTasks returns legacy verification tasks corresponding to groupIDs and objectIDs.
-func getLegacyTasks(f *sif.FileImage, cb VerifyCallback, groupIDs []uint32, objectIDs []uint32) ([]verifyTask, error) {
+func getLegacyTasks(f *sif.FileImage, cb VerifyCallback, groupIDs, objectIDs []uint32) ([]verifyTask, error) {
 	t := make([]verifyTask, 0, len(groupIDs)+len(objectIDs))
 
 	for _, groupID := range groupIDs {

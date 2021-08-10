@@ -19,8 +19,6 @@ import (
 const (
 	headerLen = 128
 	descrLen  = 585
-
-	testObjContainer = "testdata/test-obj-container.sif"
 )
 
 func TestNextAligned(t *testing.T) {
@@ -60,6 +58,13 @@ func TestDataStructs(t *testing.T) {
 }
 
 func TestCreateContainer(t *testing.T) {
+	f, err := os.CreateTemp("", "sif-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(f.Name())
+	f.Close()
+
 	id, err := uuid.NewV4()
 	if err != nil {
 		t.Fatalf("id generation failed: %v", err)
@@ -67,7 +72,7 @@ func TestCreateContainer(t *testing.T) {
 
 	// general info for the new SIF file creation
 	cinfo := CreateInfo{
-		Pathname:   "testdata/testcontainer.sif",
+		Pathname:   f.Name(),
 		Launchstr:  HdrLaunch,
 		Sifversion: HdrVersion,
 		ID:         id,
@@ -142,6 +147,15 @@ func TestCreateContainer(t *testing.T) {
 }
 
 func TestAddDelObject(t *testing.T) {
+	f, err := os.CreateTemp("", "sif-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(f.Name())
+	f.Close()
+
+	testObjContainer := f.Name()
+
 	// data we need to create a dummy labels descriptor
 	labinput := DescriptorInput{
 		Datatype: DataLabels,
@@ -368,7 +382,7 @@ func cpFile(fromFile, toFile string) error {
 	}
 	defer s.Close()
 
-	d, err := os.OpenFile(toFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+	d, err := os.OpenFile(toFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o777)
 	if err != nil {
 		return err
 	}

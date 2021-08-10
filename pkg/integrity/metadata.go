@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -204,7 +204,7 @@ func (om objectMetadata) matches(f *sif.FileImage, od *sif.Descriptor) error {
 		return &DescriptorIntegrityError{ID: od.ID}
 	}
 
-	if ok, err := om.ObjectDigest.matches(od.GetReadSeeker(f)); err != nil {
+	if ok, err := om.ObjectDigest.matches(od.GetReader(f)); err != nil {
 		return err
 	} else if !ok {
 		return &ObjectIntegrityError{ID: od.ID}
@@ -242,7 +242,7 @@ func getImageMetadata(f *sif.FileImage, minID uint32, ods []*sif.Descriptor, h c
 			return imageMetadata{}, errMinimumIDInvalid
 		}
 
-		om, err := getObjectMetadata(od.ID-minID, *od, od.GetReadSeeker(f), h)
+		om, err := getObjectMetadata(od.ID-minID, *od, od.GetReader(f), h)
 		if err != nil {
 			return imageMetadata{}, err
 		}

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -15,6 +15,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sebdah/goldie/v2"
 	"golang.org/x/crypto/openpgp"
 	pgperrors "golang.org/x/crypto/openpgp/errors"
 	"golang.org/x/crypto/openpgp/packet"
@@ -63,9 +64,8 @@ func TestSignAndEncodeJSON(t *testing.T) {
 			}
 
 			if err == nil {
-				if err := verifyGolden(t.Name(), &b); err != nil {
-					t.Fatalf("failed to verify golden: %v", err)
-				}
+				g := goldie.New(t, goldie.WithTestNameForDir(true))
+				g.Assert(t, tt.name, b.Bytes())
 			}
 		})
 	}

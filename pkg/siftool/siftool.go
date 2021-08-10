@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -31,7 +31,7 @@ func Siftool() *cobra.Command {
 	// A set of commands are provided to display elements such as the SIF global
 	// header, the data object descriptors and to dump data objects. It is also
 	// possible to modify a SIF file via this tool via the add/del commands.
-	var Siftool = &cobra.Command{
+	Siftool := &cobra.Command{
 		Use:                   "sif",
 		Short:                 "siftool is a program for Singularity Image Format (SIF) file manipulation",
 		Long:                  siftoolLong,

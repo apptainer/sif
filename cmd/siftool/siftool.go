@@ -107,8 +107,8 @@ func main() {
 	-signentity   the entity that signs (with -datatype 5-Signature)
 	              [NEEDED, no default]:
 	                example: 433FE984155206BD962725E20E8713472A879943
-	-groupid      set groupid [default: DescrUnusedGroup]
-	-link         set link pointer [default: DescrUnusedLink]
+	-groupid      set groupid [default: 0]
+	-link         set link pointer [default: 0]
 	-alignment    set alignment constraint [default: aligned on page size]
 	-filename     set logical filename/handle [default: input filename]
 `},

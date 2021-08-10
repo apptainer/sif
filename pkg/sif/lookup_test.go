@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,7 +7,7 @@ package sif
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"testing"
 )
@@ -262,25 +262,11 @@ func TestFromDescr(t *testing.T) {
 }
 
 func TestGetData(t *testing.T) {
-	mmapImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
-	if err != nil {
-		t.Fatalf("failed to load container: %v", err)
-	}
-	defer func() {
-		if err := mmapImage.UnloadContainer(); err != nil {
-			t.Error(err)
-		}
-	}()
-
-	// It's a little tough to test the code path for buffered I/O. Cheat a little by forcing
-	// Amodebuf to true, which simulates that.
 	bufferedImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
 	if err != nil {
 		t.Fatalf("failed to load container: %v", err)
 	}
-	bufferedImage.Amodebuf = true // apply hack to fake buffered I/O
 	defer func() {
-		bufferedImage.Amodebuf = false // undo hack to fake buffered I/O (ensures munmap called)
 		if err := bufferedImage.UnloadContainer(); err != nil {
 			t.Error(err)
 		}
@@ -290,7 +276,6 @@ func TestGetData(t *testing.T) {
 		name string
 		fimg *FileImage
 	}{
-		{"Mmap", &mmapImage},
 		{"Buffered", &bufferedImage},
 	}
 
@@ -312,26 +297,13 @@ func TestGetData(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func TestGetReadSeeker(t *testing.T) {
-	mmapImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
-	if err != nil {
-		t.Fatalf("failed to load container: %v", err)
-	}
-	defer func() {
-		if err := mmapImage.UnloadContainer(); err != nil {
-			t.Error(err)
-		}
-	}()
-
-	// It's a little tough to test the code path for buffered I/O. Cheat a little by forcing
-	// Amodebuf to true, which simulates that.
 	bufferedImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
 	if err != nil {
 		t.Fatalf("failed to load container: %v", err)
 	}
-	bufferedImage.Amodebuf = true // apply hack to fake buffered I/O
 	defer func() {
-		bufferedImage.Amodebuf = false // undo hack to fake buffered I/O (ensures munmap called)
 		if err := bufferedImage.UnloadContainer(); err != nil {
 			t.Error(err)
 		}
@@ -341,7 +313,6 @@ func TestGetReadSeeker(t *testing.T) {
 		name string
 		fimg *FileImage
 	}{
-		{"Mmap", &mmapImage},
 		{"Buffered", &bufferedImage},
 	}
 
@@ -355,8 +326,48 @@ func TestGetReadSeeker(t *testing.T) {
 			}
 
 			// Read data via ReadSeeker and validate data.
-			b, err := ioutil.ReadAll(descr.GetReadSeeker(tt.fimg))
+			b := make([]byte, descr.Filelen)
+			if _, err := io.ReadFull(descr.GetReadSeeker(tt.fimg), b); err != nil {
+				t.Fatalf("failed to read: %v", err)
+			}
+			if got, want := string(b[5:10]), "BEGIN"; got != want {
+				t.Errorf("got data %#v, want %#v", got, want)
+			}
+		})
+	}
+}
+
+//nolint:dupl
+func TestGetReader(t *testing.T) {
+	bufferedImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
+	if err != nil {
+		t.Fatalf("failed to load container: %v", err)
+	}
+	defer func() {
+		if err := bufferedImage.UnloadContainer(); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	tests := []struct {
+		name string
+		fimg *FileImage
+	}{
+		{"Buffered", &bufferedImage},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			// Get the signature block
+			descr, _, err := tt.fimg.GetFromDescrID(3)
 			if err != nil {
+				t.Fatalf("failed to get descriptor: %v", err)
+			}
+
+			// Read data via Reader and validate data.
+			b := make([]byte, descr.Filelen)
+			if _, err := io.ReadFull(descr.GetReader(tt.fimg), b); err != nil {
 				t.Fatalf("failed to read: %v", err)
 			}
 			if got, want := string(b[5:10]), "BEGIN"; got != want {

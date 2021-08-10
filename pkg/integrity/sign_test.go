@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -8,12 +8,14 @@ package integrity
 import (
 	"crypto"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 
 	"github.com/hpcng/sif/pkg/sif"
+	"github.com/sebdah/goldie/v2"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/packet"
 )
@@ -430,9 +432,12 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 					t.Errorf("got link %v, want %v", got, want)
 				}
 
-				if err := verifyGolden(t.Name(), di.Fp); err != nil {
-					t.Errorf("failed to verify golden: %v", err)
+				b := make([]byte, di.Size)
+				if _, err := io.ReadFull(di.Fp, b); err != nil {
+					t.Fatal(err)
 				}
+				g := goldie.New(t, goldie.WithTestNameForDir(true))
+				g.Assert(t, tt.name, b)
 			}
 		})
 	}

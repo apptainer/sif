@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2018, Divya Cote <divya.cote@gmail.com> All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
@@ -11,7 +11,6 @@ package siftool
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"time"
 
@@ -19,89 +18,48 @@ import (
 )
 
 // Header displays a SIF file global header.
-func Header(file string) error {
-	fimg, err := sif.LoadContainer(file, true)
-	if err != nil {
+func Header(path string) error {
+	return withFileImage(path, true, func(f *sif.FileImage) error {
+		//nolint:staticcheck // In use until v2 API to avoid code duplication
+		_, err := fmt.Print(f.FmtHeader())
 		return err
-	}
-	defer func() {
-		if err := fimg.UnloadContainer(); err != nil {
-			log.Printf("Error unloading container: %v", err)
-		}
-	}()
-
-	fmt.Print(fimg.FmtHeader())
-
-	return nil
+	})
 }
 
 // List displays a list of all active descriptors from a SIF file.
-func List(file string) error {
-	fimg, err := sif.LoadContainer(file, true)
-	if err != nil {
+func List(path string) error {
+	return withFileImage(path, false, func(f *sif.FileImage) error {
+		fmt.Println("Container id:", f.Header.ID)
+		fmt.Println("Created on:  ", time.Unix(f.Header.Ctime, 0).UTC())
+		fmt.Println("Modified on: ", time.Unix(f.Header.Mtime, 0).UTC())
+		fmt.Println("----------------------------------------------------")
+
+		fmt.Println("Descriptor list:")
+
+		//nolint:staticcheck // In use until v2 API to avoid code duplication
+		_, err := fmt.Print(f.FmtDescrList())
 		return err
-	}
-	defer func() {
-		if err := fimg.UnloadContainer(); err != nil {
-			log.Printf("Error unloading container: %v", err)
-		}
-	}()
-
-	fmt.Println("Container id:", fimg.Header.ID)
-	fmt.Println("Created on:  ", time.Unix(fimg.Header.Ctime, 0).UTC())
-	fmt.Println("Modified on: ", time.Unix(fimg.Header.Mtime, 0).UTC())
-	fmt.Println("----------------------------------------------------")
-
-	fmt.Println("Descriptor list:")
-
-	fmt.Print(fimg.FmtDescrList())
-
-	return nil
+	})
 }
 
 // Info displays detailed info about a descriptor from a SIF file.
-func Info(descr uint64, file string) error {
-	fimg, err := sif.LoadContainer(file, true)
-	if err != nil {
+func Info(path string, id uint32) error {
+	return withFileImage(path, false, func(f *sif.FileImage) error {
+		//nolint:staticcheck // In use until v2 API to avoid code duplication
+		_, err := fmt.Print(f.FmtDescrInfo(id))
 		return err
-	}
-	defer func() {
-		if err := fimg.UnloadContainer(); err != nil {
-			log.Printf("Error unloading container: %v", err)
-		}
-	}()
-
-	fmt.Print(fimg.FmtDescrInfo(uint32(descr)))
-
-	return nil
+	})
 }
 
 // Dump extracts and outputs a data object from a SIF file.
-func Dump(descr uint64, file string) error {
-	fimg, err := sif.LoadContainer(file, true)
-	if err != nil {
+func Dump(path string, id uint32) error {
+	return withFileImage(path, false, func(f *sif.FileImage) error {
+		d, _, err := f.GetFromDescrID(id)
+		if err != nil {
+			return err
+		}
+
+		_, err = io.CopyN(os.Stdout, d.GetReader(f), d.Filelen)
 		return err
-	}
-	defer func() {
-		if err := fimg.UnloadContainer(); err != nil {
-			log.Printf("Error unloading container: %v", err)
-		}
-	}()
-
-	for _, v := range fimg.DescrArr {
-		if !v.Used {
-			continue
-		}
-		if v.ID == uint32(descr) {
-			if _, err := fimg.Fp.Seek(v.Fileoff, 0); err != nil {
-				return fmt.Errorf("while seeking to data object: %s", err)
-			}
-			if _, err := io.CopyN(os.Stdout, fimg.Fp, v.Filelen); err != nil {
-				return fmt.Errorf("while copying data object to stdout: %s", err)
-			}
-			return nil
-		}
-	}
-
-	return fmt.Errorf("descriptor not in range or currently unused")
+	})
 }

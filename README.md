@@ -5,21 +5,18 @@
 [![Code Coverage](https://codecov.io/gh/hpcng/sif/branch/master/graph/badge.svg)](https://codecov.io/gh/hpcng/sif)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hpcng/sif)](https://goreportcard.com/report/github.com/hpcng/sif)
 
-SIF is an open source implementation of the Singularity Container Image Format
-that makes it easy to create complete and encapsulated container enviroments
-stored in a single file.
+This module contains an open source implementation of the Singularity Image Format (SIF) that makes it easy to create complete and encapsulated container environments stored in a single file.
 
 ![SIF Image](doc/sif.png)
 
-Unless otherwise noted, the SIF source files are distributed under the BSD-style
-license found in the LICENSE.md file.
+Unless otherwise noted, the SIF source files are distributed under the BSD-style license found in the [LICENSE.md](LICENSE.md) file.
 
 ## Download and Install From Source
 
 To get the sif package to use directly from your programs:
 
 ```sh
-go get -u github.com/hpcng/sif/pkg/sif
+go get -u github.com/hpcng/sif
 ```
 
 To get the siftool CLI program installed to `$(go env GOPATH)/bin` to manipulate SIF container files:
@@ -32,11 +29,10 @@ cd sif
 
 ## Go Version Compatibility
 
-This module aims to maintain support for the two most recent stable versions of Go.
+This module aims to maintain support for the two most recent stable versions of Go. This corresponds to the Go [Release Maintenance Policy](https://github.com/golang/go/wiki/Go-Release-Cycle#release-maintenance) and [Security Policy](https://golang.org/security), ensuring critical bug fixes and security patches are available for all supported language versions.
 
-### Contributing
+## Contributing
 
-SIF and Singularity is the work of many contributors. We appreciate your help!
+SIF and [Singularity](https://github.com/hpcng/singularity) are the work of many contributors. We appreciate your help!
 
-To contribute, please read the contribution guidelines:
-    [CONTRIBUTING.md](./CONTRIBUTING.md)
+To contribute, please read the contribution guidelines found in the [CONTRIBUTING.md](CONTRIBUTING.md) file.

@@ -1,3 +1,4 @@
+// Copyright (c) 2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2018, Divya Cote <divya.cote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
@@ -41,7 +42,7 @@ func cmdInfo(args []string) error {
 		return fmt.Errorf("while converting input descriptor id: %s", err)
 	}
 
-	return siftool.Info(id, args[1])
+	return siftool.Info(args[1], uint32(id))
 }
 
 // cmdDump extracts and output a data object from a SIF file to stdout.
@@ -55,5 +56,5 @@ func cmdDump(args []string) error {
 		return fmt.Errorf("while converting input descriptor id: %s", err)
 	}
 
-	return siftool.Dump(id, args[1])
+	return siftool.Dump(args[1], uint32(id))
 }

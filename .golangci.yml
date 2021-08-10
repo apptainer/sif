@@ -13,9 +13,8 @@ linters:
     - gocritic
     - godot
     - godox
-    - gofmt
+    - gofumpt
     - goimports
-    - golint
     - gomodguard
     - goprintffuncname
     - gosec
@@ -26,6 +25,7 @@ linters:
     - misspell
     - nolintlint
     - prealloc
+    - revive
     - rowserrcheck
     - staticcheck
     - structcheck
@@ -37,7 +37,5 @@ linters:
     - whitespace
 
 linters-settings:
-  gofmt:
-    simplify: true
   misspell:
     locale: US
