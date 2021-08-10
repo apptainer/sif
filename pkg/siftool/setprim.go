@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/hpcng/sif/v2/internal/app/siftool"
 	"github.com/spf13/cobra"
 )
 

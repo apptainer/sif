@@ -8,7 +8,6 @@
 package siftool
 
 import (
-	"github.com/hpcng/sif/v2/internal/app/siftool"
 	"github.com/spf13/cobra"
 )
 
