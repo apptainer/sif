@@ -29,7 +29,7 @@ all your interactions with the project members and users.
 1. Essential bug fix PRs should be sent to both `master` and release branches (if applicable).
 1. Small bug fix and feature enhancement PRs should be sent to `master` only.
 1. Follow the existing code style precedent. Use [golangci-lint](https://golangci-lint.run) to ensure your code is properly formatted and free of lint.
-1. For any new functionality, please write appropriate tests that will run as part of the continuous integration system ([CircleCI](https://circleci.com/gh/sylabs/workflows/sif)).
+1. For any new functionality, please write appropriate tests that will run as part of the continuous integration system.
 1. Ensure the project's default copyright and header have been included in any new source files.
 1. Make sure you have run `go test ./...` and all tests succeed before submitting the PR.
 1. Is the code human understandable? This can be accomplished via a clear code style as well as documentation and/or comments.
