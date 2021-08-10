@@ -6,7 +6,7 @@
 package siftool
 
 import (
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/hpcng/sif/pkg/sif"
 )
 
 // withFileImage calls fn with a FileImage loaded from path.

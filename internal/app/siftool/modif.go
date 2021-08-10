@@ -9,6 +9,7 @@
 package siftool
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/hpcng/sif/pkg/sif"
