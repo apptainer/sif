@@ -79,8 +79,13 @@ func TestCreateContainer(t *testing.T) {
 	}
 
 	// test container creation without any input descriptors
-	if _, err := CreateContainer(cinfo); err != nil {
+	fimg, err := CreateContainer(cinfo)
+	if err != nil {
 		t.Error("CreateContainer(cinfo): should allow empty input descriptor list")
+	}
+
+	if err := fimg.UnloadContainer(); err != nil {
+		t.Error(err)
 	}
 
 	// data we need to create a definition file descriptor
@@ -141,8 +146,13 @@ func TestCreateContainer(t *testing.T) {
 	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
 
 	// test container creation with two partition input descriptors
-	if _, err := CreateContainer(cinfo); err != nil {
+	fimg, err = CreateContainer(cinfo)
+	if err != nil {
 		t.Errorf("CreateContainer(cinfo): CreateContainer(): %s", err)
+	}
+
+	if err := fimg.UnloadContainer(); err != nil {
+		t.Error(err)
 	}
 }
 

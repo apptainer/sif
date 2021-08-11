@@ -219,6 +219,9 @@ func writeHeader(fimg *FileImage) error {
 // CreateContainer is responsible for the creation of a new SIF container
 // file. It takes the creation information specification as input
 // and produces an output file as specified in the input data.
+//
+// On success, a FileImage is returned. The caller must call UnloadContainer
+// to ensure resources are released.
 func CreateContainer(cinfo CreateInfo) (fimg *FileImage, err error) {
 	fimg = &FileImage{}
 	fimg.DescrArr = make([]Descriptor, DescrNumEntries)
@@ -241,7 +244,11 @@ func CreateContainer(cinfo CreateInfo) (fimg *FileImage, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("container file creation failed: %s", err)
 	}
-	defer fimg.Fp.Close()
+	defer func() {
+		if err != nil {
+			fimg.Fp.Close()
+		}
+	}()
 
 	// set file pointer to start of data section */
 	if _, err = fimg.Fp.Seek(DataStartOffset, 0); err != nil {
