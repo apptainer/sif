@@ -6,7 +6,6 @@
 package siftool
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -22,7 +21,7 @@ func Test_command_getNew(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tf, err := ioutil.TempFile("", "sif-test-*")
+			tf, err := os.CreateTemp("", "sif-test-*")
 			if err != nil {
 				t.Fatal(err)
 			}

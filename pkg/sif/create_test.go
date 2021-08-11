@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -57,7 +56,7 @@ func TestDataStructs(t *testing.T) {
 }
 
 func TestCreateContainer(t *testing.T) {
-	tf, err := ioutil.TempFile("", "sif-test-*")
+	tf, err := os.CreateTemp("", "sif-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +113,7 @@ func TestCreateContainer(t *testing.T) {
 }
 
 func TestAddDelObject(t *testing.T) {
-	f, err := ioutil.TempFile("", "sif-test-*")
+	f, err := os.CreateTemp("", "sif-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}

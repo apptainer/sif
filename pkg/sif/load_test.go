@@ -6,7 +6,6 @@
 package sif
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -98,9 +97,9 @@ func TestLoadContainerFpMock(t *testing.T) {
 	// (e.g. Seek, ReadAt or Truncate reporting errors).
 
 	// Load a valid SIF file to test the happy path.
-	content, err := ioutil.ReadFile("testdata/testcontainer2.sif")
+	content, err := os.ReadFile("testdata/testcontainer2.sif")
 	if err != nil {
-		t.Error(`ioutil.ReadFile("testdata/testcontainer2.sif"):`, err)
+		t.Error(`os.ReadFile("testdata/testcontainer2.sif"):`, err)
 	}
 
 	rw := NewBuffer(content)
@@ -117,9 +116,9 @@ func TestLoadContainerFpMock(t *testing.T) {
 
 func TestLoadContainerInvalidMagic(t *testing.T) {
 	// Load a valid SIF file ...
-	content, err := ioutil.ReadFile("testdata/testcontainer2.sif")
+	content, err := os.ReadFile("testdata/testcontainer2.sif")
 	if err != nil {
-		t.Error(`ioutil.ReadFile("testdata/testcontainer2.sif"):`, err)
+		t.Error(`os.ReadFile("testdata/testcontainer2.sif"):`, err)
 	}
 
 	// ... and edit the magic to make it invalid. Instead of

@@ -8,7 +8,6 @@ package integrity
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -35,7 +34,7 @@ func tempFileFrom(path string) (tf *os.File, err error) {
 		pattern = fmt.Sprintf("*.%s", ext)
 	}
 
-	tf, err = ioutil.TempFile("", pattern)
+	tf, err = os.CreateTemp("", pattern)
 	if err != nil {
 		return nil, err
 	}

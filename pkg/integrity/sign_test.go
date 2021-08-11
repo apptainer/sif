@@ -8,7 +8,6 @@ package integrity
 import (
 	"crypto"
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -432,7 +431,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			}
 
 			if err == nil {
-				tf, err := ioutil.TempFile("", "*")
+				tf, err := os.CreateTemp("", "*")
 				if err != nil {
 					t.Fatal(err)
 				}

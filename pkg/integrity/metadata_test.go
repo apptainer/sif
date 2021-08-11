@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,7 +23,7 @@ import (
 )
 
 func TestGetHeaderMetadata(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "sources", "header.bin"))
+	b, err := os.ReadFile(filepath.Join("testdata", "sources", "header.bin"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,14 +67,14 @@ func TestGetHeaderMetadata(t *testing.T) {
 func TestGetObjectMetadata(t *testing.T) {
 	// Byte stream that represents integrity-protected fields of an arbitrary descriptor with
 	// relative ID of zero.
-	rid0, err := ioutil.ReadFile(filepath.Join("testdata", "sources", "descr-rid0.bin"))
+	rid0, err := os.ReadFile(filepath.Join("testdata", "sources", "descr-rid0.bin"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Byte stream that represents integrity-protected fields of an arbitrary descriptor with
 	// relative ID of one.
-	rid1, err := ioutil.ReadFile(filepath.Join("testdata", "sources", "descr-rid1.bin"))
+	rid1, err := os.ReadFile(filepath.Join("testdata", "sources", "descr-rid1.bin"))
 	if err != nil {
 		t.Fatal(err)
 	}
