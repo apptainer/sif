@@ -6,58 +6,83 @@
 package sif
 
 import (
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
-func TestLoadContainer(t *testing.T) {
-	fimg, err := LoadContainerFromPath(
-		filepath.Join("testdata", "testcontainer2.sif"),
-		OptLoadWithFlag(os.O_RDONLY),
-	)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
-	}
-
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("fimg.UnloadContainer():", err)
-	}
-}
-
-func TestLoadContainerFp(t *testing.T) {
+func TestLoadContainerFromPath(t *testing.T) {
 	tests := []struct {
-		name   string
-		offset int64
+		name string
+		path string
+		opts []LoadOpt
 	}{
 		{
-			name: "NoSeek",
+			name: "NoOpts",
+			path: filepath.Join("testdata", "testcontainer2.sif"),
 		},
 		{
-			name:   "Seek",
-			offset: 1,
+			name: "ReadOnly",
+			path: filepath.Join("testdata", "testcontainer2.sif"),
+			opts: []LoadOpt{OptLoadWithFlag(os.O_RDONLY)},
+		},
+		{
+			name: "ReadWrite",
+			path: filepath.Join("testdata", "testcontainer2.sif"),
+			opts: []LoadOpt{OptLoadWithFlag(os.O_RDWR)},
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
-			fp, err := os.Open("testdata/testcontainer2.sif")
+			f, err := LoadContainerFromPath(tt.path, tt.opts...)
 			if err != nil {
-				t.Fatal("error opening testdata/testcontainer2.sif:", err)
+				t.Fatalf("failed to load container: %v", err)
 			}
 
-			if _, err := fp.Seek(tt.offset, io.SeekStart); err != nil {
+			if err := f.UnloadContainer(); err != nil {
+				t.Errorf("failed to unload container: %v", err)
+			}
+		})
+	}
+}
+
+func TestLoadContainer(t *testing.T) {
+	tests := []struct {
+		name string
+		opts []LoadOpt
+	}{
+		{
+			name: "NoOpts",
+		},
+		{
+			name: "CloseOnUnload",
+			opts: []LoadOpt{OptLoadWithCloseOnUnload(true)},
+		},
+		{
+			name: "NoCloseOnUnload",
+			opts: []LoadOpt{OptLoadWithCloseOnUnload(false)},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			rw, err := os.Open(filepath.Join("testdata", "testcontainer2.sif"))
+			if err != nil {
 				t.Fatal(err)
 			}
+			defer rw.Close()
 
-			fimg, err := LoadContainer(fp, OptLoadWithFlag(os.O_RDONLY))
+			f, err := LoadContainer(rw, tt.opts...)
 			if err != nil {
-				t.Error("LoadContainerFp(fp, true):", err)
+				t.Fatalf("failed to load container: %v", err)
 			}
 
-			if err = fimg.UnloadContainer(); err != nil {
-				t.Error("fimg.UnloadContainer():", err)
+			if err := f.UnloadContainer(); err != nil {
+				t.Errorf("failed to unload container: %v", err)
 			}
 		})
 	}
