@@ -75,7 +75,8 @@ func loadContainer(rw ReadWriter) (*FileImage, error) {
 
 // loadOpts accumulates container loading options.
 type loadOpts struct {
-	flag int
+	flag          int
+	closeOnUnload bool
 }
 
 // LoadOpt are used to specify container loading options.
@@ -85,6 +86,15 @@ type LoadOpt func(*loadOpts) error
 func OptLoadWithFlag(flag int) LoadOpt {
 	return func(lo *loadOpts) error {
 		lo.flag = flag
+		return nil
+	}
+}
+
+// OptLoadWithCloseOnUnload specifies whether the ReadWriter should be closed by UnloadContainer.
+// By default, the ReadWriter will be closed if it implements the io.Closer interface.
+func OptLoadWithCloseOnUnload(b bool) LoadOpt {
+	return func(lo *loadOpts) error {
+		lo.closeOnUnload = b
 		return nil
 	}
 }
@@ -118,15 +128,20 @@ func LoadContainerFromPath(path string, opts ...LoadOpt) (*FileImage, error) {
 
 		return nil, fmt.Errorf("%w", err)
 	}
+
+	f.closeOnUnload = true
 	return f, nil
 }
 
 // LoadContainer loads a new SIF container from rw, according to opts.
 //
 // On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
-// are released.
+// are released. By default, UnloadContainer will close rw if it implements the io.Closer
+// interface. To change this behavior, consider using OptLoadWithCloseOnUnload.
 func LoadContainer(rw ReadWriter, opts ...LoadOpt) (*FileImage, error) {
-	lo := loadOpts{}
+	lo := loadOpts{
+		closeOnUnload: true,
+	}
 
 	for _, opt := range opts {
 		if err := opt(&lo); err != nil {
@@ -138,12 +153,14 @@ func LoadContainer(rw ReadWriter, opts ...LoadOpt) (*FileImage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
+
+	f.closeOnUnload = lo.closeOnUnload
 	return f, nil
 }
 
 // UnloadContainer unloads f, releasing associated resources.
 func (f *FileImage) UnloadContainer() error {
-	if c, ok := f.rw.(io.Closer); ok {
+	if c, ok := f.rw.(io.Closer); ok && f.closeOnUnload {
 		if err := c.Close(); err != nil {
 			return err
 		}

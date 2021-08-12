@@ -311,7 +311,8 @@ type FileImage struct {
 	h   header          // Raw global header from image.
 	rds []rawDescriptor // Raw descriptors from image.
 
-	minIDs map[uint32]uint32 // Minimum object IDs for each group ID.
+	closeOnUnload bool              // Close rw on Unload.
+	minIDs        map[uint32]uint32 // Minimum object IDs for each group ID.
 }
 
 // LaunchScript returns the image launch script.
