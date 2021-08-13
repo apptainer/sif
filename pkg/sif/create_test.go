@@ -65,7 +65,7 @@ func TestCreateContainer(t *testing.T) {
 	defer tf.Close()
 
 	// test container creation without any input descriptors
-	f, err := CreateContainer(tf)
+	f, err := CreateContainer(tf, OptCreateWithCloseOnUnload(true))
 	if err != nil {
 		t.Fatalf("failed to create container: %v", err)
 	}

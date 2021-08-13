@@ -135,9 +135,10 @@ func (f *FileImage) writeHeader() error {
 
 // createOpts accumulates container creation options.
 type createOpts struct {
-	id  uuid.UUID
-	dis []DescriptorInput
-	t   time.Time
+	id            uuid.UUID
+	dis           []DescriptorInput
+	t             time.Time
+	closeOnUnload bool
 }
 
 // CreateOpt are used to specify container creation options.
@@ -164,6 +165,15 @@ func OptCreateWithDescriptors(dis ...DescriptorInput) CreateOpt {
 func OptCreateWithTime(t time.Time) CreateOpt {
 	return func(co *createOpts) error {
 		co.t = t
+		return nil
+	}
+}
+
+// OptCreateWithCloseOnUnload specifies whether the ReadWriter should be closed by UnloadContainer.
+// By default, the ReadWriter will be closed if it implements the io.Closer interface.
+func OptCreateWithCloseOnUnload(b bool) CreateOpt {
+	return func(co *createOpts) error {
+		co.closeOnUnload = b
 		return nil
 	}
 }
@@ -215,7 +225,8 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 // CreateContainer creates a new SIF container in rw, according to opts.
 //
 // On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
-// are released.
+// are released. By default, UnloadContainer will close rw if it implements the io.Closer
+// interface. To change this behavior, consider using OptCreateWithCloseOnUnload.
 func CreateContainer(rw ReadWriter, opts ...CreateOpt) (*FileImage, error) {
 	id, err := uuid.NewRandom()
 	if err != nil {
@@ -223,8 +234,9 @@ func CreateContainer(rw ReadWriter, opts ...CreateOpt) (*FileImage, error) {
 	}
 
 	co := createOpts{
-		id: id,
-		t:  time.Now(),
+		id:            id,
+		t:             time.Now(),
+		closeOnUnload: true,
 	}
 
 	for _, opt := range opts {
@@ -237,6 +249,8 @@ func CreateContainer(rw ReadWriter, opts ...CreateOpt) (*FileImage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
+
+	f.closeOnUnload = co.closeOnUnload
 	return f, nil
 }
 
@@ -255,6 +269,8 @@ func CreateContainerAtPath(path string, opts ...CreateOpt) (*FileImage, error) {
 		fp.Close()
 		os.Remove(fp.Name())
 	}
+
+	f.closeOnUnload = true
 	return f, err
 }
 
