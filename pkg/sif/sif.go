@@ -84,35 +84,55 @@ package sif
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
+	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 // SIF header constants and quantities.
 const (
-	HdrLaunch       = "#!/usr/bin/env run-singularity\n"
-	HdrMagic        = "SIF_MAGIC" // SIF identification
-	HdrVersion      = "01"        // SIF SPEC VERSION
-	HdrArchUnknown  = "00"        // Undefined/Unsupported arch
-	HdrArch386      = "01"        // 386 (i[3-6]86) arch code
-	HdrArchAMD64    = "02"        // AMD64 arch code
-	HdrArchARM      = "03"        // ARM arch code
-	HdrArchARM64    = "04"        // AARCH64 arch code
-	HdrArchPPC64    = "05"        // PowerPC 64 arch code
-	HdrArchPPC64le  = "06"        // PowerPC 64 little-endian arch code
-	HdrArchMIPS     = "07"        // MIPS arch code
-	HdrArchMIPSle   = "08"        // MIPS little-endian arch code
-	HdrArchMIPS64   = "09"        // MIPS64 arch code
-	HdrArchMIPS64le = "10"        // MIPS64 little-endian arch code
-	HdrArchS390x    = "11"        // IBM s390x arch code
+	hdrLaunch     = "#!/usr/bin/env run-singularity\n"
+	hdrLaunchLen  = 32 // len("#!/usr/bin/env... ")
+	hdrMagic      = "SIF_MAGIC"
+	hdrMagicLen   = 10 // len("SIF_MAGIC")
+	hdrVersionLen = 3  // len("99")
+	hdrArchLen    = 3  // len("99")
+)
 
-	HdrLaunchLen  = 32 // len("#!/usr/bin/env... ")
-	HdrMagicLen   = 10 // len("SIF_MAGIC")
-	HdrVersionLen = 3  // len("99")
-	HdrArchLen    = 3  // len("99")
+// SpecVersion specifies a SIF specification version.
+type SpecVersion uint8
 
+func (v SpecVersion) String() string { return fmt.Sprintf("%02d", v) }
+func (v SpecVersion) bytes() []byte  { return []byte(v.String()) }
+
+// SIF specification versions.
+const (
+	version01 SpecVersion = iota + 1
+)
+
+// CurrentVersion specifies the current SIF specification version.
+const CurrentVersion = version01
+
+// SIF architecture values.
+const (
+	HdrArchUnknown  = "00" // Undefined/Unsupported arch
+	HdrArch386      = "01" // 386 (i[3-6]86) arch code
+	HdrArchAMD64    = "02" // AMD64 arch code
+	HdrArchARM      = "03" // ARM arch code
+	HdrArchARM64    = "04" // AARCH64 arch code
+	HdrArchPPC64    = "05" // PowerPC 64 arch code
+	HdrArchPPC64le  = "06" // PowerPC 64 little-endian arch code
+	HdrArchMIPS     = "07" // MIPS arch code
+	HdrArchMIPSle   = "08" // MIPS little-endian arch code
+	HdrArchMIPS64   = "09" // MIPS64 arch code
+	HdrArchMIPS64le = "10" // MIPS64 little-endian arch code
+	HdrArchS390x    = "11" // IBM s390x arch code
+)
+
+const (
 	DescrNumEntries   = 48                 // the default total number of available descriptors
 	DescrGroupMask    = 0xf0000000         // groups start at that offset
 	DescrUnusedGroup  = DescrGroupMask     // descriptor without a group
@@ -296,25 +316,6 @@ const (
 	DelCompact            // free the space used by data object
 )
 
-// Descriptor represents the SIF descriptor type.
-type Descriptor struct {
-	Datatype Datatype // informs of descriptor type
-	Used     bool     // is the descriptor in use
-	ID       uint32   // a unique id for this data object
-	Groupid  uint32   // object group this data object is related to
-	Link     uint32   // special link or relation to an id or group
-	Fileoff  int64    // offset from start of image file
-	Filelen  int64    // length of data in file
-	Storelen int64    // length of data + alignment to store data in file
-
-	Ctime int64                 // image creation time
-	Mtime int64                 // last modification time
-	UID   int64                 // system user owning the file
-	Gid   int64                 // system group owning the file
-	Name  [DescrNameLen]byte    // descriptor name (string identifier)
-	Extra [DescrMaxPrivLen]byte // big enough for extra data below
-}
-
 // Deffile represents the SIF definition-file data object descriptor.
 type Deffile struct{}
 
@@ -328,7 +329,7 @@ type Envvar struct{}
 type Partition struct {
 	Fstype   Fstype
 	Parttype Parttype
-	Arch     [HdrArchLen]byte // arch the image is built for
+	Arch     [hdrArchLen]byte // arch the image is built for
 }
 
 // Signature represents the SIF signature data object descriptor.
@@ -349,13 +350,13 @@ type CryptoMessage struct {
 	Messagetype Messagetype
 }
 
-// Header describes a loaded SIF file.
-type Header struct {
-	Launch [HdrLaunchLen]byte // #! shell execution line
+// header describes a loaded SIF file.
+type header struct {
+	Launch [hdrLaunchLen]byte // #! shell execution line
 
-	Magic   [HdrMagicLen]byte   // look for "SIF_MAGIC"
-	Version [HdrVersionLen]byte // SIF version
-	Arch    [HdrArchLen]byte    // arch the primary partition is built for
+	Magic   [hdrMagicLen]byte   // look for "SIF_MAGIC"
+	Version [hdrVersionLen]byte // SIF version
+	Arch    [hdrArchLen]byte    // arch the primary partition is built for
 	ID      uuid.UUID           // image unique identifier
 
 	Ctime int64 // image creation time
@@ -367,6 +368,16 @@ type Header struct {
 	Descrlen int64 // bytes used by all current descriptors
 	Dataoff  int64 // bytes into file where data starts
 	Datalen  int64 // bytes used by all data objects
+}
+
+// GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from h.
+func (h header) GetIntegrityReader() io.Reader {
+	return io.MultiReader(
+		bytes.NewReader(h.Launch[:]),
+		bytes.NewReader(h.Magic[:]),
+		bytes.NewReader(h.Version[:]),
+		bytes.NewReader(h.ID[:]),
+	)
 }
 
 //
@@ -390,23 +401,53 @@ type ReadWriter interface {
 
 // FileImage describes the representation of a SIF file in memory.
 type FileImage struct {
-	Header     Header        // the loaded SIF global header
-	Fp         ReadWriter    // file pointer of opened SIF file
-	Filesize   int64         // file size of the opened SIF file
-	Filedata   []byte        // Deprecated: Filedata exists for historical compatibility and should not be used.
-	Amodebuf   bool          // Deprecated: Amodebuf exists for historical compatibility and should not be used.
-	Reader     *bytes.Reader // Deprecated: Reader exists for historical compatibility and should not be used.
-	DescrArr   []Descriptor  // slice of loaded descriptors from SIF file
-	PrimPartID uint32        // ID of primary system partition if present
+	h          header       // the loaded SIF global header
+	fp         ReadWriter   // file pointer of opened SIF file
+	size       int64        // file size of the opened SIF file
+	descrArr   []Descriptor // slice of loaded descriptors from SIF file
+	primPartID uint32       // ID of primary system partition if present
 }
 
-// CreateInfo wraps all SIF file creation info needed.
-type CreateInfo struct {
-	Pathname   string            // the end result output filename
-	Launchstr  string            // the shell run command
-	Sifversion string            // the SIF specification version used
-	ID         uuid.UUID         // image unique identifier
-	InputDescr []DescriptorInput // slice of input info for descriptor creation
+// LaunchScript returns the image launch script.
+func (f *FileImage) LaunchScript() string { return trimZeroBytes(f.h.Launch[:]) }
+
+// Version returns the SIF specification version of the image.
+func (f *FileImage) Version() string { return trimZeroBytes(f.h.Version[:]) }
+
+// PrimaryArch returns the primary CPU architecture of the image.
+func (f *FileImage) PrimaryArch() string { return GetGoArch(trimZeroBytes(f.h.Arch[:])) }
+
+// ID returns the ID of the image.
+func (f *FileImage) ID() string { return f.h.ID.String() }
+
+// CreatedAt returns the creation time of the image.
+func (f *FileImage) CreatedAt() time.Time { return time.Unix(f.h.Ctime, 0).UTC() }
+
+// ModifiedAt returns the last modification time of the image.
+func (f *FileImage) ModifiedAt() time.Time { return time.Unix(f.h.Mtime, 0).UTC() }
+
+// DescriptorsFree returns the number of free descriptors in the image.
+func (f *FileImage) DescriptorsFree() uint64 { return uint64(f.h.Dfree) }
+
+// DescriptorsTotal returns the total number of descriptors in the image.
+func (f *FileImage) DescriptorsTotal() uint64 { return uint64(f.h.Dtotal) }
+
+// DescriptorSectionOffset returns the offset (in bytes) of the descriptors section in the image.
+func (f *FileImage) DescriptorSectionOffset() uint64 { return uint64(f.h.Descroff) }
+
+// DescriptorSectionSize returns the size (in bytes) of the descriptors section in the image.
+func (f *FileImage) DescriptorSectionSize() uint64 { return uint64(f.h.Descrlen) }
+
+// DataSectionOffset returns the offset (in bytes) of the data section in the image.
+func (f *FileImage) DataSectionOffset() uint64 { return uint64(f.h.Dataoff) }
+
+// DataSectionSize returns the size (in bytes) of the data section in the image.
+func (f *FileImage) DataSectionSize() uint64 { return uint64(f.h.Datalen) }
+
+// GetHeaderIntegrityReader returns an io.Reader that reads the integrity-protected fields from the
+// header of the image.
+func (f *FileImage) GetHeaderIntegrityReader() io.Reader {
+	return f.h.GetIntegrityReader()
 }
 
 // DescriptorInput describes the common info needed to create a data object descriptor.

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2018, Divya Cote <divya.cote@gmail.com> All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
@@ -9,19 +9,20 @@
 package siftool
 
 import (
-	"github.com/hpcng/sif/internal/app/siftool"
 	"github.com/spf13/cobra"
 )
 
-// Header implements 'siftool header' sub-command.
-func Header() *cobra.Command {
+// getHeader returns a command that displays the global SIF header.
+func (c *command) getHeader() *cobra.Command {
 	return &cobra.Command{
-		Use:   "header <containerfile>",
-		Short: "Display SIF global headers",
-		Args:  cobra.ExactArgs(1),
-
+		Use:     "header <sif_path>",
+		Short:   "Display global header",
+		Long:    "Display global header from a SIF image.",
+		Example: c.opts.rootPath + " header image.sif",
+		Args:    cobra.ExactArgs(1),
+		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return siftool.Header(args[0])
+			return c.app.Header(args[0])
 		},
 		DisableFlagsInUseLine: true,
 	}

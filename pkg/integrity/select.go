@@ -9,19 +9,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"sort"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 )
 
 var (
-	errInvalidObjectID      = errors.New("invalid object ID")
-	errInvalidGroupID       = errors.New("invalid group ID")
-	errMultipleObjectsFound = errors.New("multiple objects found")
-	errObjectNotFound       = errors.New("object not found")
-	errGroupNotFound        = errors.New("group not found")
-	errNoGroupsFound        = errors.New("no groups found")
+	errGroupNotFound = errors.New("group not found")
+	errNoGroupsFound = errors.New("no groups found")
 )
 
 // insertSorted inserts unique vals into the sorted slice s.
@@ -42,47 +37,12 @@ func insertSorted(s []uint32, vals ...uint32) []uint32 {
 	return s
 }
 
-// getObject returns the descriptor in f associated with the object with identifier id. If multiple
-// such objects are found, errMultipleObjectsFound is returned. If no such object is found,
-// errObjectNotFound is returned.
-func getObject(f *sif.FileImage, id uint32) (*sif.Descriptor, error) {
-	if id == 0 {
-		return nil, errInvalidObjectID
-	}
-
-	od, _, err := f.GetFromDescrID(id)
-	switch {
-	case errors.Is(err, sif.ErrMultValues):
-		err = errMultipleObjectsFound
-	case errors.Is(err, sif.ErrNotFound):
-		err = errObjectNotFound
-	}
-	return od, err
-}
-
 // getGroupObjects returns all descriptors in f that are contained in the object group with
 // identifier groupID. If no such object group is found, errGroupNotFound is returned.
-func getGroupObjects(f *sif.FileImage, groupID uint32) ([]*sif.Descriptor, error) {
-	if groupID == 0 {
-		return nil, errInvalidGroupID
-	}
-
-	ods, _, err := f.GetFromDescr(sif.Descriptor{
-		Groupid: groupID | sif.DescrGroupMask,
-	})
-	if errors.Is(err, sif.ErrNotFound) {
+func getGroupObjects(f *sif.FileImage, groupID uint32) ([]sif.Descriptor, error) {
+	ods, err := f.GetDescriptors(sif.WithGroupID(groupID))
+	if err == nil && len(ods) == 0 {
 		err = errGroupNotFound
-	}
-	return ods, err
-}
-
-// getNonGroupObjects returns all descriptors in f that are not contained within an object group.
-func getNonGroupObjects(f *sif.FileImage) ([]*sif.Descriptor, error) {
-	ods, _, err := f.GetFromDescr(sif.Descriptor{
-		Groupid: sif.DescrUnusedGroup,
-	})
-	if errors.Is(err, sif.ErrNotFound) {
-		err = nil
 	}
 	return ods, err
 }
@@ -120,74 +80,71 @@ func (e *SignatureNotFoundError) Is(target error) bool {
 // getObjectSignatures returns all descriptors in f that contain signature objects linked to the
 // object with identifier id. If no such signatures are found, a SignatureNotFoundError is
 // returned.
-func getObjectSignatures(f *sif.FileImage, id uint32) ([]*sif.Descriptor, error) {
-	if id == 0 {
-		return nil, errInvalidObjectID
+func getObjectSignatures(f *sif.FileImage, id uint32) ([]sif.Descriptor, error) {
+	sigs, err := f.GetDescriptors(
+		sif.WithDataType(sif.DataSignature),
+		sif.WithLinkedID(id),
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	sigs, _, err := f.GetLinkedDescrsByType(id, sif.DataSignature)
-	if errors.Is(err, sif.ErrNotFound) {
-		err = &SignatureNotFoundError{ID: id}
+	if len(sigs) == 0 {
+		return nil, &SignatureNotFoundError{ID: id}
 	}
-	return sigs, err
+
+	return sigs, nil
 }
 
 // getGroupSignatures returns descriptors in f that contain signature objects linked to the object
 // group with identifier groupID. If legacy is true, only legacy signatures are considered.
 // Otherwise, only non-legacy signatures are considered. If no such signatures are found, a
 // SignatureNotFoundError is returned.
-func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]*sif.Descriptor, error) {
-	if groupID == 0 {
-		return nil, errInvalidGroupID
-	}
+func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]sif.Descriptor, error) {
+	// Get list of signature blocks linked to group, taking legacy flag into consideration.
+	sigs, err := f.GetDescriptors(
+		sif.WithDataType(sif.DataSignature),
+		sif.WithLinkedGroupID(groupID),
+		func(od sif.Descriptor) (bool, error) {
+			b, err := od.GetData(f)
+			if err != nil {
+				return false, err
+			}
 
-	// Get list of signature blocks linked to group.
-	ods, _, err := f.GetLinkedDescrsByType(groupID|sif.DescrGroupMask, sif.DataSignature)
-	if errors.Is(err, sif.ErrNotFound) {
-		return nil, &SignatureNotFoundError{IsGroup: true, ID: groupID}
-	} else if err != nil {
+			isLegacy, err := isLegacySignature(b)
+			return isLegacy == legacy, err
+		},
+	)
+	if err != nil {
 		return nil, err
-	}
-
-	// Filter signatures based on legacy flag.
-	sigs := make([]*sif.Descriptor, 0, len(ods))
-	for _, od := range ods {
-		b := make([]byte, od.Filelen)
-		if _, err := io.ReadFull(od.GetReader(f), b); err != nil {
-			return nil, err
-		}
-
-		isLegacy, err := isLegacySignature(b)
-		if err != nil {
-			return nil, err
-		}
-
-		if isLegacy == legacy {
-			sigs = append(sigs, od)
-		}
 	}
 
 	if len(sigs) == 0 {
 		return nil, &SignatureNotFoundError{IsGroup: true, ID: groupID}
 	}
 
-	return sigs, err
+	return sigs, nil
 }
 
 // getGroupMinObjectID returns the minimum ID from the set of descriptors in f that are contained
 // in the object group with identifier groupID. If no such object group is found, errGroupNotFound
 // is returned.
 func getGroupMinObjectID(f *sif.FileImage, groupID uint32) (uint32, error) {
-	ods, err := getGroupObjects(f, groupID)
-	if err != nil {
-		return 0, err
-	}
-
 	minID := ^uint32(0)
-	for _, od := range ods {
-		if od.ID < minID {
-			minID = od.ID
+
+	f.WithDescriptors(func(od sif.Descriptor) bool {
+		if od.GetGroupID() != groupID {
+			return false
 		}
+
+		if id := od.GetID(); id < minID {
+			minID = id
+		}
+		return false
+	})
+
+	if minID == ^uint32(0) {
+		return 0, errGroupNotFound
 	}
 	return minID, nil
 }
@@ -195,15 +152,12 @@ func getGroupMinObjectID(f *sif.FileImage, groupID uint32) (uint32, error) {
 // getGroupIDs returns all identifiers for the groups contained in f, sorted by ID. If no groups
 // are present, errNoGroupsFound is returned.
 func getGroupIDs(f *sif.FileImage) (groupIDs []uint32, err error) {
-	for _, od := range f.DescrArr {
-		if !od.Used {
-			continue
+	f.WithDescriptors(func(od sif.Descriptor) bool {
+		if groupID := od.GetGroupID(); groupID != 0 {
+			groupIDs = insertSorted(groupIDs, groupID)
 		}
-		if od.Groupid == sif.DescrUnusedGroup {
-			continue
-		}
-		groupIDs = insertSorted(groupIDs, od.Groupid&^sif.DescrGroupMask)
-	}
+		return false
+	})
 
 	if len(groupIDs) == 0 {
 		err = errNoGroupsFound
@@ -213,7 +167,7 @@ func getGroupIDs(f *sif.FileImage) (groupIDs []uint32, err error) {
 }
 
 // getFingerprints returns a sorted list of unique fingerprints contained in sigs.
-func getFingerprints(sigs []*sif.Descriptor) ([][20]byte, error) {
+func getFingerprints(sigs []sif.Descriptor) ([][20]byte, error) {
 	fps := make([][20]byte, 0, len(sigs))
 
 	for _, sig := range sigs {

@@ -1,0 +1,10 @@
+Display global header from a SIF image.
+
+Usage:
+  siftool header <sif_path>
+
+Examples:
+siftool header image.sif
+
+Flags:
+  -h, --help   help for header

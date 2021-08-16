@@ -1,0 +1,14 @@
+Descr slot#: 1
+  Datatype:  FS
+  ID:        2
+  Used:      true
+  Groupid:   1
+  Link:      NONE
+  Fileoff:   36864
+  Filelen:   4
+  Ctime:     2020-06-30 00:01:56 +0000 UTC
+  Mtime:     2020-06-30 00:01:56 +0000 UTC
+  Name:      .
+  Fstype:    Squashfs
+  Parttype:  *System
+  Arch:      386

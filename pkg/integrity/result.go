@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -6,7 +6,7 @@
 package integrity
 
 import (
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"golang.org/x/crypto/openpgp"
 )
 
@@ -49,10 +49,10 @@ func (r result) Error() error {
 }
 
 type legacyResult struct {
-	signature uint32            // ID of signature object.
-	ods       []*sif.Descriptor // Descriptors of signed objects.
-	e         *openpgp.Entity   // Signing entity.
-	err       error             // Verify error (nil if successful).
+	signature uint32           // ID of signature object.
+	ods       []sif.Descriptor // Descriptors of signed objects.
+	e         *openpgp.Entity  // Signing entity.
+	err       error            // Verify error (nil if successful).
 }
 
 // Signature returns the ID of the signature object associated with the result.
@@ -64,7 +64,7 @@ func (r legacyResult) Signature() uint32 {
 func (r legacyResult) Signed() []uint32 {
 	ids := make([]uint32, 0, len(r.ods))
 	for _, om := range r.ods {
-		ids = append(ids, om.ID)
+		ids = append(ids, om.GetID())
 	}
 	return ids
 }

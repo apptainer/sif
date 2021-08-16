@@ -1,0 +1,10 @@
+Display info about a data object from a SIF image.
+
+Usage:
+  siftool info <id> <sif_path>
+
+Examples:
+siftool info 1 image.sif
+
+Flags:
+  -h, --help   help for info

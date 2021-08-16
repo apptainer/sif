@@ -11,27 +11,13 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/hpcng/sif/pkg/integrity"
-	"github.com/hpcng/sif/pkg/sif"
-	uuid "github.com/satori/go.uuid"
+	"github.com/hpcng/sif/v2/pkg/integrity"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"golang.org/x/crypto/openpgp"
 )
 
 func createImage(path string, dis []sif.DescriptorInput) error {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return fmt.Errorf("id generation failed: %v", err)
-	}
-
-	ci := sif.CreateInfo{
-		Pathname:   path,
-		Launchstr:  sif.HdrLaunch,
-		Sifversion: sif.HdrVersion,
-		ID:         id,
-		InputDescr: dis,
-	}
-
-	_, err = sif.CreateContainer(ci)
+	_, err := sif.CreateContainer(path, sif.WithDescriptors(dis...))
 	return err
 }
 

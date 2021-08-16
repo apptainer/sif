@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/packet"
 )
@@ -44,12 +44,12 @@ func sifHashType(h crypto.Hash) sif.Hashtype {
 }
 
 type groupSigner struct {
-	f         *sif.FileImage    // SIF image to sign.
-	id        uint32            // Group ID.
-	ods       []*sif.Descriptor // Descriptors of object(s) to sign.
-	mdHash    crypto.Hash       // Hash type for metadata.
-	sigConfig *packet.Config    // Configuration for signature.
-	sigHash   sif.Hashtype      // SIF hash type for signature.
+	f         *sif.FileImage   // SIF image to sign.
+	id        uint32           // Group ID.
+	ods       []sif.Descriptor // Descriptors of object(s) to sign.
+	mdHash    crypto.Hash      // Hash type for metadata.
+	sigConfig *packet.Config   // Configuration for signature.
+	sigHash   sif.Hashtype     // SIF hash type for signature.
 }
 
 // groupSignerOpt are used to configure gs.
@@ -63,7 +63,7 @@ func optSignGroupObjects(ids ...uint32) groupSignerOpt {
 		}
 
 		for _, id := range ids {
-			od, err := getObject(gs.f, id)
+			od, err := gs.f.GetDescriptor(sif.WithID(id))
 			if err != nil {
 				return err
 			}
@@ -101,6 +101,10 @@ func optSignGroupSignatureConfig(c *packet.Config) groupSignerOpt {
 // optSignGroupMetadataHash(). To override the default PGP configuration for signature generation,
 // use optSignGroupSignatureConfig().
 func newGroupSigner(f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*groupSigner, error) {
+	if groupID == 0 {
+		return nil, sif.ErrInvalidGroupID
+	}
+
 	gs := groupSigner{
 		f:      f,
 		id:     groupID,
@@ -135,17 +139,17 @@ func newGroupSigner(f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*
 }
 
 // addObject adds od to the list of object descriptors to be signed.
-func (gs *groupSigner) addObject(od *sif.Descriptor) error {
-	if groupID := od.Groupid &^ sif.DescrGroupMask; groupID != gs.id {
+func (gs *groupSigner) addObject(od sif.Descriptor) error {
+	if groupID := od.GetGroupID(); groupID != gs.id {
 		return fmt.Errorf("%w (%v)", errUnexpectedGroupID, groupID)
 	}
 
 	// Insert into sorted descriptor list, if not already present.
-	i := sort.Search(len(gs.ods), func(i int) bool { return gs.ods[i].ID >= od.ID })
-	if i < len(gs.ods) && gs.ods[i].ID == od.ID {
+	i := sort.Search(len(gs.ods), func(i int) bool { return gs.ods[i].GetID() >= od.GetID() })
+	if i < len(gs.ods) && gs.ods[i].GetID() == od.GetID() {
 		return nil
 	}
-	gs.ods = append(gs.ods, nil)
+	gs.ods = append(gs.ods, sif.Descriptor{})
 	copy(gs.ods[i+1:], gs.ods[i:])
 	gs.ods[i] = od
 
@@ -232,6 +236,10 @@ func OptSignObjects(ids ...uint32) SignerOpt {
 		var groupIDs []uint32
 
 		for _, id := range ids {
+			if id == 0 {
+				return sif.ErrInvalidObjectID
+			}
+
 			// Ignore duplicate IDs.
 			if _, ok := idMap[id]; ok {
 				continue
@@ -239,14 +247,14 @@ func OptSignObjects(ids ...uint32) SignerOpt {
 			idMap[id] = true
 
 			// Get descriptor.
-			od, err := getObject(s.f, id)
+			od, err := s.f.GetDescriptor(sif.WithID(id))
 			if err != nil {
 				return err
 			}
 
 			// Note the group ID if it hasn't been seen before, and append the object ID to the
 			// appropriate group in the map.
-			groupID := od.Groupid &^ sif.DescrGroupMask
+			groupID := od.GetGroupID()
 			if _, ok := groupObjectIDs[groupID]; !ok {
 				groupIDs = append(groupIDs, groupID)
 			}

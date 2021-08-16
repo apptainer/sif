@@ -1,0 +1,10 @@
+Dump a data object from a SIF image.
+
+Usage:
+  siftool dump <id> <sif_path>
+
+Examples:
+siftool dump 1 image.sif
+
+Flags:
+  -h, --help   help for dump

@@ -12,24 +12,26 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/hpcng/sif/internal/app/siftool"
 	"github.com/spf13/cobra"
 )
 
-// Info implements 'siftool info' sub-command.
-func Info() *cobra.Command {
+// getInfo returns a command that displays detailed information of an object descriptor from a SIF
+// image.
+func (c *command) getInfo() *cobra.Command {
 	return &cobra.Command{
-		Use:   "info <descriptorid> <containerfile>",
-		Short: "Display detailed information of object descriptors",
-		Args:  cobra.ExactArgs(2),
-
+		Use:     "info <id> <sif_path>",
+		Short:   "Display data object info",
+		Long:    "Display info about a data object from a SIF image.",
+		Example: c.opts.rootPath + " info 1 image.sif",
+		Args:    cobra.ExactArgs(2),
+		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := strconv.ParseUint(args[0], 10, 32)
 			if err != nil {
 				return fmt.Errorf("while converting input descriptor id: %s", err)
 			}
 
-			return siftool.Info(args[1], uint32(id))
+			return c.app.Info(args[1], uint32(id))
 		},
 		DisableFlagsInUseLine: true,
 	}

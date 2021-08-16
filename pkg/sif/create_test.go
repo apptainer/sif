@@ -12,8 +12,6 @@ import (
 	"os"
 	"runtime"
 	"testing"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -45,10 +43,10 @@ func TestNextAligned(t *testing.T) {
 }
 
 func TestDataStructs(t *testing.T) {
-	var header Header
+	var h header
 	var descr Descriptor
 
-	if hdrlen := binary.Size(header); hdrlen != headerLen {
+	if hdrlen := binary.Size(h); hdrlen != headerLen {
 		t.Errorf("expecting global header size of %d, got %d", headerLen, hdrlen)
 	}
 
@@ -65,22 +63,9 @@ func TestCreateContainer(t *testing.T) {
 	defer os.Remove(f.Name())
 	f.Close()
 
-	id, err := uuid.NewV4()
-	if err != nil {
-		t.Fatalf("id generation failed: %v", err)
-	}
-
-	// general info for the new SIF file creation
-	cinfo := CreateInfo{
-		Pathname:   f.Name(),
-		Launchstr:  HdrLaunch,
-		Sifversion: HdrVersion,
-		ID:         id,
-	}
-
 	// test container creation without any input descriptors
-	if _, err := CreateContainer(cinfo); err != nil {
-		t.Error("CreateContainer(cinfo): should allow empty input descriptor list")
+	if _, err := CreateContainer(f.Name()); err != nil {
+		t.Errorf("failed to create container: %v", err)
 	}
 
 	// data we need to create a definition file descriptor
@@ -105,9 +90,6 @@ func TestCreateContainer(t *testing.T) {
 		t.Errorf("CreateContainer(cinfo): can't stat definition file: %s", err)
 	}
 	definput.Size = fi.Size()
-
-	// add this descriptor input element to creation descriptor slice
-	cinfo.InputDescr = append(cinfo.InputDescr, definput)
 
 	// data we need to create a system partition descriptor
 	parinput := DescriptorInput{
@@ -137,12 +119,9 @@ func TestCreateContainer(t *testing.T) {
 		t.Errorf("CreateContainer(cinfo): can't set extra info: %s", err)
 	}
 
-	// add this descriptor input element to creation descriptor slice
-	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
-
 	// test container creation with two partition input descriptors
-	if _, err := CreateContainer(cinfo); err != nil {
-		t.Errorf("CreateContainer(cinfo): CreateContainer(): %s", err)
+	if _, err := CreateContainer(f.Name(), OptCreateWithDescriptors(definput, parinput)); err != nil {
+		t.Errorf("failed to create container: %v", err)
 	}
 }
 
@@ -264,44 +243,44 @@ func TestAddObjectPipe(t *testing.T) {
 	}
 
 	fimg := &FileImage{
-		Header: Header{
+		h: header{
 			Dfree:  1,
 			Dtotal: 1,
 		},
-		Fp:       &mockSifReadWriter{},
-		DescrArr: make([]Descriptor, 1),
+		fp:       &mockSifReadWriter{},
+		descrArr: make([]Descriptor, 1),
 	}
 
 	if err := fimg.AddObject(input); err != nil {
 		t.Errorf("fimg.AddObject(...): %s", err)
 	}
 
-	if expected, actual := int64(0), fimg.Header.Dfree; actual != expected {
+	if expected, actual := int64(0), fimg.h.Dfree; actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value in fimg.Header.Dfree: expected=%d actual=%d",
 			expected, actual)
 	}
 
-	if expected, actual := "pipe1", fimg.DescrArr[0].GetName(); actual != expected {
+	if expected, actual := "pipe1", fimg.descrArr[0].GetName(); actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].GetName(): expected=%s actual=%s",
 			expected, actual)
 	}
 
-	if expected, actual := int64(len(payload)), fimg.DescrArr[0].Filelen; actual != expected {
+	if expected, actual := int64(len(payload)), fimg.descrArr[0].Filelen; actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Filelen: expected=%d actual=%d",
 			expected, actual)
 	}
 
-	if expected, actual := input.Datatype, fimg.DescrArr[0].Datatype; actual != expected {
+	if expected, actual := input.Datatype, fimg.descrArr[0].Datatype; actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Datatype: expected=%d actual=%d",
 			expected, actual)
 	}
 
-	if expected, actual := input.Groupid, fimg.DescrArr[0].Groupid; actual != expected {
+	if expected, actual := input.Groupid, fimg.descrArr[0].Groupid; actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Groupid: expected=%d actual=%d",
 			expected, actual)
 	}
 
-	if expected, actual := input.Link, fimg.DescrArr[0].Link; actual != expected {
+	if expected, actual := input.Link, fimg.descrArr[0].Link; actual != expected {
 		t.Errorf("after calling fimg.AddObject(...), unexpected value from fimg.DescrArr[0].Groupid: expected=%d actual=%d",
 			expected, actual)
 	}
@@ -331,12 +310,12 @@ func TestSetPrimPart(t *testing.T) {
 	}
 
 	fimg := &FileImage{
-		Header: Header{
+		h: header{
 			Dfree:  int64(len(inputs)),
 			Dtotal: int64(len(inputs)),
 		},
-		Fp:       &mockSifReadWriter{},
-		DescrArr: make([]Descriptor, len(inputs)),
+		fp:       &mockSifReadWriter{},
+		descrArr: make([]Descriptor, len(inputs)),
 	}
 
 	for i := range inputs {
@@ -352,24 +331,20 @@ func TestSetPrimPart(t *testing.T) {
 		if err := binary.Write(&buffer, binary.LittleEndian, partition); err != nil {
 			t.Fatalf("while serializing partition info: %s", err)
 		}
-		fimg.DescrArr[i].SetExtra(buffer.Bytes())
+		fimg.descrArr[i].setExtra(buffer.Bytes())
 	}
 
 	// the first pass tests that the primary partition can be set;
 	// the second pass tests that the primary can be changed.
 	for i := range inputs {
-		if err := fimg.SetPrimPart(fimg.DescrArr[i].ID); err != nil {
+		if err := fimg.SetPrimPart(fimg.descrArr[i].ID); err != nil {
 			t.Error("fimg.SetPrimPart(...):", err)
 		}
 
-		if part, idx, err := fimg.GetPartPrimSys(); err != nil {
-			t.Error("fimg.GetPartPrimSys():", err)
-		} else if expected, actual := i, idx; actual != expected {
-			t.Errorf("after calling fimg.SetPrimPart(...), unexpected value from fimg.GetPartPrimSys(): expected=%d actual=%d",
-				expected, actual)
-		} else if expected, actual := fimg.DescrArr[i].ID, part.ID; actual != expected {
-			t.Errorf("after calling fimg.SetPrimPart(...), unexpected value from fimg.GetPartPrimSys(): expected=%d actual=%d",
-				expected, actual)
+		if part, err := fimg.GetDescriptor(WithPartitionType(PartPrimSys)); err != nil {
+			t.Fatal(err)
+		} else if want, got := part.ID, fimg.descrArr[i].ID; got != want {
+			t.Errorf("got ID %v, want %v", got, want)
 		}
 	}
 }

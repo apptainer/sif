@@ -11,24 +11,26 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/hpcng/sif/internal/app/siftool"
 	"github.com/spf13/cobra"
 )
 
-// Del implements 'siftool del' sub-command.
-func Del() *cobra.Command {
+// getDel returns a command that deletes a data object from a SIF.
+func (c *command) getDel() *cobra.Command {
 	return &cobra.Command{
-		Use:   "del <descriptorid> <containerfile>",
-		Short: "Delete a specified object descriptor and data from SIF file",
-		Args:  cobra.ExactArgs(2),
-
+		Use:     "del <id> <sif_path>",
+		Short:   "Delete data object",
+		Long:    "Delete a data object from a SIF image.",
+		Example: c.opts.rootPath + " del 1 image.sif",
+		Args:    cobra.ExactArgs(2),
+		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := strconv.ParseUint(args[0], 10, 32)
 			if err != nil {
 				return fmt.Errorf("while converting input descriptor id: %s", err)
 			}
 
-			return siftool.Del(args[1], uint32(id))
+			return c.app.Del(args[1], uint32(id))
 		},
+		DisableFlagsInUseLine: true,
 	}
 }

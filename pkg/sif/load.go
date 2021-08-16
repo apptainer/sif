@@ -22,7 +22,7 @@ func readBinaryAt(r io.ReaderAt, off int64, data interface{}) error {
 
 // Read the global header from r and populate fimg.Header.
 func readHeader(r io.ReaderAt, fimg *FileImage) error {
-	if err := readBinaryAt(r, 0, &fimg.Header); err != nil {
+	if err := readBinaryAt(r, 0, &fimg.h); err != nil {
 		return fmt.Errorf("reading global header from container file: %s", err)
 	}
 
@@ -32,29 +32,27 @@ func readHeader(r io.ReaderAt, fimg *FileImage) error {
 // Read the descriptors from r and populate fimg.DescrArr.
 func readDescriptors(r io.ReaderAt, fimg *FileImage) error {
 	// Initialize descriptor array (slice) and read them all from file
-	fimg.DescrArr = make([]Descriptor, fimg.Header.Dtotal)
-	if err := readBinaryAt(r, fimg.Header.Descroff, &fimg.DescrArr); err != nil {
-		fimg.DescrArr = nil
+	fimg.descrArr = make([]Descriptor, fimg.h.Dtotal)
+	if err := readBinaryAt(r, fimg.h.Descroff, &fimg.descrArr); err != nil {
+		fimg.descrArr = nil
 		return fmt.Errorf("reading descriptor array from container file: %s", err)
 	}
 
-	descr, _, err := fimg.GetPartPrimSys()
-	if err == nil {
-		fimg.PrimPartID = descr.ID
+	if d, err := fimg.GetDescriptor(WithPartitionType(PartPrimSys)); err == nil {
+		fimg.primPartID = d.ID
 	}
 
 	return nil
 }
 
-// Look at key fields from the global header to assess SIF validity.
-// `runnable' checks is current container can run on host.
-func isValidSif(fimg *FileImage) error {
-	// check various header fields
-	if trimZeroBytes(fimg.Header.Magic[:]) != HdrMagic {
-		return fmt.Errorf("invalid SIF file: Magic |%s| want |%s|", trimZeroBytes(fimg.Header.Magic[:]), HdrMagic)
+// isValidSif looks at key fields from the global header to assess SIF validity.
+func isValidSif(f *FileImage) error {
+	if got, want := trimZeroBytes(f.h.Magic[:]), hdrMagic; got != want {
+		return fmt.Errorf("invalid SIF file: Magic |%v| want |%v|", got, want)
 	}
-	if trimZeroBytes(fimg.Header.Version[:]) > HdrVersion {
-		return fmt.Errorf("invalid SIF file: Version %s want <= %s", trimZeroBytes(fimg.Header.Version[:]), HdrVersion)
+
+	if got, want := trimZeroBytes(f.h.Version[:]), CurrentVersion.String(); got > want {
+		return fmt.Errorf("invalid SIF file: Version %s want <= %s", got, want)
 	}
 
 	return nil
@@ -90,15 +88,13 @@ func LoadContainerFp(fp ReadWriter, rdonly bool) (fimg FileImage, err error) {
 	if fp == nil {
 		return fimg, fmt.Errorf("provided fp for file is invalid")
 	}
-	fimg.Fp = fp
+	fimg.fp = fp
 
-	info, err := fimg.Fp.Stat()
+	info, err := fimg.fp.Stat()
 	if err != nil {
 		return fimg, err
 	}
-	fimg.Filesize = info.Size()
-
-	fimg.Amodebuf = true // for backwards compat, true == !mmap
+	fimg.size = info.Size()
 
 	// read global header from SIF file
 	if err = readHeader(fp, &fimg); err != nil {
@@ -122,8 +118,6 @@ func LoadContainerFp(fp ReadWriter, rdonly bool) (fimg FileImage, err error) {
 // and extract various components like the global header, descriptors and even
 // perhaps data, depending on how much is read from the source.
 func LoadContainerReader(b *bytes.Reader) (fimg FileImage, err error) {
-	fimg.Amodebuf = true // for backwards compat, true == !mmap
-
 	// read global header from SIF file
 	if err = readHeader(b, &fimg); err != nil {
 		return
@@ -144,10 +138,10 @@ func LoadContainerReader(b *bytes.Reader) (fimg FileImage, err error) {
 }
 
 // UnloadContainer closes the SIF container file and free associated resources if needed.
-func (fimg *FileImage) UnloadContainer() (err error) {
+func (f *FileImage) UnloadContainer() (err error) {
 	// if SIF data comes from file, not a slice buffer (see LoadContainer() variants)
-	if fimg.Fp != nil {
-		if err = fimg.Fp.Close(); err != nil {
+	if f.fp != nil {
+		if err = f.fp.Close(); err != nil {
 			return fmt.Errorf("closing SIF file failed, corrupted: don't use: %s", err)
 		}
 	}

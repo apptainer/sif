@@ -1,0 +1,10 @@
+Create a new, empty SIF image.
+
+Usage:
+  siftool new <sif_path>
+
+Examples:
+siftool new image.sif
+
+Flags:
+  -h, --help   help for new

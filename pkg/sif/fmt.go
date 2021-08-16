@@ -11,62 +11,14 @@ import (
 	"time"
 )
 
-// readableSize returns the size in human readable format.
-func readableSize(size uint64) string {
-	var divs int
-	var conversion string
-
-	for ; size != 0; size >>= 10 {
-		if size < 1024 {
-			break
-		}
-		divs++
-	}
-
-	switch divs {
-	case 0:
-		conversion = fmt.Sprintf("%d", size)
-	case 1:
-		conversion = fmt.Sprintf("%dKB", size)
-	case 2:
-		conversion = fmt.Sprintf("%dMB", size)
-	case 3:
-		conversion = fmt.Sprintf("%dGB", size)
-	case 4:
-		conversion = fmt.Sprintf("%dTB", size)
-	}
-	return conversion
-}
-
-// FmtHeader formats the output of a SIF file global header.
-//
-// Deprecated: FmtHeader will be removed in a future release.
-func (fimg *FileImage) FmtHeader() string {
-	s := fmt.Sprintln("Launch:  ", trimZeroBytes(fimg.Header.Launch[:]))
-	s += fmt.Sprintln("Magic:   ", trimZeroBytes(fimg.Header.Magic[:]))
-	s += fmt.Sprintln("Version: ", trimZeroBytes(fimg.Header.Version[:]))
-	s += fmt.Sprintln("Arch:    ", GetGoArch(trimZeroBytes(fimg.Header.Arch[:])))
-	s += fmt.Sprintln("ID:      ", fimg.Header.ID)
-	s += fmt.Sprintln("Ctime:   ", time.Unix(fimg.Header.Ctime, 0).UTC())
-	s += fmt.Sprintln("Mtime:   ", time.Unix(fimg.Header.Mtime, 0).UTC())
-	s += fmt.Sprintln("Dfree:   ", fimg.Header.Dfree)
-	s += fmt.Sprintln("Dtotal:  ", fimg.Header.Dtotal)
-	s += fmt.Sprintln("Descoff: ", fimg.Header.Descroff)
-	s += fmt.Sprintln("Descrlen:", readableSize(uint64(fimg.Header.Descrlen)))
-	s += fmt.Sprintln("Dataoff: ", fimg.Header.Dataoff)
-	s += fmt.Sprintln("Datalen: ", readableSize(uint64(fimg.Header.Datalen)))
-
-	return s
-}
-
 // FmtDescrList formats the output of a list of all active descriptors from a SIF file.
 //
 // Deprecated: FmtDescrList will be removed in a future release.
-func (fimg *FileImage) FmtDescrList() string {
+func (f *FileImage) FmtDescrList() string {
 	s := fmt.Sprintf("%-4s %-8s %-8s %-26s %s\n", "ID", "|GROUP", "|LINK", "|SIF POSITION (start-end)", "|TYPE")
 	s += fmt.Sprintln("------------------------------------------------------------------------------")
 
-	for _, v := range fimg.DescrArr {
+	for _, v := range f.descrArr {
 		if !v.Used {
 			continue
 		} else {
@@ -114,10 +66,10 @@ func (fimg *FileImage) FmtDescrList() string {
 // FmtDescrInfo formats the output of detailed info about a descriptor from a SIF file.
 //
 // Deprecated: FmtDescrInfo will be removed in a future release.
-func (fimg *FileImage) FmtDescrInfo(id uint32) string {
+func (f *FileImage) FmtDescrInfo(id uint32) string {
 	var s string
 
-	for i, v := range fimg.DescrArr {
+	for i, v := range f.descrArr {
 		if !v.Used {
 			continue
 		} else if v.ID == id {
@@ -143,8 +95,6 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 			s += fmt.Sprintln("  Filelen:  ", v.Filelen)
 			s += fmt.Sprintln("  Ctime:    ", time.Unix(v.Ctime, 0).UTC())
 			s += fmt.Sprintln("  Mtime:    ", time.Unix(v.Mtime, 0).UTC())
-			s += fmt.Sprintln("  UID:      ", v.UID)
-			s += fmt.Sprintln("  Gid:      ", v.Gid)
 			s += fmt.Sprintln("  Name:     ", trimZeroBytes(v.Name[:]))
 			switch v.Datatype {
 			case DataPartition:

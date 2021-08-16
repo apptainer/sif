@@ -14,7 +14,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/sebdah/goldie/v2"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/packet"
@@ -41,7 +41,7 @@ func TestOptSignGroupObjects(t *testing.T) {
 		{
 			name:    "InvalidObjectID",
 			ids:     []uint32{0},
-			wantErr: errInvalidObjectID,
+			wantErr: sif.ErrInvalidObjectID,
 		},
 		{
 			name:    "UnexpectedGroupID",
@@ -53,7 +53,7 @@ func TestOptSignGroupObjects(t *testing.T) {
 			name:    "ObjectNotFound",
 			groupID: 1,
 			ids:     []uint32{4},
-			wantErr: errObjectNotFound,
+			wantErr: sif.ErrObjectNotFound,
 		},
 		{
 			name:    "Object1",
@@ -85,7 +85,7 @@ func TestOptSignGroupObjects(t *testing.T) {
 			if err == nil {
 				var got []uint32
 				for _, od := range gs.ods {
-					got = append(got, od.ID)
+					got = append(got, od.GetID())
 				}
 				if want := tt.ids; !reflect.DeepEqual(got, want) {
 					t.Errorf("got objects %v, want %v", got, want)
@@ -122,7 +122,7 @@ func TestNewGroupSigner(t *testing.T) {
 			name:    "InvalidGroupID",
 			fi:      &emptyImage,
 			groupID: 0,
-			wantErr: errInvalidGroupID,
+			wantErr: sif.ErrInvalidGroupID,
 		},
 		{
 			name:    "GroupNotFound",
@@ -287,7 +287,7 @@ func TestNewGroupSigner(t *testing.T) {
 
 				var got []uint32
 				for _, od := range s.ods {
-					got = append(got, od.ID)
+					got = append(got, od.GetID())
 				}
 				if want := tt.wantObjects; !reflect.DeepEqual(got, want) {
 					t.Errorf("got objects %v, want %v", got, want)
@@ -312,17 +312,17 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 	}
 	defer twoGroups.UnloadContainer() // nolint:errcheck
 
-	d1, _, err := twoGroups.GetFromDescrID(1)
+	d1, err := twoGroups.GetDescriptor(sif.WithID(1))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	d2, _, err := twoGroups.GetFromDescrID(2)
+	d2, err := twoGroups.GetDescriptor(sif.WithID(2))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	d3, _, err := twoGroups.GetFromDescrID(3)
+	d3, err := twoGroups.GetDescriptor(sif.WithID(3))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -346,7 +346,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []*sif.Descriptor{d1},
+				ods:       []sif.Descriptor{d1},
 				mdHash:    crypto.MD4,
 				sigConfig: &config,
 			},
@@ -358,7 +358,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []*sif.Descriptor{d1},
+				ods:       []sif.Descriptor{d1},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -370,7 +370,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []*sif.Descriptor{d1},
+				ods:       []sif.Descriptor{d1},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -381,7 +381,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []*sif.Descriptor{d2},
+				ods:       []sif.Descriptor{d2},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -392,7 +392,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        1,
-				ods:       []*sif.Descriptor{d1, d2},
+				ods:       []sif.Descriptor{d1, d2},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -403,7 +403,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 			gs: groupSigner{
 				f:         &twoGroups,
 				id:        2,
-				ods:       []*sif.Descriptor{d3},
+				ods:       []sif.Descriptor{d3},
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -458,7 +458,7 @@ func TestOptSignGroup(t *testing.T) {
 		{
 			name:    "InvalidGroupID",
 			gid:     0,
-			wantErr: errInvalidGroupID,
+			wantErr: sif.ErrInvalidGroupID,
 		},
 		{
 			name: "Group1",
@@ -512,13 +512,13 @@ func TestOptSignObjects(t *testing.T) {
 			name:          "InvalidObjectID",
 			inputFileName: "empty.sif",
 			ids:           []uint32{0},
-			wantErr:       errInvalidObjectID,
+			wantErr:       sif.ErrInvalidObjectID,
 		},
 		{
 			name:          "ObjectNotFound",
 			inputFileName: "empty.sif",
 			ids:           []uint32{1},
-			wantErr:       errObjectNotFound,
+			wantErr:       sif.ErrObjectNotFound,
 		},
 		{
 			name:             "Duplicates",
@@ -576,7 +576,7 @@ func TestOptSignObjects(t *testing.T) {
 					} else {
 						var got []uint32
 						for _, od := range gs.ods {
-							got = append(got, od.ID)
+							got = append(got, od.GetID())
 						}
 
 						if !reflect.DeepEqual(got, want) {
@@ -632,7 +632,7 @@ func TestNewSigner(t *testing.T) {
 			name:    "InvalidGroupID",
 			fi:      &emptyImage,
 			opts:    []SignerOpt{OptSignGroup(0)},
-			wantErr: errInvalidGroupID,
+			wantErr: sif.ErrInvalidGroupID,
 		},
 		{
 			name:    "NoObjectsSpecified",
@@ -644,7 +644,7 @@ func TestNewSigner(t *testing.T) {
 			name:    "InvalidObjectID",
 			fi:      &emptyImage,
 			opts:    []SignerOpt{OptSignObjects(0)},
-			wantErr: errInvalidObjectID,
+			wantErr: sif.ErrInvalidObjectID,
 		},
 		{
 			name:             "OneGroupDefaultObjects",
@@ -728,7 +728,7 @@ func TestNewSigner(t *testing.T) {
 					} else {
 						var got []uint32
 						for _, od := range signer.ods {
-							got = append(got, od.ID)
+							got = append(got, od.GetID())
 						}
 
 						if !reflect.DeepEqual(got, want) {

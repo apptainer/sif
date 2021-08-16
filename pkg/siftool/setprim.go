@@ -11,24 +11,26 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/hpcng/sif/internal/app/siftool"
 	"github.com/spf13/cobra"
 )
 
-// Setprim implements 'siftool setprim' sub-command.
-func Setprim() *cobra.Command {
+// getSetPrim returns a command that sets the primary system partition.
+func (c *command) getSetPrim() *cobra.Command {
 	return &cobra.Command{
-		Use:   "setprim <descriptorid> <containerfile>",
-		Short: "Set primary system partition",
-		Args:  cobra.ExactArgs(2),
-
+		Use:     "setprim <id> <sif_path>",
+		Short:   "Set primary system partition",
+		Long:    "Set the primary system partition in a SIF image.",
+		Example: c.opts.rootPath + " setprim 1 image.sif",
+		Args:    cobra.ExactArgs(2),
+		PreRunE: c.initApp,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := strconv.ParseUint(args[0], 10, 32)
 			if err != nil {
 				return fmt.Errorf("while converting input descriptor id: %s", err)
 			}
 
-			return siftool.Setprim(args[1], uint32(id))
+			return c.app.Setprim(args[1], uint32(id))
 		},
+		DisableFlagsInUseLine: true,
 	}
 }

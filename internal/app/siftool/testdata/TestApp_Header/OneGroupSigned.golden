@@ -1,0 +1,12 @@
+Launch:   #!/usr/bin/env run-singularity
+Version:  01
+Arch:     386
+ID:       73e1c5c3-5c41-41ed-ad7c-2504d669f140
+Ctime:    2020-06-30 00:01:56 +0000 UTC
+Mtime:    2020-06-30 00:01:56 +0000 UTC
+Dfree:    45
+Dtotal:   48
+Descoff:  4096
+Descrlen: 27 KiB
+Dataoff:  32768
+Datalen:  9 KiB

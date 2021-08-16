@@ -5,48 +5,66 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// Package siftool implements cobra.Command structs for the siftool functionality. This
-// allows for easy inclusion of siftool functions in the singularity cli.
+// Package siftool adds siftool commands to a parent cobra.Command.
 package siftool
 
 import (
+	"github.com/hpcng/sif/v2/internal/app/siftool"
 	"github.com/spf13/cobra"
 )
 
-const (
-	siftoolLong = `
-  A set of commands are provided to display elements such as the SIF global 
-  header, the data object descriptors and to dump data objects. It is also 
-  possible to modify a SIF file via this tool via the add/del commands.`
-)
+// command contains options and command state.
+type command struct {
+	opts commandOpts
+	app  *siftool.App
+}
 
-// Siftool is a program for Singularity Image Format (SIF) file manipulation.
+// initApp initializes the siftool app.
+func (c *command) initApp(cmd *cobra.Command, args []string) error {
+	app, err := siftool.New(
+		siftool.OptAppOutput(cmd.OutOrStdout()),
+	)
+	c.app = app
+
+	return err
+}
+
+// commandOpts contains configured options.
+type commandOpts struct {
+	rootPath string
+}
+
+// CommandOpt are used to configure optional command behavior.
+type CommandOpt func(*commandOpts) error
+
+// AddCommands adds siftool commands to cmd according to opts.
 //
 // A set of commands are provided to display elements such as the SIF global
 // header, the data object descriptors and to dump data objects. It is also
 // possible to modify a SIF file via this tool via the add/del commands.
-func Siftool() *cobra.Command {
-	// Siftool is a program for Singularity Image Format (SIF) file manipulation.
-	//
-	// A set of commands are provided to display elements such as the SIF global
-	// header, the data object descriptors and to dump data objects. It is also
-	// possible to modify a SIF file via this tool via the add/del commands.
-	Siftool := &cobra.Command{
-		Use:                   "sif",
-		Short:                 "siftool is a program for Singularity Image Format (SIF) file manipulation",
-		Long:                  siftoolLong,
-		Aliases:               []string{"siftool"},
-		DisableFlagsInUseLine: true,
+func AddCommands(cmd *cobra.Command, opts ...CommandOpt) error {
+	c := command{
+		opts: commandOpts{
+			rootPath: cmd.CommandPath(),
+		},
 	}
 
-	Siftool.AddCommand(Header())
-	Siftool.AddCommand(List())
-	Siftool.AddCommand(Info())
-	Siftool.AddCommand(Dump())
-	Siftool.AddCommand(New())
-	Siftool.AddCommand(Add())
-	Siftool.AddCommand(Del())
-	Siftool.AddCommand(Setprim())
+	for _, opt := range opts {
+		if err := opt(&c.opts); err != nil {
+			return err
+		}
+	}
 
-	return Siftool
+	cmd.AddCommand(
+		c.getHeader(),
+		c.getList(),
+		c.getInfo(),
+		c.getDump(),
+		c.getNew(),
+		c.getAdd(),
+		c.getDel(),
+		c.getSetPrim(),
+	)
+
+	return nil
 }

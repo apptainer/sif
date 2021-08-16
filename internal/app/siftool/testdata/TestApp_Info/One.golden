@@ -1,0 +1,14 @@
+Descr slot#: 0
+  Datatype:  FS
+  ID:        1
+  Used:      true
+  Groupid:   1
+  Link:      NONE
+  Fileoff:   32768
+  Filelen:   4
+  Ctime:     2020-06-30 00:01:56 +0000 UTC
+  Mtime:     2020-06-30 00:01:56 +0000 UTC
+  Name:      .
+  Fstype:    Raw
+  Parttype:  System
+  Arch:      386

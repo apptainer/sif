@@ -10,51 +10,68 @@ package siftool
 import (
 	"errors"
 	"os"
+	"strings"
 
-	"github.com/hpcng/sif/internal/app/siftool"
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/internal/app/siftool"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/spf13/cobra"
 )
 
-// Add implements 'siftool add' sub-command.
-func Add() *cobra.Command {
-	ret := &cobra.Command{
-		Use:   "add <containerfile> <dataobjectfile>",
-		Short: "Add a data object to a SIF file",
-		Args:  cobra.ExactArgs(2),
+// getAddExamples returns add command examples based on rootCmd.
+func getAddExamples(rootPath string) string {
+	examples := []string{
+		rootPath +
+			" add image.sif recipe.def -datatype 1",
+		rootPath +
+			" add image.sif rootfs.squashfs --datatype 4 --parttype 1 --partfs 1 ----partarch 2",
+		rootPath +
+			" add image.sif signature.bin -datatype 5 --signentity 433FE984155206BD962725E20E8713472A879943 --signhash 1",
+	}
+	return strings.Join(examples, "\n")
+}
+
+// getAdd returns a command that adds a data object to a SIF.
+func (c *command) getAdd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "add <sif_path> <object_path>",
+		Short:   "Add data object",
+		Long:    "Add a data object to a SIF image.",
+		Example: getAddExamples(c.opts.rootPath),
+		Args:    cobra.ExactArgs(2),
 	}
 
-	datatype := ret.Flags().Int("datatype", 0, `the type of data to add
+	datatype := cmd.Flags().Int("datatype", 0, `the type of data to add
 [NEEDED, no default]:
   1-Deffile,   2-EnvVar,    3-Labels,
   4-Partition, 5-Signature, 6-GenericJSON`)
-	parttype := ret.Flags().Int32("parttype", 0, `the type of partition (with -datatype 4-Partition)
+	parttype := cmd.Flags().Int32("parttype", 0, `the type of partition (with -datatype 4-Partition)
 [NEEDED, no default]:
   1-System,    2-PrimSys,   3-Data,
   4-Overlay`)
-	partfs := ret.Flags().Int32("partfs", 0, `the filesystem used (with -datatype 4-Partition)
+	partfs := cmd.Flags().Int32("partfs", 0, `the filesystem used (with -datatype 4-Partition)
 [NEEDED, no default]:
   1-Squash,    2-Ext3,      3-ImmuObj,
   4-Raw`)
-	partarch := ret.Flags().Int32("partarch", 0, `the main architecture used (with -datatype 4-Partition)
+	partarch := cmd.Flags().Int32("partarch", 0, `the main architecture used (with -datatype 4-Partition)
 [NEEDED, no default]:
   1-386,       2-amd64,     3-arm,
   4-arm64,     5-ppc64,     6-ppc64le,
   7-mips,      8-mipsle,    9-mips64,
   10-mips64le, 11-s390x`)
-	signhash := ret.Flags().Int32("signhash", 0, `the signature hash used (with -datatype 5-Signature)
+	signhash := cmd.Flags().Int32("signhash", 0, `the signature hash used (with -datatype 5-Signature)
 [NEEDED, no default]:
   1-SHA256,    2-SHA384,    3-SHA512,
   4-BLAKE2S,   5-BLAKE2B`)
-	signentity := ret.Flags().String("signentity", "", `the entity that signs (with -datatype 5-Signature)
+	signentity := cmd.Flags().String("signentity", "", `the entity that signs (with -datatype 5-Signature)
 [NEEDED, no default]:
   example: 433FE984155206BD962725E20E8713472A879943`)
-	groupid := ret.Flags().Uint32("groupid", 0, "set groupid [default: 0]")
-	link := ret.Flags().Uint32("link", 0, "set link pointer [default: 0]")
-	alignment := ret.Flags().Int("alignment", 0, "set alignment constraint [default: aligned on page size]")
-	filename := ret.Flags().String("filename", "", "set logical filename/handle [default: input filename]")
+	groupid := cmd.Flags().Uint32("groupid", 0, "set groupid [default: 0]")
+	link := cmd.Flags().Uint32("link", 0, "set link pointer [default: 0]")
+	alignment := cmd.Flags().Int("alignment", 0, "set alignment constraint [default: aligned on page size]")
+	filename := cmd.Flags().String("filename", "", "set logical filename/handle [default: input filename]")
 
-	ret.RunE = func(cmd *cobra.Command, args []string) error {
+	cmd.PreRunE = c.initApp
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		opts := siftool.AddOptions{
 			Groupid:   *groupid,
 			Link:      *link,
@@ -141,8 +158,8 @@ func Add() *cobra.Command {
 			}
 		}
 
-		return siftool.Add(args[0], opts)
+		return c.app.Add(args[0], opts)
 	}
 
-	return ret
+	return cmd
 }

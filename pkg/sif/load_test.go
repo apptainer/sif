@@ -244,7 +244,7 @@ func TestLoadContainerInvalidMagic(t *testing.T) {
 	// ... and edit the magic to make it invalid. Instead of
 	// exploring all kinds of invalid, simply mess with the last
 	// byte, as this would catch off-by-one errors in the code.
-	copy(content[HdrLaunchLen:HdrLaunchLen+HdrMagicLen], "SIF_MAGIX")
+	copy(content[hdrLaunchLen:hdrLaunchLen+hdrMagicLen], "SIF_MAGIX")
 
 	fp := &mockSifReadWriter{
 		buf:  content,
@@ -270,7 +270,7 @@ func TestLoadContainerReader(t *testing.T) {
 	// and that DescrArr is set to nil (since not complete)
 	r := bytes.NewReader(content[:31768])
 	fimg, err := LoadContainerReader(r)
-	if err != nil || fimg.DescrArr != nil {
+	if err != nil || fimg.descrArr != nil {
 		t.Error(`LoadContainerReader(buf):`, err)
 	}
 

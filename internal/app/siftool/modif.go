@@ -9,28 +9,14 @@
 package siftool
 
 import (
-	"fmt"
 	"io"
 
-	"github.com/hpcng/sif/pkg/sif"
-	uuid "github.com/satori/go.uuid"
+	"github.com/hpcng/sif/v2/pkg/sif"
 )
 
 // New creates a new empty SIF file.
-func New(path string) error {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return fmt.Errorf("id generation failed: %v", err)
-	}
-
-	cinfo := sif.CreateInfo{
-		Pathname:   path,
-		Launchstr:  sif.HdrLaunch,
-		Sifversion: sif.HdrVersion,
-		ID:         id,
-	}
-
-	_, err = sif.CreateContainer(cinfo)
+func (*App) New(path string) error {
+	_, err := sif.CreateContainer(path)
 	return err
 }
 
@@ -50,7 +36,7 @@ type AddOptions struct {
 }
 
 // Add adds a data object to a SIF file.
-func Add(path string, opts AddOptions) error {
+func (*App) Add(path string, opts AddOptions) error {
 	input := sif.DescriptorInput{
 		Datatype:  opts.Datatype,
 		Groupid:   sif.DescrGroupMask | opts.Groupid,
@@ -76,14 +62,14 @@ func Add(path string, opts AddOptions) error {
 }
 
 // Del deletes a specified object descriptor and data from the SIF file.
-func Del(path string, id uint32) error {
+func (*App) Del(path string, id uint32) error {
 	return withFileImage(path, true, func(f *sif.FileImage) error {
 		return f.DeleteObject(id, 0)
 	})
 }
 
 // Setprim sets the primary system partition of the SIF file.
-func Setprim(path string, id uint32) error {
+func (*App) Setprim(path string, id uint32) error {
 	return withFileImage(path, true, func(f *sif.FileImage) error {
 		return f.SetPrimPart(id)
 	})

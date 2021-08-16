@@ -6,14 +6,12 @@
 package integrity
 
 import (
-	"bytes"
 	"crypto"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 )
 
 var (
@@ -71,58 +69,13 @@ func (e *ObjectIntegrityError) Is(target error) bool {
 	return e.ID == t.ID || t.ID == 0
 }
 
-// writeHeader writes the integrity-protected fields of h to w.
-func writeHeader(w io.Writer, h sif.Header) error {
-	fields := []interface{}{
-		h.Launch,
-		h.Magic,
-		h.Version,
-		h.ID,
-	}
-
-	for _, f := range fields {
-		if err := binary.Write(w, binary.LittleEndian, f); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// writeDescriptor writes the integrity-protected fields of od to w.
-func writeDescriptor(w io.Writer, relativeID uint32, od sif.Descriptor) error {
-	fields := []interface{}{
-		od.Datatype,
-		od.Used,
-		relativeID,
-		od.Link,
-		od.Filelen,
-		od.Ctime,
-		od.UID,
-		od.Gid,
-		od.Name,
-		od.Extra,
-	}
-
-	for _, f := range fields {
-		if err := binary.Write(w, binary.LittleEndian, f); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 type headerMetadata struct {
 	Digest digest `json:"digest"`
 }
 
-// getHeaderMetadata returns headerMetadata for hdr, using hash algorithm h.
-func getHeaderMetadata(hdr sif.Header, h crypto.Hash) (headerMetadata, error) {
-	b := bytes.Buffer{}
-	if err := writeHeader(&b, hdr); err != nil {
-		return headerMetadata{}, err
-	}
-
-	d, err := newDigestReader(h, &b)
+// getHeaderMetadata returns headerMetadata for the fields read from r, using hash algorithm h.
+func getHeaderMetadata(r io.Reader, h crypto.Hash) (headerMetadata, error) {
+	d, err := newDigestReader(h, r)
 	if err != nil {
 		return headerMetadata{}, err
 	}
@@ -130,16 +83,11 @@ func getHeaderMetadata(hdr sif.Header, h crypto.Hash) (headerMetadata, error) {
 	return headerMetadata{Digest: d}, nil
 }
 
-// matches verifies hdr matches the metadata in hm.
+// matches verifies the fields read fromr matche the metadata in hm.
 //
 // If the SIF global header does not match, ErrHeaderIntegrity is returned.
-func (hm headerMetadata) matches(hdr sif.Header) error {
-	b := bytes.Buffer{}
-	if err := writeHeader(&b, hdr); err != nil {
-		return err
-	}
-
-	if ok, err := hm.Digest.matches(&b); err != nil {
+func (hm headerMetadata) matches(r io.Reader) error {
+	if ok, err := hm.Digest.matches(r); err != nil {
 		return err
 	} else if !ok {
 		return ErrHeaderIntegrity
@@ -155,26 +103,20 @@ type objectMetadata struct {
 	id uint32 // absolute object ID (minID + RelativeID)
 }
 
-// getObjectMetadata returns objectMetadata for object with relativeID, descriptor od and content r
-// using hash algorithm h.
-func getObjectMetadata(relativeID uint32, od sif.Descriptor, r io.Reader, h crypto.Hash) (objectMetadata, error) {
-	om := objectMetadata{RelativeID: relativeID, id: od.ID}
-
-	// Write integrity-protected fields from object descriptor to buffer.
-	b := bytes.Buffer{}
-	if err := writeDescriptor(&b, relativeID, od); err != nil {
-		return objectMetadata{}, err
-	}
+// getObjectMetadata returns objectMetadata for object with relativeID, using digests calculated
+// over descr and data using hash algorithm h.
+func getObjectMetadata(relativeID uint32, descr, data io.Reader, h crypto.Hash) (objectMetadata, error) {
+	om := objectMetadata{RelativeID: relativeID}
 
 	// Calculate digest on object descriptor.
-	d, err := newDigestReader(h, &b)
+	d, err := newDigestReader(h, descr)
 	if err != nil {
 		return objectMetadata{}, err
 	}
 	om.DescriptorDigest = d
 
 	// Calculate digest on object data.
-	d, err = newDigestReader(h, r)
+	d, err = newDigestReader(h, data)
 	if err != nil {
 		return objectMetadata{}, err
 	}
@@ -192,22 +134,17 @@ func (om *objectMetadata) populateAbsoluteID(minID uint32) {
 //
 // If the data object descriptor does not match, a DescriptorIntegrityError is returned. If the
 // data object does not match, a ObjectIntegrityError is returned.
-func (om objectMetadata) matches(f *sif.FileImage, od *sif.Descriptor) error {
-	b := bytes.Buffer{}
-	if err := writeDescriptor(&b, om.RelativeID, *od); err != nil {
-		return err
-	}
-
-	if ok, err := om.DescriptorDigest.matches(&b); err != nil {
+func (om objectMetadata) matches(f *sif.FileImage, od sif.Descriptor) error {
+	if ok, err := om.DescriptorDigest.matches(od.GetIntegrityReader(om.RelativeID)); err != nil {
 		return err
 	} else if !ok {
-		return &DescriptorIntegrityError{ID: od.ID}
+		return &DescriptorIntegrityError{ID: od.GetID()}
 	}
 
 	if ok, err := om.ObjectDigest.matches(od.GetReader(f)); err != nil {
 		return err
 	} else if !ok {
-		return &ObjectIntegrityError{ID: od.ID}
+		return &ObjectIntegrityError{ID: od.GetID()}
 	}
 	return nil
 }
@@ -226,11 +163,11 @@ type imageMetadata struct {
 
 // getImageMetadata returns populated imageMetadata for object descriptors ods in f, using hash
 // algorithm h.
-func getImageMetadata(f *sif.FileImage, minID uint32, ods []*sif.Descriptor, h crypto.Hash) (imageMetadata, error) {
+func getImageMetadata(f *sif.FileImage, minID uint32, ods []sif.Descriptor, h crypto.Hash) (imageMetadata, error) {
 	im := imageMetadata{Version: metadataVersion1}
 
 	// Add header metadata.
-	hm, err := getHeaderMetadata(f.Header, h)
+	hm, err := getHeaderMetadata(f.GetHeaderIntegrityReader(), h)
 	if err != nil {
 		return imageMetadata{}, err
 	}
@@ -238,16 +175,20 @@ func getImageMetadata(f *sif.FileImage, minID uint32, ods []*sif.Descriptor, h c
 
 	// Add object descriptor/data metadata.
 	for _, od := range ods {
-		if od.ID < minID { // shouldn't really be possible...
+		id := od.GetID()
+
+		if id < minID { // shouldn't really be possible...
 			return imageMetadata{}, errMinimumIDInvalid
 		}
 
-		om, err := getObjectMetadata(od.ID-minID, *od, od.GetReader(f), h)
+		om, err := getObjectMetadata(id-minID, od.GetIntegrityReader(id-minID), od.GetReader(f), h)
 		if err != nil {
 			return imageMetadata{}, err
 		}
 		im.Objects = append(im.Objects, om)
 	}
+
+	im.populateAbsoluteObjectIDs(minID)
 
 	return im, nil
 }
@@ -262,7 +203,7 @@ func (im *imageMetadata) populateAbsoluteObjectIDs(minID uint32) {
 
 // objectIDsMatch verifies the object IDs described by ods match exactly the object IDs described
 // by im.
-func (im imageMetadata) objectIDsMatch(ods []*sif.Descriptor) error {
+func (im imageMetadata) objectIDsMatch(ods []sif.Descriptor) error {
 	ids := make(map[uint32]bool)
 	for _, om := range im.Objects {
 		ids[om.id] = false
@@ -270,10 +211,11 @@ func (im imageMetadata) objectIDsMatch(ods []*sif.Descriptor) error {
 
 	// Check each object in ods exists in ids, and mark as seen.
 	for _, od := range ods {
-		if _, ok := ids[od.ID]; !ok {
-			return fmt.Errorf("object %d: %w", od.ID, errObjectNotSigned)
+		id := od.GetID()
+		if _, ok := ids[id]; !ok {
+			return fmt.Errorf("object %d: %w", id, errObjectNotSigned)
 		}
-		ids[od.ID] = true
+		ids[id] = true
 	}
 
 	// Check that all objects in ids were seen.
@@ -300,17 +242,19 @@ func (im imageMetadata) metadataForObject(id uint32) (objectMetadata, error) {
 // If the SIF global header does not match, ErrHeaderIntegrity is returned. If the data object
 // descriptor does not match, a DescriptorIntegrityError is returned. If the data object does not
 // match, a ObjectIntegrityError is returned.
-func (im imageMetadata) matches(f *sif.FileImage, ods []*sif.Descriptor) ([]uint32, error) {
+func (im imageMetadata) matches(f *sif.FileImage, ods []sif.Descriptor) ([]uint32, error) {
 	verified := make([]uint32, 0, len(ods))
 
 	// Verify header metadata.
-	if err := im.Header.matches(f.Header); err != nil {
+	if err := im.Header.matches(f.GetHeaderIntegrityReader()); err != nil {
 		return verified, err
 	}
 
 	// Verify data object metadata.
 	for _, od := range ods {
-		om, err := im.metadataForObject(od.ID)
+		id := od.GetID()
+
+		om, err := im.metadataForObject(id)
 		if err != nil {
 			return verified, err
 		}
@@ -319,7 +263,7 @@ func (im imageMetadata) matches(f *sif.FileImage, ods []*sif.Descriptor) ([]uint
 			return verified, err
 		}
 
-		verified = append(verified, od.ID)
+		verified = append(verified, id)
 	}
 
 	return verified, nil

@@ -1,0 +1,10 @@
+List data objects from a SIF image.
+
+Usage:
+  siftool list <sif_path>
+
+Examples:
+siftool list image.sif
+
+Flags:
+  -h, --help   help for list

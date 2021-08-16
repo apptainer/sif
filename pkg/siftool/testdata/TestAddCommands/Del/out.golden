@@ -1,0 +1,10 @@
+Delete a data object from a SIF image.
+
+Usage:
+  siftool del <id> <sif_path>
+
+Examples:
+siftool del 1 image.sif
+
+Flags:
+  -h, --help   help for del
