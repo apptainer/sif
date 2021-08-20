@@ -10,62 +10,30 @@ import (
 	"golang.org/x/crypto/openpgp"
 )
 
-type result struct {
-	signature sif.Descriptor   // Signature object.
-	im        imageMetadata    // Metadata from signature.
-	verified  []sif.Descriptor // Verified objects.
-	e         *openpgp.Entity  // Signing entity.
-	err       error            // Verify error (nil if successful).
+type VerifyResult struct {
+	sig      sif.Descriptor
+	verified []sif.Descriptor
+	e        *openpgp.Entity
+	err      error
 }
 
 // Signature returns the signature object associated with the result.
-func (r result) Signature() sif.Descriptor {
-	return r.signature
+func (r VerifyResult) Signature() sif.Descriptor {
+	return r.sig
 }
 
 // Verified returns the data objects that were verified.
-func (r result) Verified() []sif.Descriptor {
+func (r VerifyResult) Verified() []sif.Descriptor {
 	return r.verified
 }
 
 // Entity returns the signing entity, or nil if the signing entity could not be determined.
-func (r result) Entity() *openpgp.Entity {
+func (r VerifyResult) Entity() *openpgp.Entity {
 	return r.e
 }
 
 // Error returns an error describing the reason verification failed, or nil if verification was
 // successful.
-func (r result) Error() error {
-	return r.err
-}
-
-type legacyResult struct {
-	signature sif.Descriptor   // Signature object.
-	ods       []sif.Descriptor // Signed objects.
-	e         *openpgp.Entity  // Signing entity.
-	err       error            // Verify error (nil if successful).
-}
-
-// Signature returns the signature object associated with the result.
-func (r legacyResult) Signature() sif.Descriptor {
-	return r.signature
-}
-
-// Verified returns the data objects that were verified.
-func (r legacyResult) Verified() []sif.Descriptor {
-	if r.err != nil {
-		return nil
-	}
-	return r.ods
-}
-
-// Entity returns the signing entity, or nil if the signing entity could not be determined.
-func (r legacyResult) Entity() *openpgp.Entity {
-	return r.e
-}
-
-// Error returns an error describing the reason verification failed, or nil if verification was
-// successful.
-func (r legacyResult) Error() error {
+func (r VerifyResult) Error() error {
 	return r.err
 }

@@ -58,22 +58,6 @@ func (e *SignatureNotValidError) Is(target error) bool {
 	return e.ID == t.ID || t.ID == 0
 }
 
-// VerifyResult is the interface that each verification result implements.
-type VerifyResult interface {
-	// Signature returns the signature object associated with the result.
-	Signature() sif.Descriptor
-
-	// Verified returns the data objects that were verified.
-	Verified() []sif.Descriptor
-
-	// Entity returns the signing entity, or nil if the signing entity could not be determined.
-	Entity() *openpgp.Entity
-
-	// Error returns an error describing the reason verification failed, or nil if verification was
-	// successful.
-	Error() error
-}
-
 // VerifyCallback is called immediately after a signature is verified. If r contains a non-nil
 // error, and the callback returns true, the error is ignored, and verification proceeds as if no
 // error occurred.
@@ -124,50 +108,50 @@ func (v *groupVerifier) fingerprints() ([][20]byte, error) {
 // If verification of the SIF global header fails, ErrHeaderIntegrity is returned. If verification
 // of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
 // data object fails, a ObjectIntegrityError is returned.
-func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) (imageMetadata, []sif.Descriptor, *openpgp.Entity, error) { // nolint:lll
+func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) ([]sif.Descriptor, *openpgp.Entity, error) { // nolint:lll
 	b, err := sig.GetData()
 	if err != nil {
-		return imageMetadata{}, nil, nil, err
+		return nil, nil, err
 	}
 
 	// Verify signature and decode image metadata.
 	var im imageMetadata
 	e, _, err := verifyAndDecodeJSON(b, &im, kr)
 	if err != nil {
-		return im, nil, e, &SignatureNotValidError{ID: sig.ID(), Err: err}
+		return nil, e, &SignatureNotValidError{ID: sig.ID(), Err: err}
 	}
 
 	// Get minimum object ID in group, and use this to populate absolute object IDs in im.
 	minID, err := getGroupMinObjectID(v.f, v.groupID)
 	if err != nil {
-		return im, nil, e, err
+		return nil, e, err
 	}
 	im.populateAbsoluteObjectIDs(minID)
 
 	// Ensure signing entity matches fingerprint in descriptor.
 	_, fp, err := sig.SignatureMetadata()
 	if err != nil {
-		return im, nil, e, err
+		return nil, e, err
 	}
 	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:]) {
-		return im, nil, e, errFingerprintMismatch
+		return nil, e, errFingerprintMismatch
 	}
 
 	// If an object subset is not permitted, verify our set of IDs match exactly what is in the
 	// image metadata.
 	if !v.subsetOK {
 		if err := im.objectIDsMatch(v.ods); err != nil {
-			return im, nil, e, err
+			return nil, e, err
 		}
 	}
 
 	// Verify header and object integrity.
 	verified, err := im.matches(v.f, v.ods)
 	if err != nil {
-		return im, verified, e, err
+		return verified, e, err
 	}
 
-	return im, verified, e, nil
+	return verified, e, nil
 }
 
 // verifyWithKeyRing performs verification of the objects specified by v using keyring kr.
@@ -186,11 +170,11 @@ func (v *groupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 	}
 
 	for _, sig := range sigs {
-		im, verified, e, err := v.verifySignature(sig, kr)
+		verified, e, err := v.verifySignature(sig, kr)
 
 		// Call verify callback, if applicable.
 		if v.cb != nil {
-			r := result{signature: sig, im: im, verified: verified, e: e, err: err}
+			r := VerifyResult{sig: sig, verified: verified, e: e, err: err}
 			if ignoreError := v.cb(r); ignoreError {
 				err = nil
 			}
@@ -299,7 +283,10 @@ func (v *legacyGroupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 
 		// Call verify callback, if applicable.
 		if v.cb != nil {
-			r := legacyResult{signature: sig, ods: v.ods, e: e, err: err}
+			r := VerifyResult{sig: sig, e: e, err: err}
+			if err == nil {
+				r.verified = v.ods
+			}
 			if ignoreError := v.cb(r); ignoreError {
 				err = nil
 			}
@@ -400,7 +387,10 @@ func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 
 		// Call verify callback, if applicable.
 		if v.cb != nil {
-			r := legacyResult{signature: sig, ods: []sif.Descriptor{v.od}, e: e, err: err}
+			r := VerifyResult{sig: sig, e: e, err: err}
+			if err == nil {
+				r.verified = []sif.Descriptor{v.od}
+			}
 			if ignoreError := v.cb(r); ignoreError {
 				err = nil
 			}
