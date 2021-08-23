@@ -912,28 +912,8 @@ func TestNewVerifier(t *testing.T) {
 					t.Errorf("got FileImage %v, want %v", got, want)
 				}
 
-				if got, want := v.keyRing, tt.wantKeyring; !reflect.DeepEqual(got, want) {
+				if got, want := v.kr, tt.wantKeyring; !reflect.DeepEqual(got, want) {
 					t.Errorf("got key ring %v, want %v", got, want)
-				}
-
-				if got, want := v.groups, tt.wantGroups; !reflect.DeepEqual(got, want) {
-					t.Errorf("got groups %v, want %v", got, want)
-				}
-
-				if got, want := v.objects, tt.wantObjects; !reflect.DeepEqual(got, want) {
-					t.Errorf("got objects %v, want %v", got, want)
-				}
-
-				if got, want := v.isLegacy, tt.wantLegacy; got != want {
-					t.Errorf("got legacy %v, want %v", got, want)
-				}
-
-				if got, want := v.isLegacyAll, tt.wantLegacyAll; got != want {
-					t.Errorf("got legacy all %v, want %v", got, want)
-				}
-
-				if got := v.cb; (got != nil) != tt.wantCallback {
-					t.Errorf("got callback %v, want callback %v", got, tt.wantCallback)
 				}
 
 				if got, want := len(v.tasks), tt.wantTasks; got != want {
@@ -1175,9 +1155,9 @@ func TestVerifier_Verify(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			v := Verifier{
-				f:       tt.f,
-				keyRing: tt.kr,
-				tasks:   tt.tasks,
+				f:     tt.f,
+				kr:    tt.kr,
+				tasks: tt.tasks,
 			}
 
 			if got, want := v.Verify(), tt.wantErr; !errors.Is(got, want) {

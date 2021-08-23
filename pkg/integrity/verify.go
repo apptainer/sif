@@ -409,27 +409,22 @@ type verifyTask interface {
 	verifyWithKeyRing(kr openpgp.KeyRing) error
 }
 
-// Verifier describes a SIF image verifier.
-type Verifier struct {
-	f *sif.FileImage // SIF image to verify.
-
-	keyRing     openpgp.KeyRing // Keyring to use for verification.
-	groups      []uint32        // Data object group(s) selected for verification.
-	objects     []uint32        // Individual data object(s) selected for verification.
-	isLegacy    bool            // Enable verification of legacy signature(s).
-	isLegacyAll bool            // Verify legacy sigs of all of non-signature objects in a group.
-	cb          VerifyCallback  // Verification callback.
-
-	tasks []verifyTask // Slice of verification tasks.
+type verifyOpts struct {
+	kr          openpgp.KeyRing
+	groups      []uint32
+	objects     []uint32
+	isLegacy    bool
+	isLegacyAll bool
+	cb          VerifyCallback
 }
 
-// VerifierOpt are used to configure v.
-type VerifierOpt func(v *Verifier) error
+// VerifierOpt are used to configure vo.
+type VerifierOpt func(vo *verifyOpts) error
 
 // OptVerifyWithKeyRing sets the keyring to use for verification to kr.
 func OptVerifyWithKeyRing(kr openpgp.KeyRing) VerifierOpt {
-	return func(v *Verifier) error {
-		v.keyRing = kr
+	return func(vo *verifyOpts) error {
+		vo.kr = kr
 		return nil
 	}
 }
@@ -437,11 +432,11 @@ func OptVerifyWithKeyRing(kr openpgp.KeyRing) VerifierOpt {
 // OptVerifyGroup adds a verification task for the group with the specified groupID. This may be
 // called multliple times to request verification of more than one group.
 func OptVerifyGroup(groupID uint32) VerifierOpt {
-	return func(v *Verifier) error {
+	return func(vo *verifyOpts) error {
 		if groupID == 0 {
 			return sif.ErrInvalidGroupID
 		}
-		v.groups = insertSorted(v.groups, groupID)
+		vo.groups = insertSorted(vo.groups, groupID)
 		return nil
 	}
 }
@@ -449,11 +444,11 @@ func OptVerifyGroup(groupID uint32) VerifierOpt {
 // OptVerifyObject adds a verification task for the object with the specified id. This may be
 // called multliple times to request verification of more than one object.
 func OptVerifyObject(id uint32) VerifierOpt {
-	return func(v *Verifier) error {
+	return func(vo *verifyOpts) error {
 		if id == 0 {
 			return sif.ErrInvalidObjectID
 		}
-		v.objects = insertSorted(v.objects, id)
+		vo.objects = insertSorted(vo.objects, id)
 		return nil
 	}
 }
@@ -465,8 +460,8 @@ func OptVerifyObject(id uint32) VerifierOpt {
 // global header or object descriptors. For the best security, use of non-legacy signatures is
 // required.
 func OptVerifyLegacy() VerifierOpt {
-	return func(v *Verifier) error {
-		v.isLegacy = true
+	return func(vo *verifyOpts) error {
+		vo.isLegacy = true
 		return nil
 	}
 }
@@ -479,9 +474,9 @@ func OptVerifyLegacy() VerifierOpt {
 // global header or object descriptors. For the best security, use of non-legacy signatures is
 // required.
 func OptVerifyLegacyAll() VerifierOpt {
-	return func(v *Verifier) error {
-		v.isLegacy = true
-		v.isLegacyAll = true
+	return func(vo *verifyOpts) error {
+		vo.isLegacy = true
+		vo.isLegacyAll = true
 		return nil
 	}
 }
@@ -489,8 +484,8 @@ func OptVerifyLegacyAll() VerifierOpt {
 // OptVerifyCallback registers cb as the verification callback, which is called after each
 // signature is verified.
 func OptVerifyCallback(cb VerifyCallback) VerifierOpt {
-	return func(v *Verifier) error {
-		v.cb = cb
+	return func(vo *verifyOpts) error {
+		vo.cb = cb
 		return nil
 	}
 }
@@ -546,6 +541,13 @@ func getLegacyTasks(f *sif.FileImage, cb VerifyCallback, groupIDs, objectIDs []u
 	return t, nil
 }
 
+// Verifier describes a SIF image verifier.
+type Verifier struct {
+	f     *sif.FileImage
+	kr    openpgp.KeyRing
+	tasks []verifyTask
+}
+
 // NewVerifier returns a Verifier to examine and/or verify digital signatures(s) in f according to
 // opts.
 //
@@ -561,46 +563,50 @@ func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 		return nil, fmt.Errorf("integrity: %w", errNilFileImage)
 	}
 
-	v := &Verifier{f: f}
+	vo := verifyOpts{}
 
 	// Apply options.
 	for _, o := range opts {
-		if err := o(v); err != nil {
+		if err := o(&vo); err != nil {
 			return nil, fmt.Errorf("integrity: %w", err)
 		}
 	}
 
 	// If "legacy all" mode selected, add all non-signature objects that are in a group.
-	if v.isLegacyAll {
+	if vo.isLegacyAll {
 		f.WithDescriptors(func(od sif.Descriptor) bool {
 			if od.DataType() != sif.DataSignature && od.GroupID() != 0 {
-				v.objects = insertSorted(v.objects, od.ID())
+				vo.objects = insertSorted(vo.objects, od.ID())
 			}
 			return false
 		})
 	}
 
 	// If no verification tasks specified, add one per object group
-	if len(v.groups) == 0 && len(v.objects) == 0 {
+	if len(vo.groups) == 0 && len(vo.objects) == 0 {
 		ids, err := getGroupIDs(f)
 		if err != nil {
 			return nil, fmt.Errorf("integrity: %w", err)
 		}
-		v.groups = ids
+		vo.groups = ids
 	}
 
 	// Get tasks.
 	getTasksFunc := getTasks
-	if v.isLegacy {
+	if vo.isLegacy {
 		getTasksFunc = getLegacyTasks
 	}
-	t, err := getTasksFunc(f, v.cb, v.groups, v.objects)
+	t, err := getTasksFunc(f, vo.cb, vo.groups, vo.objects)
 	if err != nil {
 		return nil, fmt.Errorf("integrity: %w", err)
 	}
-	v.tasks = t
 
-	return v, nil
+	v := Verifier{
+		f:     f,
+		kr:    vo.kr,
+		tasks: t,
+	}
+	return &v, nil
 }
 
 // fingerprints returns a sorted list of unique fingerprints of entities participating in the
@@ -676,7 +682,7 @@ func (v *Verifier) AllSignedBy() ([][20]byte, error) {
 // DescriptorIntegrityError is returned. If verification of a data object fails, an error wrapping
 // a ObjectIntegrityError is returned.
 func (v *Verifier) Verify() error {
-	if v.keyRing == nil {
+	if v.kr == nil {
 		return fmt.Errorf("integrity: %w", ErrNoKeyMaterial)
 	}
 
@@ -692,7 +698,7 @@ func (v *Verifier) Verify() error {
 	}
 
 	for _, t := range v.tasks {
-		if err := t.verifyWithKeyRing(v.keyRing); err != nil {
+		if err := t.verifyWithKeyRing(v.kr); err != nil {
 			return fmt.Errorf("integrity: %w", err)
 		}
 	}
