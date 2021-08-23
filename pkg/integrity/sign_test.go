@@ -133,10 +133,10 @@ func TestNewGroupSigner(t *testing.T) {
 			wantErr: sif.ErrInvalidGroupID,
 		},
 		{
-			name:    "GroupNotFound",
+			name:    "NoObjects",
 			fi:      emptyImage,
 			groupID: 1,
-			wantErr: errGroupNotFound,
+			wantErr: sif.ErrNoObjects,
 		},
 		{
 			name:    "NoObjectsSpecified",
@@ -144,6 +144,12 @@ func TestNewGroupSigner(t *testing.T) {
 			groupID: 1,
 			opts:    []groupSignerOpt{optSignGroupObjects()},
 			wantErr: errNoObjectsSpecified,
+		},
+		{
+			name:    "GroupNotFound",
+			fi:      twoGroupImage,
+			groupID: 3,
+			wantErr: errGroupNotFound,
 		},
 		{
 			name:        "Group1",
@@ -553,9 +559,15 @@ func TestOptSignObjects(t *testing.T) {
 			wantErr:       sif.ErrInvalidObjectID,
 		},
 		{
-			name:          "ObjectNotFound",
+			name:          "NoObjects",
 			inputFileName: "empty.sif",
 			ids:           []uint32{1},
+			wantErr:       sif.ErrNoObjects,
+		},
+		{
+			name:          "ObjectNotFound",
+			inputFileName: "one-group.sif",
+			ids:           []uint32{3},
 			wantErr:       sif.ErrObjectNotFound,
 		},
 		{

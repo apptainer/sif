@@ -82,11 +82,7 @@ func (f *FileImage) writeDataObject(di DescriptorInput) error {
 	// If this is a primary partition, verify there isn't another primary partition, and update the
 	// architecture in the global header.
 	if p, ok := di.opts.extra.(partition); ok && p.Parttype == PartPrimSys {
-		ds, err := f.GetDescriptors(WithPartitionType(PartPrimSys))
-		if err != nil {
-			return err
-		}
-		if len(ds) > 0 {
+		if ds, err := f.GetDescriptors(WithPartitionType(PartPrimSys)); err == nil && len(ds) > 0 {
 			return fmt.Errorf("only 1 FS data object may be a primary partition")
 		}
 

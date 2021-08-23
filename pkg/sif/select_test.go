@@ -35,7 +35,12 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 		},
 	}
 
-	f := &FileImage{rds: ds}
+	f := &FileImage{
+		rds: ds,
+		h: header{
+			Dtotal: int64(len(ds)),
+		},
+	}
 
 	f.populateMinIDs()
 
@@ -173,7 +178,12 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 		},
 	}
 
-	f := &FileImage{rds: ds}
+	f := &FileImage{
+		rds: ds,
+		h: header{
+			Dtotal: int64(len(ds)),
+		},
+	}
 
 	f.populateMinIDs()
 

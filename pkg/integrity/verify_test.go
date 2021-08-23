@@ -736,15 +736,21 @@ func TestNewVerifier(t *testing.T) {
 			wantErr: sif.ErrInvalidGroupID,
 		},
 		{
-			name:    "GroupNotFound",
+			name:    "NoObjects",
 			fi:      emptyImage,
 			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(1)},
+			wantErr: sif.ErrNoObjects,
+		},
+		{
+			name:    "GroupNotFound",
+			fi:      oneGroupImage,
+			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(2)},
 			wantErr: errGroupNotFound,
 		},
 		{
 			name:    "GroupNotFoundLegacy",
-			fi:      emptyImage,
-			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(1), OptVerifyLegacy()},
+			fi:      oneGroupImage,
+			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(2), OptVerifyLegacy()},
 			wantErr: errGroupNotFound,
 		},
 		{
@@ -755,14 +761,14 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name:    "ObjectNotFound",
-			fi:      emptyImage,
-			opts:    []VerifierOpt{OptVerifyObject(1)},
+			fi:      oneGroupImage,
+			opts:    []VerifierOpt{OptVerifyObject(3)},
 			wantErr: sif.ErrObjectNotFound,
 		},
 		{
 			name:    "ObjectNotFoundLegacy",
-			fi:      emptyImage,
-			opts:    []VerifierOpt{OptVerifyObject(1), OptVerifyLegacy()},
+			fi:      oneGroupImage,
+			opts:    []VerifierOpt{OptVerifyObject(3), OptVerifyLegacy()},
 			wantErr: sif.ErrObjectNotFound,
 		},
 		{

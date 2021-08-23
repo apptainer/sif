@@ -10,6 +10,9 @@ import (
 	"fmt"
 )
 
+// ErrNoObjects is the error returned when an image contains no data objects.
+var ErrNoObjects = errors.New("no objects in image")
+
 // ErrObjectNotFound is the error returned when a data object is not found.
 var ErrObjectNotFound = errors.New("object not found")
 
@@ -99,7 +102,12 @@ func (f *FileImage) descriptorFromRaw(rd *rawDescriptor) Descriptor {
 }
 
 // GetDescriptors returns a slice of in-use descriptors for which all selector funcs return true.
+// If the image contains no data objects, an error wrapping ErrNoObjects is returned.
 func (f *FileImage) GetDescriptors(fns ...DescriptorSelectorFunc) ([]Descriptor, error) {
+	if f.DescriptorsFree() == f.DescriptorsTotal() {
+		return nil, fmt.Errorf("%w", ErrNoObjects)
+	}
+
 	var ds []Descriptor
 
 	err := f.withDescriptors(multiSelectorFunc(fns...), func(d *rawDescriptor) error {
@@ -134,14 +142,20 @@ func (f *FileImage) getDescriptor(fns ...DescriptorSelectorFunc) (*rawDescriptor
 	return d, err
 }
 
-// GetDescriptor returns the in-use descriptor selected by fns. If no descriptor is selected by
-// fns, an error wrapping ErrObjectNotFound is returned. If multiple descriptors are selected by
-// fns, an error wrapping ErrMultipleObjectsFound is returned.
+// GetDescriptor returns the in-use descriptor selected by fns. If the image contains no data
+// objects, an error wrapping ErrNoObjects is returned. If no descriptor is selected by fns, an
+// error wrapping ErrObjectNotFound is returned. If multiple descriptors are selected by fns, an
+// error wrapping ErrMultipleObjectsFound is returned.
 func (f *FileImage) GetDescriptor(fns ...DescriptorSelectorFunc) (Descriptor, error) {
+	if f.DescriptorsFree() == f.DescriptorsTotal() {
+		return Descriptor{}, fmt.Errorf("%w", ErrNoObjects)
+	}
+
 	d, err := f.getDescriptor(fns...)
 	if err != nil {
 		return Descriptor{}, fmt.Errorf("%w", err)
 	}
+
 	return f.descriptorFromRaw(d), nil
 }
 
