@@ -16,6 +16,8 @@ import (
 	"golang.org/x/crypto/openpgp"
 )
 
+var corpus = filepath.Join("..", "..", "test", "images")
+
 // fixedTime returns a fixed time value, useful for ensuring tests are deterministic.
 func fixedTime() time.Time {
 	return time.Unix(1504657553, 0)
@@ -59,7 +61,7 @@ func tempFileFrom(path string) (tf *os.File, err error) {
 func getTestEntity(t *testing.T) *openpgp.Entity {
 	t.Helper()
 
-	f, err := os.Open(filepath.Join("testdata", "keys", "private.asc"))
+	f, err := os.Open(filepath.Join("..", "..", "test", "keys", "private.asc"))
 	if err != nil {
 		t.Fatal(err)
 	}

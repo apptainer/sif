@@ -16,7 +16,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var corpus = filepath.Join("..", "integrity", "testdata", "images")
+var corpus = filepath.Join("..", "..", "test", "images")
 
 func makeTestSIF(t *testing.T, withDataObject bool) string {
 	tf, err := os.CreateTemp("", "sif-test-*")

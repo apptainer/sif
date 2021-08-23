@@ -14,7 +14,7 @@ import (
 	"github.com/sebdah/goldie/v2"
 )
 
-var corpus = filepath.Join("..", "..", "..", "pkg", "integrity", "testdata", "images")
+var corpus = filepath.Join("..", "..", "..", "test", "images")
 
 func Test_readableSize(t *testing.T) {
 	tests := []struct {

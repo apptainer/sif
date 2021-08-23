@@ -20,7 +20,7 @@ import (
 
 func TestGroupVerifier_fingerprints(t *testing.T) {
 	oneGroupImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group.sif"),
+		filepath.Join(corpus, "one-group.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -29,7 +29,7 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
 	oneGroupSignedImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group-signed.sif"),
+		filepath.Join(corpus, "one-group-signed.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -82,7 +82,7 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 
 func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 	oneGroupImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group.sif"),
+		filepath.Join(corpus, "one-group.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -91,7 +91,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
 	oneGroupSignedImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group-signed.sif"),
+		filepath.Join(corpus, "one-group-signed.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -253,7 +253,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 
 func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
 	oneGroupImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group.sif"),
+		filepath.Join(corpus, "one-group.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -262,7 +262,7 @@ func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
 	oneGroupImageSigned, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group-signed-legacy-group.sif"),
+		filepath.Join(corpus, "one-group-signed-legacy-group.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -315,7 +315,7 @@ func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
 
 func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
 	oneGroupImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group.sif"),
+		filepath.Join(corpus, "one-group.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -324,7 +324,7 @@ func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
 	oneGroupSignedImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group-signed-legacy-group.sif"),
+		filepath.Join(corpus, "one-group-signed-legacy-group.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -462,7 +462,7 @@ func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
 
 func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 	oneGroupImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group.sif"),
+		filepath.Join(corpus, "one-group.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -471,7 +471,7 @@ func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
 	oneGroupImageSigned, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group-signed-legacy-all.sif"),
+		filepath.Join(corpus, "one-group-signed-legacy-all.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -529,7 +529,7 @@ func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 
 func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 	oneGroupImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group.sif"),
+		filepath.Join(corpus, "one-group.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -538,7 +538,7 @@ func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
 	oneGroupSignedImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group-signed-legacy-all.sif"),
+		filepath.Join(corpus, "one-group-signed-legacy-all.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -675,7 +675,7 @@ func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 
 func TestNewVerifier(t *testing.T) {
 	emptyImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "empty.sif"),
+		filepath.Join(corpus, "empty.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -684,7 +684,7 @@ func TestNewVerifier(t *testing.T) {
 	defer emptyImage.UnloadContainer() // nolint:errcheck
 
 	oneGroupImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group.sif"),
+		filepath.Join(corpus, "one-group.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -693,7 +693,7 @@ func TestNewVerifier(t *testing.T) {
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
 	twoGroupImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "two-groups.sif"),
+		filepath.Join(corpus, "two-groups.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -1113,7 +1113,7 @@ func TestVerifier_AllSignedBy(t *testing.T) {
 
 func TestVerifier_Verify(t *testing.T) {
 	oneGroupSignedImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group-signed.sif"),
+		filepath.Join(corpus, "one-group-signed.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {

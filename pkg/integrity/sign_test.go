@@ -22,7 +22,7 @@ import (
 
 func TestOptSignGroupObjects(t *testing.T) {
 	twoGroupImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "two-groups.sif"),
+		filepath.Join(corpus, "two-groups.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -100,7 +100,7 @@ func TestOptSignGroupObjects(t *testing.T) {
 
 func TestNewGroupSigner(t *testing.T) {
 	emptyImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "empty.sif"),
+		filepath.Join(corpus, "empty.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -109,7 +109,7 @@ func TestNewGroupSigner(t *testing.T) {
 	defer emptyImage.UnloadContainer() // nolint:errcheck
 
 	twoGroupImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "two-groups.sif"),
+		filepath.Join(corpus, "two-groups.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -322,7 +322,7 @@ func TestNewGroupSigner(t *testing.T) {
 
 func TestGroupSigner_SignWithEntity(t *testing.T) {
 	twoGroups, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "two-groups.sif"),
+		filepath.Join(corpus, "two-groups.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -493,7 +493,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 
 func TestNewSigner(t *testing.T) {
 	emptyImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "empty.sif"),
+		filepath.Join(corpus, "empty.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -502,7 +502,7 @@ func TestNewSigner(t *testing.T) {
 	defer emptyImage.UnloadContainer() // nolint:errcheck
 
 	oneGroupImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group.sif"),
+		filepath.Join(corpus, "one-group.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -511,7 +511,7 @@ func TestNewSigner(t *testing.T) {
 	defer oneGroupImage.UnloadContainer() // nolint:errcheck
 
 	twoGroupImage, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "two-groups.sif"),
+		filepath.Join(corpus, "two-groups.sif"),
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -735,7 +735,7 @@ func TestSigner_Sign(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			// Signing modifies the file, so work with a temporary file.
-			tf, err := tempFileFrom(filepath.Join("testdata", "images", tt.inputFile))
+			tf, err := tempFileFrom(filepath.Join(corpus, tt.inputFile))
 			if err != nil {
 				t.Fatal(err)
 			}
