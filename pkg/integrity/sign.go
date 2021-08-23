@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
 	"golang.org/x/crypto/openpgp"
@@ -30,6 +31,7 @@ type groupSigner struct {
 	f         *sif.FileImage   // SIF image to sign.
 	id        uint32           // Group ID.
 	ods       []sif.Descriptor // Descriptors of object(s) to sign.
+	timeFunc  func() time.Time // Func to obtain SIF data object timestamp.
 	mdHash    crypto.Hash      // Hash type for metadata.
 	sigConfig *packet.Config   // Configuration for signature.
 	sigHash   crypto.Hash      // Hash type for signature.
@@ -56,6 +58,14 @@ func optSignGroupObjects(ids ...uint32) groupSignerOpt {
 			}
 		}
 
+		return nil
+	}
+}
+
+// optSignGroupWithObjectTime specifies fn as the func to obtain SIF data object timestamp.
+func optSignGroupWithObjectTime(fn func() time.Time) groupSignerOpt {
+	return func(gs *groupSigner) error {
+		gs.timeFunc = fn
 		return nil
 	}
 }
@@ -89,9 +99,10 @@ func newGroupSigner(f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*
 	}
 
 	gs := groupSigner{
-		f:      f,
-		id:     groupID,
-		mdHash: crypto.SHA256,
+		f:        f,
+		id:       groupID,
+		timeFunc: time.Now,
+		mdHash:   crypto.SHA256,
 	}
 
 	// Apply options.
@@ -163,6 +174,7 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 	return sif.NewDescriptorInput(sif.DataSignature, &b,
 		sif.OptNoGroup(),
 		sif.OptLinkedGroupID(gs.id),
+		sif.OptObjectTime(gs.timeFunc()),
 		sif.OptSignatureMetadata(gs.sigHash, e.PrimaryKey.Fingerprint),
 	)
 }
@@ -171,6 +183,7 @@ type signOpts struct {
 	e         *openpgp.Entity
 	groupIDs  []uint32
 	objectIDs [][]uint32
+	timeFunc  func() time.Time
 }
 
 // SignerOpt are used to configure so.
@@ -203,6 +216,14 @@ func OptSignObjects(ids ...uint32) SignerOpt {
 		}
 
 		so.objectIDs = append(so.objectIDs, ids)
+		return nil
+	}
+}
+
+// OptSignWithTime specifies fn as the func to obtain the signature time and SIF timestamps.
+func OptSignWithTime(fn func() time.Time) SignerOpt {
+	return func(so *signOpts) error {
+		so.timeFunc = fn
 		return nil
 	}
 }
@@ -257,7 +278,9 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 		return nil, fmt.Errorf("integrity: %w", errNilFileImage)
 	}
 
-	so := signOpts{}
+	so := signOpts{
+		timeFunc: time.Now,
+	}
 
 	// Apply options.
 	for _, opt := range opts {
@@ -271,9 +294,20 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 		e: so.e,
 	}
 
+	var commonOpts []groupSignerOpt
+
+	if so.timeFunc != nil {
+		commonOpts = append(commonOpts,
+			optSignGroupWithObjectTime(so.timeFunc),
+			optSignGroupSignatureConfig(&packet.Config{
+				Time: so.timeFunc,
+			}),
+		)
+	}
+
 	// Add signer for each groupID.
 	for _, groupID := range so.groupIDs {
-		gs, err := newGroupSigner(f, groupID)
+		gs, err := newGroupSigner(f, groupID, commonOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("integrity: %w", err)
 		}
@@ -283,7 +317,10 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 	// Add signer(s) for each list of object IDs.
 	for _, ids := range so.objectIDs {
 		err := withGroupedObjects(f, ids, func(groupID uint32, ids []uint32) error {
-			gs, err := newGroupSigner(f, groupID, optSignGroupObjects(ids...))
+			opts := commonOpts
+			opts = append(opts, optSignGroupObjects(ids...))
+
+			gs, err := newGroupSigner(f, groupID, opts...)
 			if err != nil {
 				return err
 			}
@@ -304,7 +341,7 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 		}
 
 		for _, id := range ids {
-			gs, err := newGroupSigner(f, id)
+			gs, err := newGroupSigner(f, id, commonOpts...)
 			if err != nil {
 				return nil, fmt.Errorf("integrity: %w", err)
 			}

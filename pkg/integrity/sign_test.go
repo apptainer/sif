@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/sebdah/goldie/v2"
@@ -364,6 +365,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:         twoGroups,
 				id:        1,
 				ods:       []sif.Descriptor{d1},
+				timeFunc:  time.Now,
 				mdHash:    crypto.MD4,
 				sigConfig: &config,
 			},
@@ -376,6 +378,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:         twoGroups,
 				id:        1,
 				ods:       []sif.Descriptor{d1},
+				timeFunc:  time.Now,
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -388,6 +391,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:         twoGroups,
 				id:        1,
 				ods:       []sif.Descriptor{d1},
+				timeFunc:  time.Now,
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -399,6 +403,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:         twoGroups,
 				id:        1,
 				ods:       []sif.Descriptor{d2},
+				timeFunc:  time.Now,
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -410,6 +415,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:         twoGroups,
 				id:        1,
 				ods:       []sif.Descriptor{d1, d2},
+				timeFunc:  time.Now,
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -421,6 +427,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:         twoGroups,
 				id:        2,
 				ods:       []sif.Descriptor{d3},
+				timeFunc:  time.Now,
 				mdHash:    crypto.SHA1,
 				sigConfig: &config,
 			},
@@ -610,6 +617,14 @@ func TestNewSigner(t *testing.T) {
 			fi:               twoGroupImage,
 			opts:             []SignerOpt{OptSignObjects(1, 2, 3)},
 			wantGroupObjects: map[uint32][]uint32{1: {1, 2}, 2: {3}},
+		},
+		{
+			name: "OneGroupSignWithTime",
+			fi:   oneGroupImage,
+			opts: []SignerOpt{OptSignWithTime(func() time.Time {
+				return time.Date(2020, 5, 22, 19, 30, 59, 0, time.UTC)
+			})},
+			wantGroupObjects: map[uint32][]uint32{1: {1, 2}},
 		},
 	}
 
