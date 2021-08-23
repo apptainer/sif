@@ -167,20 +167,19 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 	)
 }
 
-// Signer describes a SIF image signer.
-type Signer struct {
-	f       *sif.FileImage  // SIF image to sign.
-	signers []*groupSigner  // Signer for each group.
-	e       *openpgp.Entity // Entity to use to generate signature(s).
+type signOpts struct {
+	e         *openpgp.Entity
+	groupIDs  []uint32
+	objectIDs [][]uint32
 }
 
-// SignerOpt are used to configure s.
-type SignerOpt func(s *Signer) error
+// SignerOpt are used to configure so.
+type SignerOpt func(so *signOpts) error
 
 // OptSignWithEntity specifies e as the entity to use to generate signature(s).
 func OptSignWithEntity(e *openpgp.Entity) SignerOpt {
-	return func(s *Signer) error {
-		s.e = e
+	return func(so *signOpts) error {
+		so.e = e
 		return nil
 	}
 }
@@ -188,12 +187,8 @@ func OptSignWithEntity(e *openpgp.Entity) SignerOpt {
 // OptSignGroup specifies that a signature be applied to cover all objects in the group with the
 // specified groupID. This may be called multiple times to add multiple group signatures.
 func OptSignGroup(groupID uint32) SignerOpt {
-	return func(s *Signer) error {
-		gs, err := newGroupSigner(s.f, groupID)
-		if err != nil {
-			return err
-		}
-		s.signers = append(s.signers, gs)
+	return func(so *signOpts) error {
+		so.groupIDs = append(so.groupIDs, groupID)
 		return nil
 	}
 }
@@ -202,54 +197,53 @@ func OptSignGroup(groupID uint32) SignerOpt {
 // specified ids. One signature will be applied for each group ID associated with the object(s).
 // This may be called multiple times to add multiple signatures.
 func OptSignObjects(ids ...uint32) SignerOpt {
-	return func(s *Signer) error {
+	return func(so *signOpts) error {
 		if len(ids) == 0 {
 			return errNoObjectsSpecified
 		}
 
-		idMap := make(map[uint32]bool)
-		groupObjectIDs := make(map[uint32][]uint32)
-		var groupIDs []uint32
-
-		for _, id := range ids {
-			if id == 0 {
-				return sif.ErrInvalidObjectID
-			}
-
-			// Ignore duplicate IDs.
-			if _, ok := idMap[id]; ok {
-				continue
-			}
-			idMap[id] = true
-
-			// Get descriptor.
-			od, err := s.f.GetDescriptor(sif.WithID(id))
-			if err != nil {
-				return err
-			}
-
-			// Note the group ID if it hasn't been seen before, and append the object ID to the
-			// appropriate group in the map.
-			groupID := od.GroupID()
-			if _, ok := groupObjectIDs[groupID]; !ok {
-				groupIDs = append(groupIDs, groupID)
-			}
-			groupObjectIDs[groupID] = append(groupObjectIDs[groupID], id)
-		}
-
-		sort.Slice(groupIDs, func(i, j int) bool { return groupIDs[i] < groupIDs[j] })
-
-		// Add one groupSigner per group.
-		for _, groupID := range groupIDs {
-			gs, err := newGroupSigner(s.f, groupID, optSignGroupObjects(groupObjectIDs[groupID]...))
-			if err != nil {
-				return err
-			}
-			s.signers = append(s.signers, gs)
-		}
-
+		so.objectIDs = append(so.objectIDs, ids)
 		return nil
 	}
+}
+
+// withGroupedObjects splits the objects represented by ids into object groups, and calls fn once
+// per object group.
+func withGroupedObjects(f *sif.FileImage, ids []uint32, fn func(uint32, []uint32) error) error {
+	var groupIDs []uint32
+	groupObjectIDs := make(map[uint32][]uint32)
+
+	for _, id := range ids {
+		od, err := f.GetDescriptor(sif.WithID(id))
+		if err != nil {
+			return err
+		}
+
+		// Note the group ID if it hasn't been seen before, and append the object ID to the
+		// appropriate group in the map.
+		groupID := od.GroupID()
+		if _, ok := groupObjectIDs[groupID]; !ok {
+			groupIDs = append(groupIDs, groupID)
+		}
+		groupObjectIDs[groupID] = append(groupObjectIDs[groupID], id)
+	}
+
+	sort.Slice(groupIDs, func(i, j int) bool { return groupIDs[i] < groupIDs[j] })
+
+	for _, groupID := range groupIDs {
+		if err := fn(groupID, groupObjectIDs[groupID]); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Signer describes a SIF image signer.
+type Signer struct {
+	f       *sif.FileImage
+	signers []*groupSigner
+	e       *openpgp.Entity
 }
 
 // NewSigner returns a Signer to add digital signature(s) to f, according to opts.
@@ -263,11 +257,41 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 		return nil, fmt.Errorf("integrity: %w", errNilFileImage)
 	}
 
-	s := Signer{f: f}
+	so := signOpts{}
 
 	// Apply options.
 	for _, opt := range opts {
-		if err := opt(&s); err != nil {
+		if err := opt(&so); err != nil {
+			return nil, fmt.Errorf("integrity: %w", err)
+		}
+	}
+
+	s := Signer{
+		f: f,
+		e: so.e,
+	}
+
+	// Add signer for each groupID.
+	for _, groupID := range so.groupIDs {
+		gs, err := newGroupSigner(f, groupID)
+		if err != nil {
+			return nil, fmt.Errorf("integrity: %w", err)
+		}
+		s.signers = append(s.signers, gs)
+	}
+
+	// Add signer(s) for each list of object IDs.
+	for _, ids := range so.objectIDs {
+		err := withGroupedObjects(f, ids, func(groupID uint32, ids []uint32) error {
+			gs, err := newGroupSigner(f, groupID, optSignGroupObjects(ids...))
+			if err != nil {
+				return err
+			}
+			s.signers = append(s.signers, gs)
+
+			return nil
+		})
+		if err != nil {
 			return nil, fmt.Errorf("integrity: %w", err)
 		}
 	}

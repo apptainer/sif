@@ -484,164 +484,6 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 	}
 }
 
-func TestOptSignGroup(t *testing.T) {
-	oneGroup, err := sif.LoadContainerFromPath(
-		filepath.Join("testdata", "images", "one-group.sif"),
-		sif.OptLoadWithFlag(os.O_RDONLY),
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer oneGroup.UnloadContainer() // nolint:errcheck
-
-	tests := []struct {
-		name    string
-		gid     uint32
-		wantErr error
-	}{
-		{
-			name:    "InvalidGroupID",
-			gid:     0,
-			wantErr: sif.ErrInvalidGroupID,
-		},
-		{
-			name: "Group1",
-			gid:  1,
-		},
-		{
-			name:    "GroupNotFound",
-			gid:     2,
-			wantErr: errGroupNotFound,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			s := Signer{f: oneGroup}
-
-			err := OptSignGroup(tt.gid)(&s)
-			if got, want := err, tt.wantErr; !errors.Is(got, want) {
-				t.Fatalf("got error %v, want %v", got, want)
-			}
-
-			if err == nil {
-				if got, want := len(s.signers), 1; got != want {
-					t.Fatalf("got %v signers, want %v", got, want)
-				}
-
-				if got, want := s.signers[0].id, tt.gid; got != want {
-					t.Errorf("got group ID %v, want %v", got, want)
-				}
-			}
-		})
-	}
-}
-
-func TestOptSignObjects(t *testing.T) {
-	tests := []struct {
-		name             string
-		inputFileName    string
-		ids              []uint32
-		wantErr          error
-		wantGroupObjects map[uint32][]uint32
-	}{
-		{
-			name:          "NoObjectsSpecified",
-			inputFileName: "empty.sif",
-			ids:           []uint32{},
-			wantErr:       errNoObjectsSpecified,
-		},
-		{
-			name:          "InvalidObjectID",
-			inputFileName: "empty.sif",
-			ids:           []uint32{0},
-			wantErr:       sif.ErrInvalidObjectID,
-		},
-		{
-			name:          "NoObjects",
-			inputFileName: "empty.sif",
-			ids:           []uint32{1},
-			wantErr:       sif.ErrNoObjects,
-		},
-		{
-			name:          "ObjectNotFound",
-			inputFileName: "one-group.sif",
-			ids:           []uint32{3},
-			wantErr:       sif.ErrObjectNotFound,
-		},
-		{
-			name:             "Duplicates",
-			inputFileName:    "one-group.sif",
-			ids:              []uint32{1, 1},
-			wantGroupObjects: map[uint32][]uint32{1: {1}},
-		},
-		{
-			name:             "Object1",
-			inputFileName:    "one-group.sif",
-			ids:              []uint32{1},
-			wantGroupObjects: map[uint32][]uint32{1: {1}},
-		},
-		{
-			name:             "Object2",
-			inputFileName:    "one-group.sif",
-			ids:              []uint32{2},
-			wantGroupObjects: map[uint32][]uint32{1: {2}},
-		},
-		{
-			name:             "Object3",
-			inputFileName:    "two-groups.sif",
-			ids:              []uint32{3},
-			wantGroupObjects: map[uint32][]uint32{2: {3}},
-		},
-		{
-			name:             "AllObjects",
-			inputFileName:    "two-groups.sif",
-			ids:              []uint32{1, 2, 3},
-			wantGroupObjects: map[uint32][]uint32{1: {1, 2}, 2: {3}},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-
-		t.Run(tt.name, func(t *testing.T) {
-			f, err := sif.LoadContainerFromPath(
-				filepath.Join("testdata", "images", tt.inputFileName),
-				sif.OptLoadWithFlag(os.O_RDONLY),
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer f.UnloadContainer() //nolint:errcheck
-
-			s := Signer{f: f}
-
-			err = OptSignObjects(tt.ids...)(&s)
-			if got, want := err, tt.wantErr; !errors.Is(got, want) {
-				t.Fatalf("got error %v, want %v", got, want)
-			}
-
-			if err == nil {
-				for _, gs := range s.signers {
-					if want, ok := tt.wantGroupObjects[gs.id]; !ok {
-						t.Fatalf("unexpected signer for group ID %v", gs.id)
-					} else {
-						var got []uint32
-						for _, od := range gs.ods {
-							got = append(got, od.ID())
-						}
-
-						if !reflect.DeepEqual(got, want) {
-							t.Errorf("got objects %v, want %v", got, want)
-						}
-					}
-				}
-			}
-		})
-	}
-}
-
 func TestNewSigner(t *testing.T) {
 	emptyImage, err := sif.LoadContainerFromPath(
 		filepath.Join("testdata", "images", "empty.sif"),
@@ -703,8 +545,14 @@ func TestNewSigner(t *testing.T) {
 			wantErr: errNoObjectsSpecified,
 		},
 		{
-			name:    "InvalidObjectID",
+			name:    "NoObjects",
 			fi:      emptyImage,
+			opts:    []SignerOpt{OptSignObjects(1)},
+			wantErr: sif.ErrNoObjects,
+		},
+		{
+			name:    "InvalidObjectID",
+			fi:      oneGroupImage,
 			opts:    []SignerOpt{OptSignObjects(0)},
 			wantErr: sif.ErrInvalidObjectID,
 		},
