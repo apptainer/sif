@@ -89,13 +89,13 @@ func (f *FileImage) writeDataObject(di DescriptorInput) error {
 		f.h.Arch = p.Arch
 	}
 
+	if err := writeDataObject(f.rw, di, d); err != nil {
+		return err
+	}
+
 	// Update minimum object ID map.
 	if minID, ok := f.minIDs[d.Groupid]; !ok || d.ID < minID {
 		f.minIDs[d.Groupid] = d.ID
-	}
-
-	if err := writeDataObject(f.rw, di, d); err != nil {
-		return err
 	}
 
 	f.h.Dfree--
