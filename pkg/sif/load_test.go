@@ -19,16 +19,16 @@ func TestLoadContainerFromPath(t *testing.T) {
 	}{
 		{
 			name: "NoOpts",
-			path: filepath.Join("testdata", "testcontainer2.sif"),
+			path: filepath.Join(corpus, "one-group.sif"),
 		},
 		{
 			name: "ReadOnly",
-			path: filepath.Join("testdata", "testcontainer2.sif"),
+			path: filepath.Join(corpus, "one-group.sif"),
 			opts: []LoadOpt{OptLoadWithFlag(os.O_RDONLY)},
 		},
 		{
 			name: "ReadWrite",
-			path: filepath.Join("testdata", "testcontainer2.sif"),
+			path: filepath.Join(corpus, "one-group.sif"),
 			opts: []LoadOpt{OptLoadWithFlag(os.O_RDWR)},
 		},
 	}
@@ -69,7 +69,7 @@ func TestLoadContainer(t *testing.T) {
 		tt := tt
 
 		t.Run(tt.name, func(t *testing.T) {
-			rw, err := os.Open(filepath.Join("testdata", "testcontainer2.sif"))
+			rw, err := os.Open(filepath.Join(corpus, "one-group.sif"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -97,9 +97,9 @@ func TestLoadContainerFpMock(t *testing.T) {
 	// (e.g. Seek, ReadAt or Truncate reporting errors).
 
 	// Load a valid SIF file to test the happy path.
-	content, err := os.ReadFile("testdata/testcontainer2.sif")
+	content, err := os.ReadFile(filepath.Join(corpus, "one-group.sif"))
 	if err != nil {
-		t.Error(`os.ReadFile("testdata/testcontainer2.sif"):`, err)
+		t.Fatalf("failed to read file: %v", err)
 	}
 
 	rw := NewBuffer(content)
@@ -116,9 +116,9 @@ func TestLoadContainerFpMock(t *testing.T) {
 
 func TestLoadContainerInvalidMagic(t *testing.T) {
 	// Load a valid SIF file ...
-	content, err := os.ReadFile("testdata/testcontainer2.sif")
+	content, err := os.ReadFile(filepath.Join(corpus, "one-group.sif"))
 	if err != nil {
-		t.Error(`os.ReadFile("testdata/testcontainer2.sif"):`, err)
+		t.Fatalf("failed to read file: %v", err)
 	}
 
 	// ... and edit the magic to make it invalid. Instead of

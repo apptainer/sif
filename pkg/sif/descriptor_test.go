@@ -19,7 +19,7 @@ import (
 
 func TestDescriptor_GetData(t *testing.T) {
 	f, err := LoadContainerFromPath(
-		filepath.Join("testdata", "testcontainer2.sif"),
+		filepath.Join(corpus, "one-group-signed.sif"),
 		OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -49,7 +49,7 @@ func TestDescriptor_GetData(t *testing.T) {
 
 func TestDescriptor_GetReader(t *testing.T) {
 	f, err := LoadContainerFromPath(
-		filepath.Join("testdata", "testcontainer2.sif"),
+		filepath.Join(corpus, "one-group-signed.sif"),
 		OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -80,27 +80,23 @@ func TestDescriptor_GetReader(t *testing.T) {
 func TestDescriptor_GetName(t *testing.T) {
 	// load the test container
 	f, err := LoadContainerFromPath(
-		filepath.Join("testdata", "testcontainer2.sif"),
+		filepath.Join(corpus, "one-group.sif"),
 		OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
+		t.Fatalf("failed to load container: %v", err)
 	}
 
-	parts, err := f.GetDescriptors(
-		WithDataType(DataPartition),
+	part, err := f.GetDescriptor(
+		WithPartitionType(PartPrimSys),
 		WithGroupID(DefaultObjectGroup),
 	)
 	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
+		t.Fatalf("failed to get descriptor: %v", err)
 	}
 
-	if len(parts) != 1 {
-		t.Error("multiple partitions found where expecting 1")
-	}
-
-	if parts[0].Name() != "busybox.squash" {
-		t.Error(`parts[0].GetName() != "busybox.squash"`)
+	if got, want := part.Name(), "."; got != want {
+		t.Errorf("got name %v, want %v", got, want)
 	}
 
 	// unload the test container

@@ -7,11 +7,14 @@ package sif
 import (
 	"bytes"
 	"io"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/sebdah/goldie/v2"
 )
+
+var corpus = filepath.Join("..", "..", "test", "images")
 
 func TestHeader_GetIntegrityReader(t *testing.T) {
 	h := header{

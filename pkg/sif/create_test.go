@@ -8,7 +8,6 @@ package sif
 import (
 	"bytes"
 	"encoding/binary"
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -113,14 +112,10 @@ func TestCreateContainer(t *testing.T) {
 }
 
 func TestAddDelObject(t *testing.T) {
-	f, err := os.CreateTemp("", "sif-test-*")
+	fimg, err := CreateContainer(&Buffer{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(f.Name())
-	f.Close()
-
-	testObjContainer := f.Name()
 
 	// data we need to create a dummy labels descriptor
 	labinput, err := NewDescriptorInput(DataLabels, bytes.NewBufferString("LABEL"))
@@ -141,21 +136,9 @@ func TestAddDelObject(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// copy a test container, so we dont modify the existing container
-	err = cpFile("testdata/testcontainer1.sif", testObjContainer)
-	if err != nil {
-		t.Fatalf("failed to copy test containers: %s", err)
-	}
-
 	//
 	// Add the object
 	//
-
-	// load the test container
-	fimg, err := LoadContainerFromPath(testObjContainer)
-	if err != nil {
-		t.Errorf("failed to load test container: %s: %s", testObjContainer, err)
-	}
 
 	// add new data object 'DataLabels' to SIF file
 	if err = fimg.AddObject(labinput); err != nil {
@@ -167,20 +150,9 @@ func TestAddDelObject(t *testing.T) {
 		t.Errorf("fimg.AddObject(): %s", err)
 	}
 
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Errorf("UnloadContainer(fimg): %s", err)
-	}
-
 	//
 	// Delete the object
 	//
-
-	// load the test container
-	fimg, err = LoadContainerFromPath(testObjContainer)
-	if err != nil {
-		t.Errorf("failed to load test container: %s: %s", testObjContainer, err)
-	}
 
 	// test data object deletation
 	if err := fimg.DeleteObject(1, OptDeleteZero(true)); err != nil {
@@ -250,23 +222,4 @@ func TestSetPrimPart(t *testing.T) {
 			t.Errorf("got ID %v, want %v", got, want)
 		}
 	}
-}
-
-// cpFile is a simple function to copy the test container to a file.
-func cpFile(fromFile, toFile string) error {
-	s, err := os.Open(fromFile)
-	if err != nil {
-		return err
-	}
-	defer s.Close()
-
-	d, err := os.OpenFile(toFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o777)
-	if err != nil {
-		return err
-	}
-	defer d.Close()
-
-	_, err = io.Copy(d, s)
-
-	return err
 }
