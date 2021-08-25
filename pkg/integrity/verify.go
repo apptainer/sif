@@ -7,6 +7,7 @@ package integrity
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -14,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
-	"golang.org/x/crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp"
 )
 
 var (
@@ -91,7 +92,7 @@ func newGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32, ods .
 
 // fingerprints returns a sorted list of unique fingerprints of entities that have signed the
 // objects specified by v.
-func (v *groupVerifier) fingerprints() ([][20]byte, error) {
+func (v *groupVerifier) fingerprints() ([][]byte, error) {
 	sigs, err := getGroupSignatures(v.f, v.groupID, false)
 	if errors.Is(err, &SignatureNotFoundError{}) {
 		return nil, nil
@@ -133,7 +134,7 @@ func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) 
 	if err != nil {
 		return nil, e, err
 	}
-	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:]) {
+	if !bytes.Equal(e.PrimaryKey.Fingerprint, fp) {
 		return nil, e, errFingerprintMismatch
 	}
 
@@ -206,7 +207,7 @@ func newLegacyGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32)
 
 // fingerprints returns a sorted list of unique fingerprints of entities that have signed the
 // objects specified by v.
-func (v *legacyGroupVerifier) fingerprints() ([][20]byte, error) {
+func (v *legacyGroupVerifier) fingerprints() ([][]byte, error) {
 	sigs, err := getGroupSignatures(v.f, v.groupID, true)
 	if errors.Is(err, &SignatureNotFoundError{}) {
 		return nil, nil
@@ -238,7 +239,7 @@ func (v *legacyGroupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.Key
 	if err != nil {
 		return e, err
 	}
-	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:]) {
+	if !bytes.Equal(e.PrimaryKey.Fingerprint, fp) {
 		return e, errFingerprintMismatch
 	}
 
@@ -317,7 +318,7 @@ func newLegacyObjectVerifier(f *sif.FileImage, cb VerifyCallback, id uint32) (*l
 
 // fingerprints returns a sorted list of unique fingerprints of entities that have signed the
 // objects specified by v.
-func (v *legacyObjectVerifier) fingerprints() ([][20]byte, error) {
+func (v *legacyObjectVerifier) fingerprints() ([][]byte, error) {
 	sigs, err := getObjectSignatures(v.f, v.od.ID())
 	if errors.Is(err, &SignatureNotFoundError{}) {
 		return nil, nil
@@ -349,7 +350,7 @@ func (v *legacyObjectVerifier) verifySignature(sig sif.Descriptor, kr openpgp.Ke
 	if err != nil {
 		return e, err
 	}
-	if !bytes.Equal(e.PrimaryKey.Fingerprint[:], fp[:]) {
+	if !bytes.Equal(e.PrimaryKey.Fingerprint, fp) {
 		return e, errFingerprintMismatch
 	}
 
@@ -405,7 +406,7 @@ func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 }
 
 type verifyTask interface {
-	fingerprints() ([][20]byte, error)
+	fingerprints() ([][]byte, error)
 	verifyWithKeyRing(kr openpgp.KeyRing) error
 }
 
@@ -612,8 +613,8 @@ func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 // fingerprints returns a sorted list of unique fingerprints of entities participating in the
 // verification tasks in v. If any is true, entities involved in at least one task are included.
 // Otherwise, only entities participatinging in all tasks are included.
-func (v *Verifier) fingerprints(any bool) ([][20]byte, error) {
-	m := make(map[[20]byte]int)
+func (v *Verifier) fingerprints(any bool) ([][]byte, error) {
+	m := make(map[string]int)
 
 	// Build up a map containing fingerprints, and the number of tasks they are participating in.
 	for _, t := range v.tasks {
@@ -623,20 +624,24 @@ func (v *Verifier) fingerprints(any bool) ([][20]byte, error) {
 		}
 
 		for _, fp := range fps {
-			m[fp]++
+			m[hex.EncodeToString(fp)]++
 		}
 	}
 
 	// Build up list of fingerprints.
-	var fps [][20]byte
+	var fps [][]byte
 	for fp, n := range m {
 		if any || len(v.tasks) == n {
-			fps = append(fps, fp)
+			b, err := hex.DecodeString(fp)
+			if err != nil {
+				panic(err)
+			}
+			fps = append(fps, b)
 		}
 	}
 
 	sort.Slice(fps, func(i, j int) bool {
-		return bytes.Compare(fps[i][:], fps[j][:]) < 0
+		return bytes.Compare(fps[i], fps[j]) < 0
 	})
 
 	return fps, nil
@@ -647,7 +652,7 @@ func (v *Verifier) fingerprints(any bool) ([][20]byte, error) {
 //
 // Note that this routine does not perform cryptograhic validation. To ensure the image contains
 // cryptographically valid signatures, use Verify.
-func (v *Verifier) AnySignedBy() ([][20]byte, error) {
+func (v *Verifier) AnySignedBy() ([][]byte, error) {
 	fps, err := v.fingerprints(true)
 	if err != nil {
 		return nil, fmt.Errorf("integrity: %w", err)
@@ -660,7 +665,7 @@ func (v *Verifier) AnySignedBy() ([][20]byte, error) {
 //
 // Note that this routine does not perform cryptograhic validation. To ensure the image contains
 // cryptographically valid signatures, use Verify.
-func (v *Verifier) AllSignedBy() ([][20]byte, error) {
+func (v *Verifier) AllSignedBy() ([][]byte, error) {
 	fps, err := v.fingerprints(false)
 	if err != nil {
 		return nil, fmt.Errorf("integrity: %w", err)

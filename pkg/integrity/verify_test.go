@@ -14,8 +14,8 @@ import (
 	"testing"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
-	"golang.org/x/crypto/openpgp"
-	pgperrors "golang.org/x/crypto/openpgp/errors"
+	"github.com/ProtonMail/go-crypto/openpgp"
+	pgperrors "github.com/ProtonMail/go-crypto/openpgp/errors"
 )
 
 func TestGroupVerifier_fingerprints(t *testing.T) {
@@ -43,7 +43,7 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 		name    string
 		f       *sif.FileImage
 		groupID uint32
-		wantFPs [][20]byte
+		wantFPs [][]byte
 		wantErr error
 	}{
 		{
@@ -55,7 +55,7 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 			name:    "Signed",
 			f:       oneGroupSignedImage,
 			groupID: 1,
-			wantFPs: [][20]byte{e.PrimaryKey.Fingerprint},
+			wantFPs: [][]byte{e.PrimaryKey.Fingerprint},
 		},
 	}
 
@@ -276,7 +276,7 @@ func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
 		name    string
 		f       *sif.FileImage
 		id      uint32
-		wantFPs [][20]byte
+		wantFPs [][]byte
 		wantErr error
 	}{
 		{
@@ -288,7 +288,7 @@ func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
 			name:    "Signed",
 			f:       oneGroupImageSigned,
 			id:      1,
-			wantFPs: [][20]byte{e.PrimaryKey.Fingerprint},
+			wantFPs: [][]byte{e.PrimaryKey.Fingerprint},
 		},
 	}
 
@@ -485,7 +485,7 @@ func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 		name    string
 		f       *sif.FileImage
 		id      uint32
-		wantFPs [][20]byte
+		wantFPs [][]byte
 		wantErr error
 	}{
 		{
@@ -497,7 +497,7 @@ func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 			name:    "Signed",
 			f:       oneGroupImageSigned,
 			id:      1,
-			wantFPs: [][20]byte{e.PrimaryKey.Fingerprint},
+			wantFPs: [][]byte{e.PrimaryKey.Fingerprint},
 		},
 	}
 
@@ -925,11 +925,11 @@ func TestNewVerifier(t *testing.T) {
 }
 
 type mockVerifier struct {
-	fps [][20]byte
+	fps [][]byte
 	err error
 }
 
-func (v mockVerifier) fingerprints() ([][20]byte, error) {
+func (v mockVerifier) fingerprints() ([][]byte, error) {
 	return v.fps, v.err
 }
 
@@ -938,12 +938,12 @@ func (v mockVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 }
 
 func TestVerifier_AnySignedBy(t *testing.T) {
-	fp1 := [...]byte{
+	fp1 := []byte{
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
 		0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
 	}
 
-	fp2 := [...]byte{
+	fp2 := []byte{
 		0x13, 0x12, 0x11, 0x10, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a,
 		0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00,
 	}
@@ -952,7 +952,7 @@ func TestVerifier_AnySignedBy(t *testing.T) {
 		name             string
 		tasks            []verifyTask
 		wantErr          error
-		wantFingerprints [][20]byte
+		wantFingerprints [][]byte
 	}{
 		{
 			name: "OneTaskEOF",
@@ -964,7 +964,7 @@ func TestVerifier_AnySignedBy(t *testing.T) {
 		{
 			name: "TwoTasksEOF",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{fps: [][]byte{fp1}},
 				mockVerifier{err: io.EOF},
 			},
 			wantErr: io.EOF,
@@ -972,35 +972,35 @@ func TestVerifier_AnySignedBy(t *testing.T) {
 		{
 			name: "OneTaskOneFP",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{fps: [][]byte{fp1}},
 			},
-			wantFingerprints: [][20]byte{fp1},
+			wantFingerprints: [][]byte{fp1},
 		},
 		{
 			name: "TwoTasksSameFP",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{fp1}},
-				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{fps: [][]byte{fp1}},
+				mockVerifier{fps: [][]byte{fp1}},
 			},
-			wantFingerprints: [][20]byte{fp1},
+			wantFingerprints: [][]byte{fp1},
 		},
 		{
 			name: "TwoTasksTwoFP",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{fp1}},
-				mockVerifier{fps: [][20]byte{fp2}},
+				mockVerifier{fps: [][]byte{fp1}},
+				mockVerifier{fps: [][]byte{fp2}},
 			},
-			wantFingerprints: [][20]byte{fp1, fp2},
+			wantFingerprints: [][]byte{fp1, fp2},
 		},
 		{
 			name: "KitchenSink",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{}},
-				mockVerifier{fps: [][20]byte{fp1}},
-				mockVerifier{fps: [][20]byte{fp2}},
-				mockVerifier{fps: [][20]byte{fp1, fp2}},
+				mockVerifier{fps: [][]byte{}},
+				mockVerifier{fps: [][]byte{fp1}},
+				mockVerifier{fps: [][]byte{fp2}},
+				mockVerifier{fps: [][]byte{fp1, fp2}},
 			},
-			wantFingerprints: [][20]byte{fp1, fp2},
+			wantFingerprints: [][]byte{fp1, fp2},
 		},
 	}
 
@@ -1023,12 +1023,12 @@ func TestVerifier_AnySignedBy(t *testing.T) {
 }
 
 func TestVerifier_AllSignedBy(t *testing.T) {
-	fp1 := [...]byte{
+	fp1 := []byte{
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
 		0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
 	}
 
-	fp2 := [...]byte{
+	fp2 := []byte{
 		0x13, 0x12, 0x11, 0x10, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a,
 		0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00,
 	}
@@ -1037,7 +1037,7 @@ func TestVerifier_AllSignedBy(t *testing.T) {
 		name             string
 		tasks            []verifyTask
 		wantErr          error
-		wantFingerprints [][20]byte
+		wantFingerprints [][]byte
 	}{
 		{
 			name: "OneTaskEOF",
@@ -1049,7 +1049,7 @@ func TestVerifier_AllSignedBy(t *testing.T) {
 		{
 			name: "TwoTasksEOF",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{fps: [][]byte{fp1}},
 				mockVerifier{err: io.EOF},
 			},
 			wantErr: io.EOF,
@@ -1057,38 +1057,38 @@ func TestVerifier_AllSignedBy(t *testing.T) {
 		{
 			name: "OneTaskNoFP",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{}},
+				mockVerifier{fps: [][]byte{}},
 			},
 		},
 		{
 			name: "OneTaskOneFP",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{fps: [][]byte{fp1}},
 			},
-			wantFingerprints: [][20]byte{fp1},
+			wantFingerprints: [][]byte{fp1},
 		},
 		{
 			name: "TwoTasksSameFP",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{fp1}},
-				mockVerifier{fps: [][20]byte{fp1}},
+				mockVerifier{fps: [][]byte{fp1}},
+				mockVerifier{fps: [][]byte{fp1}},
 			},
-			wantFingerprints: [][20]byte{fp1},
+			wantFingerprints: [][]byte{fp1},
 		},
 		{
 			name: "TwoTasksTwoFP",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{fp1}},
-				mockVerifier{fps: [][20]byte{fp2}},
+				mockVerifier{fps: [][]byte{fp1}},
+				mockVerifier{fps: [][]byte{fp2}},
 			},
 		},
 		{
 			name: "KitchenSink",
 			tasks: []verifyTask{
-				mockVerifier{fps: [][20]byte{}},
-				mockVerifier{fps: [][20]byte{fp1}},
-				mockVerifier{fps: [][20]byte{fp2}},
-				mockVerifier{fps: [][20]byte{fp1, fp2}},
+				mockVerifier{fps: [][]byte{}},
+				mockVerifier{fps: [][]byte{fp1}},
+				mockVerifier{fps: [][]byte{fp2}},
+				mockVerifier{fps: [][]byte{fp1, fp2}},
 			},
 		},
 	}

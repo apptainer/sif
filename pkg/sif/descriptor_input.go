@@ -179,7 +179,7 @@ func sifHashType(h crypto.Hash) hashType {
 // the signing entity fingerprint is set to fp.
 //
 // If this option is applied to a data object with an incompatible type, an error is returned.
-func OptSignatureMetadata(ht crypto.Hash, fp [20]byte) DescriptorInputOpt {
+func OptSignatureMetadata(ht crypto.Hash, fp []byte) DescriptorInputOpt {
 	return func(t DataType, opts *descriptorOpts) error {
 		if got, want := t, DataSignature; got != want {
 			return &unexpectedDataTypeError{got, want}
@@ -188,7 +188,7 @@ func OptSignatureMetadata(ht crypto.Hash, fp [20]byte) DescriptorInputOpt {
 		s := signature{
 			Hashtype: sifHashType(ht),
 		}
-		copy(s.Entity[:], fp[:])
+		copy(s.Entity[:], fp)
 
 		opts.extra = s
 		return nil

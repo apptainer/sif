@@ -186,7 +186,7 @@ func getHashType(ht hashType) (crypto.Hash, error) {
 }
 
 // SignatureMetadata gets metadata for a signature data object.
-func (d Descriptor) SignatureMetadata() (ht crypto.Hash, fp [20]byte, err error) {
+func (d Descriptor) SignatureMetadata() (ht crypto.Hash, fp []byte, err error) {
 	if got, want := d.raw.Datatype, DataSignature; got != want {
 		return ht, fp, &unexpectedDataTypeError{got, want}
 	}
@@ -202,7 +202,8 @@ func (d Descriptor) SignatureMetadata() (ht crypto.Hash, fp [20]byte, err error)
 		return ht, fp, fmt.Errorf("%w", err)
 	}
 
-	copy(fp[:], s.Entity[:])
+	fp = make([]byte, 20)
+	copy(fp, s.Entity[:])
 
 	return ht, fp, nil
 }

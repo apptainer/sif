@@ -190,7 +190,7 @@ func TestDescriptor_GetSignatureMetadata(t *testing.T) {
 		name    string
 		rd      rawDescriptor
 		wantHT  crypto.Hash
-		wantFP  [20]byte
+		wantFP  []byte
 		wantErr error
 	}{
 		{
@@ -204,7 +204,7 @@ func TestDescriptor_GetSignatureMetadata(t *testing.T) {
 			name:   "OK",
 			rd:     rd,
 			wantHT: crypto.SHA384,
-			wantFP: [...]byte{
+			wantFP: []byte{
 				0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
 				0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,
 			},
@@ -225,7 +225,7 @@ func TestDescriptor_GetSignatureMetadata(t *testing.T) {
 					t.Fatalf("got hash type %v, want %v", got, want)
 				}
 
-				if got, want := fp[:], tt.wantFP[:]; !bytes.Equal(got, want) {
+				if got, want := fp, tt.wantFP; !bytes.Equal(got, want) {
 					t.Fatalf("got entity %v, want %v", got, want)
 				}
 			}

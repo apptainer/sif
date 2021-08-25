@@ -192,11 +192,11 @@ func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, e
 			return nil, err
 		}
 
-		var fp [20]byte
+		fp := make([]byte, 20)
 		if got, want := len(b), len(fp); got != want {
 			return nil, fmt.Errorf("invalid signing entity fingerprint length: got %v, want %v", got, want)
 		}
-		copy(fp[:], b)
+		copy(fp, b)
 
 		opts = append(opts, sif.OptSignatureMetadata(ht, fp))
 	}

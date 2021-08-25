@@ -167,8 +167,8 @@ func getGroupIDs(f *sif.FileImage) (groupIDs []uint32, err error) {
 }
 
 // getFingerprints returns a sorted list of unique fingerprints contained in sigs.
-func getFingerprints(sigs []sif.Descriptor) ([][20]byte, error) {
-	fps := make([][20]byte, 0, len(sigs))
+func getFingerprints(sigs []sif.Descriptor) ([][]byte, error) {
+	fps := make([][]byte, 0, len(sigs))
 
 	for _, sig := range sigs {
 		_, fp, err := sig.SignatureMetadata()
@@ -178,14 +178,14 @@ func getFingerprints(sigs []sif.Descriptor) ([][20]byte, error) {
 
 		// Check if fingerprint is already in list.
 		i := sort.Search(len(fps), func(i int) bool {
-			return bytes.Compare(fps[i][:], fp[:]) >= 0
+			return bytes.Compare(fps[i], fp) >= 0
 		})
-		if i < len(fps) && fps[i] == fp {
+		if i < len(fps) && bytes.Equal(fps[i], fp) {
 			continue
 		}
 
 		// Insert into (sorted) list.
-		fps = append(fps, [20]byte{})
+		fps = append(fps, []byte{})
 		copy(fps[i+1:], fps[i:])
 		fps[i] = fp
 	}
