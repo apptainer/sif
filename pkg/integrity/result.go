@@ -10,6 +10,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 )
 
+// VerifyResult describes the results of an individual signature validation.
 type VerifyResult struct {
 	sig      sif.Descriptor
 	verified []sif.Descriptor
