@@ -6,8 +6,8 @@
 package integrity
 
 import (
+	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/hpcng/sif/v2/pkg/sif"
-	"golang.org/x/crypto/openpgp"
 )
 
 type result struct {

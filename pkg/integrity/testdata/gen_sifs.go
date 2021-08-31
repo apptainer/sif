@@ -11,9 +11,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/hpcng/sif/v2/pkg/integrity"
 	"github.com/hpcng/sif/v2/pkg/sif"
-	"golang.org/x/crypto/openpgp"
 )
 
 func createImage(path string, dis []sif.DescriptorInput) error {

@@ -12,9 +12,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
+	pgperrors "github.com/ProtonMail/go-crypto/openpgp/errors"
 	"github.com/hpcng/sif/v2/pkg/sif"
-	"golang.org/x/crypto/openpgp"
-	pgperrors "golang.org/x/crypto/openpgp/errors"
 )
 
 func TestGroupVerifier_fingerprints(t *testing.T) {
