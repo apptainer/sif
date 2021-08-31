@@ -3,12 +3,10 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-//go:build mage
-// +build mage
-
-package main
+package git
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/blang/semver/v4"
@@ -46,7 +44,8 @@ func getVersions(r *git.Repository) (map[plumbing.Hash]semver.Version, error) {
 	return tags, err
 }
 
-type gitDescription struct {
+// Description describes the state of a git repository.
+type Description struct {
 	isClean bool                // if true, the git working tree has local modifications
 	ref     *plumbing.Reference // reference being described
 	v       *semver.Version     // version of nearest tag reachable from ref (or nil if none found)
@@ -54,7 +53,7 @@ type gitDescription struct {
 }
 
 // describe returns a gitDescription of ref.
-func describe(r *git.Repository, ref *plumbing.Reference) (*gitDescription, error) {
+func describe(r *git.Repository, ref *plumbing.Reference) (*Description, error) {
 	tags, err := getVersions(r)
 	if err != nil {
 		return nil, err
@@ -94,7 +93,7 @@ func describe(r *git.Repository, ref *plumbing.Reference) (*gitDescription, erro
 		return nil, err
 	}
 
-	return &gitDescription{
+	return &Description{
 		isClean: status.IsClean(),
 		ref:     ref,
 		v:       ver,
@@ -102,10 +101,10 @@ func describe(r *git.Repository, ref *plumbing.Reference) (*gitDescription, erro
 	}, nil
 }
 
-// describeHead returns a gitDescription of HEAD.
-func describeHead() (*gitDescription, error) {
+// Describe returns a description of HEAD of the git repository at path.
+func Describe(path string) (*Description, error) {
 	// Open git repo.
-	r, err := git.PlainOpen(".")
+	r, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
 	}
@@ -117,4 +116,44 @@ func describeHead() (*gitDescription, error) {
 	}
 
 	return describe(r, head)
+}
+
+// IsClean returns true if the git working tree has local modifications.
+func (d *Description) IsClean() bool {
+	return d.isClean
+}
+
+// Reference returns the reference described by d.
+func (d *Description) Reference() *plumbing.Reference {
+	return d.ref
+}
+
+// Version returns a semantic version based on d. If d is tagged directly, the parsed version is
+// returned. Otherwise, a version is derived that preserves semantic precedence.
+//
+// For example:
+//  - If d.tag.Name = "v0.1.2-alpha.1" and d.n = 1, 0.1.2-alpha.1.0.devel.1 is returned.
+//  - If d.tag.Name = "v0.1.2" and d.n = 1, 0.1.3-0.devel.1 is returned.
+//  - If d.tag.Name = "v0.1.3" and d.n = 0, 0.1.3 is returned.
+func (d *Description) Version() (semver.Version, error) {
+	if d.v == nil {
+		return semver.Version{}, errors.New("no semver tags found")
+	}
+
+	// If this version wasn't tagged directly, modify tag.
+	v := *d.v
+	if d.n > 0 {
+		if len(v.Pre) == 0 {
+			v.Patch++
+		}
+
+		// Append "0.devel.N" pre-release components.
+		v.Pre = append(v.Pre,
+			semver.PRVersion{VersionNum: 0, IsNum: true},
+			semver.PRVersion{VersionStr: "devel"},
+			semver.PRVersion{VersionNum: d.n, IsNum: true},
+		)
+	}
+
+	return v, nil
 }

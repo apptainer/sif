@@ -16,6 +16,7 @@ import (
 
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
+	"github.com/sylabs/sif/v2/internal/pkg/git"
 )
 
 // Aliases defines command-line aliases exposed by Mage.
@@ -35,16 +36,16 @@ func ldFlags() string {
 	}
 
 	// Attempt to get git details.
-	if d, err := describeHead(); err == nil {
-		vals = append(vals, "-X", fmt.Sprintf("main.commit=%v", d.ref.Hash()))
+	if d, err := git.Describe("."); err == nil {
+		vals = append(vals, "-X", fmt.Sprintf("main.commit=%v", d.Reference().Hash()))
 
-		if d.isClean {
+		if d.IsClean() {
 			vals = append(vals, "-X", "main.state=clean")
 		} else {
 			vals = append(vals, "-X", "main.state=dirty")
 		}
 
-		if v, err := getVersion(d); err == nil {
+		if v, err := d.Version(); err == nil {
 			vals = append(vals, "-X", fmt.Sprintf("main.version=%v", v))
 		} else {
 			fmt.Fprintf(os.Stderr, "warning: failed to get version: %v\n", err)
