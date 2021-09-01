@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hpcng/sif/v2/internal/pkg/git"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
-	"github.com/sylabs/sif/v2/internal/pkg/git"
 )
 
 // Aliases defines command-line aliases exposed by Mage.
