@@ -14,8 +14,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/hpcng/sif/v2/pkg/sif"
 )
 
 var (

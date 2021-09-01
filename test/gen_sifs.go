@@ -13,9 +13,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/hpcng/sif/v2/pkg/integrity"
 	"github.com/hpcng/sif/v2/pkg/sif"
-	"github.com/ProtonMail/go-crypto/openpgp"
 )
 
 func fixedTime() time.Time {
