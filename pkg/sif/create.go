@@ -106,17 +106,11 @@ func (f *FileImage) writeDataObject(di DescriptorInput) error {
 
 // writeDescriptors writes the descriptors in f to backing storage.
 func (f *FileImage) writeDescriptors() error {
-	if _, err := f.rw.Seek(descrStartOffset, io.SeekStart); err != nil {
+	if _, err := f.rw.Seek(f.h.DescriptorsOffset, io.SeekStart); err != nil {
 		return err
 	}
 
-	for _, v := range f.rds {
-		if err := binary.Write(f.rw, binary.LittleEndian, v); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return binary.Write(f.rw, binary.LittleEndian, f.rds)
 }
 
 // writeHeader writes the the global header in f to backing storage.
@@ -130,10 +124,12 @@ func (f *FileImage) writeHeader() error {
 
 // createOpts accumulates container creation options.
 type createOpts struct {
-	id            uuid.UUID
-	dis           []DescriptorInput
-	t             time.Time
-	closeOnUnload bool
+	id                 uuid.UUID
+	descriptorsOffset  int64
+	descriptorCapacity int64
+	dis                []DescriptorInput
+	t                  time.Time
+	closeOnUnload      bool
 }
 
 // CreateOpt are used to specify container creation options.
@@ -145,6 +141,15 @@ func OptCreateWithID(id string) CreateOpt {
 		id, err := uuid.Parse(id)
 		co.id = id
 		return err
+	}
+}
+
+// OptCreateWithDescriptorCapacity specifies that the created image should have the capacity for a
+// maximum of n descriptors.
+func OptCreateWithDescriptorCapacity(n int64) CreateOpt {
+	return func(co *createOpts) error {
+		co.descriptorCapacity = n
+		return nil
 	}
 }
 
@@ -175,7 +180,7 @@ func OptCreateWithCloseOnUnload(b bool) CreateOpt {
 
 // createContainer creates a new SIF container file in rw, according to opts.
 func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
-	rds := make([]rawDescriptor, descrNumEntries)
+	rds := make([]rawDescriptor, co.descriptorCapacity)
 	rdsSize := int64(binary.Size(rds))
 
 	h := header{
@@ -183,11 +188,11 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 		ID:                co.id,
 		CreatedAt:         co.t.Unix(),
 		ModifiedAt:        co.t.Unix(),
-		DescriptorsFree:   descrNumEntries,
-		DescriptorsTotal:  descrNumEntries,
-		DescriptorsOffset: descrStartOffset,
+		DescriptorsFree:   co.descriptorCapacity,
+		DescriptorsTotal:  co.descriptorCapacity,
+		DescriptorsOffset: co.descriptorsOffset,
 		DescriptorsSize:   rdsSize,
-		DataOffset:        descrStartOffset + rdsSize,
+		DataOffset:        co.descriptorsOffset + rdsSize,
 	}
 	copy(h.LaunchScript[:], hdrLaunch)
 	copy(h.Magic[:], hdrMagic)
@@ -200,7 +205,7 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 		minIDs: make(map[uint32]uint32),
 	}
 
-	if _, err := f.rw.Seek(f.h.DataOffset, io.SeekStart); err != nil {
+	if _, err := f.rw.Seek(h.DataOffset, io.SeekStart); err != nil {
 		return nil, err
 	}
 
@@ -226,6 +231,9 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 // On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
 // are released. By default, UnloadContainer will close rw if it implements the io.Closer
 // interface. To change this behavior, consider using OptCreateWithCloseOnUnload.
+//
+// By default, the image will support a maximum of 48 descriptors. To change this, consider using
+// OptCreateWithDescriptorCapacity.
 func CreateContainer(rw ReadWriter, opts ...CreateOpt) (*FileImage, error) {
 	id, err := uuid.NewRandom()
 	if err != nil {
@@ -233,9 +241,11 @@ func CreateContainer(rw ReadWriter, opts ...CreateOpt) (*FileImage, error) {
 	}
 
 	co := createOpts{
-		id:            id,
-		t:             time.Now(),
-		closeOnUnload: true,
+		id:                 id,
+		descriptorsOffset:  4096,
+		descriptorCapacity: 48,
+		t:                  time.Now(),
+		closeOnUnload:      true,
 	}
 
 	for _, opt := range opts {
@@ -257,6 +267,9 @@ func CreateContainer(rw ReadWriter, opts ...CreateOpt) (*FileImage, error) {
 //
 // On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
 // are released.
+//
+// By default, the image will support a maximum of 48 descriptors. To change this, consider using
+// OptCreateWithDescriptorCapacity.
 func CreateContainerAtPath(path string, opts ...CreateOpt) (*FileImage, error) {
 	fp, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
 	if err != nil {
