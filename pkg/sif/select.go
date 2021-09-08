@@ -97,7 +97,7 @@ func (f *FileImage) descriptorFromRaw(rd *rawDescriptor) Descriptor {
 	return Descriptor{
 		raw:        *rd,
 		r:          f.rw,
-		relativeID: rd.ID - f.minIDs[rd.Groupid],
+		relativeID: rd.ID - f.minIDs[rd.GroupID],
 	}
 }
 

@@ -13,25 +13,25 @@ import (
 func TestFileImage_GetDescriptors(t *testing.T) {
 	ds := []rawDescriptor{
 		{
-			Datatype: DataPartition,
+			DataType: DataPartition,
 			Used:     true,
 			ID:       1,
-			Groupid:  1 | descrGroupMask,
-			Link:     descrUnusedLink,
+			GroupID:  1 | descrGroupMask,
+			LinkedID: descrUnusedLink,
 		},
 		{
-			Datatype: DataSignature,
+			DataType: DataSignature,
 			Used:     true,
 			ID:       2,
-			Groupid:  1 | descrGroupMask,
-			Link:     1,
+			GroupID:  1 | descrGroupMask,
+			LinkedID: 1,
 		},
 		{
-			Datatype: DataSignature,
+			DataType: DataSignature,
 			Used:     true,
 			ID:       3,
-			Groupid:  descrUnusedGroup,
-			Link:     1 | descrGroupMask,
+			GroupID:  descrUnusedGroup,
+			LinkedID: 1 | descrGroupMask,
 		},
 	}
 
@@ -143,11 +143,11 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 
 func TestFileImage_GetDescriptor(t *testing.T) {
 	primPartDescr := rawDescriptor{
-		Datatype: DataPartition,
+		DataType: DataPartition,
 		Used:     true,
 		ID:       1,
-		Groupid:  1 | descrGroupMask,
-		Link:     descrUnusedLink,
+		GroupID:  1 | descrGroupMask,
+		LinkedID: descrUnusedLink,
 	}
 
 	p := partition{
@@ -163,18 +163,18 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 	ds := []rawDescriptor{
 		primPartDescr,
 		{
-			Datatype: DataSignature,
+			DataType: DataSignature,
 			Used:     true,
 			ID:       2,
-			Groupid:  1 | descrGroupMask,
-			Link:     1,
+			GroupID:  1 | descrGroupMask,
+			LinkedID: 1,
 		},
 		{
-			Datatype: DataSignature,
+			DataType: DataSignature,
 			Used:     true,
 			ID:       3,
-			Groupid:  descrUnusedGroup,
-			Link:     1 | descrGroupMask,
+			GroupID:  descrUnusedGroup,
+			LinkedID: 1 | descrGroupMask,
 		},
 	}
 
@@ -246,25 +246,25 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 func TestFileImage_WithDescriptors(t *testing.T) {
 	ds := []rawDescriptor{
 		{
-			Datatype: DataPartition,
+			DataType: DataPartition,
 			Used:     true,
 			ID:       1,
-			Groupid:  1 | descrGroupMask,
-			Link:     descrUnusedLink,
+			GroupID:  1 | descrGroupMask,
+			LinkedID: descrUnusedLink,
 		},
 		{
-			Datatype: DataSignature,
+			DataType: DataSignature,
 			Used:     true,
 			ID:       2,
-			Groupid:  descrUnusedGroup,
-			Link:     1 | descrGroupMask,
+			GroupID:  descrUnusedGroup,
+			LinkedID: 1 | descrGroupMask,
 		},
 		{
-			Datatype: DataSignature,
+			DataType: DataSignature,
 			Used:     false,
 			ID:       3,
-			Groupid:  descrUnusedGroup,
-			Link:     descrUnusedLink,
+			GroupID:  descrUnusedGroup,
+			LinkedID: descrUnusedLink,
 		},
 	}
 

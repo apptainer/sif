@@ -55,9 +55,9 @@ func writeDataObject(ws io.WriteSeeker, di DescriptorInput, d *rawDescriptor) er
 	}
 
 	d.Used = true
-	d.Fileoff = offset
-	d.Filelen = n
-	d.Storelen = offset - curoff + n
+	d.Offset = offset
+	d.Size = n
+	d.SizeWithPadding = offset - curoff + n
 
 	return nil
 }
@@ -94,12 +94,12 @@ func (f *FileImage) writeDataObject(di DescriptorInput) error {
 	}
 
 	// Update minimum object ID map.
-	if minID, ok := f.minIDs[d.Groupid]; !ok || d.ID < minID {
-		f.minIDs[d.Groupid] = d.ID
+	if minID, ok := f.minIDs[d.GroupID]; !ok || d.ID < minID {
+		f.minIDs[d.GroupID] = d.ID
 	}
 
 	f.h.Dfree--
-	f.h.Datalen += d.Storelen
+	f.h.Datalen += d.SizeWithPadding
 
 	return nil
 }
@@ -272,12 +272,12 @@ func CreateContainerAtPath(path string, opts ...CreateOpt) (*FileImage, error) {
 
 func zeroData(fimg *FileImage, descr *rawDescriptor) error {
 	// first, move to data object offset
-	if _, err := fimg.rw.Seek(descr.Fileoff, io.SeekStart); err != nil {
+	if _, err := fimg.rw.Seek(descr.Offset, io.SeekStart); err != nil {
 		return fmt.Errorf("seeking to data object offset: %s", err)
 	}
 
 	var zero [4096]byte
-	n := descr.Filelen
+	n := descr.Size
 	upbound := int64(4096)
 	for {
 		if n < 4096 {
@@ -374,7 +374,7 @@ func (f *FileImage) AddObject(input DescriptorInput, opts ...AddOpt) error {
 func objectIsLast(f *FileImage, d *rawDescriptor) bool {
 	isLast := true
 
-	end := d.Fileoff + d.Filelen
+	end := d.Offset + d.Size
 	f.WithDescriptors(func(d Descriptor) bool {
 		isLast = d.Offset()+d.Size() <= end
 		return !isLast
@@ -391,21 +391,21 @@ func compactAtDescr(fimg *FileImage, descr *rawDescriptor) error {
 		if !v.Used || v.ID == descr.ID {
 			continue
 		}
-		if v.Fileoff > prev.Fileoff {
+		if v.Offset > prev.Offset {
 			prev = v
 		}
 	}
 	// make sure it's not the only used descriptor first
 	if prev.Used {
-		if err := fimg.rw.Truncate(prev.Fileoff + prev.Filelen); err != nil {
+		if err := fimg.rw.Truncate(prev.Offset + prev.Size); err != nil {
 			return err
 		}
 	} else {
-		if err := fimg.rw.Truncate(descr.Fileoff); err != nil {
+		if err := fimg.rw.Truncate(descr.Offset); err != nil {
 			return err
 		}
 	}
-	fimg.h.Datalen -= descr.Storelen
+	fimg.h.Datalen -= descr.SizeWithPadding
 	return nil
 }
 
@@ -536,7 +536,7 @@ func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
 		return err
 	}
 
-	if descr.Datatype != DataPartition {
+	if descr.DataType != DataPartition {
 		return fmt.Errorf("not a volume partition")
 	}
 

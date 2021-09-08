@@ -18,23 +18,23 @@ import (
 	"time"
 )
 
-// rawDescriptor represents the on-disk descriptor type.
+// rawDescriptor represents an on-disk object descriptor.
 type rawDescriptor struct {
-	Datatype DataType // informs of descriptor type
-	Used     bool     // is the descriptor in use
-	ID       uint32   // a unique id for this data object
-	Groupid  uint32   // object group this data object is related to
-	Link     uint32   // special link or relation to an id or group
-	Fileoff  int64    // offset from start of image file
-	Filelen  int64    // length of data in file
-	Storelen int64    // length of data + alignment to store data in file
+	DataType        DataType
+	Used            bool
+	ID              uint32
+	GroupID         uint32
+	LinkedID        uint32
+	Offset          int64
+	Size            int64
+	SizeWithPadding int64
 
-	Ctime int64                 // image creation time
-	Mtime int64                 // last modification time
-	UID   int64                 // Deprecated: UID exists for historical compatibility and should not be used.
-	GID   int64                 // Deprecated: GID exists for historical compatibility and should not be used.
-	Name  [descrNameLen]byte    // descriptor name (string identifier)
-	Extra [descrMaxPrivLen]byte // big enough for extra data below
+	CreatedAt  int64
+	ModifiedAt int64
+	UID        int64 // Deprecated: UID exists for historical compatibility and should not be used.
+	GID        int64 // Deprecated: GID exists for historical compatibility and should not be used.
+	Name       [descrNameLen]byte
+	Extra      [descrMaxPrivLen]byte
 }
 
 // partition represents the SIF partition data object descriptor.
@@ -97,7 +97,7 @@ func (d *rawDescriptor) setExtra(v interface{}) error {
 
 // getPartitionMetadata gets metadata for a partition data object.
 func (d rawDescriptor) getPartitionMetadata() (fs FSType, pt PartType, arch string, err error) {
-	if got, want := d.Datatype, DataPartition; got != want {
+	if got, want := d.DataType, DataPartition; got != want {
 		return 0, 0, "", &unexpectedDataTypeError{got, want}
 	}
 
@@ -130,33 +130,33 @@ type Descriptor struct {
 }
 
 // DataType returns the type of data object.
-func (d Descriptor) DataType() DataType { return d.raw.Datatype }
+func (d Descriptor) DataType() DataType { return d.raw.DataType }
 
 // ID returns the data object ID of d.
 func (d Descriptor) ID() uint32 { return d.raw.ID }
 
 // GroupID returns the data object group ID of d, or zero if d is not part of a data object
 // group.
-func (d Descriptor) GroupID() uint32 { return d.raw.Groupid &^ descrGroupMask }
+func (d Descriptor) GroupID() uint32 { return d.raw.GroupID &^ descrGroupMask }
 
 // LinkedID returns the object/group ID d is linked to, or zero if d does not contain a linked
 // ID. If isGroup is true, the returned id is an object group ID. Otherwise, the returned id is a
 // data object ID.
 func (d Descriptor) LinkedID() (id uint32, isGroup bool) {
-	return d.raw.Link &^ descrGroupMask, d.raw.Link&descrGroupMask == descrGroupMask
+	return d.raw.LinkedID &^ descrGroupMask, d.raw.LinkedID&descrGroupMask == descrGroupMask
 }
 
 // Offset returns the offset of the data object.
-func (d Descriptor) Offset() int64 { return d.raw.Fileoff }
+func (d Descriptor) Offset() int64 { return d.raw.Offset }
 
 // Size returns the data object size.
-func (d Descriptor) Size() int64 { return d.raw.Filelen }
+func (d Descriptor) Size() int64 { return d.raw.Size }
 
 // CreatedAt returns the creation time of the data object.
-func (d Descriptor) CreatedAt() time.Time { return time.Unix(d.raw.Ctime, 0).UTC() }
+func (d Descriptor) CreatedAt() time.Time { return time.Unix(d.raw.CreatedAt, 0).UTC() }
 
 // ModifiedAt returns the modification time of the data object.
-func (d Descriptor) ModifiedAt() time.Time { return time.Unix(d.raw.Mtime, 0).UTC() }
+func (d Descriptor) ModifiedAt() time.Time { return time.Unix(d.raw.ModifiedAt, 0).UTC() }
 
 // Name returns the name of the data object.
 func (d Descriptor) Name() string { return strings.TrimRight(string(d.raw.Name[:]), "\000") }
@@ -187,7 +187,7 @@ func getHashType(ht hashType) (crypto.Hash, error) {
 
 // SignatureMetadata gets metadata for a signature data object.
 func (d Descriptor) SignatureMetadata() (ht crypto.Hash, fp []byte, err error) {
-	if got, want := d.raw.Datatype, DataSignature; got != want {
+	if got, want := d.raw.DataType, DataSignature; got != want {
 		return ht, fp, &unexpectedDataTypeError{got, want}
 	}
 
@@ -210,7 +210,7 @@ func (d Descriptor) SignatureMetadata() (ht crypto.Hash, fp []byte, err error) {
 
 // CryptoMessageMetadata gets metadata for a crypto message data object.
 func (d Descriptor) CryptoMessageMetadata() (FormatType, MessageType, error) {
-	if got, want := d.raw.Datatype, DataCryptoMessage; got != want {
+	if got, want := d.raw.DataType, DataCryptoMessage; got != want {
 		return 0, 0, &unexpectedDataTypeError{got, want}
 	}
 
@@ -226,7 +226,7 @@ func (d Descriptor) CryptoMessageMetadata() (FormatType, MessageType, error) {
 
 // GetData returns the data object associated with descriptor d.
 func (d Descriptor) GetData() ([]byte, error) {
-	b := make([]byte, d.raw.Filelen)
+	b := make([]byte, d.raw.Size)
 	if _, err := io.ReadFull(d.GetReader(), b); err != nil {
 		return nil, err
 	}
@@ -235,18 +235,18 @@ func (d Descriptor) GetData() ([]byte, error) {
 
 // GetReader returns a io.Reader that reads the data object associated with descriptor d.
 func (d Descriptor) GetReader() io.Reader {
-	return io.NewSectionReader(d.r, d.raw.Fileoff, d.raw.Filelen)
+	return io.NewSectionReader(d.r, d.raw.Offset, d.raw.Size)
 }
 
 // GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from d.
 func (d Descriptor) GetIntegrityReader() io.Reader {
 	fields := []interface{}{
-		d.raw.Datatype,
+		d.raw.DataType,
 		d.raw.Used,
 		d.relativeID,
-		d.raw.Link,
-		d.raw.Filelen,
-		d.raw.Ctime,
+		d.raw.LinkedID,
+		d.raw.Size,
+		d.raw.CreatedAt,
 		d.raw.UID,
 		d.raw.GID,
 	}

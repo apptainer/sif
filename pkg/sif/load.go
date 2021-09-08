@@ -32,8 +32,8 @@ func isValidSif(f *FileImage) error {
 func (f *FileImage) populateMinIDs() {
 	f.minIDs = make(map[uint32]uint32)
 	f.WithDescriptors(func(d Descriptor) bool {
-		if minID, ok := f.minIDs[d.raw.Groupid]; !ok || d.ID() < minID {
-			f.minIDs[d.raw.Groupid] = d.ID()
+		if minID, ok := f.minIDs[d.raw.GroupID]; !ok || d.ID() < minID {
+			f.minIDs[d.raw.GroupID] = d.ID()
 		}
 		return false
 	})
