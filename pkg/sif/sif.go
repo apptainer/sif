@@ -108,15 +108,13 @@ const (
 const CurrentVersion = version01
 
 const (
-	descrNumEntries  = 48             // the default total number of available descriptors
-	descrGroupMask   = 0xf0000000     // groups start at that offset
-	descrUnusedGroup = descrGroupMask // descriptor without a group
-	descrUnusedLink  = 0              // descriptor without link to other
-	descrEntityLen   = 256            // len("Joe Bloe <jbloe@gmail.com>...")
-	descrNameLen     = 128            // descriptor name (string identifier)
-	descrMaxPrivLen  = 384            // size reserved for descriptor specific data
-	descrStartOffset = 4096           // where descriptors start after global header
-	dataStartOffset  = 32768          // where data object start after descriptors
+	descrNumEntries  = 48         // the default total number of available descriptors
+	descrGroupMask   = 0xf0000000 // groups start at that offset
+	descrEntityLen   = 256        // len("Joe Bloe <jbloe@gmail.com>...")
+	descrNameLen     = 128        // descriptor name (string identifier)
+	descrMaxPrivLen  = 384        // size reserved for descriptor specific data
+	descrStartOffset = 4096       // where descriptors start after global header
+	dataStartOffset  = 32768      // where data object start after descriptors
 )
 
 // DataType represents the different SIF data object types stored in the image.
