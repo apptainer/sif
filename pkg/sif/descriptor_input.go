@@ -244,11 +244,11 @@ func NewDescriptorInput(t DataType, r io.Reader, opts ...DescriptorInputOpt) (De
 
 // fillDescriptor fills d according to di.
 func (di DescriptorInput) fillDescriptor(d *rawDescriptor) error {
-	d.Datatype = di.dt
-	d.Groupid = di.opts.groupID | descrGroupMask
-	d.Link = di.opts.linkID
-	d.Ctime = di.opts.t.UTC().Unix()
-	d.Mtime = di.opts.t.UTC().Unix()
+	d.DataType = di.dt
+	d.GroupID = di.opts.groupID | descrGroupMask
+	d.LinkedID = di.opts.linkID
+	d.CreatedAt = di.opts.t.UTC().Unix()
+	d.ModifiedAt = di.opts.t.UTC().Unix()
 	d.UID = 0
 	d.GID = 0
 

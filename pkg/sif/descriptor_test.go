@@ -113,7 +113,7 @@ func TestDescriptor_GetPartitionMetadata(t *testing.T) {
 	}
 
 	rd := rawDescriptor{
-		Datatype: DataPartition,
+		DataType: DataPartition,
 	}
 	if err := rd.setExtra(p); err != nil {
 		t.Fatal(err)
@@ -131,7 +131,7 @@ func TestDescriptor_GetPartitionMetadata(t *testing.T) {
 		{
 			name: "UnexpectedDataType",
 			rd: rawDescriptor{
-				Datatype: DataGeneric,
+				DataType: DataGeneric,
 			},
 			wantErr: &unexpectedDataTypeError{DataGeneric, DataPartition},
 		},
@@ -180,7 +180,7 @@ func TestDescriptor_GetSignatureMetadata(t *testing.T) {
 	})
 
 	rd := rawDescriptor{
-		Datatype: DataSignature,
+		DataType: DataSignature,
 	}
 	if err := rd.setExtra(s); err != nil {
 		t.Fatal(err)
@@ -196,7 +196,7 @@ func TestDescriptor_GetSignatureMetadata(t *testing.T) {
 		{
 			name: "UnexpectedDataType",
 			rd: rawDescriptor{
-				Datatype: DataGeneric,
+				DataType: DataGeneric,
 			},
 			wantErr: &unexpectedDataTypeError{DataGeneric, DataSignature},
 		},
@@ -240,7 +240,7 @@ func TestDescriptor_GetCryptoMessageMetadata(t *testing.T) {
 	}
 
 	rd := rawDescriptor{
-		Datatype: DataCryptoMessage,
+		DataType: DataCryptoMessage,
 	}
 	if err := rd.setExtra(m); err != nil {
 		t.Fatal(err)
@@ -256,7 +256,7 @@ func TestDescriptor_GetCryptoMessageMetadata(t *testing.T) {
 		{
 			name: "UnexpectedDataType",
 			rd: rawDescriptor{
-				Datatype: DataGeneric,
+				DataType: DataGeneric,
 			},
 			wantErr: &unexpectedDataTypeError{DataGeneric, DataCryptoMessage},
 		},
@@ -292,12 +292,12 @@ func TestDescriptor_GetCryptoMessageMetadata(t *testing.T) {
 
 func TestDescriptor_GetIntegrityReader(t *testing.T) {
 	rd := rawDescriptor{
-		Datatype: DataDeffile,
-		Used:     true,
-		ID:       1,
-		Groupid:  descrGroupMask | 1,
-		Ctime:    1504657553,
-		Mtime:    1504657553,
+		DataType:   DataDeffile,
+		Used:       true,
+		ID:         1,
+		GroupID:    descrGroupMask | 1,
+		CreatedAt:  1504657553,
+		ModifiedAt: 1504657553,
 	}
 	copy(rd.Name[:], "GOOD_NAME")
 	copy(rd.Extra[:], "GOOD_EXTRA")
@@ -308,8 +308,8 @@ func TestDescriptor_GetIntegrityReader(t *testing.T) {
 		modFunc    func(*rawDescriptor)
 	}{
 		{
-			name:    "Datatype",
-			modFunc: func(od *rawDescriptor) { od.Datatype = DataEnvVar },
+			name:    "DataType",
+			modFunc: func(od *rawDescriptor) { od.DataType = DataEnvVar },
 		},
 		{
 			name:    "Used",
@@ -324,32 +324,32 @@ func TestDescriptor_GetIntegrityReader(t *testing.T) {
 			relativeID: 1,
 		},
 		{
-			name:    "Groupid",
-			modFunc: func(od *rawDescriptor) { od.Groupid++ },
+			name:    "GroupID",
+			modFunc: func(od *rawDescriptor) { od.GroupID++ },
 		},
 		{
-			name:    "Link",
-			modFunc: func(od *rawDescriptor) { od.Link++ },
+			name:    "LinkedID",
+			modFunc: func(od *rawDescriptor) { od.LinkedID++ },
 		},
 		{
-			name:    "Fileoff",
-			modFunc: func(od *rawDescriptor) { od.Fileoff++ },
+			name:    "Offset",
+			modFunc: func(od *rawDescriptor) { od.Offset++ },
 		},
 		{
-			name:    "Filelen",
-			modFunc: func(od *rawDescriptor) { od.Filelen++ },
+			name:    "Size",
+			modFunc: func(od *rawDescriptor) { od.Size++ },
 		},
 		{
-			name:    "Storelen",
-			modFunc: func(od *rawDescriptor) { od.Storelen++ },
+			name:    "SizeWithPadding",
+			modFunc: func(od *rawDescriptor) { od.SizeWithPadding++ },
 		},
 		{
-			name:    "Ctime",
-			modFunc: func(od *rawDescriptor) { od.Ctime++ },
+			name:    "CreatedAt",
+			modFunc: func(od *rawDescriptor) { od.CreatedAt++ },
 		},
 		{
-			name:    "Mtime",
-			modFunc: func(od *rawDescriptor) { od.Mtime++ },
+			name:    "ModifiedAt",
+			modFunc: func(od *rawDescriptor) { od.ModifiedAt++ },
 		},
 		{
 			name:    "UID",
