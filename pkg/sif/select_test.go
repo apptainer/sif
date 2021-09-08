@@ -37,7 +37,7 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 	f := &FileImage{
 		rds: ds,
 		h: header{
-			Dtotal: int64(len(ds)),
+			DescriptorsTotal: int64(len(ds)),
 		},
 	}
 
@@ -179,7 +179,7 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 	f := &FileImage{
 		rds: ds,
 		h: header{
-			Dtotal: int64(len(ds)),
+			DescriptorsTotal: int64(len(ds)),
 		},
 	}
 

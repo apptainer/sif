@@ -267,28 +267,28 @@ func (t MessageType) String() string {
 
 // header describes a loaded SIF file.
 type header struct {
-	Launch [hdrLaunchLen]byte // #! shell execution line
+	LaunchScript [hdrLaunchLen]byte
 
-	Magic   [hdrMagicLen]byte   // look for "SIF_MAGIC"
-	Version [hdrVersionLen]byte // SIF version
-	Arch    archType            // arch the primary partition is built for
-	ID      uuid.UUID           // image unique identifier
+	Magic   [hdrMagicLen]byte
+	Version [hdrVersionLen]byte
+	Arch    archType
+	ID      uuid.UUID
 
-	Ctime int64 // image creation time
-	Mtime int64 // last modification time
+	CreatedAt  int64
+	ModifiedAt int64
 
-	Dfree    int64 // # of unused data object descr.
-	Dtotal   int64 // # of total available data object descr.
-	Descroff int64 // bytes into file where descs start
-	Descrlen int64 // bytes used by all current descriptors
-	Dataoff  int64 // bytes into file where data starts
-	Datalen  int64 // bytes used by all data objects
+	DescriptorsFree   int64
+	DescriptorsTotal  int64
+	DescriptorsOffset int64
+	DescriptorsSize   int64
+	DataOffset        int64
+	DataSize          int64
 }
 
 // GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from h.
 func (h header) GetIntegrityReader() io.Reader {
 	return io.MultiReader(
-		bytes.NewReader(h.Launch[:]),
+		bytes.NewReader(h.LaunchScript[:]),
 		bytes.NewReader(h.Magic[:]),
 		bytes.NewReader(h.Version[:]),
 		bytes.NewReader(h.ID[:]),
@@ -314,7 +314,7 @@ type FileImage struct {
 }
 
 // LaunchScript returns the image launch script.
-func (f *FileImage) LaunchScript() string { return trimZeroBytes(f.h.Launch[:]) }
+func (f *FileImage) LaunchScript() string { return trimZeroBytes(f.h.LaunchScript[:]) }
 
 // Version returns the SIF specification version of the image.
 func (f *FileImage) Version() string { return trimZeroBytes(f.h.Version[:]) }
@@ -326,28 +326,28 @@ func (f *FileImage) PrimaryArch() string { return f.h.Arch.GoArch() }
 func (f *FileImage) ID() string { return f.h.ID.String() }
 
 // CreatedAt returns the creation time of the image.
-func (f *FileImage) CreatedAt() time.Time { return time.Unix(f.h.Ctime, 0).UTC() }
+func (f *FileImage) CreatedAt() time.Time { return time.Unix(f.h.CreatedAt, 0).UTC() }
 
 // ModifiedAt returns the last modification time of the image.
-func (f *FileImage) ModifiedAt() time.Time { return time.Unix(f.h.Mtime, 0).UTC() }
+func (f *FileImage) ModifiedAt() time.Time { return time.Unix(f.h.ModifiedAt, 0).UTC() }
 
 // DescriptorsFree returns the number of free descriptors in the image.
-func (f *FileImage) DescriptorsFree() int64 { return f.h.Dfree }
+func (f *FileImage) DescriptorsFree() int64 { return f.h.DescriptorsFree }
 
 // DescriptorsTotal returns the total number of descriptors in the image.
-func (f *FileImage) DescriptorsTotal() int64 { return f.h.Dtotal }
+func (f *FileImage) DescriptorsTotal() int64 { return f.h.DescriptorsTotal }
 
 // DescriptorsOffset returns the offset (in bytes) of the descriptors section in the image.
-func (f *FileImage) DescriptorsOffset() int64 { return f.h.Descroff }
+func (f *FileImage) DescriptorsOffset() int64 { return f.h.DescriptorsOffset }
 
 // DescriptorsSize returns the size (in bytes) of the descriptors section in the image.
-func (f *FileImage) DescriptorsSize() int64 { return f.h.Descrlen }
+func (f *FileImage) DescriptorsSize() int64 { return f.h.DescriptorsSize }
 
 // DataOffset returns the offset (in bytes) of the data section in the image.
-func (f *FileImage) DataOffset() int64 { return f.h.Dataoff }
+func (f *FileImage) DataOffset() int64 { return f.h.DataOffset }
 
 // DataSize returns the size (in bytes) of the data section in the image.
-func (f *FileImage) DataSize() int64 { return f.h.Datalen }
+func (f *FileImage) DataSize() int64 { return f.h.DataSize }
 
 // GetHeaderIntegrityReader returns an io.Reader that reads the integrity-protected fields from the
 // header of the image.

@@ -188,8 +188,8 @@ func TestSetPrimPart(t *testing.T) {
 	fimg := &FileImage{
 		rw: &Buffer{},
 		h: header{
-			Dfree:  int64(len(inputs)),
-			Dtotal: int64(len(inputs)),
+			DescriptorsFree:  int64(len(inputs)),
+			DescriptorsTotal: int64(len(inputs)),
 		},
 		rds:    make([]rawDescriptor, len(inputs)),
 		minIDs: make(map[uint32]uint32),
