@@ -17,7 +17,6 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 			Used:     true,
 			ID:       1,
 			GroupID:  1 | descrGroupMask,
-			LinkedID: descrUnusedLink,
 		},
 		{
 			DataType: DataSignature,
@@ -30,7 +29,7 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 			DataType: DataSignature,
 			Used:     true,
 			ID:       3,
-			GroupID:  descrUnusedGroup,
+			GroupID:  0 | descrGroupMask,
 			LinkedID: 1 | descrGroupMask,
 		},
 	}
@@ -147,7 +146,6 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 		Used:     true,
 		ID:       1,
 		GroupID:  1 | descrGroupMask,
-		LinkedID: descrUnusedLink,
 	}
 
 	p := partition{
@@ -173,7 +171,7 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 			DataType: DataSignature,
 			Used:     true,
 			ID:       3,
-			GroupID:  descrUnusedGroup,
+			GroupID:  0 | descrGroupMask,
 			LinkedID: 1 | descrGroupMask,
 		},
 	}
@@ -250,21 +248,19 @@ func TestFileImage_WithDescriptors(t *testing.T) {
 			Used:     true,
 			ID:       1,
 			GroupID:  1 | descrGroupMask,
-			LinkedID: descrUnusedLink,
 		},
 		{
 			DataType: DataSignature,
 			Used:     true,
 			ID:       2,
-			GroupID:  descrUnusedGroup,
+			GroupID:  0 | descrGroupMask,
 			LinkedID: 1 | descrGroupMask,
 		},
 		{
 			DataType: DataSignature,
 			Used:     false,
 			ID:       3,
-			GroupID:  descrUnusedGroup,
-			LinkedID: descrUnusedLink,
+			GroupID:  0 | descrGroupMask,
 		},
 	}
 
