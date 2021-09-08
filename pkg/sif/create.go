@@ -98,8 +98,8 @@ func (f *FileImage) writeDataObject(di DescriptorInput) error {
 		f.minIDs[d.GroupID] = d.ID
 	}
 
-	f.h.Dfree--
-	f.h.Datalen += d.SizeWithPadding
+	f.h.DescriptorsFree--
+	f.h.DataSize += d.SizeWithPadding
 
 	return nil
 }
@@ -115,7 +115,7 @@ func (f *FileImage) writeDescriptors() error {
 			return err
 		}
 	}
-	f.h.Descrlen = int64(binary.Size(f.rds))
+	f.h.DescriptorsSize = int64(binary.Size(f.rds))
 
 	return nil
 }
@@ -177,16 +177,16 @@ func OptCreateWithCloseOnUnload(b bool) CreateOpt {
 // createContainer creates a new SIF container file in rw, according to opts.
 func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 	h := header{
-		Arch:     hdrArchUnknown,
-		ID:       co.id,
-		Ctime:    co.t.Unix(),
-		Mtime:    co.t.Unix(),
-		Dfree:    descrNumEntries,
-		Dtotal:   descrNumEntries,
-		Descroff: descrStartOffset,
-		Dataoff:  dataStartOffset,
+		Arch:              hdrArchUnknown,
+		ID:                co.id,
+		CreatedAt:         co.t.Unix(),
+		ModifiedAt:        co.t.Unix(),
+		DescriptorsFree:   descrNumEntries,
+		DescriptorsTotal:  descrNumEntries,
+		DescriptorsOffset: descrStartOffset,
+		DataOffset:        dataStartOffset,
 	}
-	copy(h.Launch[:], hdrLaunch)
+	copy(h.LaunchScript[:], hdrLaunch)
 	copy(h.Magic[:], hdrMagic)
 	copy(h.Version[:], CurrentVersion.bytes())
 
@@ -304,7 +304,7 @@ func resetDescriptor(fimg *FileImage, index int) error {
 		fimg.h.Arch = hdrArchUnknown
 	}
 
-	offset := fimg.h.Descroff + int64(index)*int64(binary.Size(fimg.rds[0]))
+	offset := fimg.h.DescriptorsOffset + int64(index)*int64(binary.Size(fimg.rds[0]))
 
 	// first, move to descriptor offset
 	if _, err := fimg.rw.Seek(offset, io.SeekStart); err != nil {
@@ -351,7 +351,7 @@ func (f *FileImage) AddObject(input DescriptorInput, opts ...AddOpt) error {
 	}
 
 	// set file pointer to the end of data section
-	if _, err := f.rw.Seek(f.h.Dataoff+f.h.Datalen, io.SeekStart); err != nil {
+	if _, err := f.rw.Seek(f.h.DataOffset+f.h.DataSize, io.SeekStart); err != nil {
 		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
 	}
 
@@ -365,7 +365,7 @@ func (f *FileImage) AddObject(input DescriptorInput, opts ...AddOpt) error {
 		return err
 	}
 
-	f.h.Mtime = ao.t.Unix()
+	f.h.ModifiedAt = ao.t.Unix()
 
 	return f.writeHeader()
 }
@@ -405,7 +405,7 @@ func compactAtDescr(fimg *FileImage, descr *rawDescriptor) error {
 			return err
 		}
 	}
-	fimg.h.Datalen -= descr.SizeWithPadding
+	fimg.h.DataSize -= descr.SizeWithPadding
 	return nil
 }
 
@@ -490,8 +490,8 @@ func (f *FileImage) DeleteObject(id uint32, opts ...DeleteOpt) error {
 		}
 	}
 
-	f.h.Dfree++
-	f.h.Mtime = do.t.Unix()
+	f.h.DescriptorsFree++
+	f.h.ModifiedAt = do.t.Unix()
 
 	if err = resetDescriptor(f, index); err != nil {
 		return err
@@ -593,7 +593,7 @@ func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
 		return err
 	}
 
-	f.h.Mtime = so.t.Unix()
+	f.h.ModifiedAt = so.t.Unix()
 
 	return f.writeHeader()
 }

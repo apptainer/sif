@@ -18,12 +18,12 @@ var corpus = filepath.Join("..", "..", "test", "images")
 
 func TestHeader_GetIntegrityReader(t *testing.T) {
 	h := header{
-		Arch:  hdrArchAMD64,
-		ID:    uuid.UUID{0xb2, 0x65, 0x9d, 0x4e, 0xbd, 0x50, 0x4e, 0xa5, 0xbd, 0x17, 0xee, 0xc5, 0xe5, 0x4f, 0x91, 0x8e},
-		Ctime: 1504657553,
-		Mtime: 1504657653,
+		Arch:       hdrArchAMD64,
+		ID:         uuid.UUID{0xb2, 0x65, 0x9d, 0x4e, 0xbd, 0x50, 0x4e, 0xa5, 0xbd, 0x17, 0xee, 0xc5, 0xe5, 0x4f, 0x91, 0x8e},
+		CreatedAt:  1504657553,
+		ModifiedAt: 1504657653,
 	}
-	copy(h.Launch[:], hdrLaunch)
+	copy(h.LaunchScript[:], hdrLaunch)
 	copy(h.Magic[:], hdrMagic)
 	copy(h.Version[:], CurrentVersion.bytes())
 
@@ -31,8 +31,8 @@ func TestHeader_GetIntegrityReader(t *testing.T) {
 		name    string
 		modFunc func(h header) header
 	}{
-		{"Launch", func(h header) header {
-			copy(h.Launch[:], "#!/usr/bin/env rm\n")
+		{"LaunchScript", func(h header) header {
+			copy(h.LaunchScript[:], "#!/usr/bin/env rm\n")
 			return h
 		}},
 		{"Magic", func(h header) header {
@@ -51,36 +51,36 @@ func TestHeader_GetIntegrityReader(t *testing.T) {
 			h.ID[0]++
 			return h
 		}},
-		{"Ctime", func(h header) header {
-			h.Ctime++
+		{"CreatedAt", func(h header) header {
+			h.CreatedAt++
 			return h
 		}},
-		{"Mtime", func(h header) header {
-			h.Mtime++
+		{"ModifiedAt", func(h header) header {
+			h.ModifiedAt++
 			return h
 		}},
-		{"Dfree", func(h header) header {
-			h.Dfree++
+		{"DescriptorsFree", func(h header) header {
+			h.DescriptorsFree++
 			return h
 		}},
-		{"Dtotal", func(h header) header {
-			h.Dtotal++
+		{"DescriptorsTotal", func(h header) header {
+			h.DescriptorsTotal++
 			return h
 		}},
-		{"Descroff", func(h header) header {
-			h.Descroff++
+		{"DescriptorsOffset", func(h header) header {
+			h.DescriptorsOffset++
 			return h
 		}},
-		{"Descrlen", func(h header) header {
-			h.Descrlen++
+		{"DescriptorsSize", func(h header) header {
+			h.DescriptorsSize++
 			return h
 		}},
-		{"Dataoff", func(h header) header {
-			h.Dataoff++
+		{"DataOffset", func(h header) header {
+			h.DataOffset++
 			return h
 		}},
-		{"Datalen", func(h header) header {
-			h.Datalen++
+		{"DataSize", func(h header) header {
+			h.DataSize++
 			return h
 		}},
 	}

@@ -58,9 +58,9 @@ func loadContainer(rw ReadWriter) (*FileImage, error) {
 	}
 
 	// Read descriptors.
-	f.rds = make([]rawDescriptor, f.h.Dtotal)
+	f.rds = make([]rawDescriptor, f.h.DescriptorsTotal)
 	err = binary.Read(
-		io.NewSectionReader(rw, f.h.Descroff, f.h.Descrlen),
+		io.NewSectionReader(rw, f.h.DescriptorsOffset, f.h.DescriptorsSize),
 		binary.LittleEndian,
 		&f.rds,
 	)
