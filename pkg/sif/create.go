@@ -115,7 +115,6 @@ func (f *FileImage) writeDescriptors() error {
 			return err
 		}
 	}
-	f.h.DescriptorsSize = int64(binary.Size(f.rds))
 
 	return nil
 }
@@ -176,6 +175,9 @@ func OptCreateWithCloseOnUnload(b bool) CreateOpt {
 
 // createContainer creates a new SIF container file in rw, according to opts.
 func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
+	rds := make([]rawDescriptor, descrNumEntries)
+	rdsSize := int64(binary.Size(rds))
+
 	h := header{
 		Arch:              hdrArchUnknown,
 		ID:                co.id,
@@ -184,7 +186,8 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 		DescriptorsFree:   descrNumEntries,
 		DescriptorsTotal:  descrNumEntries,
 		DescriptorsOffset: descrStartOffset,
-		DataOffset:        dataStartOffset,
+		DescriptorsSize:   rdsSize,
+		DataOffset:        descrStartOffset + rdsSize,
 	}
 	copy(h.LaunchScript[:], hdrLaunch)
 	copy(h.Magic[:], hdrMagic)
@@ -193,11 +196,11 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 	f := &FileImage{
 		rw:     rw,
 		h:      h,
-		rds:    make([]rawDescriptor, descrNumEntries),
+		rds:    rds,
 		minIDs: make(map[uint32]uint32),
 	}
 
-	if _, err := f.rw.Seek(dataStartOffset, io.SeekStart); err != nil {
+	if _, err := f.rw.Seek(f.h.DataOffset, io.SeekStart); err != nil {
 		return nil, err
 	}
 
