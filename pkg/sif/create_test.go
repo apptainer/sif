@@ -25,6 +25,8 @@ func TestNextAligned(t *testing.T) {
 		align    int
 		expected int64
 	}{
+		{name: "align 0 to 0", offset: 0, align: 0, expected: 0},
+		{name: "align 1 to 0", offset: 1, align: 0, expected: 1},
 		{name: "align 0 to 1024", offset: 0, align: 1024, expected: 0},
 		{name: "align 1 to 1024", offset: 1, align: 1024, expected: 1024},
 		{name: "align 1023 to 1024", offset: 1023, align: 1024, expected: 1024},
