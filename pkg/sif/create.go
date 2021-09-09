@@ -23,7 +23,7 @@ func nextAligned(offset int64, alignment int) int64 {
 	align64 := uint64(alignment)
 	offset64 := uint64(offset)
 
-	if offset64%align64 != 0 {
+	if align64 != 0 && offset64%align64 != 0 {
 		offset64 = (offset64 & ^(align64 - 1)) + align64
 	}
 
