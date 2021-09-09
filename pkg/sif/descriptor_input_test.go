@@ -16,7 +16,21 @@ import (
 	"github.com/sebdah/goldie/v2"
 )
 
-var testTime = time.Unix(1136239445, 0)
+var (
+	testID   = "ce2eb66b-b8dd-4a66-b5f5-da179f3a18cc"
+	testTime = time.Unix(1136239445, 0)
+)
+
+// getDescriptorInput returns a new DescriptorInput of type dt with contents b, according to opts.
+func getDescriptorInput(t *testing.T, dt DataType, b []byte, opts ...DescriptorInputOpt) DescriptorInput {
+	t.Helper()
+
+	di, err := NewDescriptorInput(dt, bytes.NewReader(b), opts...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return di
+}
 
 func TestNewDescriptorInput(t *testing.T) {
 	t.Parallel()
