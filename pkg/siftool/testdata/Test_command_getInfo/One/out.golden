@@ -1,12 +1,12 @@
-  Datatype:  FS
-  ID:        1
-  Groupid:   1
-  Link:      NONE
-  Fileoff:   32768
-  Filelen:   4
-  Ctime:     2020-06-30 00:01:56 +0000 UTC
-  Mtime:     2020-06-30 00:01:56 +0000 UTC
-  Name:      .
-  Fstype:    Raw
-  Parttype:  System
-  Arch:      386
+  Data Type:        FS
+  ID:               1
+  Group ID:         1
+  Linked ID:        NONE
+  Offset:           32768
+  Size:             4
+  Created At:       2020-06-30 00:01:56 +0000 UTC
+  Modified At:      2020-06-30 00:01:56 +0000 UTC
+  Name:             .
+  Filesystem Type:  Raw
+  Partition Type:   System
+  Architecture:     386

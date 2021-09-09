@@ -1,12 +1,12 @@
-  Datatype:  FS
-  ID:        2
-  Groupid:   1
-  Link:      NONE
-  Fileoff:   36864
-  Filelen:   4
-  Ctime:     2020-06-30 00:01:56 +0000 UTC
-  Mtime:     2020-06-30 00:01:56 +0000 UTC
-  Name:      .
-  Fstype:    Squashfs
-  Parttype:  *System
-  Arch:      386
+  Data Type:        FS
+  ID:               2
+  Group ID:         1
+  Linked ID:        NONE
+  Offset:           36864
+  Size:             4
+  Created At:       2020-06-30 00:01:56 +0000 UTC
+  Modified At:      2020-06-30 00:01:56 +0000 UTC
+  Name:             .
+  Filesystem Type:  Squashfs
+  Partition Type:   *System
+  Architecture:     386
