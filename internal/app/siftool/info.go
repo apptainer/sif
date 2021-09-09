@@ -39,18 +39,18 @@ func readableSize(size int64) string {
 func writeHeader(w io.Writer, f *sif.FileImage) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 0, ' ', 0)
 
-	fmt.Fprintln(tw, "Launch:\t", strings.TrimSuffix(f.LaunchScript(), "\n"))
+	fmt.Fprintln(tw, "Launch Script:\t", strings.TrimSuffix(f.LaunchScript(), "\n"))
 	fmt.Fprintln(tw, "Version:\t", f.Version())
-	fmt.Fprintln(tw, "Arch:\t", f.PrimaryArch())
+	fmt.Fprintln(tw, "Primary Architecture:\t", f.PrimaryArch())
 	fmt.Fprintln(tw, "ID:\t", f.ID())
-	fmt.Fprintln(tw, "Ctime:\t", f.CreatedAt())
-	fmt.Fprintln(tw, "Mtime:\t", f.ModifiedAt())
-	fmt.Fprintln(tw, "Dfree:\t", f.DescriptorsFree())
-	fmt.Fprintln(tw, "Dtotal:\t", f.DescriptorsTotal())
-	fmt.Fprintln(tw, "Descoff:\t", f.DescriptorsOffset())
-	fmt.Fprintln(tw, "Descrlen:\t", readableSize(f.DescriptorsSize()))
-	fmt.Fprintln(tw, "Dataoff:\t", f.DataOffset())
-	fmt.Fprintln(tw, "Datalen:\t", readableSize(f.DataSize()))
+	fmt.Fprintln(tw, "Created At:\t", f.CreatedAt())
+	fmt.Fprintln(tw, "Modified At:\t", f.ModifiedAt())
+	fmt.Fprintln(tw, "Descriptors Free:\t", f.DescriptorsFree())
+	fmt.Fprintln(tw, "Descriptors Total:\t", f.DescriptorsTotal())
+	fmt.Fprintln(tw, "Descriptors Offset:\t", f.DescriptorsOffset())
+	fmt.Fprintln(tw, "Descriptors Size:\t", readableSize(f.DescriptorsSize()))
+	fmt.Fprintln(tw, "Data Offset:\t", f.DataOffset())
+	fmt.Fprintln(tw, "Data Size:\t", readableSize(f.DataSize()))
 
 	return tw.Flush()
 }
@@ -64,12 +64,12 @@ func (a *App) Header(path string) error {
 
 // writeList writes the list of descriptors in f to w.
 func writeList(w io.Writer, f *sif.FileImage) error {
-	fmt.Fprintln(w, "Container id:", f.ID())
-	fmt.Fprintln(w, "Created on:  ", f.CreatedAt())
-	fmt.Fprintln(w, "Modified on: ", f.ModifiedAt())
+	fmt.Fprintln(w, "ID:          ", f.ID())
+	fmt.Fprintln(w, "Created At:  ", f.CreatedAt())
+	fmt.Fprintln(w, "Modified At: ", f.ModifiedAt())
 	fmt.Fprintln(w, "----------------------------------------------------")
 
-	fmt.Fprintln(w, "Descriptor list:")
+	fmt.Fprintln(w, "Descriptors:")
 
 	fmt.Fprintf(w, "%-4s %-8s %-8s %-26s %s\n", "ID", "|GROUP", "|LINK", "|SIF POSITION (start-end)", "|TYPE")
 	fmt.Fprintln(w, ("------------------------------------------------------------------------------"))
@@ -125,43 +125,43 @@ func (a *App) List(path string) error {
 func writeInfo(w io.Writer, v sif.Descriptor) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 1, ' ', 0)
 
-	fmt.Fprintln(tw, "  Datatype:\t", v.DataType())
+	fmt.Fprintln(tw, "  Data Type:\t", v.DataType())
 	fmt.Fprintln(tw, "  ID:\t", v.ID())
 
 	if id := v.GroupID(); id == 0 {
-		fmt.Fprintln(tw, "  Groupid:\t", "NONE")
+		fmt.Fprintln(tw, "  Group ID:\t", "NONE")
 	} else {
-		fmt.Fprintln(tw, "  Groupid:\t", id)
+		fmt.Fprintln(tw, "  Group ID:\t", id)
 	}
 
 	switch id, isGroup := v.LinkedID(); {
 	case id == 0:
-		fmt.Fprintln(tw, "  Link:\t", "NONE")
+		fmt.Fprintln(tw, "  Linked ID:\t", "NONE")
 	case isGroup:
-		fmt.Fprintln(tw, "  Link:\t", id, "(G)")
+		fmt.Fprintln(tw, "  Linked ID:\t", id, "(G)")
 	default:
-		fmt.Fprintln(tw, "  Link:\t", id)
+		fmt.Fprintln(tw, "  Linked ID:\t", id)
 	}
 
-	fmt.Fprintln(tw, "  Fileoff:\t", v.Offset())
-	fmt.Fprintln(tw, "  Filelen:\t", v.Size())
-	fmt.Fprintln(tw, "  Ctime:\t", v.CreatedAt())
-	fmt.Fprintln(tw, "  Mtime:\t", v.ModifiedAt())
+	fmt.Fprintln(tw, "  Offset:\t", v.Offset())
+	fmt.Fprintln(tw, "  Size:\t", v.Size())
+	fmt.Fprintln(tw, "  Created At:\t", v.CreatedAt())
+	fmt.Fprintln(tw, "  Modified At:\t", v.ModifiedAt())
 	fmt.Fprintln(tw, "  Name:\t", v.Name())
 	switch v.DataType() {
 	case sif.DataPartition:
 		fs, pt, arch, _ := v.PartitionMetadata()
-		fmt.Fprintln(tw, "  Fstype:\t", fs)
-		fmt.Fprintln(tw, "  Parttype:\t", pt)
-		fmt.Fprintln(tw, "  Arch:\t", arch)
+		fmt.Fprintln(tw, "  Filesystem Type:\t", fs)
+		fmt.Fprintln(tw, "  Partition Type:\t", pt)
+		fmt.Fprintln(tw, "  Architecture:\t", arch)
 	case sif.DataSignature:
 		ht, fp, _ := v.SignatureMetadata()
-		fmt.Fprintln(tw, "  Hashtype:\t", ht)
+		fmt.Fprintln(tw, "  Hash Type:\t", ht)
 		fmt.Fprintln(tw, "  Entity:\t", fmt.Sprintf("%X", fp))
 	case sif.DataCryptoMessage:
 		ft, mt, _ := v.CryptoMessageMetadata()
-		fmt.Fprintln(tw, "  Fmttype:\t", ft)
-		fmt.Fprintln(tw, "  Msgtype:\t", mt)
+		fmt.Fprintln(tw, "  Format Type:\t", ft)
+		fmt.Fprintln(tw, "  Message Type:\t", mt)
 	}
 
 	return tw.Flush()
