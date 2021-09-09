@@ -122,8 +122,13 @@ const (
 	DescrNameLen      = 128                // descriptor name (string identifier)
 	DescrMaxPrivLen   = 384                // size reserved for descriptor specific data
 	DescrStartOffset  = 4096               // where descriptors start after global header
-	DataStartOffset   = 32768              // where data object start after descriptors
 )
+
+// DataStartOffset indicates where data object start after descriptors.
+//
+// Deprecated: this value may not be accurate for all images. Use (Header).Dataoff from the image
+// instead.
+const DataStartOffset = 32768
 
 // Datatype represents the different SIF data object types stored in the image.
 type Datatype int32
