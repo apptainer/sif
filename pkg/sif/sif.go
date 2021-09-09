@@ -114,7 +114,6 @@ const (
 	descrNameLen     = 128        // descriptor name (string identifier)
 	descrMaxPrivLen  = 384        // size reserved for descriptor specific data
 	descrStartOffset = 4096       // where descriptors start after global header
-	dataStartOffset  = 32768      // where data object start after descriptors
 )
 
 // DataType represents the different SIF data object types stored in the image.
