@@ -197,7 +197,6 @@ func writeDescriptors(fimg *FileImage) error {
 			return fmt.Errorf("binary writing descrtable to buf: %s", err)
 		}
 	}
-	fimg.Header.Descrlen = int64(binary.Size(fimg.DescrArr))
 
 	return nil
 }
@@ -225,6 +224,7 @@ func writeHeader(fimg *FileImage) error {
 func CreateContainer(cinfo CreateInfo) (fimg *FileImage, err error) {
 	fimg = &FileImage{}
 	fimg.DescrArr = make([]Descriptor, DescrNumEntries)
+	descrLen := int64(binary.Size(fimg.DescrArr))
 
 	// Prepare a fresh global header
 	copy(fimg.Header.Launch[:], cinfo.Launchstr)
@@ -237,7 +237,8 @@ func CreateContainer(cinfo CreateInfo) (fimg *FileImage, err error) {
 	fimg.Header.Dfree = DescrNumEntries
 	fimg.Header.Dtotal = DescrNumEntries
 	fimg.Header.Descroff = DescrStartOffset
-	fimg.Header.Dataoff = DataStartOffset
+	fimg.Header.Descrlen = descrLen
+	fimg.Header.Dataoff = DescrStartOffset + descrLen
 
 	// Create container file
 	fimg.Fp, err = os.OpenFile(cinfo.Pathname, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
@@ -251,8 +252,8 @@ func CreateContainer(cinfo CreateInfo) (fimg *FileImage, err error) {
 	}()
 
 	// set file pointer to start of data section */
-	if _, err = fimg.Fp.Seek(DataStartOffset, 0); err != nil {
-		return nil, fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
+	if _, err = fimg.Fp.Seek(fimg.Header.Dataoff, 0); err != nil {
+		return nil, fmt.Errorf("setting file offset pointer to Dataoff: %s", err)
 	}
 
 	for _, v := range cinfo.InputDescr {
