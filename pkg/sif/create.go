@@ -30,53 +30,38 @@ func nextAligned(offset int64, alignment int) int64 {
 	return int64(offset64)
 }
 
-// writeDataObject writes the data object described by di to ws, recording details in d.
-func writeDataObject(ws io.WriteSeeker, di DescriptorInput, d *rawDescriptor) error {
-	if err := di.fillDescriptor(d); err != nil {
-		return err
-	}
-
-	// Record initial offset.
-	curoff, err := ws.Seek(0, io.SeekCurrent)
+// writeDataObjectAt writes the data object described by di to ws, recording details in d. The
+// object is written at the first position that satisfies the alignment requirements described by
+// di following offsetUnaligned.
+func writeDataObjectAt(ws io.WriteSeeker, offsetUnaligned int64, di DescriptorInput, d *rawDescriptor) error {
+	offset, err := ws.Seek(nextAligned(offsetUnaligned, di.opts.alignment), io.SeekStart)
 	if err != nil {
 		return err
 	}
 
-	// Advance in accordance with alignment, record offset.
-	offset, err := ws.Seek(nextAligned(curoff, di.opts.alignment), io.SeekStart)
-	if err != nil {
-		return err
-	}
-
-	// Write the data object.
 	n, err := io.Copy(ws, di.r)
 	if err != nil {
 		return err
 	}
 
+	if err := di.fillDescriptor(d); err != nil {
+		return err
+	}
 	d.Used = true
 	d.Offset = offset
 	d.Size = n
-	d.SizeWithPadding = offset - curoff + n
+	d.SizeWithPadding = offset - offsetUnaligned + n
 
 	return nil
 }
 
-// writeDataObject locates a free descriptor in f, writes the data object described by di to
-// backing storage, recording data object details in the descriptor.
-func (f *FileImage) writeDataObject(di DescriptorInput) error {
-	var d *rawDescriptor
+var errInsufficientCapacity = errors.New("insufficient descriptor capacity to add data object(s) to image")
 
-	for i, od := range f.rds {
-		if !od.Used {
-			d = &f.rds[i]
-			d.ID = uint32(i) + 1
-			break
-		}
-	}
-
-	if d == nil {
-		return fmt.Errorf("no free descriptor table entry")
+// writeDataObject writes the data object described by di to f, recording details in the descriptor
+// at index i.
+func (f *FileImage) writeDataObject(i int, di DescriptorInput) error {
+	if i >= len(f.rds) {
+		return errInsufficientCapacity
 	}
 
 	// If this is a primary partition, verify there isn't another primary partition, and update the
@@ -89,7 +74,10 @@ func (f *FileImage) writeDataObject(di DescriptorInput) error {
 		f.h.Arch = p.Arch
 	}
 
-	if err := writeDataObject(f.rw, di, d); err != nil {
+	d := &f.rds[i]
+	d.ID = uint32(i) + 1
+
+	if err := writeDataObjectAt(f.rw, f.h.DataOffset+f.h.DataSize, di, d); err != nil {
 		return err
 	}
 
@@ -205,12 +193,8 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 		minIDs: make(map[uint32]uint32),
 	}
 
-	if _, err := f.rw.Seek(h.DataOffset, io.SeekStart); err != nil {
-		return nil, err
-	}
-
-	for _, di := range co.dis {
-		if err := f.writeDataObject(di); err != nil {
+	for i, di := range co.dis {
+		if err := f.writeDataObject(i, di); err != nil {
 			return nil, err
 		}
 	}
@@ -355,35 +339,41 @@ func OptAddWithTime(t time.Time) AddOpt {
 //
 // By default, the image modification time is set to the data object creation time. To override
 // this, use OptAddWithTime.
-func (f *FileImage) AddObject(input DescriptorInput, opts ...AddOpt) error {
+func (f *FileImage) AddObject(di DescriptorInput, opts ...AddOpt) error {
 	ao := addOpts{
-		t: input.opts.t,
+		t: di.opts.t,
 	}
 
 	for _, opt := range opts {
 		if err := opt(&ao); err != nil {
-			return err
+			return fmt.Errorf("%w", err)
 		}
 	}
 
-	// set file pointer to the end of data section
-	if _, err := f.rw.Seek(f.h.DataOffset+f.h.DataSize, io.SeekStart); err != nil {
-		return fmt.Errorf("setting file offset pointer to DataStartOffset: %s", err)
+	// Find an unused descriptor.
+	i := 0
+	for _, rd := range f.rds {
+		if !rd.Used {
+			break
+		}
+		i++
 	}
 
-	// create a new descriptor entry from input data
-	if err := f.writeDataObject(input); err != nil {
-		return err
+	if err := f.writeDataObject(i, di); err != nil {
+		return fmt.Errorf("%w", err)
 	}
 
-	// write down the descriptor array
 	if err := f.writeDescriptors(); err != nil {
-		return err
+		return fmt.Errorf("%w", err)
 	}
 
 	f.h.ModifiedAt = ao.t.Unix()
 
-	return f.writeHeader()
+	if err := f.writeHeader(); err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
 }
 
 // descrIsLast return true if passed descriptor's object is the last in a SIF file.
