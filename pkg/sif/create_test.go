@@ -7,17 +7,11 @@ package sif
 
 import (
 	"bytes"
-	"encoding/binary"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/sebdah/goldie/v2"
-)
-
-const (
-	headerLen = 128
-	descrLen  = 585
 )
 
 func TestNextAligned(t *testing.T) {
@@ -42,19 +36,6 @@ func TestNextAligned(t *testing.T) {
 			t.Errorf("nextAligned case: %q, offset: %d, align: %d, expecting: %d, actual: %d\n",
 				tc.name, tc.offset, tc.align, tc.expected, actual)
 		}
-	}
-}
-
-func TestDataStructs(t *testing.T) {
-	var h header
-	var descr rawDescriptor
-
-	if hdrlen := binary.Size(h); hdrlen != headerLen {
-		t.Errorf("expecting global header size of %d, got %d", headerLen, hdrlen)
-	}
-
-	if desclen := binary.Size(descr); desclen != descrLen {
-		t.Errorf("expecting descriptor size of %d, got %d", descrLen, desclen)
 	}
 }
 
