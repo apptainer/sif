@@ -325,10 +325,10 @@ func (f *FileImage) PrimaryArch() string { return f.h.Arch.GoArch() }
 func (f *FileImage) ID() string { return f.h.ID.String() }
 
 // CreatedAt returns the creation time of the image.
-func (f *FileImage) CreatedAt() time.Time { return time.Unix(f.h.CreatedAt, 0).UTC() }
+func (f *FileImage) CreatedAt() time.Time { return time.Unix(f.h.CreatedAt, 0) }
 
 // ModifiedAt returns the last modification time of the image.
-func (f *FileImage) ModifiedAt() time.Time { return time.Unix(f.h.ModifiedAt, 0).UTC() }
+func (f *FileImage) ModifiedAt() time.Time { return time.Unix(f.h.ModifiedAt, 0) }
 
 // DescriptorsFree returns the number of free descriptors in the image.
 func (f *FileImage) DescriptorsFree() int64 { return f.h.DescriptorsFree }
