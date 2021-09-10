@@ -43,8 +43,8 @@ func writeHeader(w io.Writer, f *sif.FileImage) error {
 	fmt.Fprintln(tw, "Version:\t", f.Version())
 	fmt.Fprintln(tw, "Primary Architecture:\t", f.PrimaryArch())
 	fmt.Fprintln(tw, "ID:\t", f.ID())
-	fmt.Fprintln(tw, "Created At:\t", f.CreatedAt())
-	fmt.Fprintln(tw, "Modified At:\t", f.ModifiedAt())
+	fmt.Fprintln(tw, "Created At:\t", f.CreatedAt().UTC())
+	fmt.Fprintln(tw, "Modified At:\t", f.ModifiedAt().UTC())
 	fmt.Fprintln(tw, "Descriptors Free:\t", f.DescriptorsFree())
 	fmt.Fprintln(tw, "Descriptors Total:\t", f.DescriptorsTotal())
 	fmt.Fprintln(tw, "Descriptors Offset:\t", f.DescriptorsOffset())
@@ -65,8 +65,8 @@ func (a *App) Header(path string) error {
 // writeList writes the list of descriptors in f to w.
 func writeList(w io.Writer, f *sif.FileImage) error {
 	fmt.Fprintln(w, "ID:          ", f.ID())
-	fmt.Fprintln(w, "Created At:  ", f.CreatedAt())
-	fmt.Fprintln(w, "Modified At: ", f.ModifiedAt())
+	fmt.Fprintln(w, "Created At:  ", f.CreatedAt().UTC())
+	fmt.Fprintln(w, "Modified At: ", f.ModifiedAt().UTC())
 	fmt.Fprintln(w, "----------------------------------------------------")
 
 	fmt.Fprintln(w, "Descriptors:")
@@ -145,8 +145,8 @@ func writeInfo(w io.Writer, v sif.Descriptor) error {
 
 	fmt.Fprintln(tw, "  Offset:\t", v.Offset())
 	fmt.Fprintln(tw, "  Size:\t", v.Size())
-	fmt.Fprintln(tw, "  Created At:\t", v.CreatedAt())
-	fmt.Fprintln(tw, "  Modified At:\t", v.ModifiedAt())
+	fmt.Fprintln(tw, "  Created At:\t", v.CreatedAt().UTC())
+	fmt.Fprintln(tw, "  Modified At:\t", v.ModifiedAt().UTC())
 	fmt.Fprintln(tw, "  Name:\t", v.Name())
 	switch v.DataType() {
 	case sif.DataPartition:

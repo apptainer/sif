@@ -247,8 +247,8 @@ func (di DescriptorInput) fillDescriptor(d *rawDescriptor) error {
 	d.DataType = di.dt
 	d.GroupID = di.opts.groupID | descrGroupMask
 	d.LinkedID = di.opts.linkID
-	d.CreatedAt = di.opts.t.UTC().Unix()
-	d.ModifiedAt = di.opts.t.UTC().Unix()
+	d.CreatedAt = di.opts.t.Unix()
+	d.ModifiedAt = di.opts.t.Unix()
 	d.UID = 0
 	d.GID = 0
 

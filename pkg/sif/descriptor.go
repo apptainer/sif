@@ -153,10 +153,10 @@ func (d Descriptor) Offset() int64 { return d.raw.Offset }
 func (d Descriptor) Size() int64 { return d.raw.Size }
 
 // CreatedAt returns the creation time of the data object.
-func (d Descriptor) CreatedAt() time.Time { return time.Unix(d.raw.CreatedAt, 0).UTC() }
+func (d Descriptor) CreatedAt() time.Time { return time.Unix(d.raw.CreatedAt, 0) }
 
 // ModifiedAt returns the modification time of the data object.
-func (d Descriptor) ModifiedAt() time.Time { return time.Unix(d.raw.ModifiedAt, 0).UTC() }
+func (d Descriptor) ModifiedAt() time.Time { return time.Unix(d.raw.ModifiedAt, 0) }
 
 // Name returns the name of the data object.
 func (d Descriptor) Name() string { return strings.TrimRight(string(d.raw.Name[:]), "\000") }
