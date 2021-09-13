@@ -518,6 +518,11 @@ func OptSetWithTime(t time.Time) SetOpt {
 	}
 }
 
+var (
+	errNotPartition = errors.New("data object not a partition")
+	errNotSystem    = errors.New("data object not a system partition")
+)
+
 // SetPrimPart sets the specified system partition to be the primary one.
 //
 // By default, the image/object modification time is set to time.Now(). To override this, use
@@ -529,22 +534,22 @@ func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
 
 	for _, opt := range opts {
 		if err := opt(&so); err != nil {
-			return err
+			return fmt.Errorf("%w", err)
 		}
 	}
 
 	descr, err := f.getDescriptor(WithID(id))
 	if err != nil {
-		return err
+		return fmt.Errorf("%w", err)
 	}
 
 	if descr.DataType != DataPartition {
-		return fmt.Errorf("not a volume partition")
+		return fmt.Errorf("%w", errNotPartition)
 	}
 
 	fs, pt, arch, err := descr.getPartitionMetadata()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w", err)
 	}
 
 	// if already primary system partition, nothing to do
@@ -553,12 +558,12 @@ func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
 	}
 
 	if pt != PartSystem {
-		return fmt.Errorf("partition must be of system type")
+		return fmt.Errorf("%w", errNotSystem)
 	}
 
 	olddescr, err := f.getDescriptor(WithPartitionType(PartPrimSys))
 	if err != nil && !errors.Is(err, ErrObjectNotFound) {
-		return err
+		return fmt.Errorf("%w", err)
 	}
 
 	f.h.Arch = getSIFArch(arch)
@@ -570,13 +575,13 @@ func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
 	copy(extra.Arch[:], arch)
 
 	if err := descr.setExtra(extra); err != nil {
-		return err
+		return fmt.Errorf("%w", err)
 	}
 
 	if olddescr != nil {
 		oldfs, _, oldarch, err := olddescr.getPartitionMetadata()
 		if err != nil {
-			return err
+			return fmt.Errorf("%w", err)
 		}
 
 		oldextra := partition{
@@ -586,16 +591,19 @@ func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
 		}
 
 		if err := olddescr.setExtra(oldextra); err != nil {
-			return err
+			return fmt.Errorf("%w", err)
 		}
 	}
 
-	// write down the descriptor array
 	if err := f.writeDescriptors(); err != nil {
-		return err
+		return fmt.Errorf("%w", err)
 	}
 
 	f.h.ModifiedAt = so.t.Unix()
 
-	return f.writeHeader()
+	if err := f.writeHeader(); err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
 }
