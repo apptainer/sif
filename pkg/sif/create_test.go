@@ -429,20 +429,6 @@ func TestDeleteObject(t *testing.T) {
 			wantErr: ErrObjectNotFound,
 		},
 		{
-			name: "ErrObjectNotFound",
-			createOpts: []CreateOpt{
-				OptCreateWithID(testID),
-				OptCreateWithTime(testTime),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
-						OptObjectTime(testTime),
-					),
-				),
-			},
-			id:      2,
-			wantErr: ErrObjectNotFound,
-		},
-		{
 			name: "Zero",
 			createOpts: []CreateOpt{
 				OptCreateWithID(testID),
