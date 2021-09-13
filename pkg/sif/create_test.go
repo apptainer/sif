@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"errors"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/sebdah/goldie/v2"
@@ -412,62 +411,128 @@ func TestAddObject(t *testing.T) {
 	}
 }
 
-func TestAddDelObject(t *testing.T) {
-	fimg, err := CreateContainer(&Buffer{})
-	if err != nil {
-		t.Fatal(err)
+func TestDeleteObject(t *testing.T) {
+	tests := []struct {
+		name       string
+		createOpts []CreateOpt
+		id         uint32
+		opts       []DeleteOpt
+		wantErr    error
+	}{
+		{
+			name: "ErrObjectNotFound",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+			},
+			id:      1,
+			wantErr: ErrObjectNotFound,
+		},
+		{
+			name: "ErrObjectNotFound",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
+						OptObjectTime(testTime),
+					),
+				),
+			},
+			id:      2,
+			wantErr: ErrObjectNotFound,
+		},
+		{
+			name: "Zero",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
+						OptObjectTime(testTime),
+					),
+				),
+			},
+			id: 1,
+			opts: []DeleteOpt{
+				OptDeleteZero(true),
+				OptDeleteWithTime(testTime),
+			},
+		},
+		{
+			name: "Compact",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
+						OptObjectTime(testTime),
+					),
+				),
+			},
+			id: 1,
+			opts: []DeleteOpt{
+				OptDeleteCompact(true),
+				OptDeleteWithTime(testTime),
+			},
+		},
+		{
+			name: "ZeroCompact",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
+						OptObjectTime(testTime),
+					),
+				),
+			},
+			id: 1,
+			opts: []DeleteOpt{
+				OptDeleteZero(true),
+				OptDeleteCompact(true),
+				OptDeleteWithTime(testTime),
+			},
+		},
+		{
+			name: "PrimaryPartition",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataPartition, []byte{0xfa, 0xce},
+						OptObjectTime(testTime),
+						OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
+					),
+				),
+			},
+			id: 1,
+			opts: []DeleteOpt{
+				OptDeleteWithTime(testTime),
+			},
+		},
 	}
 
-	// data we need to create a dummy labels descriptor
-	labinput, err := NewDescriptorInput(DataLabels, bytes.NewBufferString("LABEL"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var b Buffer
 
-	// data we need to create a system partition descriptor
-	partHandle, err := os.Open(filepath.Join("testdata", "busybox.squash"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer partHandle.Close()
-	parinput, err := NewDescriptorInput(DataPartition, partHandle,
-		OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
+			f, err := CreateContainer(&b, tt.createOpts...)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	//
-	// Add the object
-	//
+			if got, want := f.DeleteObject(tt.id, tt.opts...), tt.wantErr; !errors.Is(got, want) {
+				t.Errorf("got error %v, want %v", got, want)
+			}
 
-	// add new data object 'DataLabels' to SIF file
-	if err = fimg.AddObject(labinput); err != nil {
-		t.Errorf("fimg.AddObject(): %s", err)
-	}
+			if err := f.UnloadContainer(); err != nil {
+				t.Error(err)
+			}
 
-	// add new data object 'DataPartition' to SIF file
-	if err = fimg.AddObject(parinput, OptAddWithTime(testTime)); err != nil {
-		t.Errorf("fimg.AddObject(): %s", err)
-	}
-
-	//
-	// Delete the object
-	//
-
-	// test data object deletation
-	if err := fimg.DeleteObject(1, OptDeleteZero(true)); err != nil {
-		t.Errorf("fimg.DeleteObject(1, DelZero): %s", err)
-	}
-
-	// test data object deletation
-	if err := fimg.DeleteObject(2, OptDeleteCompact(true), OptDeleteWithTime(testTime)); err != nil {
-		t.Errorf("fimg.DeleteObject(2, DelZero): %s", err)
-	}
-
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Errorf("UnloadContainer(fimg): %s", err)
+			g := goldie.New(t, goldie.WithTestNameForDir(true))
+			g.Assert(t, tt.name, b.Bytes())
+		})
 	}
 }
 
