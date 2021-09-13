@@ -55,7 +55,10 @@ func writeDataObjectAt(ws io.WriteSeeker, offsetUnaligned int64, di DescriptorIn
 	return nil
 }
 
-var errInsufficientCapacity = errors.New("insufficient descriptor capacity to add data object(s) to image")
+var (
+	errInsufficientCapacity = errors.New("insufficient descriptor capacity to add data object(s) to image")
+	errPrimaryPartition     = errors.New("image already contains a primary partition")
+)
 
 // writeDataObject writes the data object described by di to f, recording details in the descriptor
 // at index i.
@@ -68,7 +71,7 @@ func (f *FileImage) writeDataObject(i int, di DescriptorInput) error {
 	// architecture in the global header.
 	if p, ok := di.opts.extra.(partition); ok && p.Parttype == PartPrimSys {
 		if ds, err := f.GetDescriptors(WithPartitionType(PartPrimSys)); err == nil && len(ds) > 0 {
-			return fmt.Errorf("only 1 FS data object may be a primary partition")
+			return errPrimaryPartition
 		}
 
 		f.h.Arch = p.Arch
