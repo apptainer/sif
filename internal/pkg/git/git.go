@@ -128,6 +128,8 @@ func (d *Description) Reference() *plumbing.Reference {
 	return d.ref
 }
 
+var errTagNotFound = errors.New("semantic version tag not found")
+
 // Version returns a semantic version based on d. If d is tagged directly, the parsed version is
 // returned. Otherwise, a version is derived that preserves semantic precedence.
 //
@@ -137,7 +139,7 @@ func (d *Description) Reference() *plumbing.Reference {
 //  - If d.tag.Name = "v0.1.3" and d.n = 0, 0.1.3 is returned.
 func (d *Description) Version() (semver.Version, error) {
 	if d.v == nil {
-		return semver.Version{}, errors.New("no semver tags found")
+		return semver.Version{}, errTagNotFound
 	}
 
 	// If this version wasn't tagged directly, modify tag.
