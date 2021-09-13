@@ -7,6 +7,7 @@ package sif
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -263,6 +264,150 @@ func TestCreateContainerAtPath(t *testing.T) {
 
 			g := goldie.New(t, goldie.WithTestNameForDir(true))
 			g.Assert(t, tt.name, b)
+		})
+	}
+}
+
+func TestAddObject(t *testing.T) {
+	tests := []struct {
+		name       string
+		createOpts []CreateOpt
+		di         DescriptorInput
+		wantErr    error
+	}{
+		{
+			name: "ErrInsufficientCapacity",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptorCapacity(0),
+			},
+			di: getDescriptorInput(t, DataGeneric, []byte{0xfe, 0xed},
+				OptObjectTime(testTime),
+			),
+			wantErr: errInsufficientCapacity,
+		},
+		{
+			name: "ErrPrimaryPartition",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataPartition, []byte{0xfa, 0xce},
+						OptObjectTime(testTime),
+						OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
+					),
+				),
+			},
+			di: getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
+				OptObjectTime(testTime),
+				OptPartitionMetadata(FsSquash, PartPrimSys, "amd64"),
+			),
+			wantErr: errPrimaryPartition,
+		},
+		{
+			name: "Empty",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+			},
+			di: getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
+				OptObjectTime(testTime),
+			),
+		},
+		{
+			name: "EmptyNotAligned",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+			},
+			di: getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
+				OptObjectTime(testTime),
+				OptObjectAlignment(0),
+			),
+		},
+		{
+			name: "EmptyAligned",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+			},
+			di: getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
+				OptObjectTime(testTime),
+				OptObjectAlignment(128),
+			),
+		},
+		{
+			name: "NotEmpty",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
+						OptObjectTime(testTime),
+					),
+				),
+			},
+			di: getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
+				OptObjectTime(testTime),
+				OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
+			),
+		},
+		{
+			name: "NotEmptyNotAligned",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
+						OptObjectTime(testTime),
+					),
+				),
+			},
+			di: getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
+				OptObjectTime(testTime),
+				OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
+				OptObjectAlignment(0),
+			),
+		},
+		{
+			name: "NotEmptyAligned",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
+						OptObjectTime(testTime),
+					),
+				),
+			},
+			di: getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
+				OptObjectTime(testTime),
+				OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
+				OptObjectAlignment(128),
+			),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var b Buffer
+
+			f, err := CreateContainer(&b, tt.createOpts...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := f.AddObject(tt.di), tt.wantErr; !errors.Is(got, want) {
+				t.Errorf("got error %v, want %v", got, want)
+			}
+
+			if err := f.UnloadContainer(); err != nil {
+				t.Error(err)
+			}
+
+			g := goldie.New(t, goldie.WithTestNameForDir(true))
+			g.Assert(t, tt.name, b.Bytes())
 		})
 	}
 }
