@@ -39,7 +39,9 @@ func readableSize(size int64) string {
 func writeHeader(w io.Writer, f *sif.FileImage) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 0, ' ', 0)
 
-	fmt.Fprintln(tw, "Launch Script:\t", strings.TrimSuffix(f.LaunchScript(), "\n"))
+	if s := f.LaunchScript(); s != "" {
+		fmt.Fprintln(tw, "Launch Script:\t", strings.TrimSuffix(s, "\n"))
+	}
 	fmt.Fprintln(tw, "Version:\t", f.Version())
 	fmt.Fprintln(tw, "Primary Architecture:\t", f.PrimaryArch())
 	fmt.Fprintln(tw, "ID:\t", f.ID())

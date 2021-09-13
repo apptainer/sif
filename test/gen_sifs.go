@@ -162,6 +162,7 @@ func generateImages() error {
 			sif.OptCreateWithID(image.id),
 			sif.OptCreateWithTime(image.createdAt),
 			sif.OptCreateWithDescriptors(dis...),
+			sif.OptCreateWithLaunchScript("#!/usr/bin/env run-singularity\n"),
 		)
 		if err != nil {
 			return err

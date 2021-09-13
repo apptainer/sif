@@ -51,6 +51,14 @@ func TestCreateContainer(t *testing.T) {
 			},
 		},
 		{
+			name: "LaunchScript",
+			opts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithLaunchScript("#!/usr/bin/env launch-script\n"),
+			},
+		},
+		{
 			name: "EmptyCloseOnUnload",
 			opts: []CreateOpt{
 				OptCreateWithID(testID),

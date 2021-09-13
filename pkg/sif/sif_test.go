@@ -23,7 +23,7 @@ func TestHeader_GetIntegrityReader(t *testing.T) {
 		CreatedAt:  1504657553,
 		ModifiedAt: 1504657653,
 	}
-	copy(h.LaunchScript[:], hdrLaunch)
+	copy(h.LaunchScript[:], "#!/usr/bin/env run-singularity\n")
 	copy(h.Magic[:], hdrMagic)
 	copy(h.Version[:], CurrentVersion.bytes())
 
