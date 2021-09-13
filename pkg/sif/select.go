@@ -195,9 +195,11 @@ func (f *FileImage) withDescriptors(selectFn DescriptorSelectorFunc, onMatchFn f
 	return nil
 }
 
+var errAbort = errors.New("abort")
+
 // abortOnMatch is a semantic convenience function that always returns a non-nil error, which can
 // be used as a no-op matchFn.
-func abortOnMatch(*rawDescriptor) error { return errors.New("") }
+func abortOnMatch(*rawDescriptor) error { return errAbort }
 
 // WithDescriptors calls fn with each in-use descriptor in f, until fn returns true.
 func (f *FileImage) WithDescriptors(fn func(d Descriptor) bool) {

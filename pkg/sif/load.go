@@ -10,19 +10,25 @@ package sif
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 )
 
+var (
+	errInvalidMagic        = errors.New("invalid SIF magic")
+	errIncompatibleVersion = errors.New("incompatible SIF version")
+)
+
 // isValidSif looks at key fields from the global header to assess SIF validity.
 func isValidSif(f *FileImage) error {
 	if got, want := trimZeroBytes(f.h.Magic[:]), hdrMagic; got != want {
-		return fmt.Errorf("invalid SIF file: Magic |%v| want |%v|", got, want)
+		return errInvalidMagic
 	}
 
 	if got, want := trimZeroBytes(f.h.Version[:]), CurrentVersion.String(); got > want {
-		return fmt.Errorf("invalid SIF file: Version %s want <= %s", got, want)
+		return errIncompatibleVersion
 	}
 
 	return nil
@@ -162,7 +168,7 @@ func LoadContainer(rw ReadWriter, opts ...LoadOpt) (*FileImage, error) {
 func (f *FileImage) UnloadContainer() error {
 	if c, ok := f.rw.(io.Closer); ok && f.closeOnUnload {
 		if err := c.Close(); err != nil {
-			return err
+			return fmt.Errorf("%w", err)
 		}
 	}
 	return nil

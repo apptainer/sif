@@ -7,7 +7,7 @@ package main
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -22,6 +22,8 @@ func fixedTime() time.Time {
 	return time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC)
 }
 
+var errUnexpectedNumEntities = errors.New("unexpected number of entities")
+
 func getEntity() (*openpgp.Entity, error) {
 	f, err := os.Open(filepath.Join("keys", "private.asc"))
 	if err != nil {
@@ -34,8 +36,8 @@ func getEntity() (*openpgp.Entity, error) {
 		return nil, err
 	}
 
-	if got, want := len(el), 1; got != want {
-		return nil, fmt.Errorf("got %v entities, want %v", got, want)
+	if len(el) != 1 {
+		return nil, errUnexpectedNumEntities
 	}
 	return el[0], nil
 }

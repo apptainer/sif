@@ -276,7 +276,7 @@ func CreateContainerAtPath(path string, opts ...CreateOpt) (*FileImage, error) {
 func zeroData(fimg *FileImage, descr *rawDescriptor) error {
 	// first, move to data object offset
 	if _, err := fimg.rw.Seek(descr.Offset, io.SeekStart); err != nil {
-		return fmt.Errorf("seeking to data object offset: %s", err)
+		return err
 	}
 
 	var zero [4096]byte
@@ -288,7 +288,7 @@ func zeroData(fimg *FileImage, descr *rawDescriptor) error {
 		}
 
 		if _, err := fimg.rw.Write(zero[:upbound]); err != nil {
-			return fmt.Errorf("writing 0's to data object")
+			return err
 		}
 		n -= 4096
 		if n <= 0 {
@@ -311,15 +311,11 @@ func resetDescriptor(fimg *FileImage, index int) error {
 
 	// first, move to descriptor offset
 	if _, err := fimg.rw.Seek(offset, io.SeekStart); err != nil {
-		return fmt.Errorf("seeking to descriptor: %s", err)
+		return err
 	}
 
 	var emptyDesc rawDescriptor
-	if err := binary.Write(fimg.rw, binary.LittleEndian, emptyDesc); err != nil {
-		return fmt.Errorf("binary writing empty descriptor: %s", err)
-	}
-
-	return nil
+	return binary.Write(fimg.rw, binary.LittleEndian, emptyDesc)
 }
 
 // addOpts accumulates object add options.

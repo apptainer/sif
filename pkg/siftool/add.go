@@ -80,6 +80,8 @@ func addFlags(fs *pflag.FlagSet) {
 	name = fs.String("filename", "", "set logical filename/handle [default: input filename]")
 }
 
+var errDataTypeRequired = errors.New("-datatype flag is required with a valid range")
+
 // getDataType returns the data type corresponding to input.
 func getDataType() (sif.DataType, error) {
 	switch *dataType {
@@ -100,7 +102,7 @@ func getDataType() (sif.DataType, error) {
 	case 8:
 		return sif.DataCryptoMessage, nil
 	default:
-		return 0, errors.New("-datatype flag is required with a valid range")
+		return 0, errDataTypeRequired
 	}
 }
 
@@ -133,6 +135,8 @@ func getArch() string {
 	}
 }
 
+var errInvalidHashType = errors.New("invalid hash type")
+
 func getHashType() (crypto.Hash, error) {
 	switch *signHash {
 	case 1:
@@ -146,9 +150,14 @@ func getHashType() (crypto.Hash, error) {
 	case 5:
 		return crypto.BLAKE2b_256, nil
 	default:
-		return 0, fmt.Errorf("invalid hash type: %v", *signHash)
+		return 0, fmt.Errorf("%w: %v", errInvalidHashType, *signHash)
 	}
 }
+
+var (
+	errPartitionArgs            = errors.New("with partition datatype, -partfs, -parttype and -partarch must be passed")
+	errInvalidFingerprintLength = errors.New("invalid signing entity fingerprint length")
+)
 
 func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, error) {
 	var opts []sif.DescriptorInputOpt
@@ -173,7 +182,7 @@ func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, e
 
 	if dt == sif.DataPartition {
 		if *partType == 0 || *partFS == 0 || *partArch == 0 {
-			return nil, errors.New("with partition datatype, -partfs, -parttype and -partarch must be passed")
+			return nil, errPartitionArgs
 		}
 
 		opts = append(opts,
@@ -194,7 +203,7 @@ func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, e
 
 		fp := make([]byte, 20)
 		if got, want := len(b), len(fp); got != want {
-			return nil, fmt.Errorf("invalid signing entity fingerprint length: got %v, want %v", got, want)
+			return nil, fmt.Errorf("%w: got %v, want %v", errInvalidFingerprintLength, got, want)
 		}
 		copy(fp, b)
 

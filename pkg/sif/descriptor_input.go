@@ -7,6 +7,7 @@ package sif
 
 import (
 	"crypto"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -131,6 +132,8 @@ func OptCryptoMessageMetadata(ft FormatType, mt MessageType) DescriptorInputOpt 
 	}
 }
 
+var errUnknownArchitcture = errors.New("unknown architecture")
+
 // OptPartitionMetadata sets metadata for a partition data object. The filesystem type is set to
 // fs, the partition type is set to pt, and the CPU architecture is set to arch. The value of arch
 // should be the architecture as represented by the Go runtime.
@@ -144,7 +147,7 @@ func OptPartitionMetadata(fs FSType, pt PartType, arch string) DescriptorInputOp
 
 		sifarch := getSIFArch(arch)
 		if sifarch == hdrArchUnknown {
-			return fmt.Errorf("unknown architecture: %v", arch)
+			return fmt.Errorf("%w: %v", errUnknownArchitcture, arch)
 		}
 
 		p := partition{

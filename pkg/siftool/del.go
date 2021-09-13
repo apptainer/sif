@@ -26,7 +26,7 @@ func (c *command) getDel() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := strconv.ParseUint(args[0], 10, 32)
 			if err != nil {
-				return fmt.Errorf("while converting input descriptor id: %s", err)
+				return fmt.Errorf("while converting id: %w", err)
 			}
 
 			return c.app.Del(args[1], uint32(id))
