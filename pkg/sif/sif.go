@@ -86,7 +86,6 @@ import (
 
 // SIF header constants and quantities.
 const (
-	hdrLaunch     = "#!/usr/bin/env run-singularity\n"
 	hdrLaunchLen  = 32 // len("#!/usr/bin/env... ")
 	hdrMagic      = "SIF_MAGIC"
 	hdrMagicLen   = 10 // len("SIF_MAGIC")

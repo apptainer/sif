@@ -115,6 +115,7 @@ func (f *FileImage) writeHeader() error {
 
 // createOpts accumulates container creation options.
 type createOpts struct {
+	launchScript       [hdrLaunchLen]byte
 	id                 uuid.UUID
 	descriptorsOffset  int64
 	descriptorCapacity int64
@@ -125,6 +126,23 @@ type createOpts struct {
 
 // CreateOpt are used to specify container creation options.
 type CreateOpt func(*createOpts) error
+
+var errLaunchScriptLen = errors.New("launch script too large")
+
+// OptCreateWithLaunchScript specifies s as the launch script.
+func OptCreateWithLaunchScript(s string) CreateOpt {
+	return func(co *createOpts) error {
+		b := []byte(s)
+
+		if len(b) >= len(co.launchScript) {
+			return errLaunchScriptLen
+		}
+
+		copy(co.launchScript[:], b)
+
+		return nil
+	}
+}
 
 // OptCreateWithID specifies id as the unique ID.
 func OptCreateWithID(id string) CreateOpt {
@@ -175,6 +193,7 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 	rdsSize := int64(binary.Size(rds))
 
 	h := header{
+		LaunchScript:      co.launchScript,
 		Arch:              hdrArchUnknown,
 		ID:                co.id,
 		CreatedAt:         co.t.Unix(),
@@ -185,7 +204,6 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 		DescriptorsSize:   rdsSize,
 		DataOffset:        co.descriptorsOffset + rdsSize,
 	}
-	copy(h.LaunchScript[:], hdrLaunch)
 	copy(h.Magic[:], hdrMagic)
 	copy(h.Version[:], CurrentVersion.bytes())
 
@@ -221,6 +239,8 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 //
 // By default, the image will support a maximum of 48 descriptors. To change this, consider using
 // OptCreateWithDescriptorCapacity.
+//
+// A launch script can optionally be set using OptCreateWithLaunchScript.
 func CreateContainer(rw ReadWriter, opts ...CreateOpt) (*FileImage, error) {
 	id, err := uuid.NewRandom()
 	if err != nil {
@@ -257,6 +277,8 @@ func CreateContainer(rw ReadWriter, opts ...CreateOpt) (*FileImage, error) {
 //
 // By default, the image will support a maximum of 48 descriptors. To change this, consider using
 // OptCreateWithDescriptorCapacity.
+//
+// A launch script can optionally be set using OptCreateWithLaunchScript.
 func CreateContainerAtPath(path string, opts ...CreateOpt) (*FileImage, error) {
 	fp, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
 	if err != nil {
