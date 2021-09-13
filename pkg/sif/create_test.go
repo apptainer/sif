@@ -6,7 +6,6 @@
 package sif
 
 import (
-	"bytes"
 	"errors"
 	"os"
 	"testing"
@@ -523,55 +522,81 @@ func TestDeleteObject(t *testing.T) {
 }
 
 func TestSetPrimPart(t *testing.T) {
-	payload := []byte("0123456789")
-
-	di1, err := NewDescriptorInput(DataPartition, bytes.NewReader(payload))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	di2, err := NewDescriptorInput(DataPartition, bytes.NewReader(payload))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	inputs := []DescriptorInput{di1, di2}
-
-	fimg := &FileImage{
-		rw: &Buffer{},
-		h: header{
-			DescriptorsFree:  int64(len(inputs)),
-			DescriptorsTotal: int64(len(inputs)),
+	tests := []struct {
+		name       string
+		createOpts []CreateOpt
+		id         uint32
+		opts       []SetOpt
+		wantErr    error
+	}{
+		{
+			name: "ErrObjectNotFound",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+			},
+			id:      1,
+			wantErr: ErrObjectNotFound,
 		},
-		rds:    make([]rawDescriptor, len(inputs)),
-		minIDs: make(map[uint32]uint32),
+		{
+			name: "One",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataPartition, []byte{0xfa, 0xce},
+						OptObjectTime(testTime),
+						OptPartitionMetadata(FsRaw, PartSystem, "386"),
+					),
+				),
+			},
+			id: 1,
+			opts: []SetOpt{
+				OptSetWithTime(testTime),
+			},
+		},
+		{
+			name: "Two",
+			createOpts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataPartition, []byte{0xfa, 0xce},
+						OptObjectTime(testTime),
+						OptPartitionMetadata(FsRaw, PartPrimSys, "386"),
+					),
+					getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
+						OptObjectTime(testTime),
+						OptPartitionMetadata(FsRaw, PartSystem, "amd64"),
+					),
+				),
+			},
+			id: 2,
+			opts: []SetOpt{
+				OptSetWithTime(testTime),
+			},
+		},
 	}
 
-	for i := range inputs {
-		if err := fimg.AddObject(inputs[i]); err != nil {
-			t.Fatalf("fimg.AddObject(...): %s", err)
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var b Buffer
 
-		p := partition{
-			Fstype:   FsRaw,
-			Parttype: PartSystem,
-		}
-		if err := fimg.rds[i].setExtra(p); err != nil {
-			t.Fatal(err)
-		}
-	}
+			f, err := CreateContainer(&b, tt.createOpts...)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	// the first pass tests that the primary partition can be set;
-	// the second pass tests that the primary can be changed.
-	for i := range inputs {
-		if err := fimg.SetPrimPart(fimg.rds[i].ID, OptSetWithTime(testTime)); err != nil {
-			t.Error("fimg.SetPrimPart(...):", err)
-		}
+			if got, want := f.SetPrimPart(tt.id, tt.opts...), tt.wantErr; !errors.Is(got, want) {
+				t.Errorf("got error %v, want %v", got, want)
+			}
 
-		if part, err := fimg.getDescriptor(WithPartitionType(PartPrimSys)); err != nil {
-			t.Fatal(err)
-		} else if want, got := part.ID, fimg.rds[i].ID; got != want {
-			t.Errorf("got ID %v, want %v", got, want)
-		}
+			if err := f.UnloadContainer(); err != nil {
+				t.Error(err)
+			}
+
+			g := goldie.New(t, goldie.WithTestNameForDir(true))
+			g.Assert(t, tt.name, b.Bytes())
+		})
 	}
 }
