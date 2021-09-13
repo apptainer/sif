@@ -379,8 +379,8 @@ func (f *FileImage) AddObject(di DescriptorInput, opts ...AddOpt) error {
 	return nil
 }
 
-// descrIsLast return true if passed descriptor's object is the last in a SIF file.
-func objectIsLast(f *FileImage, d *rawDescriptor) bool {
+// isLast return true if the data object associated with d is the last in f.
+func (f *FileImage) isLast(d *rawDescriptor) bool {
 	isLast := true
 
 	end := d.Offset + d.Size
@@ -392,29 +392,14 @@ func objectIsLast(f *FileImage, d *rawDescriptor) bool {
 	return isLast
 }
 
-// compactAtDescr joins data objects leading and following "descr" by compacting a SIF file.
-func compactAtDescr(fimg *FileImage, descr *rawDescriptor) error {
-	var prev rawDescriptor
+// truncateAt truncates f at the start of the padded data object described by d.
+func (f *FileImage) truncateAt(d *rawDescriptor) error {
+	start := d.Offset + d.Size - d.SizeWithPadding
 
-	for _, v := range fimg.rds {
-		if !v.Used || v.ID == descr.ID {
-			continue
-		}
-		if v.Offset > prev.Offset {
-			prev = v
-		}
+	if err := f.rw.Truncate(start); err != nil {
+		return err
 	}
-	// make sure it's not the only used descriptor first
-	if prev.Used {
-		if err := fimg.rw.Truncate(prev.Offset + prev.Size); err != nil {
-			return err
-		}
-	} else {
-		if err := fimg.rw.Truncate(descr.Offset); err != nil {
-			return err
-		}
-	}
-	fimg.h.DataSize -= descr.SizeWithPadding
+
 	return nil
 }
 
@@ -452,6 +437,8 @@ func OptDeleteWithTime(t time.Time) DeleteOpt {
 	}
 }
 
+var errCompactNotImplemented = errors.New("compact not implemented for non-last object")
+
 // DeleteObject deletes the data object with id, according to opts.
 //
 // To zero the data region of the deleted object, use OptDeleteZero. To compact the file following
@@ -466,14 +453,35 @@ func (f *FileImage) DeleteObject(id uint32, opts ...DeleteOpt) error {
 
 	for _, opt := range opts {
 		if err := opt(&do); err != nil {
-			return err
+			return fmt.Errorf("%w", err)
 		}
 	}
 
 	d, err := f.getDescriptor(WithID(id))
 	if err != nil {
-		return err
+		return fmt.Errorf("%w", err)
 	}
+
+	if do.compact && !f.isLast(d) {
+		return fmt.Errorf("%w", errCompactNotImplemented)
+	}
+
+	if do.zero {
+		if err := zeroData(f, d); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+	}
+
+	if do.compact {
+		if err := f.truncateAt(d); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+
+		f.h.DataSize -= d.SizeWithPadding
+	}
+
+	f.h.DescriptorsFree++
+	f.h.ModifiedAt = do.t.Unix()
 
 	index := 0
 	for i, od := range f.rds {
@@ -483,30 +491,15 @@ func (f *FileImage) DeleteObject(id uint32, opts ...DeleteOpt) error {
 		}
 	}
 
-	if do.zero {
-		if err := zeroData(f, d); err != nil {
-			return err
-		}
+	if err := resetDescriptor(f, index); err != nil {
+		return fmt.Errorf("%w", err)
 	}
 
-	if do.compact {
-		if objectIsLast(f, d) {
-			if err := compactAtDescr(f, d); err != nil {
-				return err
-			}
-		} else {
-			return fmt.Errorf("compact not implemented yet")
-		}
+	if err := f.writeHeader(); err != nil {
+		return fmt.Errorf("%w", err)
 	}
 
-	f.h.DescriptorsFree++
-	f.h.ModifiedAt = do.t.Unix()
-
-	if err = resetDescriptor(f, index); err != nil {
-		return err
-	}
-
-	return f.writeHeader()
+	return nil
 }
 
 // setOpts accumulates object set options.
