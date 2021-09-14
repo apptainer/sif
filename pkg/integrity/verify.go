@@ -13,7 +13,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/pkg/sif" //nolint:staticcheck // In use until v2 API
 	"golang.org/x/crypto/openpgp"
 )
 

@@ -14,7 +14,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/pkg/sif" //nolint:staticcheck // In use until v2 API
 	"github.com/sebdah/goldie/v2"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/packet"

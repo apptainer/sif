@@ -14,7 +14,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/pkg/sif" //nolint:staticcheck // In use until v2 API
 )
 
 // Header displays a SIF file global header.

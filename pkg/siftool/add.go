@@ -12,7 +12,7 @@ import (
 	"os"
 
 	"github.com/hpcng/sif/internal/app/siftool"
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/pkg/sif" //nolint:staticcheck // In use until v2 API
 	"github.com/spf13/cobra"
 )
 
