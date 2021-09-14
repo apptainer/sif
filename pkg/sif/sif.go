@@ -80,6 +80,10 @@
 //     | .                                              |
 //     `================================================'
 //
+// Deprecated: this package is deprecated. Users should migrate applications to package
+// github.com/hpcng/sif/v2/pkg/sif.
+//
+// This package is frozen and no new functionality will be added.
 package sif
 
 import (

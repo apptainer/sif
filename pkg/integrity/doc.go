@@ -42,5 +42,10 @@ on object group 1 only:
 Finally, to perform cryptographic verification:
 
 	err := v.Verify()
+
+Deprecated: this package is deprecated. Users should migrate applications to package
+github.com/hpcng/sif/v2/pkg/integrity.
+
+This package is frozen and no new functionality will be added.
 */
 package integrity

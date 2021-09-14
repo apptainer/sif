@@ -7,6 +7,11 @@
 
 // Package siftool implements cobra.Command structs for the siftool functionality. This
 // allows for easy inclusion of siftool functions in the singularity cli.
+//
+// Deprecated: this package is deprecated. Users should migrate applications to package
+// github.com/hpcng/sif/v2/pkg/siftool.
+//
+// This package is frozen and no new functionality will be added.
 package siftool
 
 import (

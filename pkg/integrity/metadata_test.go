@@ -17,7 +17,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/pkg/sif" //nolint:staticcheck // In use until v2 API
 	uuid "github.com/satori/go.uuid"
 	"github.com/sebdah/goldie/v2"
 )
