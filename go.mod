@@ -1,3 +1,4 @@
+// Deprecated: use github.com/hpcng/sif/v2 instead.
 module github.com/hpcng/sif
 
 go 1.17
