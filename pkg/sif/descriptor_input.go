@@ -46,8 +46,7 @@ func OptGroupID(groupID uint32) DescriptorInputOpt {
 	}
 }
 
-// OptLinkedID specifies that the data object is linked to the data object group with the specified
-// ID.
+// OptLinkedID specifies that the data object is linked to the data object with the specified ID.
 func OptLinkedID(id uint32) DescriptorInputOpt {
 	return func(_ DataType, opts *descriptorOpts) error {
 		if id == 0 {
