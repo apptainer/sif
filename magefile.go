@@ -30,7 +30,7 @@ var Aliases = map[string]interface{}{
 
 // ldFlags returns linker flags to pass to various Go commands.
 func ldFlags() string {
-	vals := []string{"-X", "main.builtBy=mage"}
+	vals := []string{"-s", "-w", "-X", "main.builtBy=mage"}
 
 	// Attempt to get git details.
 	if d, err := git.Describe("."); err == nil {
