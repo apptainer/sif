@@ -28,6 +28,11 @@ var Aliases = map[string]interface{}{
 	"test":    Test.All,
 }
 
+// env returns the environment to use when running Go commands.
+func env() map[string]string {
+	return map[string]string{"CGO_ENABLED": "0"}
+}
+
 // ldFlags returns linker flags to pass to various Go commands.
 func ldFlags() string {
 	vals := []string{"-s", "-w", "-X", "main.builtBy=mage"}
@@ -71,7 +76,7 @@ func (ns Build) All() {
 
 // Source compiles all source code.
 func (Build) Source() error {
-	return sh.Run(mg.GoCmd(), "build", "-trimpath", "-ldflags", ldFlags(), "./...")
+	return sh.RunWith(env(), mg.GoCmd(), "build", "-trimpath", "-ldflags", ldFlags(), "./...")
 }
 
 type Install mg.Namespace
@@ -83,7 +88,7 @@ func (ns Install) All() {
 
 // Bin installs binary to GOBIN.
 func (Install) Bin() error {
-	return sh.Run(mg.GoCmd(), "install", "-trimpath", "-ldflags", ldFlags(), "./cmd/siftool")
+	return sh.RunWith(env(), mg.GoCmd(), "install", "-trimpath", "-ldflags", ldFlags(), "./cmd/siftool")
 }
 
 type Test mg.Namespace
