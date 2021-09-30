@@ -8,6 +8,7 @@ package git
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/blang/semver/v4"
 	"github.com/go-git/go-git/v5"
@@ -46,14 +47,16 @@ func getVersions(r *git.Repository) (map[plumbing.Hash]semver.Version, error) {
 
 // Description describes the state of a git repository.
 type Description struct {
-	isClean bool                // if true, the git working tree has local modifications
-	ref     *plumbing.Reference // reference being described
-	v       *semver.Version     // version of nearest tag reachable from ref (or nil if none found)
-	n       uint64              // commits between nearest semver tag and ref (if v is non-nil)
+	isClean bool            // if true, the git working tree has local modifications
+	c       *object.Commit  // commit being described
+	v       *semver.Version // version of nearest tag reachable from commit (or nil if none found)
+	n       uint64          // commits between nearest semver tag and commit (if v is non-nil)
 }
 
-// describe returns a gitDescription of ref.
-func describe(r *git.Repository, ref *plumbing.Reference) (*Description, error) {
+// describe returns a gitDescription of commit c.
+func describe(r *git.Repository, c *object.Commit) (*Description, error) {
+	d := Description{c: c}
+
 	tags, err := getVersions(r)
 	if err != nil {
 		return nil, err
@@ -62,21 +65,19 @@ func describe(r *git.Repository, ref *plumbing.Reference) (*Description, error) 
 	// Get commit log.
 	logIter, err := r.Log(&git.LogOptions{
 		Order: git.LogOrderCommitterTime,
-		From:  ref.Hash(),
+		From:  c.Hash,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	// Iterate through commit log until we find a matching version.
-	var ver *semver.Version
-	var n uint64
 	err = logIter.ForEach(func(c *object.Commit) error {
 		if v, ok := tags[c.Hash]; ok {
-			ver = &v
+			d.v = &v
 			return storer.ErrStop
 		}
-		n++
+		d.n++
 		return nil
 	})
 	if err != nil {
@@ -88,17 +89,15 @@ func describe(r *git.Repository, ref *plumbing.Reference) (*Description, error) 
 	if err != nil {
 		return nil, err
 	}
+
 	status, err := w.Status()
 	if err != nil {
 		return nil, err
 	}
 
-	return &Description{
-		isClean: status.IsClean(),
-		ref:     ref,
-		v:       ver,
-		n:       n,
-	}, nil
+	d.isClean = status.IsClean()
+
+	return &d, nil
 }
 
 // Describe returns a description of HEAD of the git repository at path.
@@ -109,13 +108,19 @@ func Describe(path string) (*Description, error) {
 		return nil, err
 	}
 
-	// Get HEAD commit.
+	// Get HEAD ref.
 	head, err := r.Head()
 	if err != nil {
 		return nil, err
 	}
 
-	return describe(r, head)
+	// Get HEAD commit.
+	c, err := r.CommitObject(head.Hash())
+	if err != nil {
+		return nil, err
+	}
+
+	return describe(r, c)
 }
 
 // IsClean returns true if the git working tree has local modifications.
@@ -123,9 +128,14 @@ func (d *Description) IsClean() bool {
 	return d.isClean
 }
 
-// Reference returns the reference described by d.
-func (d *Description) Reference() *plumbing.Reference {
-	return d.ref
+// CommitHash returns the hash of the commit described by d.
+func (d *Description) CommitHash() string {
+	return d.c.Hash.String()
+}
+
+// CommitTime returns the time of the commit described by d.
+func (d *Description) CommitTime() time.Time {
+	return d.c.Committer.When
 }
 
 var errTagNotFound = errors.New("semantic version tag not found")
