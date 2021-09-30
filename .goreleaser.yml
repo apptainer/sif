@@ -20,6 +20,7 @@ builds:
       - 7
     env:
       - CGO_ENABLED=0
+    flags: '-trimpath'
     ldflags: '-s -w -X main.version={{ .Version }} -X main.commit={{ .FullCommit }} -X main.date={{ .CommitDate }} -X main.builtBy=goreleaser'
     main: ./cmd/siftool
     mod_timestamp: '{{ .CommitTimestamp }}'

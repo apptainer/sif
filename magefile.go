@@ -71,7 +71,7 @@ func (ns Build) All() {
 
 // Source compiles all source code.
 func (Build) Source() error {
-	return sh.Run(mg.GoCmd(), "build", "-ldflags", ldFlags(), "./...")
+	return sh.Run(mg.GoCmd(), "build", "-trimpath", "-ldflags", ldFlags(), "./...")
 }
 
 type Install mg.Namespace
@@ -83,7 +83,7 @@ func (ns Install) All() {
 
 // Bin installs binary to GOBIN.
 func (Install) Bin() error {
-	return sh.Run(mg.GoCmd(), "install", "-ldflags", ldFlags(), "./cmd/siftool")
+	return sh.Run(mg.GoCmd(), "install", "-trimpath", "-ldflags", ldFlags(), "./cmd/siftool")
 }
 
 type Test mg.Namespace
