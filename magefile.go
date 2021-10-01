@@ -9,14 +9,10 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"strings"
-	"time"
-
-	"github.com/hpcng/sif/v2/internal/pkg/git"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
+	"github.com/sylabs/release-tools/pkg/cmd"
+	"github.com/sylabs/release-tools/pkg/git"
 )
 
 // Aliases defines command-line aliases exposed by Mage.
@@ -28,45 +24,6 @@ var Aliases = map[string]interface{}{
 	"test":    Test.All,
 }
 
-// env returns the environment to use when running Go commands.
-func env() map[string]string {
-	return map[string]string{"CGO_ENABLED": "0"}
-}
-
-// ldFlags returns linker flags to pass to various Go commands.
-func ldFlags() string {
-	vals := []string{"-s", "-w", "-X", "main.builtBy=mage"}
-
-	// Attempt to get git details.
-	if d, err := git.Describe("."); err == nil {
-		vals = append(vals, "-X", fmt.Sprintf("main.commit=%v", d.CommitHash()))
-
-		if d.IsClean() {
-			vals = append(vals,
-				"-X", fmt.Sprintf("main.date=%v", d.CommitTime().UTC().Format(time.RFC3339)),
-				"-X", "main.state=clean",
-			)
-		} else {
-			vals = append(vals,
-				"-X", fmt.Sprintf("main.date=%v", time.Now().UTC().Format(time.RFC3339)),
-				"-X", "main.state=dirty",
-			)
-		}
-
-		if v, err := d.Version(); err == nil {
-			vals = append(vals, "-X", fmt.Sprintf("main.version=%v", v))
-		} else {
-			fmt.Fprintf(os.Stderr, "warning: failed to get version: %v\n", err)
-		}
-	} else {
-		fmt.Fprintf(os.Stderr, "warning: failed to describe git HEAD: %v\n", err)
-
-		vals = append(vals, "-X", fmt.Sprintf("main.date=%v", time.Now().UTC().Format(time.RFC3339)))
-	}
-
-	return strings.Join(vals, " ")
-}
-
 type Build mg.Namespace
 
 // All compiles all assets.
@@ -76,7 +33,20 @@ func (ns Build) All() {
 
 // Source compiles all source code.
 func (Build) Source() error {
-	return sh.RunWith(env(), mg.GoCmd(), "build", "-trimpath", "-ldflags", ldFlags(), "./...")
+	d, err := git.Describe(".")
+	if err != nil {
+		return err
+	}
+
+	c, err := cmd.NewBuildCommand(
+		cmd.OptBuildWithBuiltBy("mage"),
+		cmd.OptBuildWithGitDescription(d),
+	)
+	if err != nil {
+		return err
+	}
+
+	return sh.RunWith(c.Env(), mg.GoCmd(), c.Args()...)
 }
 
 type Install mg.Namespace
@@ -88,7 +58,21 @@ func (ns Install) All() {
 
 // Bin installs binary to GOBIN.
 func (Install) Bin() error {
-	return sh.RunWith(env(), mg.GoCmd(), "install", "-trimpath", "-ldflags", ldFlags(), "./cmd/siftool")
+	d, err := git.Describe(".")
+	if err != nil {
+		return err
+	}
+
+	c, err := cmd.NewInstallCommand(
+		cmd.OptBuildPackages("./cmd/siftool"),
+		cmd.OptBuildWithBuiltBy("mage"),
+		cmd.OptBuildWithGitDescription(d),
+	)
+	if err != nil {
+		return err
+	}
+
+	return sh.RunWith(c.Env(), mg.GoCmd(), c.Args()...)
 }
 
 type Test mg.Namespace
@@ -100,7 +84,12 @@ func (ns Test) All() {
 
 // Unit runs all unit tests.
 func (Test) Unit() error {
-	return sh.RunV(mg.GoCmd(), "test", "-race", "-cover", "./...")
+	c, err := cmd.NewTestCommand()
+	if err != nil {
+		return err
+	}
+
+	return sh.RunWith(c.Env(), mg.GoCmd(), c.Args()...)
 }
 
 type Cover mg.Namespace
@@ -112,5 +101,12 @@ func (ns Cover) All(path string) {
 
 // Unit runs all unit tests, writing coverage profile to the specified path.
 func (Cover) Unit(path string) error {
-	return sh.RunV(mg.GoCmd(), "test", "-race", "-coverprofile", path, "./...")
+	c, err := cmd.NewTestCommand(
+		cmd.OptTestWithCoverPath(path),
+	)
+	if err != nil {
+		return err
+	}
+
+	return sh.RunWith(c.Env(), mg.GoCmd(), c.Args()...)
 }
