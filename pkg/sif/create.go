@@ -234,11 +234,18 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 	return f, nil
 }
 
-// CreateContainer creates a new SIF container in rw, according to opts.
+// CreateContainer creates a new SIF container in rw, according to opts. One or more data objects
+// can optionally be specified using OptCreateWithDescriptors.
 //
 // On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
 // are released. By default, UnloadContainer will close rw if it implements the io.Closer
 // interface. To change this behavior, consider using OptCreateWithCloseOnUnload.
+//
+// By default, the image ID is set to a randomly generated value. To override this, consider using
+// OptCreateWithID.
+//
+// By default, the image creation time is set to time.Now(). To override this, consider using
+// OptCreateWithTime.
 //
 // By default, the image will support a maximum of 48 descriptors. To change this, consider using
 // OptCreateWithDescriptorCapacity.
@@ -273,10 +280,17 @@ func CreateContainer(rw ReadWriter, opts ...CreateOpt) (*FileImage, error) {
 	return f, nil
 }
 
-// CreateContainerAtPath creates a new SIF container file at path, according to opts.
+// CreateContainerAtPath creates a new SIF container file at path, according to opts. One or more
+// data objects can optionally be specified using OptCreateWithDescriptors.
 //
 // On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
 // are released.
+//
+// By default, the image ID is set to a randomly generated value. To override this, consider using
+// OptCreateWithID.
+//
+// By default, the image creation time is set to time.Now(). To override this, consider using
+// OptCreateWithTime.
 //
 // By default, the image will support a maximum of 48 descriptors. To change this, consider using
 // OptCreateWithDescriptorCapacity.
@@ -359,7 +373,7 @@ func OptAddWithTime(t time.Time) AddOpt {
 	}
 }
 
-// AddObject add a new data object and its descriptor into the specified SIF file.
+// AddObject adds a new data object and its descriptor into the specified SIF file.
 //
 // By default, the image modification time is set to the current time. To override this, consider
 // using OptAddWithTime.
@@ -465,7 +479,7 @@ var errCompactNotImplemented = errors.New("compact not implemented for non-last 
 // To zero the data region of the deleted object, use OptDeleteZero. To compact the file following
 // object deletion, use OptDeleteCompact.
 //
-// By default, the image modification time is set to time.Now(). To override this, use
+// By default, the image modification time is set to time.Now(). To override this, consider using
 // OptDeleteWithTime.
 func (f *FileImage) DeleteObject(id uint32, opts ...DeleteOpt) error {
 	do := deleteOpts{
@@ -546,8 +560,8 @@ var (
 
 // SetPrimPart sets the specified system partition to be the primary one.
 //
-// By default, the image/object modification time is set to time.Now(). To override this, use
-// OptSetWithTime.
+// By default, the image/object modification times are set to time.Now(). To override this,
+// consider using OptSetWithTime.
 func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
 	so := setOpts{
 		t: time.Now(),
