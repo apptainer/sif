@@ -7,7 +7,10 @@ package sif
 
 import (
 	"bytes"
+	"crypto"
+	"errors"
 	"io"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -15,349 +18,306 @@ import (
 )
 
 func TestDescriptor_GetData(t *testing.T) {
-	bufferedImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
+	f, err := LoadContainerFromPath(
+		filepath.Join(corpus, "one-group-signed.sif"),
+		OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatalf("failed to load container: %v", err)
 	}
 	defer func() {
-		if err := bufferedImage.UnloadContainer(); err != nil {
+		if err := f.UnloadContainer(); err != nil {
 			t.Error(err)
 		}
 	}()
 
-	tests := []struct {
-		name string
-		fimg *FileImage
-	}{
-		{"Buffered", &bufferedImage},
+	// Get the signature block
+	descr, err := f.GetDescriptor(WithID(3))
+	if err != nil {
+		t.Fatalf("failed to get descriptor: %v", err)
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			// Get the signature block
-			descr, err := tt.fimg.GetDescriptor(WithID(3))
-			if err != nil {
-				t.Fatalf("failed to get descriptor: %v", err)
-			}
+	b, err := descr.GetData()
+	if err != nil {
+		t.Fatalf("failed to get data: %v", err)
+	}
 
-			b, err := descr.GetData(tt.fimg)
-			if err != nil {
-				t.Fatalf("failed to get data: %v", err)
-			}
-
-			if got, want := string(b[5:10]), "BEGIN"; got != want {
-				t.Errorf("got data %#v, want %#v", got, want)
-			}
-		})
+	if got, want := string(b[5:10]), "BEGIN"; got != want {
+		t.Errorf("got data %#v, want %#v", got, want)
 	}
 }
 
 func TestDescriptor_GetReader(t *testing.T) {
-	bufferedImage, err := LoadContainer(filepath.Join("testdata", "testcontainer2.sif"), true)
+	f, err := LoadContainerFromPath(
+		filepath.Join(corpus, "one-group-signed.sif"),
+		OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatalf("failed to load container: %v", err)
 	}
 	defer func() {
-		if err := bufferedImage.UnloadContainer(); err != nil {
+		if err := f.UnloadContainer(); err != nil {
 			t.Error(err)
 		}
 	}()
 
-	tests := []struct {
-		name string
-		fimg *FileImage
-	}{
-		{"Buffered", &bufferedImage},
+	// Get the signature block
+	descr, err := f.GetDescriptor(WithID(3))
+	if err != nil {
+		t.Fatalf("failed to get descriptor: %v", err)
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			// Get the signature block
-			descr, err := tt.fimg.GetDescriptor(WithID(3))
-			if err != nil {
-				t.Fatalf("failed to get descriptor: %v", err)
-			}
-
-			// Read data via Reader and validate data.
-			b := make([]byte, descr.Filelen)
-			if _, err := io.ReadFull(descr.GetReader(tt.fimg), b); err != nil {
-				t.Fatalf("failed to read: %v", err)
-			}
-			if got, want := string(b[5:10]), "BEGIN"; got != want {
-				t.Errorf("got data %#v, want %#v", got, want)
-			}
-		})
+	// Read data via Reader and validate data.
+	b := make([]byte, descr.Size())
+	if _, err := io.ReadFull(descr.GetReader(), b); err != nil {
+		t.Fatalf("failed to read: %v", err)
+	}
+	if got, want := string(b[5:10]), "BEGIN"; got != want {
+		t.Errorf("got data %#v, want %#v", got, want)
 	}
 }
 
 func TestDescriptor_GetName(t *testing.T) {
 	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
-	}
-
-	parts, err := fimg.GetDescriptors(
-		WithDataType(DataPartition),
-		WithGroupID(1),
+	f, err := LoadContainerFromPath(
+		filepath.Join(corpus, "one-group.sif"),
+		OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
+		t.Fatalf("failed to load container: %v", err)
 	}
 
-	if len(parts) != 1 {
-		t.Error("multiple partitions found where expecting 1")
+	part, err := f.GetDescriptor(
+		WithPartitionType(PartPrimSys),
+		WithGroupID(DefaultObjectGroup),
+	)
+	if err != nil {
+		t.Fatalf("failed to get descriptor: %v", err)
 	}
 
-	if parts[0].GetName() != "busybox.squash" {
-		t.Error(`parts[0].GetName() != "busybox.squash"`)
+	if got, want := part.Name(), "."; got != want {
+		t.Errorf("got name %v, want %v", got, want)
 	}
 
 	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
+	if err = f.UnloadContainer(); err != nil {
 		t.Error("UnloadContainer(fimg):", err)
 	}
 }
 
-func TestDescriptor_GetFsType(t *testing.T) {
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
+func TestDescriptor_GetPartitionMetadata(t *testing.T) {
+	p := partition{
+		Fstype:   FsSquash,
+		Parttype: PartPrimSys,
+		Arch:     hdrArch386,
 	}
 
-	parts, err := fimg.GetDescriptors(
-		WithDataType(DataPartition),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
+	rd := rawDescriptor{
+		Datatype: DataPartition,
+	}
+	if err := rd.setExtra(p); err != nil {
+		t.Fatal(err)
 	}
 
-	if len(parts) != 1 {
-		t.Error("multiple partitions found where expecting 1")
+	tests := []struct {
+		name     string
+		rd       rawDescriptor
+		p        partition
+		wantFS   FSType
+		wantPart PartType
+		wantArch string
+		wantErr  error
+	}{
+		{
+			name: "UnexpectedDataType",
+			rd: rawDescriptor{
+				Datatype: DataGeneric,
+			},
+			wantErr: &unexpectedDataTypeError{DataGeneric, DataPartition},
+		},
+		{
+			name:     "PartPrimSys",
+			rd:       rd,
+			wantFS:   FsSquash,
+			wantPart: PartPrimSys,
+			wantArch: "386",
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := Descriptor{raw: tt.rd}
 
-	fstype, err := parts[0].GetFsType()
-	if err != nil {
-		t.Error("parts[0].GetFsType()", err)
-	}
+			fs, part, arch, err := d.PartitionMetadata()
 
-	if fstype != FsSquash {
-		t.Error("part.GetFsType() should have returned 'FsSquash'")
-	}
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
 
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
-	}
-}
+			if err == nil {
+				if got, want := fs, tt.wantFS; got != want {
+					t.Fatalf("got filesystem type %v, want %v", got, want)
+				}
 
-func TestDescriptor_GetPartType(t *testing.T) {
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
-	}
+				if got, want := part, tt.wantPart; got != want {
+					t.Fatalf("got partition type %v, want %v", got, want)
+				}
 
-	parts, err := fimg.GetDescriptors(
-		WithDataType(DataPartition),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
-	}
-
-	if len(parts) != 1 {
-		t.Error("multiple partitions found where expecting 1")
-	}
-
-	parttype, err := parts[0].GetPartType()
-	if err != nil {
-		t.Error("parts[0].GetPartType()", err)
-	}
-
-	if parttype != PartPrimSys {
-		t.Error("part.GetPartType() should have returned 'PartPrimSys'")
-	}
-
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
+				if got, want := arch, tt.wantArch; got != want {
+					t.Fatalf("got architecture %v, want %v", got, want)
+				}
+			}
+		})
 	}
 }
 
-func TestDescriptor_GetArch(t *testing.T) {
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
+func TestDescriptor_GetSignatureMetadata(t *testing.T) {
+	s := signature{
+		Hashtype: hashSHA384,
+	}
+	copy(s.Entity[:], []byte{
+		0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
+		0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,
+	})
+
+	rd := rawDescriptor{
+		Datatype: DataSignature,
+	}
+	if err := rd.setExtra(s); err != nil {
+		t.Fatal(err)
 	}
 
-	parts, err := fimg.GetDescriptors(
-		WithDataType(DataPartition),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
+	tests := []struct {
+		name    string
+		rd      rawDescriptor
+		wantHT  crypto.Hash
+		wantFP  []byte
+		wantErr error
+	}{
+		{
+			name: "UnexpectedDataType",
+			rd: rawDescriptor{
+				Datatype: DataGeneric,
+			},
+			wantErr: &unexpectedDataTypeError{DataGeneric, DataSignature},
+		},
+		{
+			name:   "OK",
+			rd:     rd,
+			wantHT: crypto.SHA384,
+			wantFP: []byte{
+				0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
+				0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,
+			},
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := Descriptor{raw: tt.rd}
 
-	if len(parts) != 1 {
-		t.Error("multiple partitions found where expecting 1")
-	}
+			ht, fp, err := d.SignatureMetadata()
 
-	arch, err := parts[0].GetArch()
-	if err != nil {
-		t.Error("parts[0].GetArch()", err)
-	}
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
 
-	if trimZeroBytes(arch[:]) != HdrArchAMD64 {
-		t.Logf("|%s|%s|\n", arch[:hdrArchLen-1], HdrArchAMD64)
-		t.Error("part.GetArch() should have returned 'HdrArchAMD64':", err)
-	}
+			if err == nil {
+				if got, want := ht, tt.wantHT; got != want {
+					t.Fatalf("got hash type %v, want %v", got, want)
+				}
 
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
-	}
-}
-
-func TestDescriptor_GetHashType(t *testing.T) {
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
-	}
-
-	sigs, err := fimg.GetDescriptors(
-		WithDataType(DataSignature),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
-	}
-
-	if len(sigs) != 1 {
-		t.Error("multiple signatures found where expecting 1")
-	}
-
-	hashtype, err := sigs[0].GetHashType()
-	if err != nil {
-		t.Error("sigs[0].GetHashType()", err)
-	}
-
-	if hashtype != HashSHA384 {
-		t.Error("sig.GetHashType() should have returned 'HashSHA384'")
-	}
-
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
+				if got, want := fp, tt.wantFP; !bytes.Equal(got, want) {
+					t.Fatalf("got entity %v, want %v", got, want)
+				}
+			}
+		})
 	}
 }
 
-func TestDescriptor_GetEntity(t *testing.T) {
-	expected := []byte{159, 43, 108, 54, 217, 153, 163, 233, 28, 179, 16, 71, 32, 103, 21, 144, 193, 45, 66, 34}
-
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
+func TestDescriptor_GetCryptoMessageMetadata(t *testing.T) {
+	m := cryptoMessage{
+		Formattype:  FormatOpenPGP,
+		Messagetype: MessageClearSignature,
 	}
 
-	sigs, err := fimg.GetDescriptors(
-		WithDataType(DataSignature),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
+	rd := rawDescriptor{
+		Datatype: DataCryptoMessage,
+	}
+	if err := rd.setExtra(m); err != nil {
+		t.Fatal(err)
 	}
 
-	if len(sigs) != 1 {
-		t.Error("multiple signatures found where expecting 1")
+	tests := []struct {
+		name    string
+		rd      rawDescriptor
+		wantFT  FormatType
+		wantMT  MessageType
+		wantErr error
+	}{
+		{
+			name: "UnexpectedDataType",
+			rd: rawDescriptor{
+				Datatype: DataGeneric,
+			},
+			wantErr: &unexpectedDataTypeError{DataGeneric, DataCryptoMessage},
+		},
+		{
+			name:   "OK",
+			rd:     rd,
+			wantFT: FormatOpenPGP,
+			wantMT: MessageClearSignature,
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := Descriptor{raw: tt.rd}
 
-	entity, err := sigs[0].GetEntity()
-	if err != nil {
-		t.Error("sigs[0].GetEntity()", err)
-	}
+			ft, mt, err := d.CryptoMessageMetadata()
 
-	if bytes.Equal(expected, entity[:len(expected)]) == false {
-		t.Error("sig.GetEntity(): didn't get the expected entity, got:", entity[:len(expected)])
-	}
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
 
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
-	}
-}
+			if err == nil {
+				if got, want := ft, tt.wantFT; got != want {
+					t.Fatalf("got format type %v, want %v", got, want)
+				}
 
-func TestDescriptor_GetEntityString(t *testing.T) {
-	expected := "9F2B6C36D999A3E91CB3104720671590C12D4222"
-
-	// load the test container
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
-	}
-
-	sigs, err := fimg.GetDescriptors(
-		WithDataType(DataSignature),
-		WithGroupID(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to get descriptors: %v", err)
-	}
-
-	if len(sigs) != 1 {
-		t.Error("multiple signatures found where expecting 1")
-	}
-
-	entity, err := sigs[0].GetEntityString()
-	if err != nil {
-		t.Error("sigs[0].GetEntityString()", err)
-	}
-
-	if expected != entity {
-		t.Error("sig.GetEntityString(): didn't get the expected entity")
-	}
-
-	// unload the test container
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("UnloadContainer(fimg):", err)
+				if got, want := mt, tt.wantMT; got != want {
+					t.Fatalf("got message type %v, want %v", got, want)
+				}
+			}
+		})
 	}
 }
 
 func TestDescriptor_GetIntegrityReader(t *testing.T) {
-	d := Descriptor{
+	rd := rawDescriptor{
 		Datatype: DataDeffile,
 		Used:     true,
 		ID:       1,
-		Groupid:  DescrGroupMask | 1,
+		Groupid:  descrGroupMask | 1,
 		Ctime:    1504657553,
 		Mtime:    1504657553,
 	}
-	copy(d.Name[:], "GOOD_NAME")
-	copy(d.Extra[:], "GOOD_EXTRA")
+	copy(rd.Name[:], "GOOD_NAME")
+	copy(rd.Extra[:], "GOOD_EXTRA")
 
 	tests := []struct {
 		name       string
 		relativeID uint32
-		modFunc    func(*Descriptor)
+		modFunc    func(*rawDescriptor)
 	}{
 		{
 			name:    "Datatype",
-			modFunc: func(od *Descriptor) { od.Datatype = DataEnvVar },
+			modFunc: func(od *rawDescriptor) { od.Datatype = DataEnvVar },
 		},
 		{
 			name:    "Used",
-			modFunc: func(od *Descriptor) { od.Used = !od.Used },
+			modFunc: func(od *rawDescriptor) { od.Used = !od.Used },
 		},
 		{
 			name:    "ID",
-			modFunc: func(od *Descriptor) { od.ID++ },
+			modFunc: func(od *rawDescriptor) { od.ID++ },
 		},
 		{
 			name:       "RelativeID",
@@ -365,61 +325,64 @@ func TestDescriptor_GetIntegrityReader(t *testing.T) {
 		},
 		{
 			name:    "Groupid",
-			modFunc: func(od *Descriptor) { od.Groupid++ },
+			modFunc: func(od *rawDescriptor) { od.Groupid++ },
 		},
 		{
 			name:    "Link",
-			modFunc: func(od *Descriptor) { od.Link++ },
+			modFunc: func(od *rawDescriptor) { od.Link++ },
 		},
 		{
 			name:    "Fileoff",
-			modFunc: func(od *Descriptor) { od.Fileoff++ },
+			modFunc: func(od *rawDescriptor) { od.Fileoff++ },
 		},
 		{
 			name:    "Filelen",
-			modFunc: func(od *Descriptor) { od.Filelen++ },
+			modFunc: func(od *rawDescriptor) { od.Filelen++ },
 		},
 		{
 			name:    "Storelen",
-			modFunc: func(od *Descriptor) { od.Storelen++ },
+			modFunc: func(od *rawDescriptor) { od.Storelen++ },
 		},
 		{
 			name:    "Ctime",
-			modFunc: func(od *Descriptor) { od.Ctime++ },
+			modFunc: func(od *rawDescriptor) { od.Ctime++ },
 		},
 		{
 			name:    "Mtime",
-			modFunc: func(od *Descriptor) { od.Mtime++ },
+			modFunc: func(od *rawDescriptor) { od.Mtime++ },
 		},
 		{
 			name:    "UID",
-			modFunc: func(od *Descriptor) { od.UID++ },
+			modFunc: func(od *rawDescriptor) { od.UID++ },
 		},
 		{
 			name:    "GID",
-			modFunc: func(od *Descriptor) { od.GID++ },
+			modFunc: func(od *rawDescriptor) { od.GID++ },
 		},
 		{
 			name:    "Name",
-			modFunc: func(od *Descriptor) { copy(od.Name[:], "BAD_NAME") },
+			modFunc: func(od *rawDescriptor) { copy(od.Name[:], "BAD_NAME") },
 		},
 		{
 			name:    "Extra",
-			modFunc: func(od *Descriptor) { copy(od.Extra[:], "BAD_EXTRA") },
+			modFunc: func(od *rawDescriptor) { copy(od.Extra[:], "BAD_EXTRA") },
 		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			d := d
+			d := Descriptor{
+				raw:        rd,
+				relativeID: tt.relativeID,
+			}
 			if tt.modFunc != nil {
-				tt.modFunc(&d)
+				tt.modFunc(&d.raw)
 			}
 
 			b := bytes.Buffer{}
 
-			if _, err := io.Copy(&b, d.GetIntegrityReader(tt.relativeID)); err != nil {
+			if _, err := io.Copy(&b, d.GetIntegrityReader()); err != nil {
 				t.Fatal(err)
 			}
 

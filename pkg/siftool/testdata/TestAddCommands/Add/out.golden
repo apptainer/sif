@@ -13,7 +13,8 @@ Flags:
       --datatype int        the type of data to add
                             [NEEDED, no default]:
                               1-Deffile,   2-EnvVar,    3-Labels,
-                              4-Partition, 5-Signature, 6-GenericJSON
+                              4-Partition, 5-Signature, 6-GenericJSON,
+                              7-Generic,   8-CryptoMessage
       --filename string     set logical filename/handle [default: input filename]
       --groupid uint32      set groupid [default: 0]
   -h, --help                help for add
@@ -37,5 +38,5 @@ Flags:
                               example: 433FE984155206BD962725E20E8713472A879943
       --signhash int32      the signature hash used (with -datatype 5-Signature)
                             [NEEDED, no default]:
-                              1-SHA256,    2-SHA384,    3-SHA512,
-                              4-BLAKE2S,   5-BLAKE2B
+                              1-SHA256,      2-SHA384,      3-SHA512,
+                              4-BLAKE2s_256, 5-BLAKE2b_256

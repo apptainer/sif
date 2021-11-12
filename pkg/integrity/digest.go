@@ -14,8 +14,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-
-	"github.com/hpcng/sif/v2/pkg/sif"
 )
 
 var (
@@ -74,19 +72,6 @@ func newDigestReader(h crypto.Hash, r io.Reader) (digest, error) {
 	return newDigest(h, value)
 }
 
-// hashType converts ht into a crypto.Hash value.
-func hashType(ht sif.Hashtype) (crypto.Hash, error) {
-	switch ht {
-	case sif.HashSHA256:
-		return crypto.SHA256, nil
-	case sif.HashSHA384:
-		return crypto.SHA384, nil
-	case sif.HashSHA512:
-		return crypto.SHA512, nil
-	}
-	return 0, errHashUnsupported
-}
-
 // newLegacyDigest parses legacy signature plaintext b, and returns a digest based on the hash type
 // ht and the digest value read from the plaintext.
 //
@@ -95,15 +80,9 @@ func hashType(ht sif.Hashtype) (crypto.Hash, error) {
 //
 // 	SIFHASH:
 //  2f0b3dca0ec42683d306338f68689aba29cdb83625b8cc0b8a789f8de92342495a6264b0c134e706630636bf90c6f331
-func newLegacyDigest(ht sif.Hashtype, b []byte) (digest, error) {
+func newLegacyDigest(ht crypto.Hash, b []byte) (digest, error) {
 	b = bytes.TrimPrefix(b, []byte("SIFHASH:\n"))
 	b = bytes.TrimSuffix(b, []byte("\n"))
-
-	// Convert hash type.
-	h, err := hashType(ht)
-	if err != nil {
-		return digest{}, err
-	}
 
 	// Decode hex input.
 	value := make([]byte, hex.DecodedLen(len(b)))
@@ -111,7 +90,7 @@ func newLegacyDigest(ht sif.Hashtype, b []byte) (digest, error) {
 		return digest{}, err
 	}
 
-	return newDigest(h, value)
+	return newDigest(ht, value)
 }
 
 // matches returns whether the digest in d matches r.

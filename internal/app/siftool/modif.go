@@ -16,47 +16,22 @@ import (
 
 // New creates a new empty SIF file.
 func (*App) New(path string) error {
-	_, err := sif.CreateContainer(path)
-	return err
-}
+	f, err := sif.CreateContainerAtPath(path)
+	if err != nil {
+		return err
+	}
 
-// AddOptions contains the options when adding a section to a SIF file.
-type AddOptions struct {
-	Datatype   sif.Datatype
-	Parttype   sif.Parttype
-	Partfs     sif.Fstype
-	Partarch   string
-	Signhash   sif.Hashtype
-	Signentity string
-	Groupid    uint32
-	Link       uint32
-	Alignment  int
-	Filename   string
-	Fp         io.Reader
+	return f.UnloadContainer()
 }
 
 // Add adds a data object to a SIF file.
-func (*App) Add(path string, opts AddOptions) error {
-	input := sif.DescriptorInput{
-		Datatype:  opts.Datatype,
-		Groupid:   sif.DescrGroupMask | opts.Groupid,
-		Link:      opts.Link,
-		Alignment: opts.Alignment,
-		Fname:     opts.Filename,
-		Fp:        opts.Fp,
-	}
-
-	if opts.Datatype == sif.DataPartition {
-		if err := input.SetPartExtra(opts.Partfs, opts.Parttype, opts.Partarch); err != nil {
-			return err
-		}
-	} else if opts.Datatype == sif.DataSignature {
-		if err := input.SetSignExtra(opts.Signhash, opts.Signentity); err != nil {
-			return err
-		}
-	}
-
+func (*App) Add(path string, t sif.DataType, r io.Reader, opts ...sif.DescriptorInputOpt) error {
 	return withFileImage(path, true, func(f *sif.FileImage) error {
+		input, err := sif.NewDescriptorInput(t, r, opts...)
+		if err != nil {
+			return err
+		}
+
 		return f.AddObject(input)
 	})
 }
@@ -64,7 +39,7 @@ func (*App) Add(path string, opts AddOptions) error {
 // Del deletes a specified object descriptor and data from the SIF file.
 func (*App) Del(path string, id uint32) error {
 	return withFileImage(path, true, func(f *sif.FileImage) error {
-		return f.DeleteObject(id, 0)
+		return f.DeleteObject(id)
 	})
 }
 

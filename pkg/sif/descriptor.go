@@ -9,15 +9,18 @@ package sif
 
 import (
 	"bytes"
+	"crypto"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
+	"time"
 )
 
-// Descriptor represents the SIF descriptor type.
-type Descriptor struct {
-	Datatype Datatype // informs of descriptor type
+// rawDescriptor represents the on-disk descriptor type.
+type rawDescriptor struct {
+	Datatype DataType // informs of descriptor type
 	Used     bool     // is the descriptor in use
 	ID       uint32   // a unique id for this data object
 	Groupid  uint32   // object group this data object is related to
@@ -30,189 +33,222 @@ type Descriptor struct {
 	Mtime int64                 // last modification time
 	UID   int64                 // Deprecated: UID exists for historical compatibility and should not be used.
 	GID   int64                 // Deprecated: GID exists for historical compatibility and should not be used.
-	Name  [DescrNameLen]byte    // descriptor name (string identifier)
-	Extra [DescrMaxPrivLen]byte // big enough for extra data below
+	Name  [descrNameLen]byte    // descriptor name (string identifier)
+	Extra [descrMaxPrivLen]byte // big enough for extra data below
 }
 
-// setName sets the byte array field "Name" to the value of string "name".
-func (d *Descriptor) setName(name string) {
-	copy(d.Name[:], name)
-	for i := len(name); i < len(d.Name); i++ {
+// partition represents the SIF partition data object descriptor.
+type partition struct {
+	Fstype   FSType
+	Parttype PartType
+	Arch     archType
+}
+
+// signature represents the SIF signature data object descriptor.
+type signature struct {
+	Hashtype hashType
+	Entity   [descrEntityLen]byte
+}
+
+// cryptoMessage represents the SIF crypto message object descriptor.
+type cryptoMessage struct {
+	Formattype  FormatType
+	Messagetype MessageType
+}
+
+var errNameTooLarge = errors.New("name value too large")
+
+// setName encodes name into the name field of d.
+func (d *rawDescriptor) setName(name string) error {
+	if len(name) > len(d.Name) {
+		return errNameTooLarge
+	}
+
+	for i := copy(d.Name[:], name); i < len(d.Name); i++ {
 		d.Name[i] = 0
 	}
+
+	return nil
 }
 
-// setExtra sets the extra byte array to a provided byte array.
-func (d *Descriptor) setExtra(extra []byte) {
-	copy(d.Extra[:], extra)
-	for i := len(extra); i < len(d.Extra); i++ {
+var errExtraTooLarge = errors.New("extra value too large")
+
+// setExtra encodes v into the extra field of d.
+func (d *rawDescriptor) setExtra(v interface{}) error {
+	if v == nil {
+		return nil
+	}
+
+	if binary.Size(v) > len(d.Extra) {
+		return errExtraTooLarge
+	}
+
+	b := new(bytes.Buffer)
+	if err := binary.Write(b, binary.LittleEndian, v); err != nil {
+		return err
+	}
+
+	for i := copy(d.Extra[:], b.Bytes()); i < len(d.Extra); i++ {
 		d.Extra[i] = 0
 	}
+
+	return nil
 }
 
-// GetDataType returns the type of data object.
-func (d Descriptor) GetDataType() Datatype { return d.Datatype }
+// getPartitionMetadata gets metadata for a partition data object.
+func (d rawDescriptor) getPartitionMetadata() (fs FSType, pt PartType, arch string, err error) {
+	if got, want := d.Datatype, DataPartition; got != want {
+		return 0, 0, "", &unexpectedDataTypeError{got, want}
+	}
 
-// GetID returns the data object ID of d.
-func (d Descriptor) GetID() uint32 { return d.ID }
+	var p partition
 
-// GetGroupID returns the data object group ID of d, or zero if d is not part of a data object
+	b := bytes.NewReader(d.Extra[:])
+	if err := binary.Read(b, binary.LittleEndian, &p); err != nil {
+		return 0, 0, "", fmt.Errorf("%w", err)
+	}
+
+	return p.Fstype, p.Parttype, p.Arch.GoArch(), nil
+}
+
+// isPartitionOfType returns true if d is a partition data object of type pt.
+func (d rawDescriptor) isPartitionOfType(pt PartType) bool {
+	_, t, _, err := d.getPartitionMetadata()
+	if err != nil {
+		return false
+	}
+	return t == pt
+}
+
+// Descriptor represents the SIF descriptor type.
+type Descriptor struct {
+	r io.ReaderAt // Backing storage.
+
+	raw rawDescriptor // Raw descriptor from image.
+
+	relativeID uint32 // ID relative to minimum ID of object group.
+}
+
+// DataType returns the type of data object.
+func (d Descriptor) DataType() DataType { return d.raw.Datatype }
+
+// ID returns the data object ID of d.
+func (d Descriptor) ID() uint32 { return d.raw.ID }
+
+// GroupID returns the data object group ID of d, or zero if d is not part of a data object
 // group.
-func (d Descriptor) GetGroupID() uint32 { return d.Groupid &^ DescrGroupMask }
+func (d Descriptor) GroupID() uint32 { return d.raw.Groupid &^ descrGroupMask }
 
-// GetLinkedID returns the object/group ID d is linked to, or zero if d does not contain a linked
+// LinkedID returns the object/group ID d is linked to, or zero if d does not contain a linked
 // ID. If isGroup is true, the returned id is an object group ID. Otherwise, the returned id is a
 // data object ID.
-func (d Descriptor) GetLinkedID() (id uint32, isGroup bool) {
-	return d.Link &^ DescrGroupMask, d.Link&DescrGroupMask == DescrGroupMask
+func (d Descriptor) LinkedID() (id uint32, isGroup bool) {
+	return d.raw.Link &^ descrGroupMask, d.raw.Link&descrGroupMask == descrGroupMask
 }
 
-// GetSize returns the data object size.
-func (d Descriptor) GetSize() int64 { return d.Filelen }
+// Offset returns the offset of the data object.
+func (d Descriptor) Offset() int64 { return d.raw.Fileoff }
 
-// GetName returns the name tag associated with the descriptor. Analogous to file name.
-func (d Descriptor) GetName() string { return strings.TrimRight(string(d.Name[:]), "\000") }
+// Size returns the data object size.
+func (d Descriptor) Size() int64 { return d.raw.Filelen }
 
-// GetFsType extracts the Fstype field from the Extra field of a Partition Descriptor.
-func (d Descriptor) GetFsType() (Fstype, error) {
-	if d.Datatype != DataPartition {
-		return -1, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
-	}
+// CreatedAt returns the creation time of the data object.
+func (d Descriptor) CreatedAt() time.Time { return time.Unix(d.raw.Ctime, 0).UTC() }
 
-	var pinfo Partition
-	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
-		return -1, fmt.Errorf("while extracting Partition extra info: %s", err)
-	}
+// ModifiedAt returns the modification time of the data object.
+func (d Descriptor) ModifiedAt() time.Time { return time.Unix(d.raw.Mtime, 0).UTC() }
 
-	return pinfo.Fstype, nil
+// Name returns the name of the data object.
+func (d Descriptor) Name() string { return strings.TrimRight(string(d.raw.Name[:]), "\000") }
+
+// PartitionMetadata gets metadata for a partition data object.
+func (d Descriptor) PartitionMetadata() (fs FSType, pt PartType, arch string, err error) {
+	return d.raw.getPartitionMetadata()
 }
 
-// GetPartType extracts the Parttype field from the Extra field of a Partition Descriptor.
-func (d Descriptor) GetPartType() (Parttype, error) {
-	if d.Datatype != DataPartition {
-		return -1, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
-	}
+var errHashUnsupported = errors.New("hash algorithm unsupported")
 
-	var pinfo Partition
-	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
-		return -1, fmt.Errorf("while extracting Partition extra info: %s", err)
+// getHashType converts ht into a crypto.Hash.
+func getHashType(ht hashType) (crypto.Hash, error) {
+	switch ht {
+	case hashSHA256:
+		return crypto.SHA256, nil
+	case hashSHA384:
+		return crypto.SHA384, nil
+	case hashSHA512:
+		return crypto.SHA512, nil
+	case hashBLAKE2S:
+		return crypto.BLAKE2s_256, nil
+	case hashBLAKE2B:
+		return crypto.BLAKE2b_256, nil
 	}
-
-	return pinfo.Parttype, nil
+	return 0, errHashUnsupported
 }
 
-// GetArch extracts the Arch field from the Extra field of a Partition Descriptor.
-func (d Descriptor) GetArch() ([hdrArchLen]byte, error) {
-	if d.Datatype != DataPartition {
-		return [hdrArchLen]byte{}, fmt.Errorf("expected DataPartition, got %v", d.Datatype)
+// SignatureMetadata gets metadata for a signature data object.
+func (d Descriptor) SignatureMetadata() (ht crypto.Hash, fp []byte, err error) {
+	if got, want := d.raw.Datatype, DataSignature; got != want {
+		return ht, fp, &unexpectedDataTypeError{got, want}
 	}
 
-	var pinfo Partition
-	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
-		return [hdrArchLen]byte{}, fmt.Errorf("while extracting Partition extra info: %s", err)
+	var s signature
+
+	b := bytes.NewReader(d.raw.Extra[:])
+	if err := binary.Read(b, binary.LittleEndian, &s); err != nil {
+		return ht, fp, fmt.Errorf("%w", err)
 	}
 
-	return pinfo.Arch, nil
+	if ht, err = getHashType(s.Hashtype); err != nil {
+		return ht, fp, fmt.Errorf("%w", err)
+	}
+
+	fp = make([]byte, 20)
+	copy(fp, s.Entity[:])
+
+	return ht, fp, nil
 }
 
-// GetHashType extracts the Hashtype field from the Extra field of a Signature Descriptor.
-func (d Descriptor) GetHashType() (Hashtype, error) {
-	if d.Datatype != DataSignature {
-		return -1, fmt.Errorf("expected DataSignature, got %v", d.Datatype)
+// CryptoMessageMetadata gets metadata for a crypto message data object.
+func (d Descriptor) CryptoMessageMetadata() (FormatType, MessageType, error) {
+	if got, want := d.raw.Datatype, DataCryptoMessage; got != want {
+		return 0, 0, &unexpectedDataTypeError{got, want}
 	}
 
-	var sinfo Signature
-	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &sinfo); err != nil {
-		return -1, fmt.Errorf("while extracting Signature extra info: %s", err)
+	var m cryptoMessage
+
+	b := bytes.NewReader(d.raw.Extra[:])
+	if err := binary.Read(b, binary.LittleEndian, &m); err != nil {
+		return 0, 0, fmt.Errorf("%w", err)
 	}
 
-	return sinfo.Hashtype, nil
+	return m.Formattype, m.Messagetype, nil
 }
 
-// GetEntity extracts the signing entity field from the Extra field of a Signature Descriptor.
-func (d Descriptor) GetEntity() ([]byte, error) {
-	if d.Datatype != DataSignature {
-		return nil, fmt.Errorf("expected DataSignature, got %v", d.Datatype)
-	}
-
-	var sinfo Signature
-	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &sinfo); err != nil {
-		return nil, fmt.Errorf("while extracting Signature extra info: %s", err)
-	}
-
-	return sinfo.Entity[:], nil
-}
-
-// GetEntityString returns the string version of the stored entity.
-func (d Descriptor) GetEntityString() (string, error) {
-	fingerprint, err := d.GetEntity()
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%0X", fingerprint[:20]), nil
-}
-
-// GetFormatType extracts the Formattype field from the Extra field of a Cryptographic Message Descriptor.
-func (d Descriptor) GetFormatType() (Formattype, error) {
-	if d.Datatype != DataCryptoMessage {
-		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", d.Datatype)
-	}
-
-	var cinfo CryptoMessage
-	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &cinfo); err != nil {
-		return -1, fmt.Errorf("while extracting Crypto extra info: %s", err)
-	}
-
-	return cinfo.Formattype, nil
-}
-
-// GetMessageType extracts the Messagetype field from the Extra field of a Cryptographic Message Descriptor.
-func (d Descriptor) GetMessageType() (Messagetype, error) {
-	if d.Datatype != DataCryptoMessage {
-		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", d.Datatype)
-	}
-
-	var cinfo CryptoMessage
-	b := bytes.NewReader(d.Extra[:])
-	if err := binary.Read(b, binary.LittleEndian, &cinfo); err != nil {
-		return -1, fmt.Errorf("while extracting Crypto extra info: %s", err)
-	}
-
-	return cinfo.Messagetype, nil
-}
-
-// GetData returns the data object associated with descriptor d from f.
-func (d Descriptor) GetData(f *FileImage) ([]byte, error) {
-	b := make([]byte, d.Filelen)
-	if _, err := io.ReadFull(d.GetReader(f), b); err != nil {
+// GetData returns the data object associated with descriptor d.
+func (d Descriptor) GetData() ([]byte, error) {
+	b := make([]byte, d.raw.Filelen)
+	if _, err := io.ReadFull(d.GetReader(), b); err != nil {
 		return nil, err
 	}
 	return b, nil
 }
 
-// GetReader returns a io.Reader that reads the data object associated with descriptor d from f.
-func (d Descriptor) GetReader(f *FileImage) io.Reader {
-	return io.NewSectionReader(f.fp, d.Fileoff, d.Filelen)
+// GetReader returns a io.Reader that reads the data object associated with descriptor d.
+func (d Descriptor) GetReader() io.Reader {
+	return io.NewSectionReader(d.r, d.raw.Fileoff, d.raw.Filelen)
 }
 
 // GetIntegrityReader returns an io.Reader that reads the integrity-protected fields from d.
-func (d Descriptor) GetIntegrityReader(relativeID uint32) io.Reader {
+func (d Descriptor) GetIntegrityReader() io.Reader {
 	fields := []interface{}{
-		d.Datatype,
-		d.Used,
-		relativeID,
-		d.Link,
-		d.Filelen,
-		d.Ctime,
-		d.UID,
-		d.GID,
+		d.raw.Datatype,
+		d.raw.Used,
+		d.relativeID,
+		d.raw.Link,
+		d.raw.Filelen,
+		d.raw.Ctime,
+		d.raw.UID,
+		d.raw.GID,
 	}
 
 	// Encode endian-sensitive fields.
@@ -225,7 +261,7 @@ func (d Descriptor) GetIntegrityReader(relativeID uint32) io.Reader {
 
 	return io.MultiReader(
 		&data,
-		bytes.NewReader(d.Name[:]),
-		bytes.NewReader(d.Extra[:]),
+		bytes.NewReader(d.raw.Name[:]),
+		bytes.NewReader(d.raw.Extra[:]),
 	)
 }

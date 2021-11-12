@@ -22,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v1
         with:
-          go-version: '1.16.x'
+          go-version: '1.17.x'
 
       - name: Check go.mod and go.sum are tidy
         run: |
@@ -30,19 +30,19 @@ jobs:
           git diff --exit-code -- go.mod go.sum
 
       - name: Build Source
-        run: ./build.sh
+        run: go run mage.go build:source
 
       - name: Install Lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.41
+          version: v1.42
 
       - name: Run Lint
         run: |
           golangci-lint run
 
       - name: Run Tests
-        run: go test -coverprofile=cover.out -race ./...
+        run: go run mage.go cover:unit cover.out
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v1
@@ -50,3 +50,6 @@ jobs:
           files: cover.out
           flags: unittests
           name: codecov
+
+      - name: Test Release
+        run: curl -sL https://git.io/goreleaser | bash -s -- --snapshot --skip-publish

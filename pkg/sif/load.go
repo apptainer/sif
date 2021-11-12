@@ -15,36 +15,6 @@ import (
 	"os"
 )
 
-// readBinaryAt reads structured binary data from r at offset off into data.
-func readBinaryAt(r io.ReaderAt, off int64, data interface{}) error {
-	return binary.Read(io.NewSectionReader(r, off, int64(binary.Size(data))), binary.LittleEndian, data)
-}
-
-// Read the global header from r and populate fimg.Header.
-func readHeader(r io.ReaderAt, fimg *FileImage) error {
-	if err := readBinaryAt(r, 0, &fimg.h); err != nil {
-		return fmt.Errorf("reading global header from container file: %s", err)
-	}
-
-	return nil
-}
-
-// Read the descriptors from r and populate fimg.DescrArr.
-func readDescriptors(r io.ReaderAt, fimg *FileImage) error {
-	// Initialize descriptor array (slice) and read them all from file
-	fimg.descrArr = make([]Descriptor, fimg.h.Dtotal)
-	if err := readBinaryAt(r, fimg.h.Descroff, &fimg.descrArr); err != nil {
-		fimg.descrArr = nil
-		return fmt.Errorf("reading descriptor array from container file: %s", err)
-	}
-
-	if d, err := fimg.GetDescriptor(WithPartitionType(PartPrimSys)); err == nil {
-		fimg.primPartID = d.ID
-	}
-
-	return nil
-}
-
 // isValidSif looks at key fields from the global header to assess SIF validity.
 func isValidSif(f *FileImage) error {
 	if got, want := trimZeroBytes(f.h.Magic[:]), hdrMagic; got != want {
@@ -58,106 +28,146 @@ func isValidSif(f *FileImage) error {
 	return nil
 }
 
-// LoadContainer is responsible for loading a SIF container file. It takes
-// the container file name, and whether the file is opened as read-only
-// as arguments.
-func LoadContainer(filename string, rdonly bool) (FileImage, error) {
-	mode := os.O_RDWR // open SIF read-write when adding and removing data objects
-	if rdonly {
-		mode = os.O_RDONLY // open SIF rdonly if mounting immutable partitions or inspecting the image
-	}
-
-	f, err := os.OpenFile(filename, mode, 0)
-	if err != nil {
-		return FileImage{}, fmt.Errorf("opening(%s) container file: %v", modeToStr(mode), err)
-	}
-
-	fimg, err := LoadContainerFp(f, rdonly)
-	if err != nil {
-		_ = f.Close()
-		return FileImage{}, err
-	}
-
-	return fimg, nil
+// populateMinIDs populates the minIDs field of f.
+func (f *FileImage) populateMinIDs() {
+	f.minIDs = make(map[uint32]uint32)
+	f.WithDescriptors(func(d Descriptor) bool {
+		if minID, ok := f.minIDs[d.raw.Groupid]; !ok || d.ID() < minID {
+			f.minIDs[d.raw.Groupid] = d.ID()
+		}
+		return false
+	})
 }
 
-// LoadContainerFp is responsible for loading a SIF container file. It takes
-// a ReadWriter pointing to an opened file, and whether the file is opened as
-// read-only for arguments.
-func LoadContainerFp(fp ReadWriter, rdonly bool) (fimg FileImage, err error) {
-	if fp == nil {
-		return fimg, fmt.Errorf("provided fp for file is invalid")
-	}
-	fimg.fp = fp
+// loadContainer loads a SIF image from rw.
+func loadContainer(rw ReadWriter) (*FileImage, error) {
+	f := FileImage{rw: rw}
 
-	info, err := fimg.fp.Stat()
+	// Read global header.
+	err := binary.Read(
+		io.NewSectionReader(rw, 0, int64(binary.Size(f.h))),
+		binary.LittleEndian,
+		&f.h,
+	)
 	if err != nil {
-		return fimg, err
-	}
-	fimg.size = info.Size()
-
-	// read global header from SIF file
-	if err = readHeader(fp, &fimg); err != nil {
-		return
+		return nil, fmt.Errorf("reading global header: %w", err)
 	}
 
-	// validate global header
-	if err = isValidSif(&fimg); err != nil {
-		return
+	if err := isValidSif(&f); err != nil {
+		return nil, err
 	}
 
-	// read descriptor array from SIF file
-	if err = readDescriptors(fp, &fimg); err != nil {
-		return
+	// Read descriptors.
+	f.rds = make([]rawDescriptor, f.h.Dtotal)
+	err = binary.Read(
+		io.NewSectionReader(rw, f.h.Descroff, f.h.Descrlen),
+		binary.LittleEndian,
+		&f.rds,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("reading descriptors: %w", err)
 	}
 
-	return fimg, nil
+	f.populateMinIDs()
+
+	return &f, nil
 }
 
-// LoadContainerReader is responsible for processing SIF data from a byte stream
-// and extract various components like the global header, descriptors and even
-// perhaps data, depending on how much is read from the source.
-func LoadContainerReader(b *bytes.Reader) (fimg FileImage, err error) {
-	// read global header from SIF file
-	if err = readHeader(b, &fimg); err != nil {
-		return
-	}
-
-	// validate global header
-	if err = isValidSif(&fimg); err != nil {
-		return
-	}
-
-	// in the case where the reader buffer doesn't include descriptor data, we
-	// don't return an error and DescrArr will be set to nil
-	if readErr := readDescriptors(b, &fimg); readErr != nil {
-		fmt.Println("Error reading descriptors: ", readErr)
-	}
-
-	return fimg, err
+// loadOpts accumulates container loading options.
+type loadOpts struct {
+	flag          int
+	closeOnUnload bool
 }
 
-// UnloadContainer closes the SIF container file and free associated resources if needed.
-func (f *FileImage) UnloadContainer() (err error) {
-	// if SIF data comes from file, not a slice buffer (see LoadContainer() variants)
-	if f.fp != nil {
-		if err = f.fp.Close(); err != nil {
-			return fmt.Errorf("closing SIF file failed, corrupted: don't use: %s", err)
+// LoadOpt are used to specify container loading options.
+type LoadOpt func(*loadOpts) error
+
+// OptLoadWithFlag specifies flag (os.O_RDONLY etc.) to be used when opening the container file.
+func OptLoadWithFlag(flag int) LoadOpt {
+	return func(lo *loadOpts) error {
+		lo.flag = flag
+		return nil
+	}
+}
+
+// OptLoadWithCloseOnUnload specifies whether the ReadWriter should be closed by UnloadContainer.
+// By default, the ReadWriter will be closed if it implements the io.Closer interface.
+func OptLoadWithCloseOnUnload(b bool) LoadOpt {
+	return func(lo *loadOpts) error {
+		lo.closeOnUnload = b
+		return nil
+	}
+}
+
+// LoadContainerFromPath loads a new SIF container from path, according to opts.
+//
+// On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
+// are released.
+//
+// By default, the file is opened for read and write access. To change this behavior, consider
+// using OptLoadWithFlag.
+func LoadContainerFromPath(path string, opts ...LoadOpt) (*FileImage, error) {
+	lo := loadOpts{
+		flag: os.O_RDWR,
+	}
+
+	for _, opt := range opts {
+		if err := opt(&lo); err != nil {
+			return nil, fmt.Errorf("%w", err)
 		}
 	}
-	return
+
+	fp, err := os.OpenFile(path, lo.flag, 0)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	f, err := loadContainer(fp)
+	if err != nil {
+		fp.Close()
+
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	f.closeOnUnload = true
+	return f, nil
+}
+
+// LoadContainer loads a new SIF container from rw, according to opts.
+//
+// On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
+// are released. By default, UnloadContainer will close rw if it implements the io.Closer
+// interface. To change this behavior, consider using OptLoadWithCloseOnUnload.
+func LoadContainer(rw ReadWriter, opts ...LoadOpt) (*FileImage, error) {
+	lo := loadOpts{
+		closeOnUnload: true,
+	}
+
+	for _, opt := range opts {
+		if err := opt(&lo); err != nil {
+			return nil, fmt.Errorf("%w", err)
+		}
+	}
+
+	f, err := loadContainer(rw)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	f.closeOnUnload = lo.closeOnUnload
+	return f, nil
+}
+
+// UnloadContainer unloads f, releasing associated resources.
+func (f *FileImage) UnloadContainer() error {
+	if c, ok := f.rw.(io.Closer); ok && f.closeOnUnload {
+		if err := c.Close(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func trimZeroBytes(str []byte) string {
 	return string(bytes.TrimRight(str, "\x00"))
-}
-
-func modeToStr(mode int) string {
-	switch mode {
-	case os.O_RDONLY:
-		return "RDONLY"
-	case os.O_RDWR:
-		return "RDWR"
-	}
-	return ""
 }

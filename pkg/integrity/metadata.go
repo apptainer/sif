@@ -130,21 +130,21 @@ func (om *objectMetadata) populateAbsoluteID(minID uint32) {
 	om.id = minID + om.RelativeID
 }
 
-// matches verifies the object in f described by od matches the metadata in om.
+// matches verifies the object described by od matches the metadata in om.
 //
 // If the data object descriptor does not match, a DescriptorIntegrityError is returned. If the
 // data object does not match, a ObjectIntegrityError is returned.
-func (om objectMetadata) matches(f *sif.FileImage, od sif.Descriptor) error {
-	if ok, err := om.DescriptorDigest.matches(od.GetIntegrityReader(om.RelativeID)); err != nil {
+func (om objectMetadata) matches(od sif.Descriptor) error {
+	if ok, err := om.DescriptorDigest.matches(od.GetIntegrityReader()); err != nil {
 		return err
 	} else if !ok {
-		return &DescriptorIntegrityError{ID: od.GetID()}
+		return &DescriptorIntegrityError{ID: od.ID()}
 	}
 
-	if ok, err := om.ObjectDigest.matches(od.GetReader(f)); err != nil {
+	if ok, err := om.ObjectDigest.matches(od.GetReader()); err != nil {
 		return err
 	} else if !ok {
-		return &ObjectIntegrityError{ID: od.GetID()}
+		return &ObjectIntegrityError{ID: od.ID()}
 	}
 	return nil
 }
@@ -175,13 +175,13 @@ func getImageMetadata(f *sif.FileImage, minID uint32, ods []sif.Descriptor, h cr
 
 	// Add object descriptor/data metadata.
 	for _, od := range ods {
-		id := od.GetID()
+		id := od.ID()
 
 		if id < minID { // shouldn't really be possible...
 			return imageMetadata{}, errMinimumIDInvalid
 		}
 
-		om, err := getObjectMetadata(id-minID, od.GetIntegrityReader(id-minID), od.GetReader(f), h)
+		om, err := getObjectMetadata(id-minID, od.GetIntegrityReader(), od.GetReader(), h)
 		if err != nil {
 			return imageMetadata{}, err
 		}
@@ -211,7 +211,7 @@ func (im imageMetadata) objectIDsMatch(ods []sif.Descriptor) error {
 
 	// Check each object in ods exists in ids, and mark as seen.
 	for _, od := range ods {
-		id := od.GetID()
+		id := od.ID()
 		if _, ok := ids[id]; !ok {
 			return fmt.Errorf("object %d: %w", id, errObjectNotSigned)
 		}
@@ -242,8 +242,8 @@ func (im imageMetadata) metadataForObject(id uint32) (objectMetadata, error) {
 // If the SIF global header does not match, ErrHeaderIntegrity is returned. If the data object
 // descriptor does not match, a DescriptorIntegrityError is returned. If the data object does not
 // match, a ObjectIntegrityError is returned.
-func (im imageMetadata) matches(f *sif.FileImage, ods []sif.Descriptor) ([]uint32, error) {
-	verified := make([]uint32, 0, len(ods))
+func (im imageMetadata) matches(f *sif.FileImage, ods []sif.Descriptor) ([]sif.Descriptor, error) {
+	verified := make([]sif.Descriptor, 0, len(ods))
 
 	// Verify header metadata.
 	if err := im.Header.matches(f.GetHeaderIntegrityReader()); err != nil {
@@ -252,18 +252,16 @@ func (im imageMetadata) matches(f *sif.FileImage, ods []sif.Descriptor) ([]uint3
 
 	// Verify data object metadata.
 	for _, od := range ods {
-		id := od.GetID()
-
-		om, err := im.metadataForObject(id)
+		om, err := im.metadataForObject(od.ID())
 		if err != nil {
 			return verified, err
 		}
 
-		if err := om.matches(f, od); err != nil {
+		if err := om.matches(od); err != nil {
 			return verified, err
 		}
 
-		verified = append(verified, id)
+		verified = append(verified, od)
 	}
 
 	return verified, nil

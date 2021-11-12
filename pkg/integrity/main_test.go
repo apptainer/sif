@@ -8,14 +8,15 @@ package integrity
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"golang.org/x/crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp"
 )
+
+var corpus = filepath.Join("..", "..", "test", "images")
 
 // fixedTime returns a fixed time value, useful for ensuring tests are deterministic.
 func fixedTime() time.Time {
@@ -35,7 +36,7 @@ func tempFileFrom(path string) (tf *os.File, err error) {
 		pattern = fmt.Sprintf("*.%s", ext)
 	}
 
-	tf, err = ioutil.TempFile("", pattern)
+	tf, err = os.CreateTemp("", pattern)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +61,7 @@ func tempFileFrom(path string) (tf *os.File, err error) {
 func getTestEntity(t *testing.T) *openpgp.Entity {
 	t.Helper()
 
-	f, err := os.Open(filepath.Join("testdata", "keys", "private.asc"))
+	f, err := os.Open(filepath.Join("..", "..", "test", "keys", "private.asc"))
 	if err != nil {
 		t.Fatal(err)
 	}

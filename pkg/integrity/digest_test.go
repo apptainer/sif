@@ -16,14 +16,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/sebdah/goldie/v2"
 )
 
 func TestNewLegacyDigest(t *testing.T) {
 	tests := []struct {
 		name       string
-		ht         sif.Hashtype
+		ht         crypto.Hash
 		text       string
 		wantError  error
 		wantDigest digest
@@ -35,19 +34,19 @@ func TestNewLegacyDigest(t *testing.T) {
 		},
 		{
 			name:      "DigestMalformed",
-			ht:        sif.HashSHA256,
+			ht:        crypto.SHA256,
 			text:      "1234",
 			wantError: errDigestMalformed,
 		},
 		{
 			name:      "HexLength",
-			ht:        sif.HashSHA256,
+			ht:        crypto.SHA256,
 			text:      "12345",
 			wantError: hex.ErrLength,
 		},
 		{
 			name: "SHA256",
-			ht:   sif.HashSHA256,
+			ht:   crypto.SHA256,
 			text: "SIFHASH:\n9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08\n",
 			wantDigest: digest{
 				hash: crypto.SHA256,
@@ -60,7 +59,7 @@ func TestNewLegacyDigest(t *testing.T) {
 		},
 		{
 			name: "SHA384",
-			ht:   sif.HashSHA384,
+			ht:   crypto.SHA384,
 			text: "SIFHASH:\n768412320f7b0aa5812fce428dc4706b3cae50e02a64caa16a782249bfe8efc4b7ef1ccb126255d196047dfedf17a0a9\n",
 			wantDigest: digest{
 				hash: crypto.SHA384,
@@ -74,7 +73,7 @@ func TestNewLegacyDigest(t *testing.T) {
 		},
 		{
 			name: "SHA512",
-			ht:   sif.HashSHA512,
+			ht:   crypto.SHA512,
 			text: "SIFHASH:\nee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac185f8a0e1d5f84f88bc887fd67b143732c304cc5fa9ad8e6f57f50028a8ff\n", // nolint:lll
 			wantDigest: digest{
 				hash: crypto.SHA512,

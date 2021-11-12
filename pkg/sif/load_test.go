@@ -6,202 +6,85 @@
 package sif
 
 import (
-	"bytes"
-	"io"
-	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
-	"time"
 )
 
-func TestLoadContainer(t *testing.T) {
-	fimg, err := LoadContainer("testdata/testcontainer2.sif", true)
-	if err != nil {
-		t.Error("LoadContainer(testdata/testcontainer2.sif, true):", err)
-	}
-
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error("fimg.UnloadContainer():", err)
-	}
-}
-
-func TestLoadContainerFp(t *testing.T) {
+func TestLoadContainerFromPath(t *testing.T) {
 	tests := []struct {
-		name   string
-		offset int64
+		name string
+		path string
+		opts []LoadOpt
 	}{
 		{
-			name: "NoSeek",
+			name: "NoOpts",
+			path: filepath.Join(corpus, "one-group.sif"),
 		},
 		{
-			name:   "Seek",
-			offset: 1,
+			name: "ReadOnly",
+			path: filepath.Join(corpus, "one-group.sif"),
+			opts: []LoadOpt{OptLoadWithFlag(os.O_RDONLY)},
+		},
+		{
+			name: "ReadWrite",
+			path: filepath.Join(corpus, "one-group.sif"),
+			opts: []LoadOpt{OptLoadWithFlag(os.O_RDWR)},
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
-			fp, err := os.Open("testdata/testcontainer2.sif")
+			f, err := LoadContainerFromPath(tt.path, tt.opts...)
 			if err != nil {
-				t.Fatal("error opening testdata/testcontainer2.sif:", err)
+				t.Fatalf("failed to load container: %v", err)
 			}
 
-			if _, err := fp.Seek(tt.offset, io.SeekStart); err != nil {
-				t.Fatal(err)
-			}
-
-			fimg, err := LoadContainerFp(fp, true)
-			if err != nil {
-				t.Error("LoadContainerFp(fp, true):", err)
-			}
-
-			if err = fimg.UnloadContainer(); err != nil {
-				t.Error("fimg.UnloadContainer():", err)
+			if err := f.UnloadContainer(); err != nil {
+				t.Errorf("failed to unload container: %v", err)
 			}
 		})
 	}
 }
 
-type mockFileInfo struct {
-	name string
-	size int64
-	time time.Time
-}
-
-func (m *mockFileInfo) Name() string {
-	return m.name
-}
-
-func (m *mockFileInfo) Size() int64 {
-	return m.size
-}
-
-func (m *mockFileInfo) Mode() os.FileMode {
-	return 0o644
-}
-
-func (m *mockFileInfo) ModTime() time.Time {
-	return m.time
-}
-
-func (m *mockFileInfo) IsDir() bool {
-	return false
-}
-
-func (m *mockFileInfo) Sys() interface{} {
-	return nil
-}
-
-type mockSifReadWriter struct {
-	buf    []byte
-	name   string
-	pos    int64
-	closed bool
-}
-
-func (m *mockSifReadWriter) Name() string {
-	return m.name
-}
-
-func (m *mockSifReadWriter) Close() error {
-	m.closed = true
-	return nil
-}
-
-func (m *mockSifReadWriter) Fd() uintptr {
-	return ^uintptr(0)
-}
-
-func (m *mockSifReadWriter) Read(b []byte) (n int, err error) {
-	if m.closed {
-		return 0, os.ErrInvalid
+func TestLoadContainer(t *testing.T) {
+	tests := []struct {
+		name string
+		opts []LoadOpt
+	}{
+		{
+			name: "NoOpts",
+		},
+		{
+			name: "CloseOnUnload",
+			opts: []LoadOpt{OptLoadWithCloseOnUnload(true)},
+		},
+		{
+			name: "NoCloseOnUnload",
+			opts: []LoadOpt{OptLoadWithCloseOnUnload(false)},
+		},
 	}
+	for _, tt := range tests {
+		tt := tt
 
-	if m.pos >= int64(len(m.buf)) {
-		return 0, io.EOF
+		t.Run(tt.name, func(t *testing.T) {
+			rw, err := os.Open(filepath.Join(corpus, "one-group.sif"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer rw.Close()
+
+			f, err := LoadContainer(rw, tt.opts...)
+			if err != nil {
+				t.Fatalf("failed to load container: %v", err)
+			}
+
+			if err := f.UnloadContainer(); err != nil {
+				t.Errorf("failed to unload container: %v", err)
+			}
+		})
 	}
-
-	n = copy(b, m.buf[m.pos:])
-
-	m.pos += int64(n)
-
-	return n, err
-}
-
-func (m *mockSifReadWriter) ReadAt(b []byte, off int64) (n int, err error) {
-	if m.closed {
-		return 0, os.ErrInvalid
-	}
-
-	if off >= int64(len(m.buf)) {
-		return 0, io.EOF
-	}
-
-	return copy(b, m.buf[off:]), nil
-}
-
-func (m *mockSifReadWriter) Seek(offset int64, whence int) (ret int64, err error) {
-	if m.closed {
-		return 0, os.ErrInvalid
-	}
-
-	sz := int64(len(m.buf))
-
-	switch whence {
-	case 0:
-		ret = offset
-
-	case 1:
-		ret = offset + m.pos
-
-	case 2:
-		ret = offset + sz
-
-	default:
-		return 0, os.ErrInvalid
-	}
-
-	if ret < 0 {
-		ret = 0
-	} else if ret > sz {
-		ret = sz
-	}
-
-	m.pos = ret
-
-	return ret, err
-}
-
-func (m *mockSifReadWriter) Stat() (os.FileInfo, error) {
-	return &mockFileInfo{name: m.name, size: int64(len(m.buf)), time: time.Unix(0, 0)}, nil
-}
-
-func (m *mockSifReadWriter) Sync() error {
-	return nil
-}
-
-func (m *mockSifReadWriter) Truncate(size int64) error {
-	m.pos = 0
-	return nil
-}
-
-func (m *mockSifReadWriter) Write(b []byte) (n int, err error) {
-	if m.closed {
-		return 0, os.ErrInvalid
-	}
-
-	if len(b) > cap(m.buf[m.pos:]) {
-		buf := make([]byte, m.pos, m.pos+int64(len(b)))
-		copy(buf, m.buf)
-		m.buf = buf
-	}
-
-	n = copy(m.buf[m.pos:cap(m.buf)], b)
-
-	m.pos += int64(n)
-
-	m.buf = m.buf[:m.pos]
-
-	return n, err
 }
 
 func TestLoadContainerFpMock(t *testing.T) {
@@ -211,20 +94,17 @@ func TestLoadContainerFpMock(t *testing.T) {
 	// very dumb buffer. This specific test could be exteded to test
 	// for more error conditions as it would be possible to report
 	// errors from cases where it would be otherwise hard to do so
-	// (e.g. Seek, Read, Sync or Truncate reporting errors).
+	// (e.g. Seek, ReadAt or Truncate reporting errors).
 
 	// Load a valid SIF file to test the happy path.
-	content, err := ioutil.ReadFile("testdata/testcontainer2.sif")
+	content, err := os.ReadFile(filepath.Join(corpus, "one-group.sif"))
 	if err != nil {
-		t.Error(`ioutil.ReadFile("testdata/testcontainer2.sif"):`, err)
+		t.Fatalf("failed to read file: %v", err)
 	}
 
-	fp := &mockSifReadWriter{
-		buf:  content,
-		name: "mockSifReadWriter",
-	}
+	rw := NewBuffer(content)
 
-	fimg, err := LoadContainerFp(fp, true)
+	fimg, err := LoadContainer(rw, OptLoadWithFlag(os.O_RDONLY))
 	if err != nil {
 		t.Error("LoadContainerFp(fp, true):", err)
 	}
@@ -236,9 +116,9 @@ func TestLoadContainerFpMock(t *testing.T) {
 
 func TestLoadContainerInvalidMagic(t *testing.T) {
 	// Load a valid SIF file ...
-	content, err := ioutil.ReadFile("testdata/testcontainer2.sif")
+	content, err := os.ReadFile(filepath.Join(corpus, "one-group.sif"))
 	if err != nil {
-		t.Error(`ioutil.ReadFile("testdata/testcontainer2.sif"):`, err)
+		t.Fatalf("failed to read file: %v", err)
 	}
 
 	// ... and edit the magic to make it invalid. Instead of
@@ -246,47 +126,14 @@ func TestLoadContainerInvalidMagic(t *testing.T) {
 	// byte, as this would catch off-by-one errors in the code.
 	copy(content[hdrLaunchLen:hdrLaunchLen+hdrMagicLen], "SIF_MAGIX")
 
-	fp := &mockSifReadWriter{
-		buf:  content,
-		name: "invalid_magic",
-	}
+	rw := NewBuffer(content)
 
-	fimg, err := LoadContainerFp(fp, true)
+	fimg, err := LoadContainer(rw, OptLoadWithFlag(os.O_RDONLY))
 	if err == nil {
 		// unload the container in case it's loaded, ignore
 		// any errors
 		_ = fimg.UnloadContainer()
 		t.Errorf(`LoadContainerFp(fp, true) did not report an error for a container with invalid magic.`)
-	}
-}
-
-func TestLoadContainerReader(t *testing.T) {
-	content, err := ioutil.ReadFile("testdata/testcontainer2.sif")
-	if err != nil {
-		t.Error(`ioutil.ReadFile("testdata/testcontainer2.sif"):`, err)
-	}
-
-	// short read on the descriptor list, make sure it still work
-	// and that DescrArr is set to nil (since not complete)
-	r := bytes.NewReader(content[:31768])
-	fimg, err := LoadContainerReader(r)
-	if err != nil || fimg.descrArr != nil {
-		t.Error(`LoadContainerReader(buf):`, err)
-	}
-
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error(`fimg.UnloadContainer():`, err)
-	}
-
-	// this buffer is big enough to include header + complete DescrArr
-	r = bytes.NewReader(content[:32768])
-	fimg, err = LoadContainerReader(r)
-	if err != nil {
-		t.Error(`LoadContainerReader(buf):`, err)
-	}
-
-	if err = fimg.UnloadContainer(); err != nil {
-		t.Error(`fimg.UnloadContainer():`, err)
 	}
 }
 

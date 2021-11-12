@@ -106,7 +106,7 @@ func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]sif.De
 		sif.WithDataType(sif.DataSignature),
 		sif.WithLinkedGroupID(groupID),
 		func(od sif.Descriptor) (bool, error) {
-			b, err := od.GetData(f)
+			b, err := od.GetData()
 			if err != nil {
 				return false, err
 			}
@@ -133,11 +133,11 @@ func getGroupMinObjectID(f *sif.FileImage, groupID uint32) (uint32, error) {
 	minID := ^uint32(0)
 
 	f.WithDescriptors(func(od sif.Descriptor) bool {
-		if od.GetGroupID() != groupID {
+		if od.GroupID() != groupID {
 			return false
 		}
 
-		if id := od.GetID(); id < minID {
+		if id := od.ID(); id < minID {
 			minID = id
 		}
 		return false
@@ -153,7 +153,7 @@ func getGroupMinObjectID(f *sif.FileImage, groupID uint32) (uint32, error) {
 // are present, errNoGroupsFound is returned.
 func getGroupIDs(f *sif.FileImage) (groupIDs []uint32, err error) {
 	f.WithDescriptors(func(od sif.Descriptor) bool {
-		if groupID := od.GetGroupID(); groupID != 0 {
+		if groupID := od.GroupID(); groupID != 0 {
 			groupIDs = insertSorted(groupIDs, groupID)
 		}
 		return false
@@ -167,29 +167,25 @@ func getGroupIDs(f *sif.FileImage) (groupIDs []uint32, err error) {
 }
 
 // getFingerprints returns a sorted list of unique fingerprints contained in sigs.
-func getFingerprints(sigs []sif.Descriptor) ([][20]byte, error) {
-	fps := make([][20]byte, 0, len(sigs))
+func getFingerprints(sigs []sif.Descriptor) ([][]byte, error) {
+	fps := make([][]byte, 0, len(sigs))
 
 	for _, sig := range sigs {
-		e, err := sig.GetEntity()
+		_, fp, err := sig.SignatureMetadata()
 		if err != nil {
 			return nil, err
 		}
 
-		// Extract fingerprint from entity.
-		var fp [20]byte
-		copy(fp[:], e)
-
 		// Check if fingerprint is already in list.
 		i := sort.Search(len(fps), func(i int) bool {
-			return bytes.Compare(fps[i][:], fp[:]) >= 0
+			return bytes.Compare(fps[i], fp) >= 0
 		})
-		if i < len(fps) && fps[i] == fp {
+		if i < len(fps) && bytes.Equal(fps[i], fp) {
 			continue
 		}
 
 		// Insert into (sorted) list.
-		fps = append(fps, [20]byte{})
+		fps = append(fps, []byte{})
 		copy(fps[i+1:], fps[i:])
 		fps[i] = fp
 	}

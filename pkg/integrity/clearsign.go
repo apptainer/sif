@@ -11,9 +11,9 @@ import (
 	"errors"
 	"io"
 
-	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/clearsign"
-	"golang.org/x/crypto/openpgp/packet"
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp/clearsign"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 )
 
 var errClearsignedMsgNotFound = errors.New("clearsigned message not found")
@@ -59,7 +59,7 @@ func verifyAndDecode(data []byte, kr openpgp.KeyRing) (*openpgp.Entity, []byte, 
 	}
 
 	// Check signature.
-	e, err := openpgp.CheckDetachedSignature(kr, bytes.NewReader(b.Bytes), b.ArmoredSignature.Body)
+	e, err := openpgp.CheckDetachedSignature(kr, bytes.NewReader(b.Bytes), b.ArmoredSignature.Body, nil)
 	return e, b.Plaintext, rest, err
 }
 

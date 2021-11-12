@@ -24,13 +24,13 @@ func Test_command_getInfo(t *testing.T) {
 		},
 		{
 			name: "Two",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
 			id:   "2",
+			path: filepath.Join(corpus, "one-group-signed.sif"),
 		},
 		{
 			name: "Three",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
 			id:   "3",
+			path: filepath.Join(corpus, "one-group-signed.sif"),
 		},
 	}
 	for _, tt := range tests {

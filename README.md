@@ -4,6 +4,7 @@
 [![Build Status](https://circleci.com/gh/hpcng/sif.svg?style=shield)](https://circleci.com/gh/hpcng/workflows/sif)
 [![Code Coverage](https://codecov.io/gh/hpcng/sif/branch/master/graph/badge.svg)](https://codecov.io/gh/hpcng/sif)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hpcng/sif)](https://goreportcard.com/report/github.com/hpcng/sif)
+[![Built with Mage](https://magefile.org/badge.svg)](https://magefile.org)
 
 This module contains an open source implementation of the Singularity Image Format (SIF) that makes it easy to create complete and encapsulated container environments stored in a single file.
 
@@ -16,7 +17,7 @@ Unless otherwise noted, the SIF source files are distributed under the BSD-style
 To get the sif package to use directly from your programs:
 
 ```sh
-go get -u github.com/hpcng/sif/v2
+go get -d github.com/hpcng/sif/v2
 ```
 
 To get the siftool CLI program installed to `$(go env GOPATH)/bin` to manipulate SIF container files:
@@ -24,7 +25,7 @@ To get the siftool CLI program installed to `$(go env GOPATH)/bin` to manipulate
 ```sh
 git clone https://github.com/hpcng/sif
 cd sif
-./build.sh
+go run mage.go install
 ```
 
 ## Go Version Compatibility

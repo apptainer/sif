@@ -119,7 +119,10 @@ func TestGetObjectMetadata(t *testing.T) {
 }
 
 func TestGetImageMetadata(t *testing.T) {
-	f, err := sif.LoadContainer(filepath.Join("testdata", "images", "one-group.sif"), true)
+	f, err := sif.LoadContainerFromPath(
+		filepath.Join(corpus, "one-group.sif"),
+		sif.OptLoadWithFlag(os.O_RDONLY),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +159,7 @@ func TestGetImageMetadata(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			md, err := getImageMetadata(&f, tt.minID, tt.ods, tt.hash)
+			md, err := getImageMetadata(f, tt.minID, tt.ods, tt.hash)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}

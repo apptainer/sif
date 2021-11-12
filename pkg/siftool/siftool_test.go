@@ -16,7 +16,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var corpus = filepath.Join("..", "integrity", "testdata", "images")
+var corpus = filepath.Join("..", "..", "test", "images")
 
 func makeTestSIF(t *testing.T, withDataObject bool) string {
 	tf, err := os.CreateTemp("", "sif-test-*")
@@ -36,14 +36,10 @@ func makeTestSIF(t *testing.T, withDataObject bool) string {
 	}
 
 	if withDataObject {
-		opts := siftool.AddOptions{
-			Datatype: sif.DataPartition,
-			Parttype: sif.PartSystem,
-			Partfs:   sif.FsSquash,
-			Partarch: sif.HdrArch386,
-			Fp:       bytes.NewBuffer([]byte{0xde, 0xad, 0xbe, 0xef}),
-		}
-		if err := app.Add(tf.Name(), opts); err != nil {
+		err := app.Add(tf.Name(), sif.DataPartition, bytes.NewReader([]byte{0xde, 0xad, 0xbe, 0xef}),
+			sif.OptPartitionMetadata(sif.FsSquash, sif.PartSystem, "386"),
+		)
+		if err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -52,6 +48,8 @@ func makeTestSIF(t *testing.T, withDataObject bool) string {
 }
 
 func runCommand(t *testing.T, cmd *cobra.Command, args []string) {
+	t.Helper()
+
 	var out, err bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetErr(&err)

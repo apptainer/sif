@@ -6,36 +6,43 @@
 package sif
 
 import (
-	"bytes"
-	"encoding/binary"
 	"errors"
 	"testing"
 )
 
 func TestFileImage_GetDescriptors(t *testing.T) {
-	ds := []Descriptor{
+	ds := []rawDescriptor{
 		{
 			Datatype: DataPartition,
 			Used:     true,
 			ID:       1,
-			Groupid:  1 | DescrGroupMask,
-			Link:     DescrUnusedLink,
+			Groupid:  1 | descrGroupMask,
+			Link:     descrUnusedLink,
 		},
 		{
 			Datatype: DataSignature,
 			Used:     true,
 			ID:       2,
-			Groupid:  1 | DescrGroupMask,
+			Groupid:  1 | descrGroupMask,
 			Link:     1,
 		},
 		{
 			Datatype: DataSignature,
 			Used:     true,
 			ID:       3,
-			Groupid:  DescrUnusedGroup,
-			Link:     1 | DescrGroupMask,
+			Groupid:  descrUnusedGroup,
+			Link:     1 | descrGroupMask,
 		},
 	}
+
+	f := &FileImage{
+		rds: ds,
+		h: header{
+			Dtotal: int64(len(ds)),
+		},
+	}
+
+	f.populateMinIDs()
 
 	tests := []struct {
 		name    string
@@ -117,17 +124,16 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fimg := &FileImage{descrArr: ds}
-
-			ds, err := fimg.GetDescriptors(tt.fns...)
+			ds, err := f.GetDescriptors(tt.fns...)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
+
 			if got, want := len(ds), len(tt.wantIDs); got != want {
-				t.Errorf("got %v IDs, want %v", got, want)
+				t.Fatalf("got %v IDs, want %v", got, want)
 			}
 			for i := range ds {
-				if got, want := ds[i].GetID(), tt.wantIDs[i]; got != want {
+				if got, want := ds[i].ID(), tt.wantIDs[i]; got != want {
 					t.Errorf("got ID %v, want %v", got, want)
 				}
 			}
@@ -136,43 +142,50 @@ func TestFileImage_GetDescriptors(t *testing.T) {
 }
 
 func TestFileImage_GetDescriptor(t *testing.T) {
-	extra := Partition{
-		Fstype:   FsSquash,
-		Parttype: PartPrimSys,
-	}
-	copy(extra.Arch[:], HdrArch386)
-
-	b := bytes.Buffer{}
-	if err := binary.Write(&b, binary.LittleEndian, extra); err != nil {
-		t.Fatal(err)
-	}
-
-	primPartDescr := Descriptor{
+	primPartDescr := rawDescriptor{
 		Datatype: DataPartition,
 		Used:     true,
 		ID:       1,
-		Groupid:  1 | DescrGroupMask,
-		Link:     DescrUnusedLink,
+		Groupid:  1 | descrGroupMask,
+		Link:     descrUnusedLink,
 	}
-	copy(primPartDescr.Extra[:], b.Bytes())
 
-	ds := []Descriptor{
+	p := partition{
+		Fstype:   FsSquash,
+		Parttype: PartPrimSys,
+		Arch:     hdrArch386,
+	}
+
+	if err := primPartDescr.setExtra(p); err != nil {
+		t.Fatal(err)
+	}
+
+	ds := []rawDescriptor{
 		primPartDescr,
 		{
 			Datatype: DataSignature,
 			Used:     true,
 			ID:       2,
-			Groupid:  1 | DescrGroupMask,
+			Groupid:  1 | descrGroupMask,
 			Link:     1,
 		},
 		{
 			Datatype: DataSignature,
 			Used:     true,
 			ID:       3,
-			Groupid:  DescrUnusedGroup,
-			Link:     1 | DescrGroupMask,
+			Groupid:  descrUnusedGroup,
+			Link:     1 | descrGroupMask,
 		},
 	}
+
+	f := &FileImage{
+		rds: ds,
+		h: header{
+			Dtotal: int64(len(ds)),
+		},
+	}
+
+	f.populateMinIDs()
 
 	tests := []struct {
 		name    string
@@ -218,13 +231,12 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fimg := &FileImage{descrArr: ds}
-
-			d, err := fimg.GetDescriptor(tt.fns...)
+			d, err := f.GetDescriptor(tt.fns...)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
-			if got, want := d.GetID(), tt.wantID; got != want {
+
+			if got, want := d.ID(), tt.wantID; got != want {
 				t.Errorf("got ID %v, want %v", got, want)
 			}
 		})
@@ -232,27 +244,27 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 }
 
 func TestFileImage_WithDescriptors(t *testing.T) {
-	ds := []Descriptor{
+	ds := []rawDescriptor{
 		{
 			Datatype: DataPartition,
 			Used:     true,
 			ID:       1,
-			Groupid:  1 | DescrGroupMask,
-			Link:     DescrUnusedLink,
+			Groupid:  1 | descrGroupMask,
+			Link:     descrUnusedLink,
 		},
 		{
 			Datatype: DataSignature,
 			Used:     true,
 			ID:       2,
-			Groupid:  DescrUnusedGroup,
-			Link:     1 | DescrGroupMask,
+			Groupid:  descrUnusedGroup,
+			Link:     1 | descrGroupMask,
 		},
 		{
 			Datatype: DataSignature,
 			Used:     false,
 			ID:       3,
-			Groupid:  DescrUnusedGroup,
-			Link:     DescrUnusedLink,
+			Groupid:  descrUnusedGroup,
+			Link:     descrUnusedLink,
 		},
 	}
 
@@ -264,7 +276,7 @@ func TestFileImage_WithDescriptors(t *testing.T) {
 			name: "ReturnTrue",
 			fn: func(t *testing.T) func(d Descriptor) bool {
 				return func(d Descriptor) bool {
-					if id := d.GetID(); id > 1 {
+					if id := d.ID(); id > 1 {
 						t.Errorf("unexpected ID: %v", id)
 					}
 					return true
@@ -275,7 +287,7 @@ func TestFileImage_WithDescriptors(t *testing.T) {
 			name: "ReturnFalse",
 			fn: func(t *testing.T) func(d Descriptor) bool {
 				return func(d Descriptor) bool {
-					if id := d.GetID(); id > 2 {
+					if id := d.ID(); id > 2 {
 						t.Errorf("unexpected ID: %v", id)
 					}
 					return false
@@ -285,7 +297,7 @@ func TestFileImage_WithDescriptors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &FileImage{descrArr: ds}
+			f := &FileImage{rds: ds}
 
 			f.WithDescriptors(tt.fn(t))
 		})
