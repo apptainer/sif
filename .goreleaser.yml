@@ -2,7 +2,7 @@ project_name: siftool
 
 release:
   github:
-    owner: sylabs
+    owner: hpcng
     name: sif
   prerelease: auto
 
