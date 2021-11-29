@@ -30,7 +30,9 @@ jobs:
           git diff --exit-code -- go.mod go.sum
 
       - name: Build Source
-        run: go run mage.go build:source
+        run: |
+          sudo apt-get install -y strace
+          strace go run mage.go build:source
 
       - name: Install Lint
         uses: golangci/golangci-lint-action@v2
