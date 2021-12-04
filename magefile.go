@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+go mod // Copyright (c) 2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hpcng/sif/v2/internal/pkg/git"
+	"github.com/apptainer/sif/v2/internal/pkg/git"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )

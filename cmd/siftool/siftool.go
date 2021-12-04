@@ -14,8 +14,8 @@ import (
 	"runtime"
 	"text/tabwriter"
 
-	"github.com/hpcng/sif/v2/pkg/sif"
-	"github.com/hpcng/sif/v2/pkg/siftool"
+	"github.com/apptainer/sif/v2/pkg/sif"
+	"github.com/apptainer/sif/v2/pkg/siftool"
 	"github.com/spf13/cobra"
 )
 

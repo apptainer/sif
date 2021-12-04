@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/hpcng/sif/v2/pkg/sif"
+	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
 var (

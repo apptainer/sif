@@ -15,7 +15,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hpcng/sif/v2/pkg/sif"
+	"github.com/apptainer/sif/v2/pkg/sif"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

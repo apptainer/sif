@@ -1,4 +1,4 @@
-module github.com/hpcng/sif/v2
+module github.com/apptainer/sif/v2
 
 go 1.17
 
@@ -7,7 +7,6 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/google/uuid v1.3.0
-	github.com/magefile/mage v1.11.0
 	github.com/sebdah/goldie/v2 v2.5.3
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5

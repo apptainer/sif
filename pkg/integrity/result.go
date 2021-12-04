@@ -7,7 +7,7 @@ package integrity
 
 import (
 	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/hpcng/sif/v2/pkg/sif"
+	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
 // VerifyResult describes the results of an individual signature validation.

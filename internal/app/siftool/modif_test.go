@@ -12,7 +12,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hpcng/sif/v2/pkg/sif"
+	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
 func TestApp_New(t *testing.T) {
