@@ -37,12 +37,13 @@ go run mage.go install
 This module aims to maintain support for the two most recent stable versions
 of Go. This corresponds to the Go
 [Release Maintenance Policy](https://github.com/golang/go/wiki/Go-Release-Cycle#release-maintenance)
-and [Security Policy](https://golang.org/security), ensuring critical bug fixes and security
-patches are available for all supported language versions.
+and [Security Policy](https://golang.org/security), ensuring critical bug
+fixes and security patches are available for all supported language versions.
 
 ## Contributing
 
-SIF and [Apptainer](https://github.com/apptainer/apptainer) are the work of many contributors. We appreciate your help!
+SIF and [Apptainer](https://github.com/apptainer/apptainer) are the work of many
+contributors. We appreciate your help!
 
-To contribute, please read the contribution guidelines found in the [CONTRIBUTING.md](CONTRIBUTING.md) file.
-
+To contribute, please read the contribution guidelines found in the
+[CONTRIBUTING.md](CONTRIBUTING.md) file.
