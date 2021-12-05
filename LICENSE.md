@@ -1,5 +1,10 @@
 # LICENSE
 
+Copyright (c) 2021 Apptainer a Series of LF Projects LLC
+
+- For website terms of use, trademark policy, privacy policy and other
+  project policies see: [LF_POLICIES](https://lfprojects.org/policies)
+
 Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

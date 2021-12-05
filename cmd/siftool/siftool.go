@@ -1,3 +1,6 @@
+// Copyright (c) 2021 Apptainer a Series of LF Projects LLC
+//   For website terms of use, trademark policy, privacy policy and other
+//   project policies see https://lfprojects.org/policies
 // Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
