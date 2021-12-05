@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hpcng/sif/v2/internal/pkg/git"
+	"github.com/apptainer/sif/v2/internal/pkg/git"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )

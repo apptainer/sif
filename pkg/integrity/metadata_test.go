@@ -18,7 +18,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hpcng/sif/v2/pkg/sif"
+	"github.com/apptainer/sif/v2/pkg/sif"
 	"github.com/sebdah/goldie/v2"
 )
 

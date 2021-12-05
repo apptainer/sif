@@ -8,7 +8,7 @@ package siftool
 import (
 	"os"
 
-	"github.com/hpcng/sif/v2/pkg/sif"
+	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
 // withFileImage calls fn with a FileImage loaded from path.

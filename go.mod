@@ -1,4 +1,4 @@
-module github.com/hpcng/sif/v2
+module github.com/apptainer/sif/v2
 
 go 1.17
 
