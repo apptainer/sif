@@ -3,7 +3,7 @@ Usage:
 
 Available Commands:
   add         Add data object
-  completion  generate the autocompletion script for the specified shell
+  completion  Generate the autocompletion script for the specified shell
   del         Delete data object
   dump        Dump data object
   header      Display global header
