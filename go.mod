@@ -6,8 +6,8 @@ go 1.17
 require (
 	github.com/satori/go.uuid v1.2.1-0.20180404165556-75cca531ea76
 	github.com/sebdah/goldie/v2 v2.5.3
-	github.com/spf13/cobra v1.2.1
-	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
+	github.com/spf13/cobra v1.3.0
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 )
 
 require (
