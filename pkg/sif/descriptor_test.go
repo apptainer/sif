@@ -80,7 +80,7 @@ func TestDescriptor_GetReader(t *testing.T) {
 	}
 }
 
-func TestDescriptor_GetName(t *testing.T) {
+func TestDescriptor_Name(t *testing.T) {
 	// load the test container
 	f, err := LoadContainerFromPath(
 		filepath.Join(corpus, "one-group.sif"),
@@ -108,7 +108,7 @@ func TestDescriptor_GetName(t *testing.T) {
 	}
 }
 
-func TestDescriptor_GetPartitionMetadata(t *testing.T) {
+func TestDescriptor_PartitionMetadata(t *testing.T) {
 	p := partition{
 		Fstype:   FsSquash,
 		Parttype: PartPrimSys,
@@ -173,7 +173,7 @@ func TestDescriptor_GetPartitionMetadata(t *testing.T) {
 	}
 }
 
-func TestDescriptor_GetSignatureMetadata(t *testing.T) {
+func TestDescriptor_SignatureMetadata(t *testing.T) {
 	s := signature{
 		Hashtype: hashSHA384,
 	}
@@ -236,7 +236,7 @@ func TestDescriptor_GetSignatureMetadata(t *testing.T) {
 	}
 }
 
-func TestDescriptor_GetCryptoMessageMetadata(t *testing.T) {
+func TestDescriptor_CryptoMessageMetadata(t *testing.T) {
 	m := cryptoMessage{
 		Formattype:  FormatOpenPGP,
 		Messagetype: MessageClearSignature,
