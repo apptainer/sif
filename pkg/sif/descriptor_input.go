@@ -98,11 +98,11 @@ func OptObjectTime(t time.Time) DescriptorInputOpt {
 
 type unexpectedDataTypeError struct {
 	got  DataType
-	want DataType
+	want []DataType
 }
 
 func (e *unexpectedDataTypeError) Error() string {
-	return fmt.Sprintf("unexpected data type %v, expected %v", e.got, e.want)
+	return fmt.Sprintf("unexpected data type %v, expected one of: %v", e.got, e.want)
 }
 
 func (e *unexpectedDataTypeError) Is(target error) bool {
@@ -110,8 +110,37 @@ func (e *unexpectedDataTypeError) Is(target error) bool {
 	if !ok {
 		return false
 	}
-	return (e.got == t.got || t.got == 0) &&
-		(e.want == t.want || t.want == 0)
+
+	if len(t.want) > 0 {
+		// Use a map to check that the "want" errors in e and t contain the same values, ignoring
+		// any ordering differences.
+		acc := make(map[DataType]int, len(t.want))
+
+		// Increment counter for each data type in e.
+		for _, dt := range e.want {
+			if _, ok := acc[dt]; !ok {
+				acc[dt] = 0
+			}
+			acc[dt]++
+		}
+
+		// Decrement counter for each data type in e.
+		for _, dt := range t.want {
+			if _, ok := acc[dt]; !ok {
+				return false
+			}
+			acc[dt]--
+		}
+
+		// If the "want" errors in e and t are equivalent, all counters should be zero.
+		for _, n := range acc {
+			if n != 0 {
+				return false
+			}
+		}
+	}
+
+	return (e.got == t.got || t.got == 0)
 }
 
 // OptCryptoMessageMetadata sets metadata for a crypto message data object. The format type is set
@@ -121,7 +150,7 @@ func (e *unexpectedDataTypeError) Is(target error) bool {
 func OptCryptoMessageMetadata(ft FormatType, mt MessageType) DescriptorInputOpt {
 	return func(t DataType, opts *descriptorOpts) error {
 		if got, want := t, DataCryptoMessage; got != want {
-			return &unexpectedDataTypeError{got, want}
+			return &unexpectedDataTypeError{got, []DataType{want}}
 		}
 
 		m := cryptoMessage{
@@ -144,7 +173,7 @@ var errUnknownArchitcture = errors.New("unknown architecture")
 func OptPartitionMetadata(fs FSType, pt PartType, arch string) DescriptorInputOpt {
 	return func(t DataType, opts *descriptorOpts) error {
 		if got, want := t, DataPartition; got != want {
-			return &unexpectedDataTypeError{got, want}
+			return &unexpectedDataTypeError{got, []DataType{want}}
 		}
 
 		sifarch := getSIFArch(arch)
@@ -187,7 +216,7 @@ func sifHashType(h crypto.Hash) hashType {
 func OptSignatureMetadata(ht crypto.Hash, fp []byte) DescriptorInputOpt {
 	return func(t DataType, opts *descriptorOpts) error {
 		if got, want := t, DataSignature; got != want {
-			return &unexpectedDataTypeError{got, want}
+			return &unexpectedDataTypeError{got, []DataType{want}}
 		}
 
 		s := signature{

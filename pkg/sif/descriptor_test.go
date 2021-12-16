@@ -136,7 +136,7 @@ func TestDescriptor_PartitionMetadata(t *testing.T) {
 			rd: rawDescriptor{
 				DataType: DataGeneric,
 			},
-			wantErr: &unexpectedDataTypeError{DataGeneric, DataPartition},
+			wantErr: &unexpectedDataTypeError{DataGeneric, []DataType{DataPartition}},
 		},
 		{
 			name:     "PartPrimSys",
@@ -201,7 +201,7 @@ func TestDescriptor_SignatureMetadata(t *testing.T) {
 			rd: rawDescriptor{
 				DataType: DataGeneric,
 			},
-			wantErr: &unexpectedDataTypeError{DataGeneric, DataSignature},
+			wantErr: &unexpectedDataTypeError{DataGeneric, []DataType{DataSignature}},
 		},
 		{
 			name:   "OK",
@@ -261,7 +261,7 @@ func TestDescriptor_CryptoMessageMetadata(t *testing.T) {
 			rd: rawDescriptor{
 				DataType: DataGeneric,
 			},
-			wantErr: &unexpectedDataTypeError{DataGeneric, DataCryptoMessage},
+			wantErr: &unexpectedDataTypeError{DataGeneric, []DataType{DataCryptoMessage}},
 		},
 		{
 			name:   "OK",
