@@ -99,7 +99,13 @@ const (
 type SpecVersion uint8
 
 func (v SpecVersion) String() string { return fmt.Sprintf("%02d", v) }
-func (v SpecVersion) bytes() []byte  { return []byte(v.String()) }
+
+// bytes returns the value of b, formatted for direct inclusion in a SIF header.
+func (v SpecVersion) bytes() [hdrVersionLen]byte {
+	var b [3]byte
+	copy(b[:], fmt.Sprintf("%02d", v))
+	return b
+}
 
 // SIF specification versions.
 const (

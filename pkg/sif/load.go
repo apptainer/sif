@@ -30,7 +30,7 @@ func isValidSif(f *FileImage) error {
 		return errInvalidMagic
 	}
 
-	if got, want := trimZeroBytes(f.h.Version[:]), CurrentVersion.String(); got > want {
+	if f.h.Version != CurrentVersion.bytes() {
 		return errIncompatibleVersion
 	}
 

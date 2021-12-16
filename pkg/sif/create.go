@@ -197,6 +197,7 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 
 	h := header{
 		LaunchScript:      co.launchScript,
+		Version:           CurrentVersion.bytes(),
 		Arch:              hdrArchUnknown,
 		ID:                co.id,
 		CreatedAt:         co.t.Unix(),
@@ -208,7 +209,6 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 		DataOffset:        co.descriptorsOffset + rdsSize,
 	}
 	copy(h.Magic[:], hdrMagic)
-	copy(h.Version[:], CurrentVersion.bytes())
 
 	f := &FileImage{
 		rw:     rw,
