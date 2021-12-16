@@ -320,10 +320,14 @@ type FileImage struct {
 }
 
 // LaunchScript returns the image launch script.
-func (f *FileImage) LaunchScript() string { return trimZeroBytes(f.h.LaunchScript[:]) }
+func (f *FileImage) LaunchScript() string {
+	return string(bytes.TrimRight(f.h.LaunchScript[:], "\x00"))
+}
 
 // Version returns the SIF specification version of the image.
-func (f *FileImage) Version() string { return trimZeroBytes(f.h.Version[:]) }
+func (f *FileImage) Version() string {
+	return string(bytes.TrimRight(f.h.Version[:], "\x00"))
+}
 
 // PrimaryArch returns the primary CPU architecture of the image.
 func (f *FileImage) PrimaryArch() string { return f.h.Arch.GoArch() }
