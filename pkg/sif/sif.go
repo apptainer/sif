@@ -90,10 +90,11 @@ import (
 // SIF header constants and quantities.
 const (
 	hdrLaunchLen  = 32 // len("#!/usr/bin/env... ")
-	hdrMagic      = "SIF_MAGIC"
 	hdrMagicLen   = 10 // len("SIF_MAGIC")
 	hdrVersionLen = 3  // len("99")
 )
+
+var hdrMagic = [...]byte{'S', 'I', 'F', '_', 'M', 'A', 'G', 'I', 'C', '\x00'}
 
 // SpecVersion specifies a SIF specification version.
 type SpecVersion uint8

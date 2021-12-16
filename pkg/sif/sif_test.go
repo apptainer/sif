@@ -21,6 +21,7 @@ var corpus = filepath.Join("..", "..", "test", "images")
 
 func TestHeader_GetIntegrityReader(t *testing.T) {
 	h := header{
+		Magic:      hdrMagic,
 		Version:    CurrentVersion.bytes(),
 		Arch:       hdrArchAMD64,
 		ID:         uuid.UUID{0xb2, 0x65, 0x9d, 0x4e, 0xbd, 0x50, 0x4e, 0xa5, 0xbd, 0x17, 0xee, 0xc5, 0xe5, 0x4f, 0x91, 0x8e},
@@ -28,7 +29,6 @@ func TestHeader_GetIntegrityReader(t *testing.T) {
 		ModifiedAt: 1504657653,
 	}
 	copy(h.LaunchScript[:], "#!/usr/bin/env run-singularity\n")
-	copy(h.Magic[:], hdrMagic)
 
 	tests := []struct {
 		name    string

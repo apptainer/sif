@@ -26,7 +26,7 @@ var (
 
 // isValidSif looks at key fields from the global header to assess SIF validity.
 func isValidSif(f *FileImage) error {
-	if got, want := trimZeroBytes(f.h.Magic[:]), hdrMagic; got != want {
+	if f.h.Magic != hdrMagic {
 		return errInvalidMagic
 	}
 
