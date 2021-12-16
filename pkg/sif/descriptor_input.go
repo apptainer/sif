@@ -88,7 +88,7 @@ func OptObjectName(name string) DescriptorInputOpt {
 	}
 }
 
-// OptObjectTime specifies t as the dat object creation time.
+// OptObjectTime specifies t as the data object creation time.
 func OptObjectTime(t time.Time) DescriptorInputOpt {
 	return func(_ DataType, opts *descriptorOpts) error {
 		opts.t = t
@@ -254,11 +254,14 @@ const DefaultObjectGroup = 1
 // override this behavior, consider using OptObjectAlignment.
 //
 // By default, no name is set for data object. To set a name, use OptObjectName.
+//
+// When creating a new image, data object creation/modification times are set to the image creation
+// time. When modifying an existing image, the data object creation/modification time is set to the
+// image modification time. To override this behavior, consider using OptObjectTime.
 func NewDescriptorInput(t DataType, r io.Reader, opts ...DescriptorInputOpt) (DescriptorInput, error) {
 	dopts := descriptorOpts{
 		groupID:   DefaultObjectGroup,
 		alignment: os.Getpagesize(),
-		t:         time.Now(),
 	}
 
 	for _, opt := range opts {
@@ -276,13 +279,18 @@ func NewDescriptorInput(t DataType, r io.Reader, opts ...DescriptorInputOpt) (De
 	return di, nil
 }
 
-// fillDescriptor fills d according to di.
-func (di DescriptorInput) fillDescriptor(d *rawDescriptor) error {
+// fillDescriptor fills d according to di. If di does not explicitly specify a time value, use t.
+func (di DescriptorInput) fillDescriptor(t time.Time, d *rawDescriptor) error {
 	d.DataType = di.dt
 	d.GroupID = di.opts.groupID | descrGroupMask
 	d.LinkedID = di.opts.linkID
-	d.CreatedAt = di.opts.t.Unix()
-	d.ModifiedAt = di.opts.t.Unix()
+
+	if !di.opts.t.IsZero() {
+		t = di.opts.t
+	}
+	d.CreatedAt = t.Unix()
+	d.ModifiedAt = t.Unix()
+
 	d.UID = 0
 	d.GID = 0
 
