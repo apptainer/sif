@@ -34,10 +34,10 @@ func getVersions(r *git.Repository) (map[plumbing.Hash]semver.Version, error) {
 	err = iter.ForEach(func(ref *plumbing.Reference) error {
 		if v, err := semver.Parse(strings.TrimPrefix(ref.Name().Short(), "v")); err == nil {
 			obj, err := r.TagObject(ref.Hash())
-			switch err {
-			case nil:
+			switch {
+			case err == nil:
 				tags[obj.Target] = v // annotated tag
-			case plumbing.ErrObjectNotFound:
+			case errors.Is(err, plumbing.ErrObjectNotFound):
 				tags[ref.Hash()] = v // lightweight tag
 			default:
 				return err
