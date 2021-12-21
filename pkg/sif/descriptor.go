@@ -101,7 +101,7 @@ func (d *rawDescriptor) setExtra(v interface{}) error {
 // getPartitionMetadata gets metadata for a partition data object.
 func (d rawDescriptor) getPartitionMetadata() (fs FSType, pt PartType, arch string, err error) {
 	if got, want := d.DataType, DataPartition; got != want {
-		return 0, 0, "", &unexpectedDataTypeError{got, want}
+		return 0, 0, "", &unexpectedDataTypeError{got, []DataType{want}}
 	}
 
 	var p partition
@@ -191,7 +191,7 @@ func getHashType(ht hashType) (crypto.Hash, error) {
 // SignatureMetadata gets metadata for a signature data object.
 func (d Descriptor) SignatureMetadata() (ht crypto.Hash, fp []byte, err error) {
 	if got, want := d.raw.DataType, DataSignature; got != want {
-		return ht, fp, &unexpectedDataTypeError{got, want}
+		return ht, fp, &unexpectedDataTypeError{got, []DataType{want}}
 	}
 
 	var s signature
@@ -214,7 +214,7 @@ func (d Descriptor) SignatureMetadata() (ht crypto.Hash, fp []byte, err error) {
 // CryptoMessageMetadata gets metadata for a crypto message data object.
 func (d Descriptor) CryptoMessageMetadata() (FormatType, MessageType, error) {
 	if got, want := d.raw.DataType, DataCryptoMessage; got != want {
-		return 0, 0, &unexpectedDataTypeError{got, want}
+		return 0, 0, &unexpectedDataTypeError{got, []DataType{want}}
 	}
 
 	var m cryptoMessage

@@ -55,6 +55,7 @@ func (e *SignatureNotValidError) Unwrap() error {
 // Is compares e against target. If target is a SignatureNotValidError and matches e or target has
 // a zero value ID, true is returned.
 func (e *SignatureNotValidError) Is(target error) bool {
+	//nolint:errorlint // don't compare wrapped errors in Is()
 	t, ok := target.(*SignatureNotValidError)
 	if !ok {
 		return false

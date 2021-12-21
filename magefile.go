@@ -31,21 +31,29 @@ var Aliases = map[string]interface{}{
 	"test":    Test.All,
 }
 
+// env returns the environment to use when running Go commands.
+func env() map[string]string {
+	return map[string]string{"CGO_ENABLED": "0"}
+}
+
 // ldFlags returns linker flags to pass to various Go commands.
 func ldFlags() string {
-	vals := []string{
-		"-X", "main.builtBy=mage",
-		"-X", fmt.Sprintf("main.date=%v", time.Now().UTC().Format(time.RFC3339)),
-	}
+	vals := []string{"-s", "-w", "-X", "main.builtBy=mage"}
 
 	// Attempt to get git details.
 	if d, err := git.Describe("."); err == nil {
-		vals = append(vals, "-X", fmt.Sprintf("main.commit=%v", d.Reference().Hash()))
+		vals = append(vals, "-X", fmt.Sprintf("main.commit=%v", d.CommitHash()))
 
 		if d.IsClean() {
-			vals = append(vals, "-X", "main.state=clean")
+			vals = append(vals,
+				"-X", fmt.Sprintf("main.date=%v", d.CommitTime().UTC().Format(time.RFC3339)),
+				"-X", "main.state=clean",
+			)
 		} else {
-			vals = append(vals, "-X", "main.state=dirty")
+			vals = append(vals,
+				"-X", fmt.Sprintf("main.date=%v", time.Now().UTC().Format(time.RFC3339)),
+				"-X", "main.state=dirty",
+			)
 		}
 
 		if v, err := d.Version(); err == nil {
@@ -55,6 +63,8 @@ func ldFlags() string {
 		}
 	} else {
 		fmt.Fprintf(os.Stderr, "warning: failed to describe git HEAD: %v\n", err)
+
+		vals = append(vals, "-X", fmt.Sprintf("main.date=%v", time.Now().UTC().Format(time.RFC3339)))
 	}
 
 	return strings.Join(vals, " ")
@@ -69,7 +79,7 @@ func (ns Build) All() {
 
 // Source compiles all source code.
 func (Build) Source() error {
-	return sh.Run(mg.GoCmd(), "build", "-ldflags", ldFlags(), "./...")
+	return sh.RunWith(env(), mg.GoCmd(), "build", "-trimpath", "-ldflags", ldFlags(), "./...")
 }
 
 type Install mg.Namespace
@@ -81,7 +91,7 @@ func (ns Install) All() {
 
 // Bin installs binary to GOBIN.
 func (Install) Bin() error {
-	return sh.Run(mg.GoCmd(), "install", "-ldflags", ldFlags(), "./cmd/siftool")
+	return sh.RunWith(env(), mg.GoCmd(), "install", "-trimpath", "-ldflags", ldFlags(), "./cmd/siftool")
 }
 
 type Test mg.Namespace

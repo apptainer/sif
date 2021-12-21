@@ -35,7 +35,9 @@ jobs:
       - name: Install Lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.42
+          version: v1.43
+          skip-pkg-cache: true
+          skip-build-cache: true
 
       - name: Run Lint
         run: |
@@ -45,7 +47,7 @@ jobs:
         run: go run mage.go cover:unit cover.out
 
       - name: Upload coverage report
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v2
         with:
           files: cover.out
           flags: unittests

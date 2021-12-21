@@ -88,7 +88,7 @@ func OptObjectName(name string) DescriptorInputOpt {
 	}
 }
 
-// OptObjectTime specifies t as the dat object creation time.
+// OptObjectTime specifies t as the data object creation time.
 func OptObjectTime(t time.Time) DescriptorInputOpt {
 	return func(_ DataType, opts *descriptorOpts) error {
 		opts.t = t
@@ -98,20 +98,50 @@ func OptObjectTime(t time.Time) DescriptorInputOpt {
 
 type unexpectedDataTypeError struct {
 	got  DataType
-	want DataType
+	want []DataType
 }
 
 func (e *unexpectedDataTypeError) Error() string {
-	return fmt.Sprintf("unexpected data type %v, expected %v", e.got, e.want)
+	return fmt.Sprintf("unexpected data type %v, expected one of: %v", e.got, e.want)
 }
 
 func (e *unexpectedDataTypeError) Is(target error) bool {
+	//nolint:errorlint // don't compare wrapped errors in Is()
 	t, ok := target.(*unexpectedDataTypeError)
 	if !ok {
 		return false
 	}
-	return (e.got == t.got || t.got == 0) &&
-		(e.want == t.want || t.want == 0)
+
+	if len(t.want) > 0 {
+		// Use a map to check that the "want" errors in e and t contain the same values, ignoring
+		// any ordering differences.
+		acc := make(map[DataType]int, len(t.want))
+
+		// Increment counter for each data type in e.
+		for _, dt := range e.want {
+			if _, ok := acc[dt]; !ok {
+				acc[dt] = 0
+			}
+			acc[dt]++
+		}
+
+		// Decrement counter for each data type in e.
+		for _, dt := range t.want {
+			if _, ok := acc[dt]; !ok {
+				return false
+			}
+			acc[dt]--
+		}
+
+		// If the "want" errors in e and t are equivalent, all counters should be zero.
+		for _, n := range acc {
+			if n != 0 {
+				return false
+			}
+		}
+	}
+
+	return (e.got == t.got || t.got == 0)
 }
 
 // OptCryptoMessageMetadata sets metadata for a crypto message data object. The format type is set
@@ -121,7 +151,7 @@ func (e *unexpectedDataTypeError) Is(target error) bool {
 func OptCryptoMessageMetadata(ft FormatType, mt MessageType) DescriptorInputOpt {
 	return func(t DataType, opts *descriptorOpts) error {
 		if got, want := t, DataCryptoMessage; got != want {
-			return &unexpectedDataTypeError{got, want}
+			return &unexpectedDataTypeError{got, []DataType{want}}
 		}
 
 		m := cryptoMessage{
@@ -144,7 +174,7 @@ var errUnknownArchitcture = errors.New("unknown architecture")
 func OptPartitionMetadata(fs FSType, pt PartType, arch string) DescriptorInputOpt {
 	return func(t DataType, opts *descriptorOpts) error {
 		if got, want := t, DataPartition; got != want {
-			return &unexpectedDataTypeError{got, want}
+			return &unexpectedDataTypeError{got, []DataType{want}}
 		}
 
 		sifarch := getSIFArch(arch)
@@ -187,7 +217,7 @@ func sifHashType(h crypto.Hash) hashType {
 func OptSignatureMetadata(ht crypto.Hash, fp []byte) DescriptorInputOpt {
 	return func(t DataType, opts *descriptorOpts) error {
 		if got, want := t, DataSignature; got != want {
-			return &unexpectedDataTypeError{got, want}
+			return &unexpectedDataTypeError{got, []DataType{want}}
 		}
 
 		s := signature{
@@ -225,11 +255,14 @@ const DefaultObjectGroup = 1
 // override this behavior, consider using OptObjectAlignment.
 //
 // By default, no name is set for data object. To set a name, use OptObjectName.
+//
+// When creating a new image, data object creation/modification times are set to the image creation
+// time. When modifying an existing image, the data object creation/modification time is set to the
+// image modification time. To override this behavior, consider using OptObjectTime.
 func NewDescriptorInput(t DataType, r io.Reader, opts ...DescriptorInputOpt) (DescriptorInput, error) {
 	dopts := descriptorOpts{
 		groupID:   DefaultObjectGroup,
 		alignment: os.Getpagesize(),
-		t:         time.Now(),
 	}
 
 	for _, opt := range opts {
@@ -247,13 +280,18 @@ func NewDescriptorInput(t DataType, r io.Reader, opts ...DescriptorInputOpt) (De
 	return di, nil
 }
 
-// fillDescriptor fills d according to di.
-func (di DescriptorInput) fillDescriptor(d *rawDescriptor) error {
+// fillDescriptor fills d according to di. If di does not explicitly specify a time value, use t.
+func (di DescriptorInput) fillDescriptor(t time.Time, d *rawDescriptor) error {
 	d.DataType = di.dt
 	d.GroupID = di.opts.groupID | descrGroupMask
 	d.LinkedID = di.opts.linkID
-	d.CreatedAt = di.opts.t.Unix()
-	d.ModifiedAt = di.opts.t.Unix()
+
+	if !di.opts.t.IsZero() {
+		t = di.opts.t
+	}
+	d.CreatedAt = t.Unix()
+	d.ModifiedAt = t.Unix()
+
 	d.UID = 0
 	d.GID = 0
 
