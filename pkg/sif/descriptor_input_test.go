@@ -134,7 +134,7 @@ func TestNewDescriptorInput(t *testing.T) {
 			opts: []DescriptorInputOpt{
 				OptCryptoMessageMetadata(FormatOpenPGP, MessageClearSignature),
 			},
-			wantErr: &unexpectedDataTypeError{DataGeneric, DataCryptoMessage},
+			wantErr: &unexpectedDataTypeError{DataGeneric, []DataType{DataCryptoMessage}},
 		},
 		{
 			name: "OptCryptoMessageMetadata",
@@ -150,7 +150,7 @@ func TestNewDescriptorInput(t *testing.T) {
 			opts: []DescriptorInputOpt{
 				OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
 			},
-			wantErr: &unexpectedDataTypeError{DataGeneric, DataPartition},
+			wantErr: &unexpectedDataTypeError{DataGeneric, []DataType{DataPartition}},
 		},
 		{
 			name: "OptPartitionMetadata",
@@ -166,7 +166,7 @@ func TestNewDescriptorInput(t *testing.T) {
 			opts: []DescriptorInputOpt{
 				OptSignatureMetadata(crypto.SHA256, fp),
 			},
-			wantErr: &unexpectedDataTypeError{DataGeneric, DataSignature},
+			wantErr: &unexpectedDataTypeError{DataGeneric, []DataType{DataSignature}},
 		},
 		{
 			name: "OptSignatureMetadata",
@@ -191,7 +191,7 @@ func TestNewDescriptorInput(t *testing.T) {
 
 			if err == nil {
 				d := rawDescriptor{}
-				if err := di.fillDescriptor(&d); err != nil {
+				if err := di.fillDescriptor(testTime, &d); err != nil {
 					t.Fatal(err)
 				}
 

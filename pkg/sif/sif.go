@@ -90,16 +90,23 @@ import (
 // SIF header constants and quantities.
 const (
 	hdrLaunchLen  = 32 // len("#!/usr/bin/env... ")
-	hdrMagic      = "SIF_MAGIC"
 	hdrMagicLen   = 10 // len("SIF_MAGIC")
 	hdrVersionLen = 3  // len("99")
 )
+
+var hdrMagic = [...]byte{'S', 'I', 'F', '_', 'M', 'A', 'G', 'I', 'C', '\x00'}
 
 // SpecVersion specifies a SIF specification version.
 type SpecVersion uint8
 
 func (v SpecVersion) String() string { return fmt.Sprintf("%02d", v) }
-func (v SpecVersion) bytes() []byte  { return []byte(v.String()) }
+
+// bytes returns the value of b, formatted for direct inclusion in a SIF header.
+func (v SpecVersion) bytes() [hdrVersionLen]byte {
+	var b [3]byte
+	copy(b[:], fmt.Sprintf("%02d", v))
+	return b
+}
 
 // SIF specification versions.
 const (
@@ -313,10 +320,14 @@ type FileImage struct {
 }
 
 // LaunchScript returns the image launch script.
-func (f *FileImage) LaunchScript() string { return trimZeroBytes(f.h.LaunchScript[:]) }
+func (f *FileImage) LaunchScript() string {
+	return string(bytes.TrimRight(f.h.LaunchScript[:], "\x00"))
+}
 
 // Version returns the SIF specification version of the image.
-func (f *FileImage) Version() string { return trimZeroBytes(f.h.Version[:]) }
+func (f *FileImage) Version() string {
+	return string(bytes.TrimRight(f.h.Version[:], "\x00"))
+}
 
 // PrimaryArch returns the primary CPU architecture of the image.
 func (f *FileImage) PrimaryArch() string { return f.h.Arch.GoArch() }

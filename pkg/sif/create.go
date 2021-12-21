@@ -33,10 +33,10 @@ func nextAligned(offset int64, alignment int) int64 {
 	return int64(offset64)
 }
 
-// writeDataObjectAt writes the data object described by di to ws, recording details in d. The
-// object is written at the first position that satisfies the alignment requirements described by
-// di following offsetUnaligned.
-func writeDataObjectAt(ws io.WriteSeeker, offsetUnaligned int64, di DescriptorInput, d *rawDescriptor) error {
+// writeDataObjectAt writes the data object described by di to ws, using time t, recording details
+// in d. The object is written at the first position that satisfies the alignment requirements
+// described by di following offsetUnaligned.
+func writeDataObjectAt(ws io.WriteSeeker, offsetUnaligned int64, di DescriptorInput, t time.Time, d *rawDescriptor) error { //nolint:lll
 	offset, err := ws.Seek(nextAligned(offsetUnaligned, di.opts.alignment), io.SeekStart)
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func writeDataObjectAt(ws io.WriteSeeker, offsetUnaligned int64, di DescriptorIn
 		return err
 	}
 
-	if err := di.fillDescriptor(d); err != nil {
+	if err := di.fillDescriptor(t, d); err != nil {
 		return err
 	}
 	d.Used = true
@@ -63,9 +63,9 @@ var (
 	errPrimaryPartition     = errors.New("image already contains a primary partition")
 )
 
-// writeDataObject writes the data object described by di to f, recording details in the descriptor
-// at index i.
-func (f *FileImage) writeDataObject(i int, di DescriptorInput) error {
+// writeDataObject writes the data object described by di to f, using time t, recording details in
+// the descriptor at index i.
+func (f *FileImage) writeDataObject(i int, di DescriptorInput, t time.Time) error {
 	if i >= len(f.rds) {
 		return errInsufficientCapacity
 	}
@@ -83,7 +83,7 @@ func (f *FileImage) writeDataObject(i int, di DescriptorInput) error {
 	d := &f.rds[i]
 	d.ID = uint32(i) + 1
 
-	if err := writeDataObjectAt(f.rw, f.h.DataOffset+f.h.DataSize, di, d); err != nil {
+	if err := writeDataObjectAt(f.rw, f.h.DataOffset+f.h.DataSize, di, t, d); err != nil {
 		return err
 	}
 
@@ -197,6 +197,8 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 
 	h := header{
 		LaunchScript:      co.launchScript,
+		Magic:             hdrMagic,
+		Version:           CurrentVersion.bytes(),
 		Arch:              hdrArchUnknown,
 		ID:                co.id,
 		CreatedAt:         co.t.Unix(),
@@ -207,8 +209,6 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 		DescriptorsSize:   rdsSize,
 		DataOffset:        co.descriptorsOffset + rdsSize,
 	}
-	copy(h.Magic[:], hdrMagic)
-	copy(h.Version[:], CurrentVersion.bytes())
 
 	f := &FileImage{
 		rw:     rw,
@@ -218,7 +218,7 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 	}
 
 	for i, di := range co.dis {
-		if err := f.writeDataObject(i, di); err != nil {
+		if err := f.writeDataObject(i, di, co.t); err != nil {
 			return nil, err
 		}
 	}
@@ -234,11 +234,18 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 	return f, nil
 }
 
-// CreateContainer creates a new SIF container in rw, according to opts.
+// CreateContainer creates a new SIF container in rw, according to opts. One or more data objects
+// can optionally be specified using OptCreateWithDescriptors.
 //
 // On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
 // are released. By default, UnloadContainer will close rw if it implements the io.Closer
 // interface. To change this behavior, consider using OptCreateWithCloseOnUnload.
+//
+// By default, the image ID is set to a randomly generated value. To override this, consider using
+// OptCreateWithID.
+//
+// By default, the image creation time is set to time.Now(). To override this, consider using
+// OptCreateWithTime.
 //
 // By default, the image will support a maximum of 48 descriptors. To change this, consider using
 // OptCreateWithDescriptorCapacity.
@@ -273,10 +280,17 @@ func CreateContainer(rw ReadWriter, opts ...CreateOpt) (*FileImage, error) {
 	return f, nil
 }
 
-// CreateContainerAtPath creates a new SIF container file at path, according to opts.
+// CreateContainerAtPath creates a new SIF container file at path, according to opts. One or more
+// data objects can optionally be specified using OptCreateWithDescriptors.
 //
 // On success, a FileImage is returned. The caller must call UnloadContainer to ensure resources
 // are released.
+//
+// By default, the image ID is set to a randomly generated value. To override this, consider using
+// OptCreateWithID.
+//
+// By default, the image creation time is set to time.Now(). To override this, consider using
+// OptCreateWithTime.
 //
 // By default, the image will support a maximum of 48 descriptors. To change this, consider using
 // OptCreateWithDescriptorCapacity.
@@ -359,13 +373,13 @@ func OptAddWithTime(t time.Time) AddOpt {
 	}
 }
 
-// AddObject add a new data object and its descriptor into the specified SIF file.
+// AddObject adds a new data object and its descriptor into the specified SIF file.
 //
-// By default, the image modification time is set to the data object creation time. To override
-// this, use OptAddWithTime.
+// By default, the image modification time is set to the current time. To override this, consider
+// using OptAddWithTime.
 func (f *FileImage) AddObject(di DescriptorInput, opts ...AddOpt) error {
 	ao := addOpts{
-		t: di.opts.t,
+		t: time.Now(),
 	}
 
 	for _, opt := range opts {
@@ -383,7 +397,7 @@ func (f *FileImage) AddObject(di DescriptorInput, opts ...AddOpt) error {
 		i++
 	}
 
-	if err := f.writeDataObject(i, di); err != nil {
+	if err := f.writeDataObject(i, di, ao.t); err != nil {
 		return fmt.Errorf("%w", err)
 	}
 
@@ -465,7 +479,7 @@ var errCompactNotImplemented = errors.New("compact not implemented for non-last 
 // To zero the data region of the deleted object, use OptDeleteZero. To compact the file following
 // object deletion, use OptDeleteCompact.
 //
-// By default, the image modification time is set to time.Now(). To override this, use
+// By default, the image modification time is set to time.Now(). To override this, consider using
 // OptDeleteWithTime.
 func (f *FileImage) DeleteObject(id uint32, opts ...DeleteOpt) error {
 	do := deleteOpts{
@@ -546,8 +560,8 @@ var (
 
 // SetPrimPart sets the specified system partition to be the primary one.
 //
-// By default, the image/object modification time is set to time.Now(). To override this, use
-// OptSetWithTime.
+// By default, the image/object modification times are set to time.Now(). To override this,
+// consider using OptSetWithTime.
 func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
 	so := setOpts{
 		t: time.Now(),

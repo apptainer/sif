@@ -70,6 +70,7 @@ func (e *SignatureNotFoundError) Error() string {
 // Is compares e against target. If target is a SignatureNotFoundError and matches e or target has
 // a zero value ID, true is returned.
 func (e *SignatureNotFoundError) Is(target error) bool {
+	//nolint:errorlint // don't compare wrapped errors in Is()
 	t, ok := target.(*SignatureNotFoundError)
 	if !ok {
 		return false

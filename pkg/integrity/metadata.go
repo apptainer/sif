@@ -43,6 +43,7 @@ func (e *DescriptorIntegrityError) Error() string {
 // Is compares e against target. If target is a DescriptorIntegrityError and matches e or target
 // has a zero value ID, true is returned.
 func (e *DescriptorIntegrityError) Is(target error) bool {
+	//nolint:errorlint // don't compare wrapped errors in Is()
 	t, ok := target.(*DescriptorIntegrityError)
 	if !ok {
 		return false
@@ -65,6 +66,7 @@ func (e *ObjectIntegrityError) Error() string {
 // Is compares e against target. If target is a ObjectIntegrityError and matches e or target has a
 // zero value ID, true is returned.
 func (e *ObjectIntegrityError) Is(target error) bool {
+	//nolint:errorlint // don't compare wrapped errors in Is()
 	t, ok := target.(*ObjectIntegrityError)
 	if !ok {
 		return false

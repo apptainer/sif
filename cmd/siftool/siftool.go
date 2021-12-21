@@ -36,10 +36,6 @@ func writeVersion(w io.Writer) error {
 
 	fmt.Fprintf(tw, "Version:\t%v\n", version)
 
-	if date != "" {
-		fmt.Fprintf(tw, "Built:\t%v\n", date)
-	}
-
 	if builtBy != "" {
 		fmt.Fprintf(tw, "By:\t%v\n", builtBy)
 	}
@@ -50,6 +46,10 @@ func writeVersion(w io.Writer) error {
 		} else {
 			fmt.Fprintf(tw, "Commit:\t%v (%v)\n", commit, state)
 		}
+	}
+
+	if date != "" {
+		fmt.Fprintf(tw, "Date:\t%v\n", date)
 	}
 
 	fmt.Fprintf(tw, "Runtime:\t%v (%v/%v)\n", runtime.Version(), runtime.GOOS, runtime.GOARCH)
