@@ -45,5 +45,6 @@ fixes and security patches are available for all supported language versions.
 SIF and [Apptainer](https://github.com/apptainer/apptainer) are the work of many
 contributors. We appreciate your help!
 
-To contribute, please read the contribution guidelines found in the
-[CONTRIBUTING.md](CONTRIBUTING.md) file.
+This is maintained as a sub-project by the Apptainer project.
+To contribute, see the [Apptainer CONTRIBUTING
+file](https://github.com/apptainer/apptainer/blob/main/CONTRIBUTING.md).
