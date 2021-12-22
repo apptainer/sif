@@ -6,7 +6,7 @@ project_name: siftool
 
 release:
   github:
-    owner: hpcng
+    owner: apptainer
     name: sif
   prerelease: auto
 
