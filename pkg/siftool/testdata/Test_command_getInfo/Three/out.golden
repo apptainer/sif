@@ -1,10 +1,8 @@
-  Data Type:    Signature
-  ID:           3
-  Group ID:     NONE
-  Linked ID:    1 (G)
-  Offset:       40960
-  Size:         1054
-  Created At:   2020-06-30 00:01:56 +0000 UTC
-  Modified At:  2020-06-30 00:01:56 +0000 UTC
-  Hash Type:    SHA-256
-  Entity:       12045C8C0B1004D058DE4BEDA20C27EE7FF7BA84
+  Data Type:  Signature
+  ID:         3
+  Group ID:   NONE
+  Linked ID:  1 (G)
+  Offset:     40960
+  Size:       1054
+  Hash Type:  SHA-256
+  Entity:     12045C8C0B1004D058DE4BEDA20C27EE7FF7BA84

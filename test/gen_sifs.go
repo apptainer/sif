@@ -193,6 +193,7 @@ func generateImages() error {
 			s, err := integrity.NewSigner(f,
 				integrity.OptSignWithEntity(e),
 				integrity.OptSignWithTime(func() time.Time { return time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC) }),
+				integrity.OptSignDeterministic(),
 			)
 			if err != nil {
 				return err
