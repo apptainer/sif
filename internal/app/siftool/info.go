@@ -84,28 +84,7 @@ func (a *App) Header(path string) error {
 
 // writeList writes the list of descriptors in f to w.
 func writeList(w io.Writer, f *sif.FileImage) error {
-	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-
-	if id := f.ID(); id != uuid.Nil.String() {
-		fmt.Fprintf(tw, "ID:\t%v\n", id)
-	}
-
-	if t := f.CreatedAt(); !t.IsZero() {
-		fmt.Fprintf(tw, "Created At:\t%v\n", t.UTC())
-	}
-
-	if t := f.ModifiedAt(); !t.IsZero() {
-		fmt.Fprintf(tw, "Modified At:\t%v\n", t.UTC())
-	}
-
-	if err := tw.Flush(); err != nil {
-		return err
-	}
-
-	fmt.Fprintln(w, "----------------------------------------------------")
-
-	fmt.Fprintln(w, "Descriptors:")
-
+	fmt.Fprintln(w, ("------------------------------------------------------------------------------"))
 	fmt.Fprintf(w, "%-4s %-8s %-8s %-26s %s\n", "ID", "|GROUP", "|LINK", "|SIF POSITION (start-end)", "|TYPE")
 	fmt.Fprintln(w, ("------------------------------------------------------------------------------"))
 
