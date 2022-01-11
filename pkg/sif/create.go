@@ -152,7 +152,7 @@ func OptCreateWithLaunchScript(s string) CreateOpt {
 func OptCreateDeterministic() CreateOpt {
 	return func(co *createOpts) error {
 		co.id = uuid.Nil
-		co.t = time.Unix(0, 0)
+		co.t = time.Time{}
 		return nil
 	}
 }
@@ -381,7 +381,7 @@ type AddOpt func(*addOpts) error
 // modification of images.
 func OptAddDeterministic() AddOpt {
 	return func(ao *addOpts) error {
-		ao.t = time.Unix(0, 0)
+		ao.t = time.Time{}
 		return nil
 	}
 }
@@ -489,7 +489,7 @@ func OptDeleteCompact(b bool) DeleteOpt {
 // modification of images.
 func OptDeleteDeterministic() DeleteOpt {
 	return func(do *deleteOpts) error {
-		do.t = time.Unix(0, 0)
+		do.t = time.Time{}
 		return nil
 	}
 }
@@ -579,7 +579,7 @@ type SetOpt func(*setOpts) error
 // modification of images.
 func OptSetDeterministic() SetOpt {
 	return func(so *setOpts) error {
-		so.t = time.Unix(0, 0)
+		so.t = time.Time{}
 		return nil
 	}
 }
