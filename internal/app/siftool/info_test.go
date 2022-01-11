@@ -94,8 +94,8 @@ func TestApp_Header(t *testing.T) {
 			path: filepath.Join(corpus, "empty-launch-script.sif"),
 		},
 		{
-			name: "EmptyTime",
-			path: filepath.Join(corpus, "empty-time.sif"),
+			name: "OneObjectTime",
+			path: filepath.Join(corpus, "one-object-time.sif"),
 		},
 		{
 			name: "OneObjectGenericJSON",
@@ -185,8 +185,8 @@ func TestApp_List(t *testing.T) {
 			path: filepath.Join(corpus, "empty-launch-script.sif"),
 		},
 		{
-			name: "EmptyTime",
-			path: filepath.Join(corpus, "empty-time.sif"),
+			name: "OneObjectTime",
+			path: filepath.Join(corpus, "one-object-time.sif"),
 		},
 		{
 			name: "OneObjectGenericJSON",
@@ -263,6 +263,11 @@ func TestApp_Info(t *testing.T) {
 		id      uint32
 		wantErr error
 	}{
+		{
+			name: "Time",
+			path: filepath.Join(corpus, "one-object-time.sif"),
+			id:   1,
+		},
 		{
 			name: "GenericJSON",
 			path: filepath.Join(corpus, "one-object-generic-json.sif"),

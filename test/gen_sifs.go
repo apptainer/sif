@@ -100,12 +100,6 @@ func generateImages() error {
 			},
 		},
 		{
-			path: "empty-time.sif",
-			opts: []sif.CreateOpt{
-				sif.OptCreateWithTime(time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC)),
-			},
-		},
-		{
 			path: "empty-launch-script.sif",
 			opts: []sif.CreateOpt{
 				sif.OptCreateWithLaunchScript("#!/usr/bin/env run-script\n"),
@@ -113,6 +107,15 @@ func generateImages() error {
 		},
 
 		// Images with one data object in one group.
+		{
+			path: "one-object-time.sif",
+			opts: []sif.CreateOpt{
+				sif.OptCreateWithTime(time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC)),
+			},
+			diFns: []func() (sif.DescriptorInput, error){
+				objectGenericJSON,
+			},
+		},
 		{
 			path: "one-object-generic-json.sif",
 			diFns: []func() (sif.DescriptorInput, error){
