@@ -43,9 +43,22 @@ func TestNextAligned(t *testing.T) {
 
 func TestCreateContainer(t *testing.T) {
 	tests := []struct {
-		name string
-		opts []CreateOpt
+		name    string
+		opts    []CreateOpt
+		wantErr error
 	}{
+		{
+			name: "ErrInsufficientCapacity",
+			opts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptorCapacity(0),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
+				),
+			},
+			wantErr: errInsufficientCapacity,
+		},
 		{
 			name: "Empty",
 			opts: []CreateOpt{
@@ -139,25 +152,41 @@ func TestCreateContainer(t *testing.T) {
 			var b Buffer
 
 			f, err := CreateContainer(&b, tt.opts...)
-			if err != nil {
-				t.Fatal(err)
+
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
 			}
 
-			if err := f.UnloadContainer(); err != nil {
-				t.Fatal(err)
-			}
+			if err == nil {
+				if err := f.UnloadContainer(); err != nil {
+					t.Error(err)
+				}
 
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, b.Bytes())
+				g := goldie.New(t, goldie.WithTestNameForDir(true))
+				g.Assert(t, tt.name, b.Bytes())
+			}
 		})
 	}
 }
 
 func TestCreateContainerAtPath(t *testing.T) {
 	tests := []struct {
-		name string
-		opts []CreateOpt
+		name    string
+		opts    []CreateOpt
+		wantErr error
 	}{
+		{
+			name: "ErrInsufficientCapacity",
+			opts: []CreateOpt{
+				OptCreateWithID(testID),
+				OptCreateWithTime(testTime),
+				OptCreateWithDescriptorCapacity(0),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
+				),
+			},
+			wantErr: errInsufficientCapacity,
+		},
 		{
 			name: "Empty",
 			opts: []CreateOpt{
@@ -240,21 +269,24 @@ func TestCreateContainerAtPath(t *testing.T) {
 			tf.Close()
 
 			f, err := CreateContainerAtPath(tf.Name(), tt.opts...)
-			if err != nil {
-				t.Fatal(err)
+
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
 			}
 
-			if err := f.UnloadContainer(); err != nil {
-				t.Fatal(err)
-			}
+			if err == nil {
+				if err := f.UnloadContainer(); err != nil {
+					t.Error(err)
+				}
 
-			b, err := os.ReadFile(tf.Name())
-			if err != nil {
-				t.Fatal(err)
-			}
+				b, err := os.ReadFile(tf.Name())
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, b)
+				g := goldie.New(t, goldie.WithTestNameForDir(true))
+				g.Assert(t, tt.name, b)
+			}
 		})
 	}
 }
