@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
@@ -505,14 +504,6 @@ func TestNewSigner(t *testing.T) {
 			opts:             []SignerOpt{OptSignObjects(1, 2, 3)},
 			wantGroupObjects: map[uint32][]uint32{1: {1, 2}, 2: {3}},
 		},
-		{
-			name: "OneGroupSignWithTime",
-			fi:   oneGroupImage,
-			opts: []SignerOpt{OptSignWithTime(func() time.Time {
-				return time.Date(2020, 5, 22, 19, 30, 59, 0, time.UTC)
-			})},
-			wantGroupObjects: map[uint32][]uint32{1: {1, 2}},
-		},
 	}
 
 	for _, tt := range tests {
@@ -644,6 +635,15 @@ func TestSigner_Sign(t *testing.T) {
 				OptSignWithEntity(e),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(1, 2, 3),
+			},
+		},
+		{
+			name:      "OptSignDeterministic",
+			inputFile: "one-group.sif",
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignWithTime(fixedTime),
+				OptSignDeterministic(),
 			},
 		},
 	}
