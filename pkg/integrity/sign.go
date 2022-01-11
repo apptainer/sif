@@ -36,7 +36,6 @@ type groupSigner struct {
 	ods       []sif.Descriptor // Descriptors of object(s) to sign.
 	mdHash    crypto.Hash      // Hash type for metadata.
 	sigConfig *packet.Config   // Configuration for signature.
-	sigHash   crypto.Hash      // Hash type for signature.
 }
 
 // groupSignerOpt are used to configure gs.
@@ -119,9 +118,6 @@ func newGroupSigner(f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*
 		}
 	}
 
-	// Populate hash type.
-	gs.sigHash = gs.sigConfig.Hash()
-
 	return &gs, nil
 }
 
@@ -167,7 +163,7 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 	return sif.NewDescriptorInput(sif.DataSignature, &b,
 		sif.OptNoGroup(),
 		sif.OptLinkedGroupID(gs.id),
-		sif.OptSignatureMetadata(gs.sigHash, e.PrimaryKey.Fingerprint),
+		sif.OptSignatureMetadata(gs.sigConfig.Hash(), e.PrimaryKey.Fingerprint),
 	)
 }
 
