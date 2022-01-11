@@ -48,7 +48,10 @@ func writeHeader(w io.Writer, f *sif.FileImage) error {
 	}
 
 	fmt.Fprintf(tw, "Version:\t%v\n", f.Version())
-	fmt.Fprintf(tw, "Primary Architecture:\t%v\n", f.PrimaryArch())
+
+	if arch := f.PrimaryArch(); arch != "unknown" {
+		fmt.Fprintf(tw, "Primary Architecture:\t%v\n", arch)
+	}
 
 	if id := f.ID(); id != uuid.Nil.String() {
 		fmt.Fprintf(tw, "ID:\t%v\n", id)
