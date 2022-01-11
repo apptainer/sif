@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
 var corpus = filepath.Join("..", "..", "test", "images")
@@ -58,6 +59,23 @@ func tempFileFrom(path string) (tf *os.File, err error) {
 	}
 
 	return tf, nil
+}
+
+// loadContainer loads a container from path for read-only access.
+func loadContainer(t *testing.T, path string) *sif.FileImage {
+	t.Helper()
+
+	f, err := sif.LoadContainerFromPath(path, sif.OptLoadWithFlag(os.O_RDONLY))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := f.UnloadContainer(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	return f
 }
 
 // getTestEntity returns a fixed test PGP entity.
