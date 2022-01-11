@@ -306,10 +306,12 @@ func CreateContainerAtPath(path string, opts ...CreateOpt) (*FileImage, error) {
 	if err != nil {
 		fp.Close()
 		os.Remove(fp.Name())
+
+		return nil, err
 	}
 
 	f.closeOnUnload = true
-	return f, err
+	return f, nil
 }
 
 func zeroData(fimg *FileImage, descr *rawDescriptor) error {
