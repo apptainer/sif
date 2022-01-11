@@ -1,8 +1,5 @@
-Launch Script:        #!/usr/bin/env run-singularity
 Version:              01
 Primary Architecture: 386
-ID:                   610cf3a3-18b0-4622-8b08-772d3510d7b5
-Created At:           2020-06-30 00:01:56 +0000 UTC
 Modified At:          2020-06-30 00:01:56 +0000 UTC
 Descriptors Free:     43
 Descriptors Total:    48

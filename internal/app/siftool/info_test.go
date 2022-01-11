@@ -86,6 +86,26 @@ func TestApp_Header(t *testing.T) {
 			path: filepath.Join(corpus, "empty.sif"),
 		},
 		{
+			name: "EmptyID",
+			path: filepath.Join(corpus, "empty-id.sif"),
+		},
+		{
+			name: "EmptyLaunchScript",
+			path: filepath.Join(corpus, "empty-launch-script.sif"),
+		},
+		{
+			name: "EmptyTime",
+			path: filepath.Join(corpus, "empty-time.sif"),
+		},
+		{
+			name: "OneObjectGenericJSON",
+			path: filepath.Join(corpus, "one-object-generic-json.sif"),
+		},
+		{
+			name: "OneObjectCryptMessage",
+			path: filepath.Join(corpus, "one-object-crypt-message.sif"),
+		},
+		{
 			name: "OneGroup",
 			path: filepath.Join(corpus, "one-group.sif"),
 		},
@@ -157,6 +177,26 @@ func TestApp_List(t *testing.T) {
 			path: filepath.Join(corpus, "empty.sif"),
 		},
 		{
+			name: "EmptyID",
+			path: filepath.Join(corpus, "empty-id.sif"),
+		},
+		{
+			name: "EmptyLaunchScript",
+			path: filepath.Join(corpus, "empty-launch-script.sif"),
+		},
+		{
+			name: "EmptyTime",
+			path: filepath.Join(corpus, "empty-time.sif"),
+		},
+		{
+			name: "OneObjectGenericJSON",
+			path: filepath.Join(corpus, "one-object-generic-json.sif"),
+		},
+		{
+			name: "OneObjectCryptMessage",
+			path: filepath.Join(corpus, "one-object-crypt-message.sif"),
+		},
+		{
 			name: "OneGroup",
 			path: filepath.Join(corpus, "one-group.sif"),
 		},
@@ -216,7 +256,6 @@ func TestApp_List(t *testing.T) {
 	}
 }
 
-//nolint:dupl
 func TestApp_Info(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -225,19 +264,34 @@ func TestApp_Info(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "One",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
+			name: "GenericJSON",
+			path: filepath.Join(corpus, "one-object-generic-json.sif"),
 			id:   1,
 		},
 		{
-			name: "Two",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
+			name: "CryptMessage",
+			path: filepath.Join(corpus, "one-object-crypt-message.sif"),
+			id:   1,
+		},
+		{
+			name: "DataPartitionRaw",
+			path: filepath.Join(corpus, "two-groups-signed.sif"),
+			id:   1,
+		},
+		{
+			name: "DataPartitionSquashFS",
+			path: filepath.Join(corpus, "two-groups-signed.sif"),
 			id:   2,
 		},
 		{
-			name: "Three",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
+			name: "DataPartitionEXT3",
+			path: filepath.Join(corpus, "two-groups-signed.sif"),
 			id:   3,
+		},
+		{
+			name: "DataSignature",
+			path: filepath.Join(corpus, "two-groups-signed.sif"),
+			id:   4,
 		},
 	}
 	for _, tt := range tests {
@@ -259,7 +313,6 @@ func TestApp_Info(t *testing.T) {
 	}
 }
 
-//nolint:dupl
 func TestApp_Dump(t *testing.T) {
 	tests := []struct {
 		name    string

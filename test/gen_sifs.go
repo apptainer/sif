@@ -21,10 +21,6 @@ import (
 	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
-func fixedTime() time.Time {
-	return time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC)
-}
-
 var errUnexpectedNumEntities = errors.New("unexpected number of entities")
 
 func getEntity() (*openpgp.Entity, error) {
@@ -51,31 +47,39 @@ func generateImages() error {
 		return err
 	}
 
-	partSystemGroup1 := func() (sif.DescriptorInput, error) {
-		return sif.NewDescriptorInput(sif.DataPartition,
-			bytes.NewReader([]byte{0xfa, 0xce, 0xfe, 0xed}),
-			sif.OptPartitionMetadata(sif.FsRaw, sif.PartSystem, "386"),
-			sif.OptObjectName("."),
-			sif.OptObjectTime(fixedTime()),
+	objectGenericJSON := func() (sif.DescriptorInput, error) {
+		return sif.NewDescriptorInput(sif.DataGenericJSON,
+			bytes.NewReader([]byte{0x7b, 0x7d}),
+			sif.OptObjectName("data.json"),
 		)
 	}
 
-	partPrimSysGroup1 := func() (sif.DescriptorInput, error) {
+	objectCryptoMessage := func() (sif.DescriptorInput, error) {
+		return sif.NewDescriptorInput(sif.DataCryptoMessage,
+			bytes.NewReader([]byte{0xfe, 0xfe, 0xf0, 0xf0}),
+			sif.OptCryptoMessageMetadata(sif.FormatOpenPGP, sif.MessageClearSignature),
+		)
+	}
+
+	partSystem := func() (sif.DescriptorInput, error) {
+		return sif.NewDescriptorInput(sif.DataPartition,
+			bytes.NewReader([]byte{0xfa, 0xce, 0xfe, 0xed}),
+			sif.OptPartitionMetadata(sif.FsRaw, sif.PartSystem, "386"),
+		)
+	}
+
+	partPrimSys := func() (sif.DescriptorInput, error) {
 		return sif.NewDescriptorInput(sif.DataPartition,
 			bytes.NewReader([]byte{0xde, 0xad, 0xbe, 0xef}),
 			sif.OptPartitionMetadata(sif.FsSquash, sif.PartPrimSys, "386"),
-			sif.OptObjectName("."),
-			sif.OptObjectTime(fixedTime()),
 		)
 	}
 
 	partSystemGroup2 := func() (sif.DescriptorInput, error) {
 		return sif.NewDescriptorInput(sif.DataPartition,
 			bytes.NewReader([]byte{0xba, 0xdd, 0xca, 0xfe}),
-			sif.OptGroupID(2),
 			sif.OptPartitionMetadata(sif.FsExt3, sif.PartSystem, "amd64"),
-			sif.OptObjectName("."),
-			sif.OptObjectTime(fixedTime()),
+			sif.OptGroupID(2),
 		)
 	}
 
@@ -88,10 +92,37 @@ func generateImages() error {
 		// Images with no objects.
 		{
 			path: "empty.sif",
+		},
+		{
+			path: "empty-id.sif",
 			opts: []sif.CreateOpt{
 				sif.OptCreateWithID("3fa802cc-358b-45e3-bcc0-69dc7a45f9f8"),
-				sif.OptCreateWithTime(time.Date(2020, 5, 22, 19, 30, 59, 0, time.UTC)),
-				sif.OptCreateWithLaunchScript("#!/usr/bin/env run-singularity\n"),
+			},
+		},
+		{
+			path: "empty-time.sif",
+			opts: []sif.CreateOpt{
+				sif.OptCreateWithTime(time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC)),
+			},
+		},
+		{
+			path: "empty-launch-script.sif",
+			opts: []sif.CreateOpt{
+				sif.OptCreateWithLaunchScript("#!/usr/bin/env run-script\n"),
+			},
+		},
+
+		// Images with one data object in one group.
+		{
+			path: "one-object-generic-json.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				objectGenericJSON,
+			},
+		},
+		{
+			path: "one-object-crypt-message.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				objectCryptoMessage,
 			},
 		},
 
@@ -99,25 +130,15 @@ func generateImages() error {
 		{
 			path: "one-group.sif",
 			diFns: []func() (sif.DescriptorInput, error){
-				partSystemGroup1,
-				partPrimSysGroup1,
-			},
-			opts: []sif.CreateOpt{
-				sif.OptCreateWithID("6ecc76b7-a497-4f7f-9ebd-8da2a04c6be1"),
-				sif.OptCreateWithTime(time.Date(2020, 5, 22, 19, 30, 59, 0, time.UTC)),
-				sif.OptCreateWithLaunchScript("#!/usr/bin/env run-singularity\n"),
+				partSystem,
+				partPrimSys,
 			},
 		},
 		{
 			path: "one-group-signed.sif",
 			diFns: []func() (sif.DescriptorInput, error){
-				partSystemGroup1,
-				partPrimSysGroup1,
-			},
-			opts: []sif.CreateOpt{
-				sif.OptCreateWithID("73e1c5c3-5c41-41ed-ad7c-2504d669f140"),
-				sif.OptCreateWithTime(fixedTime()),
-				sif.OptCreateWithLaunchScript("#!/usr/bin/env run-singularity\n"),
+				partSystem,
+				partPrimSys,
 			},
 			sign: true,
 		},
@@ -126,27 +147,17 @@ func generateImages() error {
 		{
 			path: "two-groups.sif",
 			diFns: []func() (sif.DescriptorInput, error){
-				partSystemGroup1,
-				partPrimSysGroup1,
+				partSystem,
+				partPrimSys,
 				partSystemGroup2,
-			},
-			opts: []sif.CreateOpt{
-				sif.OptCreateWithID("0b19ec2c-0b08-46c9-95ae-fa88cd9e48a1"),
-				sif.OptCreateWithTime(time.Date(2020, 5, 22, 19, 30, 59, 0, time.UTC)),
-				sif.OptCreateWithLaunchScript("#!/usr/bin/env run-singularity\n"),
 			},
 		},
 		{
 			path: "two-groups-signed.sif",
 			diFns: []func() (sif.DescriptorInput, error){
-				partSystemGroup1,
-				partPrimSysGroup1,
+				partSystem,
+				partPrimSys,
 				partSystemGroup2,
-			},
-			opts: []sif.CreateOpt{
-				sif.OptCreateWithID("610cf3a3-18b0-4622-8b08-772d3510d7b5"),
-				sif.OptCreateWithTime(fixedTime()),
-				sif.OptCreateWithLaunchScript("#!/usr/bin/env run-singularity\n"),
 			},
 			sign: true,
 		},
@@ -181,7 +192,7 @@ func generateImages() error {
 		if image.sign {
 			s, err := integrity.NewSigner(f,
 				integrity.OptSignWithEntity(e),
-				integrity.OptSignWithTime(fixedTime),
+				integrity.OptSignWithTime(func() time.Time { return time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC) }),
 			)
 			if err != nil {
 				return err

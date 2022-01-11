@@ -1,0 +1,9 @@
+  Data Type:        FS
+  ID:               3
+  Group ID:         2
+  Linked ID:        NONE
+  Offset:           40960
+  Size:             4
+  Filesystem Type:  Ext3
+  Partition Type:   System
+  Architecture:     amd64

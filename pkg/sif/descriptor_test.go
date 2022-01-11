@@ -83,22 +83,19 @@ func TestDescriptor_GetReader(t *testing.T) {
 func TestDescriptor_Name(t *testing.T) {
 	// load the test container
 	f, err := LoadContainerFromPath(
-		filepath.Join(corpus, "one-group.sif"),
+		filepath.Join(corpus, "one-object-generic-json.sif"),
 		OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
 		t.Fatalf("failed to load container: %v", err)
 	}
 
-	part, err := f.GetDescriptor(
-		WithPartitionType(PartPrimSys),
-		WithGroupID(DefaultObjectGroup),
-	)
+	part, err := f.GetDescriptor(WithDataType(DataGenericJSON))
 	if err != nil {
 		t.Fatalf("failed to get descriptor: %v", err)
 	}
 
-	if got, want := part.Name(), "."; got != want {
+	if got, want := part.Name(), "data.json"; got != want {
 		t.Errorf("got name %v, want %v", got, want)
 	}
 
