@@ -579,61 +579,95 @@ func TestSigner_Sign(t *testing.T) {
 		{
 			name:      "OneGroup",
 			inputFile: "one-group.sif",
-			opts:      []SignerOpt{OptSignWithEntity(e)},
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignWithTime(fixedTime),
+			},
 		},
 		{
 			name:      "TwoGroups",
 			inputFile: "two-groups.sif",
-			opts:      []SignerOpt{OptSignWithEntity(e)},
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignWithTime(fixedTime),
+			},
 		},
 		{
 			name:      "OptSignGroup1",
 			inputFile: "two-groups.sif",
-			opts:      []SignerOpt{OptSignWithEntity(e), OptSignGroup(1)},
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignWithTime(fixedTime),
+				OptSignGroup(1),
+			},
 		},
 		{
 			name:      "OptSignGroup2",
 			inputFile: "two-groups.sif",
-			opts:      []SignerOpt{OptSignWithEntity(e), OptSignGroup(2)},
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignWithTime(fixedTime),
+				OptSignGroup(2),
+			},
 		},
 		{
 			name:      "OptSignObject1",
 			inputFile: "two-groups.sif",
-			opts:      []SignerOpt{OptSignWithEntity(e), OptSignObjects(1)},
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignWithTime(fixedTime),
+				OptSignObjects(1),
+			},
 		},
 		{
 			name:      "OptSignObject2",
 			inputFile: "two-groups.sif",
-			opts:      []SignerOpt{OptSignWithEntity(e), OptSignObjects(2)},
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignWithTime(fixedTime),
+				OptSignObjects(2),
+			},
 		},
 		{
 			name:      "OptSignObject3",
 			inputFile: "two-groups.sif",
-			opts:      []SignerOpt{OptSignWithEntity(e), OptSignObjects(3)},
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignWithTime(fixedTime),
+				OptSignObjects(3),
+			},
 		},
 		{
 			name:      "OptSignObjects",
 			inputFile: "two-groups.sif",
-			opts:      []SignerOpt{OptSignWithEntity(e), OptSignObjects(1, 2, 3)},
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignWithTime(fixedTime),
+				OptSignObjects(1, 2, 3),
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			// Signing modifies the file, so work with a temporary file.
-			tf, err := tempFileFrom(filepath.Join(corpus, tt.inputFile))
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(tf.Name())
-			defer tf.Close()
 
-			f, err := sif.LoadContainer(tf)
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := os.ReadFile(filepath.Join(corpus, tt.inputFile))
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer f.UnloadContainer() // nolint:errcheck
+
+			buf := sif.NewBuffer(b)
+
+			f, err := sif.LoadContainer(buf)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				if err := f.UnloadContainer(); err != nil {
+					t.Error(err)
+				}
+			})
 
 			s, err := NewSigner(f, tt.opts...)
 			if err != nil {
@@ -643,6 +677,9 @@ func TestSigner_Sign(t *testing.T) {
 			if err := s.Sign(); (err != nil) != tt.wantErr {
 				t.Fatalf("got error %v, wantErr %v", err, tt.wantErr)
 			}
+
+			g := goldie.New(t, goldie.WithTestNameForDir(true))
+			g.Assert(t, tt.name, buf.Bytes())
 		})
 	}
 }
