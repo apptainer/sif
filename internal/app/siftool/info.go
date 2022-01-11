@@ -197,7 +197,9 @@ func writeInfo(w io.Writer, v sif.Descriptor) error {
 		fmt.Fprintf(tw, "\tModified At:\t%v\n", t.UTC())
 	}
 
-	fmt.Fprintf(tw, "\tName:\t%v\n", v.Name())
+	if nm := v.Name(); nm != "" {
+		fmt.Fprintf(tw, "\tName:\t%v\n", nm)
+	}
 
 	switch v.DataType() {
 	case sif.DataPartition:
