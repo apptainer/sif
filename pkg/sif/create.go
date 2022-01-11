@@ -147,6 +147,16 @@ func OptCreateWithLaunchScript(s string) CreateOpt {
 	}
 }
 
+// OptCreateDeterministic sets header/descriptor fields to values that support deterministic
+// creation of images.
+func OptCreateDeterministic() CreateOpt {
+	return func(co *createOpts) error {
+		co.id = uuid.Nil
+		co.t = time.Unix(0, 0)
+		return nil
+	}
+}
+
 // OptCreateWithID specifies id as the unique ID.
 func OptCreateWithID(id string) CreateOpt {
 	return func(co *createOpts) error {
@@ -242,10 +252,10 @@ func createContainer(rw ReadWriter, co createOpts) (*FileImage, error) {
 // interface. To change this behavior, consider using OptCreateWithCloseOnUnload.
 //
 // By default, the image ID is set to a randomly generated value. To override this, consider using
-// OptCreateWithID.
+// OptCreateDeterministic or OptCreateWithID.
 //
 // By default, the image creation time is set to time.Now(). To override this, consider using
-// OptCreateWithTime.
+// OptCreateDeterministic or OptCreateWithTime.
 //
 // By default, the image will support a maximum of 48 descriptors. To change this, consider using
 // OptCreateWithDescriptorCapacity.
@@ -287,10 +297,10 @@ func CreateContainer(rw ReadWriter, opts ...CreateOpt) (*FileImage, error) {
 // are released.
 //
 // By default, the image ID is set to a randomly generated value. To override this, consider using
-// OptCreateWithID.
+// OptCreateDeterministic or OptCreateWithID.
 //
 // By default, the image creation time is set to time.Now(). To override this, consider using
-// OptCreateWithTime.
+// OptCreateDeterministic or OptCreateWithTime.
 //
 // By default, the image will support a maximum of 48 descriptors. To change this, consider using
 // OptCreateWithDescriptorCapacity.
@@ -367,6 +377,15 @@ type addOpts struct {
 // AddOpt are used to specify object add options.
 type AddOpt func(*addOpts) error
 
+// OptAddDeterministic sets header/descriptor fields to values that support deterministic
+// modification of images.
+func OptAddDeterministic() AddOpt {
+	return func(ao *addOpts) error {
+		ao.t = time.Unix(0, 0)
+		return nil
+	}
+}
+
 // OptAddWithTime specifies t as the image modification time.
 func OptAddWithTime(t time.Time) AddOpt {
 	return func(ao *addOpts) error {
@@ -378,7 +397,7 @@ func OptAddWithTime(t time.Time) AddOpt {
 // AddObject adds a new data object and its descriptor into the specified SIF file.
 //
 // By default, the image modification time is set to the current time. To override this, consider
-// using OptAddWithTime.
+// using OptAddDeterministic or OptAddWithTime.
 func (f *FileImage) AddObject(di DescriptorInput, opts ...AddOpt) error {
 	ao := addOpts{
 		t: time.Now(),
@@ -466,6 +485,15 @@ func OptDeleteCompact(b bool) DeleteOpt {
 	}
 }
 
+// OptDeleteDeterministic sets header/descriptor fields to values that support deterministic
+// modification of images.
+func OptDeleteDeterministic() DeleteOpt {
+	return func(do *deleteOpts) error {
+		do.t = time.Unix(0, 0)
+		return nil
+	}
+}
+
 // OptDeleteWithTime specifies t as the image modification time.
 func OptDeleteWithTime(t time.Time) DeleteOpt {
 	return func(do *deleteOpts) error {
@@ -482,7 +510,7 @@ var errCompactNotImplemented = errors.New("compact not implemented for non-last 
 // object deletion, use OptDeleteCompact.
 //
 // By default, the image modification time is set to time.Now(). To override this, consider using
-// OptDeleteWithTime.
+// OptDeleteDeterministic or OptDeleteWithTime.
 func (f *FileImage) DeleteObject(id uint32, opts ...DeleteOpt) error {
 	do := deleteOpts{
 		t: time.Now(),
@@ -547,6 +575,15 @@ type setOpts struct {
 // SetOpt are used to specify object set options.
 type SetOpt func(*setOpts) error
 
+// OptSetDeterministic sets header/descriptor fields to values that support deterministic
+// modification of images.
+func OptSetDeterministic() SetOpt {
+	return func(so *setOpts) error {
+		so.t = time.Unix(0, 0)
+		return nil
+	}
+}
+
 // OptSetWithTime specifies t as the image/object modification time.
 func OptSetWithTime(t time.Time) SetOpt {
 	return func(so *setOpts) error {
@@ -563,7 +600,7 @@ var (
 // SetPrimPart sets the specified system partition to be the primary one.
 //
 // By default, the image/object modification times are set to time.Now(). To override this,
-// consider using OptSetWithTime.
+// consider using OptSetDeterministic or OptSetWithTime.
 func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
 	so := setOpts{
 		t: time.Now(),
