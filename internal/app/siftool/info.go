@@ -19,6 +19,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/apptainer/sif/v2/pkg/sif"
+	"github.com/google/uuid"
 )
 
 // readableSize returns the size in human readable format.
@@ -40,22 +41,36 @@ func readableSize(size int64) string {
 
 // writeHeader writes header information in f to w.
 func writeHeader(w io.Writer, f *sif.FileImage) error {
-	tw := tabwriter.NewWriter(w, 0, 0, 0, ' ', 0)
+	tw := tabwriter.NewWriter(w, 0, 0, 1, ' ', 0)
 
 	if s := f.LaunchScript(); s != "" {
-		fmt.Fprintln(tw, "Launch Script:\t", strings.TrimSuffix(s, "\n"))
+		fmt.Fprintf(tw, "Launch Script:\t%v\n", strings.TrimSuffix(s, "\n"))
 	}
-	fmt.Fprintln(tw, "Version:\t", f.Version())
-	fmt.Fprintln(tw, "Primary Architecture:\t", f.PrimaryArch())
-	fmt.Fprintln(tw, "ID:\t", f.ID())
-	fmt.Fprintln(tw, "Created At:\t", f.CreatedAt().UTC())
-	fmt.Fprintln(tw, "Modified At:\t", f.ModifiedAt().UTC())
-	fmt.Fprintln(tw, "Descriptors Free:\t", f.DescriptorsFree())
-	fmt.Fprintln(tw, "Descriptors Total:\t", f.DescriptorsTotal())
-	fmt.Fprintln(tw, "Descriptors Offset:\t", f.DescriptorsOffset())
-	fmt.Fprintln(tw, "Descriptors Size:\t", readableSize(f.DescriptorsSize()))
-	fmt.Fprintln(tw, "Data Offset:\t", f.DataOffset())
-	fmt.Fprintln(tw, "Data Size:\t", readableSize(f.DataSize()))
+
+	fmt.Fprintf(tw, "Version:\t%v\n", f.Version())
+
+	if arch := f.PrimaryArch(); arch != "unknown" {
+		fmt.Fprintf(tw, "Primary Architecture:\t%v\n", arch)
+	}
+
+	if id := f.ID(); id != uuid.Nil.String() {
+		fmt.Fprintf(tw, "ID:\t%v\n", id)
+	}
+
+	if t := f.CreatedAt(); !t.IsZero() {
+		fmt.Fprintf(tw, "Created At:\t%v\n", t.UTC())
+	}
+
+	if t := f.ModifiedAt(); !t.IsZero() {
+		fmt.Fprintf(tw, "Modified At:\t%v\n", t.UTC())
+	}
+
+	fmt.Fprintf(tw, "Descriptors Free:\t%v\n", f.DescriptorsFree())
+	fmt.Fprintf(tw, "Descriptors Total:\t%v\n", f.DescriptorsTotal())
+	fmt.Fprintf(tw, "Descriptors Offset:\t%v\n", f.DescriptorsOffset())
+	fmt.Fprintf(tw, "Descriptors Size:\t%v\n", readableSize(f.DescriptorsSize()))
+	fmt.Fprintf(tw, "Data Offset:\t%v\n", f.DataOffset())
+	fmt.Fprintf(tw, "Data Size:\t%v\n", readableSize(f.DataSize()))
 
 	return tw.Flush()
 }
@@ -69,13 +84,7 @@ func (a *App) Header(path string) error {
 
 // writeList writes the list of descriptors in f to w.
 func writeList(w io.Writer, f *sif.FileImage) error {
-	fmt.Fprintln(w, "ID:          ", f.ID())
-	fmt.Fprintln(w, "Created At:  ", f.CreatedAt().UTC())
-	fmt.Fprintln(w, "Modified At: ", f.ModifiedAt().UTC())
-	fmt.Fprintln(w, "----------------------------------------------------")
-
-	fmt.Fprintln(w, "Descriptors:")
-
+	fmt.Fprintln(w, ("------------------------------------------------------------------------------"))
 	fmt.Fprintf(w, "%-4s %-8s %-8s %-26s %s\n", "ID", "|GROUP", "|LINK", "|SIF POSITION (start-end)", "|TYPE")
 	fmt.Fprintln(w, ("------------------------------------------------------------------------------"))
 
@@ -101,14 +110,20 @@ func writeList(w io.Writer, f *sif.FileImage) error {
 
 		switch dt := d.DataType(); dt {
 		case sif.DataPartition:
-			fs, pt, arch, _ := d.PartitionMetadata()
-			fmt.Fprintf(w, "|%s (%s/%s/%s)\n", dt, fs, pt, arch)
+			fs, pt, arch, err := d.PartitionMetadata()
+			if err == nil {
+				fmt.Fprintf(w, "|%s (%s/%s/%s)\n", dt, fs, pt, arch)
+			}
 		case sif.DataSignature:
-			ht, _, _ := d.SignatureMetadata()
-			fmt.Fprintf(w, "|%s (%s)\n", dt, ht)
+			ht, _, err := d.SignatureMetadata()
+			if err == nil {
+				fmt.Fprintf(w, "|%s (%s)\n", dt, ht)
+			}
 		case sif.DataCryptoMessage:
-			ft, mt, _ := d.CryptoMessageMetadata()
-			fmt.Fprintf(w, "|%s (%s/%s)\n", dt, ft, mt)
+			ft, mt, err := d.CryptoMessageMetadata()
+			if err == nil {
+				fmt.Fprintf(w, "|%s (%s/%s)\n", dt, ft, mt)
+			}
 		default:
 			fmt.Fprintf(w, "|%s\n", dt)
 		}
@@ -128,45 +143,71 @@ func (a *App) List(path string) error {
 
 // writeInfo writes info about d to w.
 func writeInfo(w io.Writer, v sif.Descriptor) error {
-	tw := tabwriter.NewWriter(w, 0, 0, 1, ' ', 0)
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 
-	fmt.Fprintln(tw, "  Data Type:\t", v.DataType())
-	fmt.Fprintln(tw, "  ID:\t", v.ID())
+	fmt.Fprintf(tw, "\tData Type:\t%v\n", v.DataType())
+	fmt.Fprintf(tw, "\tID:\t%v\n", v.ID())
 
+	fmt.Fprint(tw, "\tGroup ID:\t")
 	if id := v.GroupID(); id == 0 {
-		fmt.Fprintln(tw, "  Group ID:\t", "NONE")
+		fmt.Fprintln(tw, "NONE")
 	} else {
-		fmt.Fprintln(tw, "  Group ID:\t", id)
+		fmt.Fprintln(tw, id)
 	}
 
+	fmt.Fprint(tw, "\tLinked ID:\t")
 	switch id, isGroup := v.LinkedID(); {
 	case id == 0:
-		fmt.Fprintln(tw, "  Linked ID:\t", "NONE")
+		fmt.Fprintln(tw, "NONE")
 	case isGroup:
-		fmt.Fprintln(tw, "  Linked ID:\t", id, "(G)")
+		fmt.Fprintln(tw, id, "(G)")
 	default:
-		fmt.Fprintln(tw, "  Linked ID:\t", id)
+		fmt.Fprintln(tw, id)
 	}
 
-	fmt.Fprintln(tw, "  Offset:\t", v.Offset())
-	fmt.Fprintln(tw, "  Size:\t", v.Size())
-	fmt.Fprintln(tw, "  Created At:\t", v.CreatedAt().UTC())
-	fmt.Fprintln(tw, "  Modified At:\t", v.ModifiedAt().UTC())
-	fmt.Fprintln(tw, "  Name:\t", v.Name())
+	fmt.Fprintf(tw, "\tOffset:\t%v\n", v.Offset())
+	fmt.Fprintf(tw, "\tSize:\t%v\n", v.Size())
+
+	if t := v.CreatedAt(); !t.IsZero() {
+		fmt.Fprintf(tw, "\tCreated At:\t%v\n", t.UTC())
+	}
+
+	if t := v.ModifiedAt(); !t.IsZero() {
+		fmt.Fprintf(tw, "\tModified At:\t%v\n", t.UTC())
+	}
+
+	if nm := v.Name(); nm != "" {
+		fmt.Fprintf(tw, "\tName:\t%v\n", nm)
+	}
+
 	switch v.DataType() {
 	case sif.DataPartition:
-		fs, pt, arch, _ := v.PartitionMetadata()
-		fmt.Fprintln(tw, "  Filesystem Type:\t", fs)
-		fmt.Fprintln(tw, "  Partition Type:\t", pt)
-		fmt.Fprintln(tw, "  Architecture:\t", arch)
+		fs, pt, arch, err := v.PartitionMetadata()
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(tw, "\tFilesystem Type:\t%v\n", fs)
+		fmt.Fprintf(tw, "\tPartition Type:\t%v\n", pt)
+		fmt.Fprintf(tw, "\tArchitecture:\t%v\n", arch)
+
 	case sif.DataSignature:
-		ht, fp, _ := v.SignatureMetadata()
-		fmt.Fprintln(tw, "  Hash Type:\t", ht)
-		fmt.Fprintln(tw, "  Entity:\t", fmt.Sprintf("%X", fp))
+		ht, fp, err := v.SignatureMetadata()
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(tw, "\tHash Type:\t%v\n", ht)
+		fmt.Fprintf(tw, "\tEntity:\t%X\n", fp)
+
 	case sif.DataCryptoMessage:
-		ft, mt, _ := v.CryptoMessageMetadata()
-		fmt.Fprintln(tw, "  Format Type:\t", ft)
-		fmt.Fprintln(tw, "  Message Type:\t", mt)
+		ft, mt, err := v.CryptoMessageMetadata()
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(tw, "\tFormat Type:\t%v\n", ft)
+		fmt.Fprintf(tw, "\tMessage Type:\t%v\n", mt)
 	}
 
 	return tw.Flush()

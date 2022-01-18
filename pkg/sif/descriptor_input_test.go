@@ -19,11 +19,6 @@ import (
 	"github.com/sebdah/goldie/v2"
 )
 
-var (
-	testID   = "ce2eb66b-b8dd-4a66-b5f5-da179f3a18cc"
-	testTime = time.Unix(1136239445, 0)
-)
-
 // getDescriptorInput returns a new DescriptorInput of type dt with contents b, according to opts.
 func getDescriptorInput(t *testing.T, dt DataType, b []byte, opts ...DescriptorInputOpt) DescriptorInput {
 	t.Helper()
@@ -52,16 +47,12 @@ func TestNewDescriptorInput(t *testing.T) {
 		{
 			name: "Empty",
 			t:    DataGeneric,
-			opts: []DescriptorInputOpt{
-				OptObjectTime(testTime),
-			},
 		},
 		{
 			name: "OptNoGroup",
 			t:    DataGeneric,
 			opts: []DescriptorInputOpt{
 				OptNoGroup(),
-				OptObjectTime(testTime),
 			},
 		},
 		{
@@ -77,7 +68,6 @@ func TestNewDescriptorInput(t *testing.T) {
 			t:    DataGeneric,
 			opts: []DescriptorInputOpt{
 				OptGroupID(2),
-				OptObjectTime(testTime),
 			},
 		},
 		{
@@ -93,7 +83,6 @@ func TestNewDescriptorInput(t *testing.T) {
 			t:    DataGeneric,
 			opts: []DescriptorInputOpt{
 				OptLinkedID(1),
-				OptObjectTime(testTime),
 			},
 		},
 		{
@@ -109,7 +98,6 @@ func TestNewDescriptorInput(t *testing.T) {
 			t:    DataGeneric,
 			opts: []DescriptorInputOpt{
 				OptLinkedGroupID(1),
-				OptObjectTime(testTime),
 			},
 		},
 		{
@@ -117,7 +105,6 @@ func TestNewDescriptorInput(t *testing.T) {
 			t:    DataGeneric,
 			opts: []DescriptorInputOpt{
 				OptObjectAlignment(8),
-				OptObjectTime(testTime),
 			},
 		},
 		{
@@ -125,7 +112,13 @@ func TestNewDescriptorInput(t *testing.T) {
 			t:    DataGeneric,
 			opts: []DescriptorInputOpt{
 				OptObjectName("name"),
-				OptObjectTime(testTime),
+			},
+		},
+		{
+			name: "OptObjectTime",
+			t:    DataGeneric,
+			opts: []DescriptorInputOpt{
+				OptObjectTime(time.Unix(946702800, 0)),
 			},
 		},
 		{
@@ -141,7 +134,6 @@ func TestNewDescriptorInput(t *testing.T) {
 			t:    DataCryptoMessage,
 			opts: []DescriptorInputOpt{
 				OptCryptoMessageMetadata(FormatOpenPGP, MessageClearSignature),
-				OptObjectTime(testTime),
 			},
 		},
 		{
@@ -157,7 +149,6 @@ func TestNewDescriptorInput(t *testing.T) {
 			t:    DataPartition,
 			opts: []DescriptorInputOpt{
 				OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
-				OptObjectTime(testTime),
 			},
 		},
 		{
@@ -173,7 +164,6 @@ func TestNewDescriptorInput(t *testing.T) {
 			t:    DataSignature,
 			opts: []DescriptorInputOpt{
 				OptSignatureMetadata(crypto.SHA256, fp),
-				OptObjectTime(testTime),
 			},
 		},
 	}
@@ -191,7 +181,7 @@ func TestNewDescriptorInput(t *testing.T) {
 
 			if err == nil {
 				d := rawDescriptor{}
-				if err := di.fillDescriptor(testTime, &d); err != nil {
+				if err := di.fillDescriptor(time.Time{}, &d); err != nil {
 					t.Fatal(err)
 				}
 

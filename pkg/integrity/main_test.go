@@ -9,14 +9,13 @@
 package integrity
 
 import (
-	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
 var corpus = filepath.Join("..", "..", "test", "images")
@@ -26,38 +25,21 @@ func fixedTime() time.Time {
 	return time.Unix(1504657553, 0)
 }
 
-// tempFileFrom copies the file at path to a temporary file, and returns a reference to it.
-func tempFileFrom(path string) (tf *os.File, err error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+// loadContainer loads a container from path for read-only access.
+func loadContainer(t *testing.T, path string) *sif.FileImage {
+	t.Helper()
 
-	pattern := "*"
-	if ext := filepath.Ext(path); ext != "" {
-		pattern = fmt.Sprintf("*.%s", ext)
-	}
-
-	tf, err = os.CreateTemp("", pattern)
+	f, err := sif.LoadContainerFromPath(path, sif.OptLoadWithFlag(os.O_RDONLY))
 	if err != nil {
-		return nil, err
+		t.Fatal(err)
 	}
-	defer func() {
-		if err != nil {
-			tf.Close()
+	t.Cleanup(func() {
+		if err := f.UnloadContainer(); err != nil {
+			t.Error(err)
 		}
-	}()
+	})
 
-	if _, err := io.Copy(tf, f); err != nil {
-		return nil, err
-	}
-
-	if _, err := tf.Seek(0, io.SeekStart); err != nil {
-		return nil, err
-	}
-
-	return tf, nil
+	return f
 }
 
 // getTestEntity returns a fixed test PGP entity.

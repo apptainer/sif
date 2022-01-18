@@ -8,9 +8,11 @@ package siftool
 import (
 	"bytes"
 	"errors"
+	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/apptainer/sif/v2/pkg/sif"
 	"github.com/sebdah/goldie/v2"
 )
 
@@ -82,8 +84,33 @@ func TestApp_Header(t *testing.T) {
 		wantErr error
 	}{
 		{
+			name:    "NotExist",
+			path:    "not-exist.sif",
+			wantErr: os.ErrNotExist,
+		},
+		{
 			name: "Empty",
 			path: filepath.Join(corpus, "empty.sif"),
+		},
+		{
+			name: "EmptyID",
+			path: filepath.Join(corpus, "empty-id.sif"),
+		},
+		{
+			name: "EmptyLaunchScript",
+			path: filepath.Join(corpus, "empty-launch-script.sif"),
+		},
+		{
+			name: "OneObjectTime",
+			path: filepath.Join(corpus, "one-object-time.sif"),
+		},
+		{
+			name: "OneObjectGenericJSON",
+			path: filepath.Join(corpus, "one-object-generic-json.sif"),
+		},
+		{
+			name: "OneObjectCryptMessage",
+			path: filepath.Join(corpus, "one-object-crypt-message.sif"),
 		},
 		{
 			name: "OneGroup",
@@ -139,8 +166,10 @@ func TestApp_Header(t *testing.T) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
 
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, b.Bytes())
+			if tt.wantErr == nil {
+				g := goldie.New(t, goldie.WithTestNameForDir(true))
+				g.Assert(t, tt.name, b.Bytes())
+			}
 		})
 	}
 }
@@ -153,8 +182,33 @@ func TestApp_List(t *testing.T) {
 		wantErr error
 	}{
 		{
+			name:    "NotExist",
+			path:    "not-exist.sif",
+			wantErr: os.ErrNotExist,
+		},
+		{
 			name: "Empty",
 			path: filepath.Join(corpus, "empty.sif"),
+		},
+		{
+			name: "EmptyID",
+			path: filepath.Join(corpus, "empty-id.sif"),
+		},
+		{
+			name: "EmptyLaunchScript",
+			path: filepath.Join(corpus, "empty-launch-script.sif"),
+		},
+		{
+			name: "OneObjectTime",
+			path: filepath.Join(corpus, "one-object-time.sif"),
+		},
+		{
+			name: "OneObjectGenericJSON",
+			path: filepath.Join(corpus, "one-object-generic-json.sif"),
+		},
+		{
+			name: "OneObjectCryptMessage",
+			path: filepath.Join(corpus, "one-object-crypt-message.sif"),
 		},
 		{
 			name: "OneGroup",
@@ -210,13 +264,14 @@ func TestApp_List(t *testing.T) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
 
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, b.Bytes())
+			if tt.wantErr == nil {
+				g := goldie.New(t, goldie.WithTestNameForDir(true))
+				g.Assert(t, tt.name, b.Bytes())
+			}
 		})
 	}
 }
 
-//nolint:dupl
 func TestApp_Info(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -225,19 +280,44 @@ func TestApp_Info(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "One",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
+			name:    "NotExist",
+			path:    "not-exist.sif",
+			wantErr: os.ErrNotExist,
+		},
+		{
+			name: "Time",
+			path: filepath.Join(corpus, "one-object-time.sif"),
 			id:   1,
 		},
 		{
-			name: "Two",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
+			name: "GenericJSON",
+			path: filepath.Join(corpus, "one-object-generic-json.sif"),
+			id:   1,
+		},
+		{
+			name: "CryptMessage",
+			path: filepath.Join(corpus, "one-object-crypt-message.sif"),
+			id:   1,
+		},
+		{
+			name: "DataPartitionRaw",
+			path: filepath.Join(corpus, "two-groups-signed.sif"),
+			id:   1,
+		},
+		{
+			name: "DataPartitionSquashFS",
+			path: filepath.Join(corpus, "two-groups-signed.sif"),
 			id:   2,
 		},
 		{
-			name: "Three",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
+			name: "DataPartitionEXT3",
+			path: filepath.Join(corpus, "two-groups-signed.sif"),
 			id:   3,
+		},
+		{
+			name: "DataSignature",
+			path: filepath.Join(corpus, "two-groups-signed.sif"),
+			id:   4,
 		},
 	}
 	for _, tt := range tests {
@@ -253,13 +333,14 @@ func TestApp_Info(t *testing.T) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
 
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, b.Bytes())
+			if tt.wantErr == nil {
+				g := goldie.New(t, goldie.WithTestNameForDir(true))
+				g.Assert(t, tt.name, b.Bytes())
+			}
 		})
 	}
 }
 
-//nolint:dupl
 func TestApp_Dump(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -267,6 +348,17 @@ func TestApp_Dump(t *testing.T) {
 		id      uint32
 		wantErr error
 	}{
+		{
+			name:    "NotExist",
+			path:    "not-exist.sif",
+			wantErr: os.ErrNotExist,
+		},
+		{
+			name:    "InvalidObjectID",
+			path:    filepath.Join(corpus, "one-group-signed.sif"),
+			id:      0,
+			wantErr: sif.ErrInvalidObjectID,
+		},
 		{
 			name: "One",
 			path: filepath.Join(corpus, "one-group-signed.sif"),
@@ -296,8 +388,10 @@ func TestApp_Dump(t *testing.T) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
 
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, b.Bytes())
+			if tt.wantErr == nil {
+				g := goldie.New(t, goldie.WithTestNameForDir(true))
+				g.Assert(t, tt.name, b.Bytes())
+			}
 		})
 	}
 }

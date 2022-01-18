@@ -36,7 +36,6 @@ type groupSigner struct {
 	ods       []sif.Descriptor // Descriptors of object(s) to sign.
 	mdHash    crypto.Hash      // Hash type for metadata.
 	sigConfig *packet.Config   // Configuration for signature.
-	sigHash   crypto.Hash      // Hash type for signature.
 }
 
 // groupSignerOpt are used to configure gs.
@@ -119,9 +118,6 @@ func newGroupSigner(f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*
 		}
 	}
 
-	// Populate hash type.
-	gs.sigHash = gs.sigConfig.Hash()
-
 	return &gs, nil
 }
 
@@ -167,15 +163,16 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 	return sif.NewDescriptorInput(sif.DataSignature, &b,
 		sif.OptNoGroup(),
 		sif.OptLinkedGroupID(gs.id),
-		sif.OptSignatureMetadata(gs.sigHash, e.PrimaryKey.Fingerprint),
+		sif.OptSignatureMetadata(gs.sigConfig.Hash(), e.PrimaryKey.Fingerprint),
 	)
 }
 
 type signOpts struct {
-	e         *openpgp.Entity
-	groupIDs  []uint32
-	objectIDs [][]uint32
-	timeFunc  func() time.Time
+	e             *openpgp.Entity
+	groupIDs      []uint32
+	objectIDs     [][]uint32
+	timeFunc      func() time.Time
+	deterministic bool
 }
 
 // SignerOpt are used to configure so.
@@ -212,10 +209,21 @@ func OptSignObjects(ids ...uint32) SignerOpt {
 	}
 }
 
-// OptSignWithTime specifies fn as the func to obtain the signature time and SIF timestamps.
+// OptSignWithTime specifies fn as the func to obtain signature timestamp(s). Unless
+// OptSignDeterministic is supplied, fn is also used to set SIF timestamps.
 func OptSignWithTime(fn func() time.Time) SignerOpt {
 	return func(so *signOpts) error {
 		so.timeFunc = fn
+		return nil
+	}
+}
+
+// OptSignDeterministic sets SIF header/descriptor fields to values that support deterministic
+// modification of images. This does not affect the signature timestamps; to specify deterministic
+// signature timestamps, use OptSignWithTime.
+func OptSignDeterministic() SignerOpt {
+	return func(so *signOpts) error {
+		so.deterministic = true
 		return nil
 	}
 }
@@ -254,10 +262,9 @@ func withGroupedObjects(f *sif.FileImage, ids []uint32, fn func(uint32, []uint32
 
 // Signer describes a SIF image signer.
 type Signer struct {
-	f        *sif.FileImage
-	signers  []*groupSigner
-	e        *openpgp.Entity
-	timeFunc func() time.Time
+	f       *sif.FileImage
+	opts    signOpts
+	signers []*groupSigner
 }
 
 // NewSigner returns a Signer to add digital signature(s) to f, according to opts.
@@ -266,6 +273,9 @@ type Signer struct {
 //
 // By default, one digital signature is added per object group in f. To override this behavior,
 // consider using OptSignGroup and/or OptSignObjects.
+//
+// By default, signature, header and descriptor timestamps are set to the current time. To override
+// this behavior, consider using OptSignWithTime or OptSignDeterministic.
 func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 	if f == nil {
 		return nil, fmt.Errorf("integrity: %w", errNilFileImage)
@@ -283,19 +293,14 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 	}
 
 	s := Signer{
-		f:        f,
-		e:        so.e,
-		timeFunc: so.timeFunc,
+		f:    f,
+		opts: so,
 	}
 
-	var commonOpts []groupSignerOpt
-
-	if so.timeFunc != nil {
-		commonOpts = append(commonOpts,
-			optSignGroupSignatureConfig(&packet.Config{
-				Time: so.timeFunc,
-			}),
-		)
+	commonOpts := []groupSignerOpt{
+		optSignGroupSignatureConfig(&packet.Config{
+			Time: so.timeFunc,
+		}),
 	}
 
 	// Add signer for each groupID.
@@ -350,17 +355,24 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 // If key material was not provided when s was created, Sign returns an error wrapping
 // ErrNoKeyMaterial.
 func (s *Signer) Sign() error {
-	if s.e == nil {
+	if s.opts.e == nil {
 		return fmt.Errorf("integrity: %w", ErrNoKeyMaterial)
 	}
 
 	for _, gs := range s.signers {
-		di, err := gs.signWithEntity(s.e)
+		di, err := gs.signWithEntity(s.opts.e)
 		if err != nil {
 			return fmt.Errorf("integrity: %w", err)
 		}
 
-		if err := s.f.AddObject(di, sif.OptAddWithTime(s.timeFunc())); err != nil {
+		var opts []sif.AddOpt
+		if s.opts.deterministic {
+			opts = append(opts, sif.OptAddDeterministic())
+		} else {
+			opts = append(opts, sif.OptAddWithTime(s.opts.timeFunc()))
+		}
+
+		if err := s.f.AddObject(di, opts...); err != nil {
 			return fmt.Errorf("integrity: failed to add object: %w", err)
 		}
 	}

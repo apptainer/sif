@@ -329,7 +329,8 @@ func (f *FileImage) Version() string {
 	return string(bytes.TrimRight(f.h.Version[:], "\x00"))
 }
 
-// PrimaryArch returns the primary CPU architecture of the image.
+// PrimaryArch returns the primary CPU architecture of the image, or "unknown" if the primary CPU
+// architecture cannot be determined.
 func (f *FileImage) PrimaryArch() string { return f.h.Arch.GoArch() }
 
 // ID returns the ID of the image.
