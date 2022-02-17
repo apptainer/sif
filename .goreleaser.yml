@@ -20,8 +20,8 @@ builds:
       - arm
       - arm64
     goarm:
-      - 6
-      - 7
+      - '6'
+      - '7'
     env:
       - CGO_ENABLED=0
     flags: '-trimpath'
@@ -31,7 +31,7 @@ builds:
 
 archives:
   - format: tar.gz
-    wrap_in_directory: true
+    wrap_in_directory: 'true'
     name_template: '{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
     files:
       - README.md
