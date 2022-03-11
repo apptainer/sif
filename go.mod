@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/magefile/mage v1.12.1
 	github.com/sebdah/goldie/v2 v2.5.3
-	github.com/spf13/cobra v1.3.0
+	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 )
 
