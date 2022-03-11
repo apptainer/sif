@@ -2,49 +2,70 @@
 #   For website terms of use, trademark policy, privacy policy and other
 #   project policies see https://lfprojects.org/policies
 
-project_name: siftool
-
 release:
-  github:
-    owner: apptainer
-    name: sif
   prerelease: auto
 
+changelog:
+  use: github-native
+
+gomod:
+  proxy: true
+  env:
+    - GOPROXY=https://proxy.golang.org,direct
+    - GOSUMDB=sum.golang.org
+
 builds:
-  - binary: siftool
+  - id: darwin-builds
+    binary: siftool
     goos:
       - darwin
-      - linux
     goarch:
       - amd64
-      - arm
       - arm64
+    main: &build-main ./cmd/siftool
+    mod_timestamp: &build-timestamp '{{ .CommitTimestamp }}'
+    env: &build-env
+      - CGO_ENABLED=0
+    flags: &build-flags '-trimpath'
+    ldflags: &build-ldflags |
+      -s
+      -w
+      -X main.version={{ .Version }}
+      -X main.date={{ .CommitDate }}
+      -X main.builtBy=goreleaser
+      -X main.commit={{ .FullCommit }}
+
+  - id: linux-builds
+    binary: siftool
+    goos:
+      - linux
+    goarch:
+      - '386'
+      - 'amd64'
+      - 'arm'
+      - 'arm64'
+      - 'mips'
+      - 'mips64'
+      - 'mips64le'
+      - 'mipsle'
+      - 'ppc64'
+      - 'ppc64le'
+      - 'riscv64'
+      - 's390x'
     goarm:
       - '6'
       - '7'
-    env:
-      - CGO_ENABLED=0
-    flags: '-trimpath'
-    ldflags: '-s -w -X main.version={{ .Version }} -X main.commit={{ .FullCommit }} -X main.date={{ .CommitDate }} -X main.builtBy=goreleaser'
-    main: ./cmd/siftool
-    mod_timestamp: '{{ .CommitTimestamp }}'
+    main: *build-main
+    mod_timestamp: *build-timestamp
+    env: *build-env
+    flags: *build-flags
+    ldflags: *build-ldflags
 
 archives:
-  - format: tar.gz
-    wrap_in_directory: 'true'
-    name_template: '{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
-    files:
-      - README.md
+  - id: darwin-archives
+    builds:
+      - darwin-builds
 
-checksum:
-  name_template: '{{ .ProjectName }}-{{ .Version }}-checksums.txt'
-
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^dev:'
-      - '^docs:'
-      - '^test:'
-      - '^Merge branch'
-      - '^Merge pull request'
+  - id: linux-archives
+    builds:
+      - linux-builds

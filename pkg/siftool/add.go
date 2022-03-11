@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -70,7 +70,7 @@ func addFlags(fs *pflag.FlagSet) {
   1-386,       2-amd64,     3-arm,
   4-arm64,     5-ppc64,     6-ppc64le,
   7-mips,      8-mipsle,    9-mips64,
-  10-mips64le, 11-s390x`)
+  10-mips64le, 11-s390x,    12-riscv64`)
 	signHash = fs.Int32("signhash", 0, `the signature hash used (with -datatype 5-Signature)
 [NEEDED, no default]:
   1-SHA256,      2-SHA384,      3-SHA512,
@@ -134,6 +134,8 @@ func getArch() string {
 		return "mips64le"
 	case 11:
 		return "s390x"
+	case 12:
+		return "riscv64"
 	default:
 		return "unknown"
 	}

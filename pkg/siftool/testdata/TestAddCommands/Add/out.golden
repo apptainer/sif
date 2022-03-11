@@ -24,7 +24,7 @@ Flags:
                               1-386,       2-amd64,     3-arm,
                               4-arm64,     5-ppc64,     6-ppc64le,
                               7-mips,      8-mipsle,    9-mips64,
-                              10-mips64le, 11-s390x
+                              10-mips64le, 11-s390x,    12-riscv64
       --partfs int32        the filesystem used (with -datatype 4-Partition)
                             [NEEDED, no default]:
                               1-Squash,    2-Ext3,      3-ImmuObj,
