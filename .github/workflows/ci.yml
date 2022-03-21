@@ -30,7 +30,7 @@ jobs:
           git diff --exit-code -- go.mod go.sum
 
       - name: Build Source
-        run: go run mage.go build:source
+        run: go run ./magefiles/mage.go build:source
 
       - name: Install Lint
         uses: golangci/golangci-lint-action@v2
@@ -44,7 +44,7 @@ jobs:
           golangci-lint run
 
       - name: Run Tests
-        run: go run mage.go cover:unit cover.out
+        run: go run ./magefiles/mage.go cover:unit cover.out
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v2

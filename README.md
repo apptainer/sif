@@ -29,7 +29,7 @@ manipulate SIF container files:
 ```sh
 git clone https://github.com/apptainer/sif
 cd sif
-go run mage.go install
+go run ./magefiles/mage.go install
 ```
 
 ## Go Version Compatibility
