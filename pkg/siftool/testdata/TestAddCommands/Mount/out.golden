@@ -1,0 +1,10 @@
+Mount the primary system partition of a SIF image
+
+Usage:
+  siftool mount <sif_path> <mount_path>
+
+Examples:
+siftool mount image.sif path/
+
+Flags:
+  -h, --help   help for mount
