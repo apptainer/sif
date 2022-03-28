@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -16,6 +16,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"strconv"
 	"text/tabwriter"
 
 	"github.com/apptainer/sif/v2/pkg/sif"
@@ -83,7 +84,16 @@ possible to modify a SIF file via this tool via the add/del commands.`,
 
 	root.AddCommand(getVersion())
 
-	if err := siftool.AddCommands(&root); err != nil {
+	var experimental bool
+	if val, ok := os.LookupEnv("SIFTOOL_EXPERIMENTAL"); ok {
+		b, err := strconv.ParseBool(val)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error: failed to parse SIFTOOL_EXPERIMENTAL environment variable:", err)
+		}
+		experimental = b
+	}
+
+	if err := siftool.AddCommands(&root, siftool.OptWithExperimental(experimental)); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}

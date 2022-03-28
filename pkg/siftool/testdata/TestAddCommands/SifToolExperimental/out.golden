@@ -1,0 +1,19 @@
+Usage:
+  siftool [command]
+
+Available Commands:
+  add         Add data object
+  completion  Generate the autocompletion script for the specified shell
+  del         Delete data object
+  dump        Dump data object
+  header      Display global header
+  help        Help about any command
+  info        Display data object info
+  list        List data objects
+  new         Create SIF image
+  setprim     Set primary system partition
+
+Flags:
+  -h, --help   help for siftool
+
+Use "siftool [command] --help" for more information about a command.
