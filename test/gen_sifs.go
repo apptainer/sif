@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -70,15 +70,23 @@ func generateImages() error {
 	}
 
 	partPrimSys := func() (sif.DescriptorInput, error) {
-		return sif.NewDescriptorInput(sif.DataPartition,
-			bytes.NewReader([]byte{0xde, 0xad, 0xbe, 0xef}),
+		b, err := os.ReadFile(filepath.Join("input", "root.squashfs"))
+		if err != nil {
+			return sif.DescriptorInput{}, err
+		}
+
+		return sif.NewDescriptorInput(sif.DataPartition, bytes.NewReader(b),
 			sif.OptPartitionMetadata(sif.FsSquash, sif.PartPrimSys, "386"),
 		)
 	}
 
 	partSystemGroup2 := func() (sif.DescriptorInput, error) {
-		return sif.NewDescriptorInput(sif.DataPartition,
-			bytes.NewReader([]byte{0xba, 0xdd, 0xca, 0xfe}),
+		b, err := os.ReadFile(filepath.Join("input", "root.ext3"))
+		if err != nil {
+			return sif.DescriptorInput{}, err
+		}
+
+		return sif.NewDescriptorInput(sif.DataPartition, bytes.NewReader(b),
 			sif.OptPartitionMetadata(sif.FsExt3, sif.PartSystem, "amd64"),
 			sif.OptGroupID(2),
 		)

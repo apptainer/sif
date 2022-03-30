@@ -3,7 +3,7 @@
   Group ID:         1
   Linked ID:        NONE
   Offset:           36864
-  Size:             4
+  Size:             4096
   Filesystem Type:  Squashfs
   Partition Type:   *System
   Architecture:     386

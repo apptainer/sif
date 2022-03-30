@@ -3,7 +3,7 @@
   Group ID:         2
   Linked ID:        NONE
   Offset:           40960
-  Size:             4
+  Size:             262144
   Filesystem Type:  Ext3
   Partition Type:   System
   Architecture:     amd64
