@@ -69,3 +69,6 @@ archives:
   - id: linux-archives
     builds:
       - linux-builds
+
+sboms:
+  - artifacts: archive
