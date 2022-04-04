@@ -10,6 +10,7 @@ package siftool
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -51,7 +52,7 @@ func makeTestSIF(t *testing.T, withDataObject bool) string {
 	return tf.Name()
 }
 
-func runCommand(t *testing.T, cmd *cobra.Command, args []string) {
+func runCommand(t *testing.T, cmd *cobra.Command, args []string, wantErr error) {
 	t.Helper()
 
 	var out, err bytes.Buffer
@@ -60,8 +61,8 @@ func runCommand(t *testing.T, cmd *cobra.Command, args []string) {
 
 	cmd.SetArgs(args)
 
-	if err := cmd.Execute(); err != nil {
-		t.Fatal(err)
+	if got, want := cmd.Execute(), wantErr; !errors.Is(got, want) {
+		t.Fatalf("got error %v, want %v", got, want)
 	}
 
 	g := goldie.New(t,
@@ -135,7 +136,7 @@ func TestAddCommands(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			runCommand(t, cmd, tt.args)
+			runCommand(t, cmd, tt.args, nil)
 		})
 	}
 }
