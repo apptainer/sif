@@ -27,6 +27,7 @@ type command struct {
 func (c *command) initApp(cmd *cobra.Command, args []string) error {
 	app, err := siftool.New(
 		siftool.OptAppOutput(cmd.OutOrStdout()),
+		siftool.OptAppError(cmd.ErrOrStderr()),
 	)
 	c.app = app
 
