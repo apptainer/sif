@@ -71,4 +71,7 @@ archives:
       - linux-builds
 
 sboms:
-  - artifacts: archive
+  - documents:
+      - "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.bom.cdx.json"
+    artifacts: binary
+    args: ["$artifact", "--file", "$document", "--output", "cyclonedx-json"]
