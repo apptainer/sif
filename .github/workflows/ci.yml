@@ -53,5 +53,8 @@ jobs:
           flags: unittests
           name: codecov
 
+      - name: Install syft
+        run: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
       - name: Test Release
         run: curl -sL https://git.io/goreleaser | bash -s -- --snapshot --skip-publish
