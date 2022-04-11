@@ -2,10 +2,6 @@
 #   For website terms of use, trademark policy, privacy policy and other
 #   project policies see https://lfprojects.org/policies
 
-run:
-  build-tags:
-    - mage
-
 linters:
   disable-all: true
   enable:

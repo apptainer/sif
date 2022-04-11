@@ -4,7 +4,7 @@
 [![Build Status](https://github.com/apptainer/sif/actions/workflows/ci.yml/badge.svg)](https://github.com/apptainer/sif/actions/workflows/ci.yml)
 [![Code Coverage](https://codecov.io/gh/apptainer/sif/branch/master/graph/badge.svg)](https://codecov.io/gh/apptainer/sif)
 [![Go Report Card](https://goreportcard.com/badge/github.com/apptainer/sif)](https://goreportcard.com/report/github.com/apptainer/sif)
-[![Built with Mage](https://magefile.org/badge.svg)](https://magefile.org)
+[![Powered By GoReleaser](https://img.shields.io/badge/powered%20by-goreleaser-green.svg)](https://github.com/goreleaser)
 
 This module contains an open source implementation of the
 Singularity Image Format (SIF) that makes it easy to create complete and
@@ -15,22 +15,9 @@ encapsulated container environments stored in a single file.
 Unless otherwise noted, the SIF source files are distributed under the
 BSD-style license found in the [LICENSE.md](LICENSE.md) file.
 
-## Download and Install From Source
+## Install Siftool
 
-To get the sif package to use directly from your programs:
-
-```sh
-go get -d github.com/apptainer/sif/v2
-```
-
-To get the siftool CLI program installed to `$(go env GOPATH)/bin` to
-manipulate SIF container files:
-
-```sh
-git clone https://github.com/apptainer/sif
-cd sif
-go run ./magefiles/mage.go install
-```
+Pre-built binaries are available with the [latest release](https://github.com/apptainer/sif/releases).
 
 ## Go Version Compatibility
 
