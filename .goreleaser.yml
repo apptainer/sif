@@ -72,6 +72,6 @@ archives:
 
 sboms:
   - documents:
-      - "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.bom.cdx.json"
+      - '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}.bom.cdx.json'
     artifacts: binary
     args: ["$artifact", "--file", "$document", "--output", "cyclonedx-json"]
