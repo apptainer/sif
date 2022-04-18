@@ -7,7 +7,7 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package exp
+package sif
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 )
 
 // unmountSquashFS unmounts the filesystem at mountPath.
-func unmountSquashFS(ctx context.Context, mountPath string, uo unmountOpts) error {
+func unmountSquashFS(ctx context.Context, mountPath string, uo unmountFUSEOpts) error {
 	args := []string{
 		"-u",
 		filepath.Clean(mountPath),
@@ -35,27 +35,27 @@ func unmountSquashFS(ctx context.Context, mountPath string, uo unmountOpts) erro
 	return nil
 }
 
-// unmountOpts accumulates unmount options.
-type unmountOpts struct {
+// unmountFUSEOpts accumulates unmount options.
+type unmountFUSEOpts struct {
 	stdout         io.Writer
 	stderr         io.Writer
 	fusermountPath string
 }
 
-// UnmountOpt are used to specify unmount options.
-type UnmountOpt func(*unmountOpts) error
+// UnmountFUSEOpt are used to specify unmount options.
+type UnmountFUSEOpt func(*unmountFUSEOpts) error
 
-// OptUnmountStdout writes standard output to w.
-func OptUnmountStdout(w io.Writer) UnmountOpt {
-	return func(mo *unmountOpts) error {
+// OptUnmountFUSEStdout writes standard output to w.
+func OptUnmountFUSEStdout(w io.Writer) UnmountFUSEOpt {
+	return func(mo *unmountFUSEOpts) error {
 		mo.stdout = w
 		return nil
 	}
 }
 
-// OptUnmountStderr writes standard error to w.
-func OptUnmountStderr(w io.Writer) UnmountOpt {
-	return func(mo *unmountOpts) error {
+// OptUnmountFUSEStderr writes standard error to w.
+func OptUnmountFUSEStderr(w io.Writer) UnmountFUSEOpt {
+	return func(mo *unmountFUSEOpts) error {
 		mo.stderr = w
 		return nil
 	}
@@ -63,9 +63,9 @@ func OptUnmountStderr(w io.Writer) UnmountOpt {
 
 var errFusermountPathInvalid = errors.New("fusermount path must be relative or absolute")
 
-// OptUnmountFusermountPath sets the path to the fusermount binary.
-func OptUnmountFusermountPath(path string) UnmountOpt {
-	return func(mo *unmountOpts) error {
+// OptUnmountFUSEFusermountPath sets the path to the fusermount binary.
+func OptUnmountFUSEFusermountPath(path string) UnmountFUSEOpt {
+	return func(mo *unmountFUSEOpts) error {
 		if filepath.Base(path) == path {
 			return errFusermountPathInvalid
 		}
@@ -74,16 +74,16 @@ func OptUnmountFusermountPath(path string) UnmountOpt {
 	}
 }
 
-// Unmount the FUSE mounted filesystem at mountPath.
+// UnmountFUSE unmounts the FUSE mounted filesystem at mountPath.
 //
-// Unmount may start one or more underlying processes. By default, stdout and stderr of these
+// UnmountFUSE may start one or more underlying processes. By default, stdout and stderr of these
 // processes is discarded. To modify this behavior, consider using OptUnmountStdout and/or
 // OptUnmountStderr.
 //
-// By default, Unmount searches for a fusermount binary in the directories named by the PATH
+// By default, UnmountFUSE searches for a fusermount binary in the directories named by the PATH
 // environment variable. To override this behavior, consider using OptUnmountFusermountPath().
-func Unmount(ctx context.Context, mountPath string, opts ...UnmountOpt) error {
-	uo := unmountOpts{
+func UnmountFUSE(ctx context.Context, mountPath string, opts ...UnmountFUSEOpt) error {
+	uo := unmountFUSEOpts{
 		fusermountPath: "fusermount",
 	}
 

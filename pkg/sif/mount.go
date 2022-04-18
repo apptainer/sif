@@ -7,9 +7,7 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// Package exp contains experimental functionality that is not sufficiently mature to be exported
-// as part of the module API.
-package exp
+package sif
 
 import (
 	"context"
@@ -19,12 +17,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-
-	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
 // mountSquashFS mounts the SquashFS filesystem from path at offset into mountPath.
-func mountSquashFS(ctx context.Context, offset int64, path, mountPath string, mo mountOpts) error {
+func mountSquashFS(ctx context.Context, offset int64, path, mountPath string, mo mountFUSEOpts) error {
 	args := []string{
 		"-o", fmt.Sprintf("ro,offset=%d", offset),
 		filepath.Clean(path),
@@ -42,27 +38,27 @@ func mountSquashFS(ctx context.Context, offset int64, path, mountPath string, mo
 	return nil
 }
 
-// mountOpts accumulates mount options.
-type mountOpts struct {
+// mountFUSEOpts accumulates mount options.
+type mountFUSEOpts struct {
 	stdout         io.Writer
 	stderr         io.Writer
 	squashfusePath string
 }
 
-// MountOpt are used to specify mount options.
-type MountOpt func(*mountOpts) error
+// MountFUSEOpt are used to specify mount options.
+type MountFUSEOpt func(*mountFUSEOpts) error
 
 // OptMountStdout writes standard output to w.
-func OptMountStdout(w io.Writer) MountOpt {
-	return func(mo *mountOpts) error {
+func OptMountFUSEStdout(w io.Writer) MountFUSEOpt {
+	return func(mo *mountFUSEOpts) error {
 		mo.stdout = w
 		return nil
 	}
 }
 
-// OptMountStderr writes standard error to w.
-func OptMountStderr(w io.Writer) MountOpt {
-	return func(mo *mountOpts) error {
+// OptMountFUSEStderr writes standard error to w.
+func OptMountFUSEStderr(w io.Writer) MountFUSEOpt {
+	return func(mo *mountFUSEOpts) error {
 		mo.stderr = w
 		return nil
 	}
@@ -70,10 +66,10 @@ func OptMountStderr(w io.Writer) MountOpt {
 
 var errSquashfusePathInvalid = errors.New("squashfuse path must be relative or absolute")
 
-// OptMountSquashfusePath sets an explicit path to the squashfuse binary. The path must be an
+// OptMountFUSESquashfusePath sets an explicit path to the squashfuse binary. The path must be an
 // absolute or relative path.
-func OptMountSquashfusePath(path string) MountOpt {
-	return func(mo *mountOpts) error {
+func OptMountFUSESquashfusePath(path string) MountFUSEOpt {
+	return func(mo *mountFUSEOpts) error {
 		if filepath.Base(path) == path {
 			return errSquashfusePathInvalid
 		}
@@ -84,16 +80,16 @@ func OptMountSquashfusePath(path string) MountOpt {
 
 var errUnsupportedFSType = errors.New("unrecognized filesystem type")
 
-// Mount mounts the primary system partition of the SIF file at path into mountPath.
+// MountFUSE mounts the primary system partition of the SIF file at path into mountPath.
 //
-// Mount may start one or more underlying processes. By default, stdout and stderr of these
+// MountFUSE may start one or more underlying processes. By default, stdout and stderr of these
 // processes is discarded. To modify this behavior, consider using OptMountStdout and/or
 // OptMountStderr.
 //
-// By default, Mount searches for a squashfuse binary in the directories named by the PATH
+// By default, MountFUSE searches for a squashfuse binary in the directories named by the PATH
 // environment variable. To override this behavior, consider using OptMountSquashfusePath().
-func Mount(ctx context.Context, path, mountPath string, opts ...MountOpt) error {
-	mo := mountOpts{
+func MountFUSE(ctx context.Context, path, mountPath string, opts ...MountFUSEOpt) error {
+	mo := mountFUSEOpts{
 		squashfusePath: "squashfuse",
 	}
 
@@ -103,13 +99,13 @@ func Mount(ctx context.Context, path, mountPath string, opts ...MountOpt) error 
 		}
 	}
 
-	f, err := sif.LoadContainerFromPath(path, sif.OptLoadWithFlag(os.O_RDONLY))
+	f, err := LoadContainerFromPath(path, OptLoadWithFlag(os.O_RDONLY))
 	if err != nil {
 		return fmt.Errorf("failed to load image: %w", err)
 	}
 	defer func() { _ = f.UnloadContainer() }()
 
-	d, err := f.GetDescriptor(sif.WithPartitionType(sif.PartPrimSys))
+	d, err := f.GetDescriptor(WithPartitionType(PartPrimSys))
 	if err != nil {
 		return fmt.Errorf("failed to get partition descriptor: %w", err)
 	}
@@ -120,7 +116,7 @@ func Mount(ctx context.Context, path, mountPath string, opts ...MountOpt) error 
 	}
 
 	switch fs {
-	case sif.FsSquash:
+	case FsSquash:
 		return mountSquashFS(ctx, d.Offset(), path, mountPath, mo)
 	default:
 		return errUnsupportedFSType

@@ -7,7 +7,7 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package exp
+package sif
 
 import (
 	"bufio"
@@ -21,9 +21,7 @@ import (
 	"testing"
 )
 
-var corpus = filepath.Join("..", "..", "..", "test", "images")
-
-func Test_Unmount(t *testing.T) {
+func Test_UnmountFUSE(t *testing.T) {
 	if _, err := exec.LookPath("squashfuse"); err != nil {
 		t.Skip(" not found, skipping mount tests")
 	}
@@ -44,7 +42,7 @@ func Test_Unmount(t *testing.T) {
 		name          string
 		mountSIF      string
 		mountPath     string
-		opts          []UnmountOpt
+		opts          []UnmountFUSEOpt
 		wantErr       bool
 		wantUnmounted bool
 	}{
@@ -71,14 +69,14 @@ func Test_Unmount(t *testing.T) {
 			name:      "FusermountBare",
 			mountSIF:  "",
 			mountPath: path,
-			opts:      []UnmountOpt{OptUnmountFusermountPath("fusermount")},
+			opts:      []UnmountFUSEOpt{OptUnmountFUSEFusermountPath("fusermount")},
 			wantErr:   true,
 		},
 		{
 			name:          "FusermountValid",
 			mountSIF:      filepath.Join(corpus, "one-group.sif"),
 			mountPath:     path,
-			opts:          []UnmountOpt{OptUnmountFusermountPath(fusermountPath)},
+			opts:          []UnmountFUSEOpt{OptUnmountFUSEFusermountPath(fusermountPath)},
 			wantErr:       false,
 			wantUnmounted: true,
 		},
@@ -86,13 +84,13 @@ func Test_Unmount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.mountSIF != "" {
-				err := Mount(context.Background(), tt.mountSIF, path)
+				err := MountFUSE(context.Background(), tt.mountSIF, path)
 				if err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			err := Unmount(context.Background(), tt.mountPath, tt.opts...)
+			err := UnmountFUSE(context.Background(), tt.mountPath, tt.opts...)
 
 			if err != nil && !tt.wantErr {
 				t.Errorf("Unexpected error: %s", err)

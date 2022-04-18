@@ -12,13 +12,13 @@ package siftool
 import (
 	"context"
 
-	"github.com/apptainer/sif/v2/internal/pkg/exp"
+	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
 // Mount mounts the primary system partition of the SIF file at path into mountPath.
 func (a *App) Mount(ctx context.Context, path, mountPath string) error {
-	return exp.Mount(ctx, path, mountPath,
-		exp.OptMountStdout(a.opts.out),
-		exp.OptMountStderr(a.opts.err),
+	return sif.MountFUSE(ctx, path, mountPath,
+		sif.OptMountFUSEStdout(a.opts.out),
+		sif.OptMountFUSEStderr(a.opts.err),
 	)
 }
