@@ -30,8 +30,8 @@ func mountSquashFS(ctx context.Context, offset int64, path, mountPath string, mo
 		filepath.Clean(path),
 		filepath.Clean(mountPath),
 	}
-
-	cmd := exec.CommandContext(ctx, "squashfuse", args...)
+	//nolint:gosec // note (gosec exclusion) - we require callers to be able to specify squashfuse not on PATH
+	cmd := exec.CommandContext(ctx, mo.squashfusePath, args...)
 	cmd.Stdout = mo.stdout
 	cmd.Stderr = mo.stderr
 
@@ -44,8 +44,9 @@ func mountSquashFS(ctx context.Context, offset int64, path, mountPath string, mo
 
 // mountOpts accumulates mount options.
 type mountOpts struct {
-	stdout io.Writer
-	stderr io.Writer
+	stdout         io.Writer
+	stderr         io.Writer
+	squashfusePath string
 }
 
 // MountOpt are used to specify mount options.
@@ -67,6 +68,20 @@ func OptMountStderr(w io.Writer) MountOpt {
 	}
 }
 
+var errSquashfusePathInvalid = errors.New("squashfuse path must be relative or absolute")
+
+// OptMountSquashfusePath sets an explicit path to the squashfuse binary. The path must be an
+// absolute or relative path.
+func OptMountSquashfusePath(path string) MountOpt {
+	return func(mo *mountOpts) error {
+		if filepath.Base(path) == path {
+			return errSquashfusePathInvalid
+		}
+		mo.squashfusePath = path
+		return nil
+	}
+}
+
 var errUnsupportedFSType = errors.New("unrecognized filesystem type")
 
 // Mount mounts the primary system partition of the SIF file at path into mountPath.
@@ -74,8 +89,13 @@ var errUnsupportedFSType = errors.New("unrecognized filesystem type")
 // Mount may start one or more underlying processes. By default, stdout and stderr of these
 // processes is discarded. To modify this behavior, consider using OptMountStdout and/or
 // OptMountStderr.
+//
+// By default, Mount searches for a squashfuse binary in the directories named by the PATH
+// environment variable. To override this behavior, consider using OptMountSquashfusePath().
 func Mount(ctx context.Context, path, mountPath string, opts ...MountOpt) error {
-	mo := mountOpts{}
+	mo := mountOpts{
+		squashfusePath: "squashfuse",
+	}
 
 	for _, opt := range opts {
 		if err := opt(&mo); err != nil {
