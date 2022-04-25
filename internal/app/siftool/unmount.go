@@ -12,13 +12,13 @@ package siftool
 import (
 	"context"
 
-	"github.com/apptainer/sif/v2/pkg/sif"
+	"github.com/apptainer/sif/v2/pkg/user"
 )
 
-// Unmounts the FUSE mounted filesystem at mountPath.
+// Unmounts the filesystem at mountPath.
 func (a *App) Unmount(ctx context.Context, mountPath string) error {
-	return sif.UnmountFUSE(ctx, mountPath,
-		sif.OptUnmountFUSEStdout(a.opts.out),
-		sif.OptUnmountFUSEStderr(a.opts.err),
+	return user.Unmount(ctx, mountPath,
+		user.OptUnmountStdout(a.opts.out),
+		user.OptUnmountStderr(a.opts.err),
 	)
 }
