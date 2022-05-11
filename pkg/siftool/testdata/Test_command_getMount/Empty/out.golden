@@ -1,0 +1,9 @@
+Usage:
+  mount <sif_path> <mount_path>
+
+Examples:
+ mount image.sif path/
+
+Flags:
+  -h, --help   help for mount
+
