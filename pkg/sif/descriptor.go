@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -100,7 +100,7 @@ func (d *rawDescriptor) setExtra(v interface{}) error {
 }
 
 // getPartitionMetadata gets metadata for a partition data object.
-func (d rawDescriptor) getPartitionMetadata() (fs FSType, pt PartType, arch string, err error) {
+func (d rawDescriptor) getPartitionMetadata() (FSType, PartType, string, error) {
 	if got, want := d.DataType, DataPartition; got != want {
 		return 0, 0, "", &unexpectedDataTypeError{got, []DataType{want}}
 	}
@@ -146,6 +146,7 @@ func (d Descriptor) GroupID() uint32 { return d.raw.GroupID &^ descrGroupMask }
 // LinkedID returns the object/group ID d is linked to, or zero if d does not contain a linked
 // ID. If isGroup is true, the returned id is an object group ID. Otherwise, the returned id is a
 // data object ID.
+//nolint:nonamedreturns // Named returns effective as documentation.
 func (d Descriptor) LinkedID() (id uint32, isGroup bool) {
 	return d.raw.LinkedID &^ descrGroupMask, d.raw.LinkedID&descrGroupMask == descrGroupMask
 }
@@ -166,6 +167,7 @@ func (d Descriptor) ModifiedAt() time.Time { return time.Unix(d.raw.ModifiedAt, 
 func (d Descriptor) Name() string { return strings.TrimRight(string(d.raw.Name[:]), "\000") }
 
 // PartitionMetadata gets metadata for a partition data object.
+//nolint:nonamedreturns // Named returns effective as documentation.
 func (d Descriptor) PartitionMetadata() (fs FSType, pt PartType, arch string, err error) {
 	return d.raw.getPartitionMetadata()
 }
@@ -190,6 +192,7 @@ func getHashType(ht hashType) (crypto.Hash, error) {
 }
 
 // SignatureMetadata gets metadata for a signature data object.
+//nolint:nonamedreturns // Named returns effective as documentation.
 func (d Descriptor) SignatureMetadata() (ht crypto.Hash, fp []byte, err error) {
 	if got, want := d.raw.DataType, DataSignature; got != want {
 		return ht, fp, &unexpectedDataTypeError{got, []DataType{want}}

@@ -40,6 +40,7 @@ linters:
     - misspell
     - nilnil
     - nolintlint
+    - nonamedreturns
     - prealloc
     - revive
     - rowserrcheck

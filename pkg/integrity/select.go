@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -156,7 +156,9 @@ func getGroupMinObjectID(f *sif.FileImage, groupID uint32) (uint32, error) {
 
 // getGroupIDs returns all identifiers for the groups contained in f, sorted by ID. If no groups
 // are present, errNoGroupsFound is returned.
-func getGroupIDs(f *sif.FileImage) (groupIDs []uint32, err error) {
+func getGroupIDs(f *sif.FileImage) ([]uint32, error) {
+	var groupIDs []uint32
+
 	f.WithDescriptors(func(od sif.Descriptor) bool {
 		if groupID := od.GroupID(); groupID != 0 {
 			groupIDs = insertSorted(groupIDs, groupID)
@@ -165,10 +167,10 @@ func getGroupIDs(f *sif.FileImage) (groupIDs []uint32, err error) {
 	})
 
 	if len(groupIDs) == 0 {
-		err = errNoGroupsFound
+		return nil, errNoGroupsFound
 	}
 
-	return groupIDs, err
+	return groupIDs, nil
 }
 
 // getFingerprints returns a sorted list of unique fingerprints contained in sigs.
