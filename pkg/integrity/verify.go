@@ -20,6 +20,7 @@ import (
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/apptainer/sif/v2/pkg/sif"
+	"github.com/hashicorp/go-multierror"
 )
 
 var (
@@ -175,6 +176,7 @@ func (v *groupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 		return err
 	}
 
+	var errors *multierror.Error
 	for _, sig := range sigs {
 		verified, e, err := v.verifySignature(sig, kr)
 
@@ -187,11 +189,10 @@ func (v *groupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 		}
 
 		if err != nil {
-			return err
+			errors = multierror.Append(errors, err)
 		}
 	}
-
-	return nil
+	return errors.ErrorOrNil()
 }
 
 type legacyGroupVerifier struct {
