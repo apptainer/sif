@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -82,8 +82,8 @@ func newDigestReader(h crypto.Hash, r io.Reader) (digest, error) {
 // For reference, the plaintext of legacy signatures is comprised of the string "SIFHASH:\n",
 // followed by a digest value. For example:
 //
-// 	SIFHASH:
-//  2f0b3dca0ec42683d306338f68689aba29cdb83625b8cc0b8a789f8de92342495a6264b0c134e706630636bf90c6f331
+//	SIFHASH:
+//	2f0b3dca0ec42683d306338f68689aba29cdb83625b8cc0b8a789f8de92342495a6264b0c134e706630636bf90c6f331
 func newLegacyDigest(ht crypto.Hash, b []byte) (digest, error) {
 	b = bytes.TrimPrefix(b, []byte("SIFHASH:\n"))
 	b = bytes.TrimSuffix(b, []byte("\n"))
