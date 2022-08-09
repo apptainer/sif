@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -80,7 +80,7 @@ type groupVerifier struct {
 
 // newGroupVerifier constructs a new group verifier, optionally limited to objects described by
 // ods. If no descriptors are supplied, verify all objects in group.
-func newGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32, ods ...sif.Descriptor) (*groupVerifier, error) { // nolint:lll
+func newGroupVerifier(f *sif.FileImage, cb VerifyCallback, groupID uint32, ods ...sif.Descriptor) (*groupVerifier, error) { //nolint:lll
 	v := groupVerifier{f: f, cb: cb, groupID: groupID, ods: ods}
 
 	if len(ods) == 0 {
@@ -115,7 +115,7 @@ func (v *groupVerifier) fingerprints() ([][]byte, error) {
 // If verification of the SIF global header fails, ErrHeaderIntegrity is returned. If verification
 // of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
 // data object fails, a ObjectIntegrityError is returned.
-func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) ([]sif.Descriptor, *openpgp.Entity, error) { // nolint:lll
+func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) ([]sif.Descriptor, *openpgp.Entity, error) { //nolint:lll
 	b, err := sig.GetData()
 	if err != nil {
 		return nil, nil, err

@@ -148,9 +148,9 @@ var errTagNotFound = errors.New("semantic version tag not found")
 // returned. Otherwise, a version is derived that preserves semantic precedence.
 //
 // For example:
-//  - If d.tag.Name = "v0.1.2-alpha.1" and d.n = 1, 0.1.2-alpha.1.0.devel.1 is returned.
-//  - If d.tag.Name = "v0.1.2" and d.n = 1, 0.1.3-0.devel.1 is returned.
-//  - If d.tag.Name = "v0.1.3" and d.n = 0, 0.1.3 is returned.
+//   - If d.tag.Name = "v0.1.2-alpha.1" and d.n = 1, 0.1.2-alpha.1.0.devel.1 is returned.
+//   - If d.tag.Name = "v0.1.2" and d.n = 1, 0.1.3-0.devel.1 is returned.
+//   - If d.tag.Name = "v0.1.3" and d.n = 0, 0.1.3 is returned.
 func (d *Description) Version() (semver.Version, error) {
 	if d.v == nil {
 		return semver.Version{}, errTagNotFound
