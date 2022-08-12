@@ -10,6 +10,11 @@
 package integrity
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -43,8 +48,30 @@ func loadContainer(t *testing.T, path string) *sif.FileImage {
 	return f
 }
 
-// getTestEntity returns a fixed test PGP entity.
-func getTestEntity(t *testing.T) *openpgp.Entity {
+// getTestX509Signer returns the CA certificate.
+func getTestX509Signer(t *testing.T) *packet.PrivateKey {
+	t.Helper()
+
+	rawPrivKey, err := ioutil.ReadFile(filepath.Join("..", "..", "test", "keys", "private.key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	block, _ := pem.Decode(rawPrivKey)
+	if block == nil {
+		return nil
+	}
+
+	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return packet.NewRSAPrivateKey(time.Time{}, key.(*rsa.PrivateKey))
+}
+
+// getTestPGPEntity returns a fixed test SignPGP entity.
+func getTestPGPEntity(t *testing.T) *openpgp.Entity {
 	t.Helper()
 
 	f, err := os.Open(filepath.Join("..", "..", "test", "keys", "private.asc"))

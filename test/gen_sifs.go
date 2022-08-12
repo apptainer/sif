@@ -11,7 +11,12 @@ package main
 
 import (
 	"bytes"
-	"errors"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
+	"github.com/pkg/errors"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -24,7 +29,26 @@ import (
 
 var errUnexpectedNumEntities = errors.New("unexpected number of entities")
 
-func getEntity() (*openpgp.Entity, error) {
+func getX509Signer() (*packet.PrivateKey, error) {
+	rawPrivKey, err := ioutil.ReadFile(filepath.Join("keys", "private.key"))
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(rawPrivKey)
+	if block == nil {
+		return nil, err
+	}
+
+	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return packet.NewRSAPrivateKey(time.Time{}, key.(*rsa.PrivateKey)), nil
+}
+
+func getPGPEntity() (*openpgp.Entity, error) {
 	f, err := os.Open(filepath.Join("keys", "private.asc"))
 	if err != nil {
 		return nil, err
@@ -43,7 +67,12 @@ func getEntity() (*openpgp.Entity, error) {
 }
 
 func generateImages() error {
-	e, err := getEntity()
+	pgpEntity, err := getPGPEntity()
+	if err != nil {
+		return err
+	}
+
+	x509Issuer, err := getX509Signer()
 	if err != nil {
 		return err
 	}
@@ -96,7 +125,7 @@ func generateImages() error {
 		path  string
 		diFns []func() (sif.DescriptorInput, error)
 		opts  []sif.CreateOpt
-		sign  bool
+		sign  integrity.SignMethod
 	}{
 		// Images with no objects.
 		{
@@ -152,7 +181,15 @@ func generateImages() error {
 				partSystem,
 				partPrimSys,
 			},
-			sign: true,
+			sign: integrity.SignPGP,
+		},
+		{
+			path: "one-group-signed-x509.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				partSystem,
+				partPrimSys,
+			},
+			sign: integrity.SignX509,
 		},
 
 		// Images with three partitions in two groups.
@@ -171,7 +208,16 @@ func generateImages() error {
 				partPrimSys,
 				partSystemGroup2,
 			},
-			sign: true,
+			sign: integrity.SignPGP,
+		},
+		{
+			path: "two-groups-signed-x509.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				partSystem,
+				partPrimSys,
+				partSystemGroup2,
+			},
+			sign: integrity.SignX509,
 		},
 	}
 
@@ -201,9 +247,24 @@ func generateImages() error {
 			}
 		}()
 
-		if image.sign {
+		switch image.sign {
+		case integrity.SignPGP:
 			s, err := integrity.NewSigner(f,
-				integrity.OptSignWithEntity(e),
+				integrity.OptSignPGPWithEntity(pgpEntity),
+				integrity.OptSignWithTime(func() time.Time { return time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC) }),
+				integrity.OptSignDeterministic(),
+			)
+			if err != nil {
+				return err
+			}
+
+			if err := s.Sign(); err != nil {
+				return err
+			}
+
+		case integrity.SignX509:
+			s, err := integrity.NewSigner(f,
+				integrity.OptSignWithX509Signer(x509Issuer),
 				integrity.OptSignWithTime(func() time.Time { return time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC) }),
 				integrity.OptSignDeterministic(),
 			)

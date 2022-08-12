@@ -34,6 +34,10 @@ func Test_command_getList(t *testing.T) {
 			path: filepath.Join(corpus, "one-group-signed.sif"),
 		},
 		{
+			name: "OneGroupSignedX509",
+			path: filepath.Join(corpus, "one-group-signed-x509.sif"),
+		},
+		{
 			name: "OneGroupSignedLegacy",
 			path: filepath.Join(corpus, "one-group-signed-legacy.sif"),
 		},
@@ -52,6 +56,10 @@ func Test_command_getList(t *testing.T) {
 		{
 			name: "TwoGroupsSigned",
 			path: filepath.Join(corpus, "two-groups-signed.sif"),
+		},
+		{
+			name: "TwoGroupsSignedX509",
+			path: filepath.Join(corpus, "two-groups-signed-x509.sif"),
 		},
 		{
 			name: "TwoGroupsSignedLegacy",

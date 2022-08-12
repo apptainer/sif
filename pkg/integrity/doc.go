@@ -13,15 +13,15 @@ image.
 
 Sign
 
-To add one or more digital signatures to a SIF, create a Signer, and supply a signing PGP entity:
+To add one or more digital signatures to a SIF, create a Signer, and supply a signing SignPGP entity:
 
-	s, err := integrity.NewSigner(f, OptSignWithEntity(e))
+	s, err := integrity.NewSigner(f, OptSignPGPWithEntity(e))
 
 By default, the returned Signer will add one digital signature per group of objects in f. To
 override this behavior, supply additional options. For example, to apply a signature to object
 group 1 only:
 
-	s, err := integrity.NewSigner(f, OptSignWithEntity(e), OptSignGroup(1))
+	s, err := integrity.NewSigner(f, OptSignPGPWithEntity(e), OptSignGroup(1))
 
 Finally, to apply the signature(s):
 

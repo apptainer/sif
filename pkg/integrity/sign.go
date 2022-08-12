@@ -12,8 +12,8 @@ package integrity
 import (
 	"bytes"
 	"crypto"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"sort"
 	"time"
 
@@ -85,7 +85,7 @@ func optSignGroupSignatureConfig(c *packet.Config) groupSignerOpt {
 //
 // By default, all data objects in the group will be signed. To override this behavior, use
 // optSignGroupObjects(). To override the default metadata hash algorithm, use
-// optSignGroupMetadataHash(). To override the default PGP configuration for signature generation,
+// optSignGroupMetadataHash(). To override the default SignPGP configuration for signature generation,
 // use optSignGroupSignatureConfig().
 func newGroupSigner(f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*groupSigner, error) {
 	if groupID == 0 {
@@ -140,8 +140,8 @@ func (gs *groupSigner) addObject(od sif.Descriptor) error {
 	return nil
 }
 
-// signWithEntity signs the objects specified by gs with e.
-func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, error) {
+// signPGPWithEntity signs the objects specified by gs with e.
+func (gs *groupSigner) signPGPWithEntity(e *openpgp.Entity) (sif.DescriptorInput, error) {
 	// Get minimum object ID in group. Object IDs in the image metadata will be relative to this.
 	minID, err := getGroupMinObjectID(gs.f, gs.id)
 	if err != nil {
@@ -156,7 +156,7 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 
 	// Sign and encode image metadata.
 	b := bytes.Buffer{}
-	if err := signAndEncodeJSON(&b, md, e.PrivateKey, gs.sigConfig); err != nil {
+	if err := signPGPAndEncodeJSON(&b, md, e.PrivateKey, gs.sigConfig); err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("failed to encode signature: %w", err)
 	}
 
@@ -168,8 +168,45 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 	)
 }
 
+// signX509WithSigner signs the objects specified by gs with e.
+func (gs *groupSigner) signX509WithSigner(e *packet.PrivateKey) (sif.DescriptorInput, error) {
+	// Get minimum object ID in group. Object IDs in the image metadata will be relative to this.
+	minID, err := getGroupMinObjectID(gs.f, gs.id)
+	if err != nil {
+		return sif.DescriptorInput{}, err
+	}
+
+	// Get metadata for the image.
+	md, err := getImageMetadata(gs.f, minID, gs.ods, gs.mdHash)
+	if err != nil {
+		return sif.DescriptorInput{}, fmt.Errorf("failed to get image metadata: %w", err)
+	}
+
+	// Sign and encode image metadata.
+	b := bytes.Buffer{}
+	if err := signX509AndEncodeJSON(&b, md, e, gs.sigConfig); err != nil {
+		return sif.DescriptorInput{}, fmt.Errorf("failed to encode signature: %w", err)
+	}
+
+	// Prepare SIF data object descriptor.
+	return sif.NewDescriptorInput(sif.DataSignature, &b,
+		sif.OptNoGroup(),
+		sif.OptLinkedGroupID(gs.id),
+		sif.OptSignatureMetadata(gs.sigConfig.Hash(), e.PublicKey.Fingerprint),
+	)
+}
+
+type SignMethod string
+
+const (
+	SignX509 SignMethod = "SignX509"
+	SignPGP  SignMethod = "SignPGP"
+)
+
 type signOpts struct {
-	e             *openpgp.Entity
+	method SignMethod
+
+	e             interface{}
 	groupIDs      []uint32
 	objectIDs     [][]uint32
 	timeFunc      func() time.Time
@@ -179,10 +216,20 @@ type signOpts struct {
 // SignerOpt are used to configure so.
 type SignerOpt func(so *signOpts) error
 
-// OptSignWithEntity specifies e as the entity to use to generate signature(s).
-func OptSignWithEntity(e *openpgp.Entity) SignerOpt {
+// OptSignPGPWithEntity specifies e as the entity to use to generate signature(s).
+func OptSignPGPWithEntity(e *openpgp.Entity) SignerOpt {
 	return func(so *signOpts) error {
 		so.e = e
+		so.method = SignPGP
+		return nil
+	}
+}
+
+// OptSignWithX509Signer specifies e as the entity to use to generate signature(s).
+func OptSignWithX509Signer(e *packet.PrivateKey) SignerOpt {
+	return func(so *signOpts) error {
+		so.e = e
+		so.method = SignX509
 		return nil
 	}
 }
@@ -270,7 +317,7 @@ type Signer struct {
 
 // NewSigner returns a Signer to add digital signature(s) to f, according to opts.
 //
-// Sign requires key material be provided. OptSignWithEntity can be used for this purpose.
+// Sign requires key material be provided. OptSignPGPWithEntity can be used for this purpose.
 //
 // By default, one digital signature is added per object group in f. To override this behavior,
 // consider using OptSignGroup and/or OptSignObjects.
@@ -360,10 +407,24 @@ func (s *Signer) Sign() error {
 		return fmt.Errorf("integrity: %w", ErrNoKeyMaterial)
 	}
 
+	var di sif.DescriptorInput
+	var err error
+
 	for _, gs := range s.signers {
-		di, err := gs.signWithEntity(s.opts.e)
-		if err != nil {
-			return fmt.Errorf("integrity: %w", err)
+		// select the appropriate signer
+		switch s.opts.method {
+		case SignPGP:
+			di, err = gs.signPGPWithEntity(s.opts.e.(*openpgp.Entity))
+			if err != nil {
+				return fmt.Errorf("integrity: %w", err)
+			}
+		case SignX509:
+			di, err = gs.signX509WithSigner(s.opts.e.(*packet.PrivateKey))
+			if err != nil {
+				return fmt.Errorf("integrity: %w", err)
+			}
+		default:
+			return errors.Errorf("Unknown signing method '%s'", s.opts.method)
 		}
 
 		var opts []sif.AddOpt

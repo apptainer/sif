@@ -12,8 +12,9 @@ package integrity
 import (
 	"bytes"
 	"encoding/hex"
-	"errors"
 	"fmt"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
+	"github.com/pkg/errors"
 	"io"
 	"sort"
 	"strings"
@@ -108,14 +109,14 @@ func (v *groupVerifier) fingerprints() ([][]byte, error) {
 	return getFingerprints(sigs)
 }
 
-// verifySignature verifies the objects specified by v against signature sig using keyring kr.
+// verifyPGPSignature verifies the objects specified by v against signature sig using keyring kr.
 //
 // If an invalid signature is encountered, a SignatureNotValidError is returned.
 //
 // If verification of the SIF global header fails, ErrHeaderIntegrity is returned. If verification
 // of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
 // data object fails, a ObjectIntegrityError is returned.
-func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) ([]sif.Descriptor, *openpgp.Entity, error) { // nolint:lll
+func (v *groupVerifier) verifyPGPSignature(sig sif.Descriptor, kr openpgp.KeyRing) ([]sif.Descriptor, *openpgp.Entity, error) { // nolint:lll
 	b, err := sig.GetData()
 	if err != nil {
 		return nil, nil, err
@@ -123,7 +124,7 @@ func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) 
 
 	// Verify signature and decode image metadata.
 	var im imageMetadata
-	e, _, err := verifyAndDecodeJSON(b, &im, kr)
+	e, _, err := verifyPGPAndDecodeJSON(b, &im, kr)
 	if err != nil {
 		return nil, e, &SignatureNotValidError{ID: sig.ID(), Err: err}
 	}
@@ -161,6 +162,53 @@ func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) 
 	return verified, e, nil
 }
 
+func (v *groupVerifier) verifyX509Signature(sig sif.Descriptor, kr *packet.PublicKey) ([]sif.Descriptor, *packet.PublicKey, error) { // nolint:lll
+	b, err := sig.GetData()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Verify signature and decode image metadata.
+	var im imageMetadata
+	e, _, err := verifyX509AndDecodeJSON(b, &im, kr)
+	if err != nil {
+		return nil, e, &SignatureNotValidError{ID: sig.ID(), Err: err}
+	}
+
+	// Get minimum object ID in group, and use this to populate absolute object IDs in im.
+	minID, err := getGroupMinObjectID(v.f, v.groupID)
+	if err != nil {
+		return nil, e, err
+	}
+	im.populateAbsoluteObjectIDs(minID)
+
+	// Ensure signing entity matches fingerprint in descriptor.
+	_, fp, err := sig.SignatureMetadata()
+	if err != nil {
+		return nil, e, err
+	}
+
+	if !bytes.Equal(e.Fingerprint, fp) {
+		return nil, e, errFingerprintMismatch
+	}
+
+	// If an object subset is not permitted, verify our set of IDs match exactly what is in the
+	// image metadata.
+	if !v.subsetOK {
+		if err := im.objectIDsMatch(v.ods); err != nil {
+			return nil, e, err
+		}
+	}
+
+	// Verify header and object integrity.
+	verified, err := im.matches(v.f, v.ods)
+	if err != nil {
+		return verified, e, err
+	}
+
+	return verified, e, nil
+}
+
 // verifyWithKeyRing performs verification of the objects specified by v using keyring kr.
 //
 // If no signatures are found for the object group specified by v, a SignatureNotFoundError is
@@ -169,7 +217,7 @@ func (v *groupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) 
 // If verification of the SIF global header fails, ErrHeaderIntegrity is returned. If verification
 // of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
 // data object fails, a ObjectIntegrityError is returned.
-func (v *groupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
+func (v *groupVerifier) verifyPGPWithKeyRing(kr openpgp.KeyRing) error {
 	// Obtain all signatures related to group.
 	sigs, err := getGroupSignatures(v.f, v.groupID, false)
 	if err != nil {
@@ -178,7 +226,33 @@ func (v *groupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 
 	var errors *multierror.Error
 	for _, sig := range sigs {
-		verified, e, err := v.verifySignature(sig, kr)
+		verified, e, err := v.verifyPGPSignature(sig, kr)
+
+		// Call verify callback, if applicable.
+		if v.cb != nil {
+			r := VerifyResult{sig: sig, verified: verified, e: e, err: err}
+			if ignoreError := v.cb(r); ignoreError {
+				err = nil
+			}
+		}
+
+		if err != nil {
+			errors = multierror.Append(errors, err)
+		}
+	}
+	return errors.ErrorOrNil()
+}
+
+func (v *groupVerifier) verifyX509WithRoots(kr *packet.PublicKey) error {
+	// Obtain all signatures related to group.
+	sigs, err := getGroupSignatures(v.f, v.groupID, false)
+	if err != nil {
+		return err
+	}
+
+	var errors *multierror.Error
+	for _, sig := range sigs {
+		verified, e, err := v.verifyX509Signature(sig, kr)
 
 		// Call verify callback, if applicable.
 		if v.cb != nil {
@@ -223,19 +297,19 @@ func (v *legacyGroupVerifier) fingerprints() ([][]byte, error) {
 	return getFingerprints(sigs)
 }
 
-// verifySignature verifies the objects specified by v against signature sig using keyring kr.
+// verifyPGPSignature verifies the objects specified by v against signature sig using keyring kr.
 //
 // If an invalid signature is encountered, a SignatureNotValidError is returned.
 //
 // If verification of a data object fails, a ObjectIntegrityError is returned.
-func (v *legacyGroupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
+func (v *legacyGroupVerifier) verifyPGPSignature(sig sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
 	b, err := sig.GetData()
 	if err != nil {
 		return nil, err
 	}
 
 	// Verify signature and decode plaintext.
-	e, b, _, err := verifyAndDecode(b, kr)
+	e, b, _, err := verifyPGPAndDecode(b, kr)
 	if err != nil {
 		return e, &SignatureNotValidError{ID: sig.ID(), Err: err}
 	}
@@ -278,7 +352,7 @@ func (v *legacyGroupVerifier) verifySignature(sig sif.Descriptor, kr openpgp.Key
 // returned. If an invalid signature is encountered, a SignatureNotValidError is returned.
 //
 // If verification of the data object group fails, a ObjectIntegrityError is returned.
-func (v *legacyGroupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
+func (v *legacyGroupVerifier) verifyPGPWithKeyRing(kr openpgp.KeyRing) error {
 	// Obtain all signatures related to object.
 	sigs, err := getGroupSignatures(v.f, v.groupID, true)
 	if err != nil {
@@ -286,7 +360,7 @@ func (v *legacyGroupVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 	}
 
 	for _, sig := range sigs {
-		e, err := v.verifySignature(sig, kr)
+		e, err := v.verifyPGPSignature(sig, kr)
 
 		// Call verify callback, if applicable.
 		if v.cb != nil {
@@ -334,19 +408,19 @@ func (v *legacyObjectVerifier) fingerprints() ([][]byte, error) {
 	return getFingerprints(sigs)
 }
 
-// verifySignature verifies the objects specified by v against signature sig using keyring kr.
+// verifyPGPSignature verifies the objects specified by v against signature sig using keyring kr.
 //
 // If an invalid signature is encountered, a SignatureNotValidError is returned.
 //
 // If verification of a data object fails, a ObjectIntegrityError is returned.
-func (v *legacyObjectVerifier) verifySignature(sig sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
+func (v *legacyObjectVerifier) verifyPGPSignature(sig sif.Descriptor, kr openpgp.KeyRing) (*openpgp.Entity, error) {
 	b, err := sig.GetData()
 	if err != nil {
 		return nil, err
 	}
 
 	// Verify signature and decode plaintext.
-	e, b, _, err := verifyAndDecode(b, kr)
+	e, b, _, err := verifyPGPAndDecode(b, kr)
 	if err != nil {
 		return e, &SignatureNotValidError{ID: sig.ID(), Err: err}
 	}
@@ -382,7 +456,7 @@ func (v *legacyObjectVerifier) verifySignature(sig sif.Descriptor, kr openpgp.Ke
 // If an invalid signature is encountered, a SignatureNotValidError is returned.
 //
 // If verification of the data object fails, a ObjectIntegrityError is returned.
-func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
+func (v *legacyObjectVerifier) verifyPGPWithKeyRing(kr openpgp.KeyRing) error {
 	// Obtain all signatures related to object.
 	sigs, err := getObjectSignatures(v.f, v.od.ID())
 	if err != nil {
@@ -390,7 +464,7 @@ func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 	}
 
 	for _, sig := range sigs {
-		e, err := v.verifySignature(sig, kr)
+		e, err := v.verifyPGPSignature(sig, kr)
 
 		// Call verify callback, if applicable.
 		if v.cb != nil {
@@ -413,7 +487,7 @@ func (v *legacyObjectVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
 
 type verifyTask interface {
 	fingerprints() ([][]byte, error)
-	verifyWithKeyRing(kr openpgp.KeyRing) error
+	verifyPGPWithKeyRing(kr openpgp.KeyRing) error
 }
 
 type verifyOpts struct {
@@ -709,7 +783,7 @@ func (v *Verifier) Verify() error {
 	}
 
 	for _, t := range v.tasks {
-		if err := t.verifyWithKeyRing(v.kr); err != nil {
+		if err := t.verifyPGPWithKeyRing(v.kr); err != nil {
 			return fmt.Errorf("integrity: %w", err)
 		}
 	}

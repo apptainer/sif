@@ -8,9 +8,12 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-multierror v1.1.1
+	github.com/pkg/errors v0.9.1
 	github.com/sebdah/goldie/v2 v2.5.3
+	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
+	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352
 )
 
 require (
@@ -24,6 +27,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20201106050909-4977a11b4351 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
