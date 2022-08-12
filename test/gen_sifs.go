@@ -27,6 +27,13 @@ import (
 	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
+type SignMethod string
+
+const (
+	SignX509 SignMethod = "SignX509"
+	SignPGP  SignMethod = "SignPGP"
+)
+
 var errUnexpectedNumEntities = errors.New("unexpected number of entities")
 
 func getX509Signer() (*packet.PrivateKey, error) {
@@ -125,7 +132,7 @@ func generateImages() error {
 		path  string
 		diFns []func() (sif.DescriptorInput, error)
 		opts  []sif.CreateOpt
-		sign  integrity.SignMethod
+		sign  SignMethod
 	}{
 		// Images with no objects.
 		{
@@ -181,7 +188,7 @@ func generateImages() error {
 				partSystem,
 				partPrimSys,
 			},
-			sign: integrity.SignPGP,
+			sign: SignPGP,
 		},
 		{
 			path: "one-group-signed-x509.sif",
@@ -189,7 +196,7 @@ func generateImages() error {
 				partSystem,
 				partPrimSys,
 			},
-			sign: integrity.SignX509,
+			sign: SignX509,
 		},
 
 		// Images with three partitions in two groups.
@@ -208,7 +215,7 @@ func generateImages() error {
 				partPrimSys,
 				partSystemGroup2,
 			},
-			sign: integrity.SignPGP,
+			sign: SignPGP,
 		},
 		{
 			path: "two-groups-signed-x509.sif",
@@ -217,7 +224,7 @@ func generateImages() error {
 				partPrimSys,
 				partSystemGroup2,
 			},
-			sign: integrity.SignX509,
+			sign: SignX509,
 		},
 	}
 
@@ -248,9 +255,9 @@ func generateImages() error {
 		}()
 
 		switch image.sign {
-		case integrity.SignPGP:
+		case SignPGP:
 			s, err := integrity.NewSigner(f,
-				integrity.OptSignPGPWithEntity(pgpEntity),
+				integrity.OptSignWithEntity(pgpEntity),
 				integrity.OptSignWithTime(func() time.Time { return time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC) }),
 				integrity.OptSignDeterministic(),
 			)
@@ -262,9 +269,9 @@ func generateImages() error {
 				return err
 			}
 
-		case integrity.SignX509:
+		case SignX509:
 			s, err := integrity.NewSigner(f,
-				integrity.OptSignX509WithSigner(x509Issuer),
+				integrity.OptSignWithEntity(x509Issuer),
 				integrity.OptSignWithTime(func() time.Time { return time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC) }),
 				integrity.OptSignDeterministic(),
 			)

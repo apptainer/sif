@@ -524,7 +524,7 @@ type verifyTask interface {
 }
 
 type verifyOpts struct {
-	kr          openpgp.KeyRing
+	signer      interface{}
 	groups      []uint32
 	objects     []uint32
 	isLegacy    bool
@@ -535,10 +535,10 @@ type verifyOpts struct {
 // VerifierOpt are used to configure vo.
 type VerifierOpt func(vo *verifyOpts) error
 
-// OptVerifyWithKeyRing sets the keyring to use for verification to signer.
-func OptVerifyWithKeyRing(kr openpgp.KeyRing) VerifierOpt {
+// OptVerifyWithSigner sets the keyring to use for verification to signer.
+func OptVerifyWithSigner(s interface{}) VerifierOpt {
 	return func(vo *verifyOpts) error {
-		vo.kr = kr
+		vo.signer = s
 		return nil
 	}
 }
@@ -665,7 +665,7 @@ type Verifier struct {
 // NewVerifier returns a Verifier to examine and/or verify digital signatures(s) in f according to
 // opts.
 //
-// Verify requires key material be provided. OptVerifyWithKeyRing can be used for this purpose. Key
+// Verify requires key material be provided. OptVerifyWithSigner can be used for this purpose. Key
 // material is not required for routines that do not perform cryptographic verification, such as
 // AnySignedBy or AllSignedBy.
 //
@@ -717,7 +717,7 @@ func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 
 	v := Verifier{
 		f:     f,
-		kr:    vo.kr,
+		kr:    vo.signer,
 		tasks: t,
 	}
 	return &v, nil

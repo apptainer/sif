@@ -794,19 +794,19 @@ func TestNewVerifier(t *testing.T) {
 		{
 			name:    "NoObjects",
 			fi:      emptyImage,
-			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(1)},
+			opts:    []VerifierOpt{OptVerifyWithSigner(kr), OptVerifyGroup(1)},
 			wantErr: sif.ErrNoObjects,
 		},
 		{
 			name:    "GroupNotFound",
 			fi:      oneGroupImage,
-			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(2)},
+			opts:    []VerifierOpt{OptVerifyWithSigner(kr), OptVerifyGroup(2)},
 			wantErr: errGroupNotFound,
 		},
 		{
 			name:    "GroupNotFoundLegacy",
 			fi:      oneGroupImage,
-			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(2), OptVerifyLegacy()},
+			opts:    []VerifierOpt{OptVerifyWithSigner(kr), OptVerifyGroup(2), OptVerifyLegacy()},
 			wantErr: errGroupNotFound,
 		},
 		{
@@ -842,9 +842,9 @@ func TestNewVerifier(t *testing.T) {
 			wantTasks:  2,
 		},
 		{
-			name:        "OptVerifyWithKeyRing",
+			name:        "OptVerifyWithSigner",
 			fi:          twoGroupImage,
-			opts:        []VerifierOpt{OptVerifyWithKeyRing(kr)},
+			opts:        []VerifierOpt{OptVerifyWithSigner(kr)},
 			wantKeyring: kr,
 			wantGroups:  []uint32{1, 2},
 			wantTasks:   2,
