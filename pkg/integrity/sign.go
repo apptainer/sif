@@ -225,8 +225,8 @@ func OptSignPGPWithEntity(e *openpgp.Entity) SignerOpt {
 	}
 }
 
-// OptSignWithX509Signer specifies e as the entity to use to generate signature(s).
-func OptSignWithX509Signer(e *packet.PrivateKey) SignerOpt {
+// OptSignX509WithSigner specifies e as the entity to use to generate signature(s).
+func OptSignX509WithSigner(e *packet.PrivateKey) SignerOpt {
 	return func(so *signOpts) error {
 		so.e = e
 		so.method = SignX509

@@ -35,13 +35,13 @@ To examine and/or verify digital signatures in a SIF, create a Verifier:
 
 If you intend to perform cryptographic verification, you must provide a source of key material:
 
-	v, err := NewVerifier(f, OptVerifyWithKeyRing(kr))
+	v, err := NewVerifier(f, OptVerifyWithKeyRing(signer))
 
 By default, the returned Verifier will consider non-legacy signatures for all object groups. To
 override this behavior, supply additional options. For example, to consider non-legacy signatures
 on object group 1 only:
 
-	v, err := NewVerifier(f, OptVerifyWithKeyRing(kr), OptVerifyGroup(1))
+	v, err := NewVerifier(f, OptVerifyWithKeyRing(signer), OptVerifyGroup(1))
 
 Finally, to perform cryptographic verification:
 

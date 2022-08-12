@@ -989,7 +989,15 @@ func (v mockVerifier) fingerprints() ([][]byte, error) {
 	return v.fps, v.err
 }
 
+func (v mockVerifier) verifySignature(signer interface{}) error {
+	return v.err
+}
+
 func (v mockVerifier) verifyPGPWithKeyRing(kr openpgp.KeyRing) error {
+	return v.err
+}
+
+func (v mockVerifier) verifyX509WithRoots(signer *packet.PublicKey) error {
 	return v.err
 }
 
@@ -1170,12 +1178,15 @@ func TestVerifier_AllSignedBy(t *testing.T) {
 func TestVerifier_Verify(t *testing.T) {
 	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed.sif"))
 
+	oneGroupSignedX509Image := loadContainer(t, filepath.Join(corpus, "one-group-signed-x509.sif"))
+
 	kr := openpgp.EntityList{getTestPGPEntity(t)}
+	eX509 := getTestX509Signer(t)
 
 	tests := []struct {
 		name    string
 		f       *sif.FileImage
-		kr      openpgp.KeyRing
+		signer  interface{}
 		tasks   []verifyTask
 		wantErr error
 	}{
@@ -1188,15 +1199,21 @@ func TestVerifier_Verify(t *testing.T) {
 		{
 			name:    "EOF",
 			f:       oneGroupSignedImage,
-			kr:      kr,
+			signer:  kr,
 			tasks:   []verifyTask{mockVerifier{err: io.EOF}},
 			wantErr: io.EOF,
 		},
 		{
-			name:  "OK",
-			f:     oneGroupSignedImage,
-			kr:    kr,
-			tasks: []verifyTask{mockVerifier{}},
+			name:   "OK",
+			f:      oneGroupSignedImage,
+			signer: kr,
+			tasks:  []verifyTask{mockVerifier{}},
+		},
+		{
+			name:   "OKX509",
+			f:      oneGroupSignedX509Image,
+			signer: eX509,
+			tasks:  []verifyTask{mockVerifier{}},
 		},
 	}
 
@@ -1205,7 +1222,7 @@ func TestVerifier_Verify(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			v := Verifier{
 				f:     tt.f,
-				kr:    tt.kr,
+				kr:    tt.signer,
 				tasks: tt.tasks,
 			}
 

@@ -264,7 +264,7 @@ func generateImages() error {
 
 		case integrity.SignX509:
 			s, err := integrity.NewSigner(f,
-				integrity.OptSignWithX509Signer(x509Issuer),
+				integrity.OptSignX509WithSigner(x509Issuer),
 				integrity.OptSignWithTime(func() time.Time { return time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC) }),
 				integrity.OptSignDeterministic(),
 			)
