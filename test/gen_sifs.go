@@ -36,7 +36,7 @@ const (
 
 var errUnexpectedNumEntities = errors.New("unexpected number of entities")
 
-func getX509Signer() (*packet.PrivateKey, error) {
+func getX509Signer() (*integrity.X509Signer, error) {
 	rawPrivKey, err := ioutil.ReadFile(filepath.Join("keys", "private.key"))
 	if err != nil {
 		return nil, err

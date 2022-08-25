@@ -408,7 +408,7 @@ func TestNewSigner(t *testing.T) {
 
 	ePGP := getTestPGPEntity(t)
 
-	eX509 := getTestX509Signer(t)
+	eX509 := getX509Signer(t)
 
 	tests := []struct {
 		name             string
@@ -560,7 +560,7 @@ func TestSigner_Sign(t *testing.T) {
 	encrypted := getTestPGPEntity(t)
 	encrypted.PrivateKey.Encrypted = true
 
-	eX509 := getTestX509Signer(t)
+	eX509 := getX509Signer(t)
 
 	tests := []struct {
 		name      string

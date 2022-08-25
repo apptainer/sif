@@ -11,6 +11,7 @@ package integrity
 
 import (
 	"bytes"
+	"crypto/x509"
 	"encoding/hex"
 	"fmt"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
@@ -113,7 +114,7 @@ func (v *groupVerifier) verifySignature(signer interface{}) error {
 	switch s := signer.(type) {
 	case openpgp.KeyRing:
 		return v.verifyPGPWithKeyRing(s)
-	case *packet.PublicKey:
+	case *x509.Certificate:
 		return v.verifyX509WithRoots(s)
 	default:
 		return errors.Errorf("Unknown signer %s", signer)
@@ -173,15 +174,25 @@ func (v *groupVerifier) verifyPGPSignature(sig sif.Descriptor, kr openpgp.KeyRin
 	return verified, e, nil
 }
 
-func (v *groupVerifier) verifyX509Signature(sig sif.Descriptor, kr *packet.PublicKey) ([]sif.Descriptor, *packet.PublicKey, error) { // nolint:lll
+func (v *groupVerifier) verifyX509Signature(sig sif.Descriptor, cert *x509.Certificate) ([]sif.Descriptor, *x509.Certificate, error) { // nolint:lll
 	b, err := sig.GetData()
 	if err != nil {
 		return nil, nil, err
 	}
 
+	// Ensure signing entity matches fingerprint in descriptor.
+	_, fp, err := sig.SignatureMetadata()
+	if err != nil {
+		return nil, cert, err
+	}
+
+	if !bytes.Equal(cert.SubjectKeyId, fp) {
+		return nil, cert, errFingerprintMismatch
+	}
+
 	// Verify signature and decode image metadata.
 	var im imageMetadata
-	e, _, err := verifyX509AndDecodeJSON(b, &im, kr)
+	e, _, err := verifyX509AndDecodeJSON(b, &im, cert)
 	if err != nil {
 		return nil, e, &SignatureNotValidError{ID: sig.ID(), Err: err}
 	}
@@ -192,16 +203,6 @@ func (v *groupVerifier) verifyX509Signature(sig sif.Descriptor, kr *packet.Publi
 		return nil, e, err
 	}
 	im.populateAbsoluteObjectIDs(minID)
-
-	// Ensure signing entity matches fingerprint in descriptor.
-	_, fp, err := sig.SignatureMetadata()
-	if err != nil {
-		return nil, e, err
-	}
-
-	if !bytes.Equal(e.Fingerprint, fp) {
-		return nil, e, errFingerprintMismatch
-	}
 
 	// If an object subset is not permitted, verify our set of IDs match exactly what is in the
 	// image metadata.
@@ -254,7 +255,7 @@ func (v *groupVerifier) verifyPGPWithKeyRing(kr openpgp.KeyRing) error {
 	return errors.ErrorOrNil()
 }
 
-func (v *groupVerifier) verifyX509WithRoots(signer *packet.PublicKey) error {
+func (v *groupVerifier) verifyX509WithRoots(signer *x509.Certificate) error {
 	// Obtain all signatures related to group.
 	sigs, err := getGroupSignatures(v.f, v.groupID, false)
 	if err != nil {

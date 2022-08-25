@@ -12,6 +12,7 @@ package integrity
 import (
 	"bytes"
 	"crypto"
+	"crypto/x509"
 	"fmt"
 	"github.com/pkg/errors"
 	"sort"
@@ -30,6 +31,11 @@ var (
 
 // ErrNoKeyMaterial is the error returned when no key material was provided.
 var ErrNoKeyMaterial = errors.New("key material not provided")
+
+type X509Signer struct {
+	Signer      crypto.Signer
+	Certificate *x509.Certificate
+}
 
 type groupSigner struct {
 	f         *sif.FileImage   // SIF image to sign.
@@ -169,10 +175,10 @@ func (gs *groupSigner) signWithEntity(e interface{}) (sif.DescriptorInput, error
 			sif.OptSignatureMetadata(gs.sigConfig.Hash(), v.PrimaryKey.Fingerprint),
 		)
 
-	case *packet.PrivateKey:
+	case *X509Signer:
 		// Sign and encode image metadata.
 		b := bytes.Buffer{}
-		if err := signX509AndEncodeJSON(&b, md, v, gs.sigConfig); err != nil {
+		if err := signX509AndEncodeJSON(&b, md, v); err != nil {
 			return sif.DescriptorInput{}, fmt.Errorf("failed to encode signature: %w", err)
 		}
 
@@ -180,10 +186,10 @@ func (gs *groupSigner) signWithEntity(e interface{}) (sif.DescriptorInput, error
 		return sif.NewDescriptorInput(sif.DataSignature, &b,
 			sif.OptNoGroup(),
 			sif.OptLinkedGroupID(gs.id),
-			sif.OptSignatureMetadata(gs.sigConfig.Hash(), v.PublicKey.Fingerprint),
+			sif.OptSignatureMetadata(gs.sigConfig.Hash(), v.Certificate.SubjectKeyId),
 		)
 	default:
-		panic(errors.Errorf("Unsupported method: %t", e))
+		panic(errors.Errorf("Unsupported method: %T", e))
 	}
 }
 

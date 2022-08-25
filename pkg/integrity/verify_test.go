@@ -29,7 +29,7 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 	oneGroupX509SignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed-x509.sif"))
 
 	ePGP := getTestPGPEntity(t)
-	eX509 := getTestX509Signer(t)
+	eX509 := getTextX509Certificate(t)
 
 	tests := []struct {
 		name    string
@@ -53,7 +53,7 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 			name:    "SignedX509",
 			f:       oneGroupX509SignedImage,
 			groupID: 1,
-			wantFPs: [][]byte{eX509.PublicKey.Fingerprint},
+			wantFPs: [][]byte{eX509.SubjectKeyId},
 		},
 	}
 
@@ -238,7 +238,7 @@ func TestGroupVerifier_verifyX509(t *testing.T) {
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
 	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed-x509.sif"))
 
-	e := &getTestX509Signer(t).PublicKey
+	e := getTextX509Certificate(t)
 	kr := e
 
 	tests := []struct {
@@ -249,10 +249,10 @@ func TestGroupVerifier_verifyX509(t *testing.T) {
 		groupID         uint32
 		objectIDs       []uint32
 		subsetOK        bool
-		kr              *packet.PublicKey
+		kr              *x509.Certificate
 		wantCBSignature uint32
 		wantCBVerified  []uint32
-		wantCBEntity    *packet.PublicKey
+		wantCBEntity    *x509.Certificate
 		wantCBErr       error
 		wantErr         error
 	}{
@@ -1181,7 +1181,7 @@ func TestVerifier_Verify(t *testing.T) {
 	oneGroupSignedX509Image := loadContainer(t, filepath.Join(corpus, "one-group-signed-x509.sif"))
 
 	kr := openpgp.EntityList{getTestPGPEntity(t)}
-	eX509 := getTestX509Signer(t)
+	eX509 := getTextX509Certificate(t)
 
 	tests := []struct {
 		name    string

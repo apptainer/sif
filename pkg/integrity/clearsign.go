@@ -12,6 +12,9 @@ package integrity
 import (
 	"bytes"
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	cryptorand "crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
@@ -72,7 +75,7 @@ func verifyPGPAndDecode(data []byte, kr openpgp.KeyRing) (*openpgp.Entity, []byt
 
 // signX509AndEncodeJSON encodes v, clear-signs it with privateKey, and writes it to w. If config is
 // nil, sensible defaults are used.
-func signX509AndEncodeJSON(w io.Writer, v interface{}, signer *packet.PrivateKey, config *packet.Config) error {
+func signX509AndEncodeJSON(w io.Writer, v interface{}, signer *X509Signer) error {
 
 	/* Create Message */
 	message, err := json.Marshal(v)
@@ -88,9 +91,18 @@ func signX509AndEncodeJSON(w io.Writer, v interface{}, signer *packet.PrivateKey
 	d := crypto.SHA256.New()
 	d.Write(message)
 
-	signature, err := rsa.SignPKCS1v15(config.Rand, signer.PrivateKey.(*rsa.PrivateKey), config.Hash(), d.Sum(nil)[:])
+	var signerOpts crypto.SignerOpts
+
+	switch signer.Certificate.PublicKeyAlgorithm {
+	case x509.Ed25519: // https://pkg.go.dev/crypto/ed25519#PrivateKey.Sign
+		signerOpts = crypto.Hash(0)
+	default:
+		signerOpts = crypto.SHA256
+	}
+
+	signature, err := signer.Signer.Sign(cryptorand.Reader, d.Sum(nil), signerOpts)
 	if err != nil {
-		return errors.Wrap(err, "sign")
+		return errors.Wrap(err, "signing error")
 	}
 
 	if err := pem.Encode(w, &pem.Block{Type: "SIGNATURE", Bytes: signature}); err != nil {
@@ -102,9 +114,9 @@ func signX509AndEncodeJSON(w io.Writer, v interface{}, signer *packet.PrivateKey
 
 // verifyX509AndDecodeJSON reads the first clearsigned message in data, verifies its signature, and returns
 // the signing entity, plaintext and suffix of data which follows the message.
-func verifyX509AndDecodeJSON(data []byte, v interface{}, kr *packet.PublicKey) (*packet.PublicKey, []byte, error) {
+func verifyX509AndDecodeJSON(data []byte, v interface{}, cert *x509.Certificate) (*x509.Certificate, []byte, error) {
 	// Decode clearsign block and check signature.
-	e, plaintext, rest, err := verifyX509AndDecode(data, kr)
+	e, plaintext, rest, err := verifyX509AndDecode(data, cert)
 	if err != nil {
 		return e, rest, err
 	}
@@ -118,8 +130,8 @@ func verifyX509AndDecodeJSON(data []byte, v interface{}, kr *packet.PublicKey) (
 
 // verifyX509AndDecode reads the first clearsigned message in data, verifies its signature, and returns
 // the signing entity, plaintext and suffix of data which follows the message.
-func verifyX509AndDecode(data []byte, kr *packet.PublicKey) (*packet.PublicKey, []byte, []byte, error) {
-	if kr == nil {
+func verifyX509AndDecode(data []byte, cert *x509.Certificate) (*x509.Certificate, []byte, []byte, error) {
+	if cert == nil {
 		return nil, nil, nil, x509.UnknownAuthorityError{}
 	}
 
@@ -139,12 +151,35 @@ func verifyX509AndDecode(data []byte, kr *packet.PublicKey) (*packet.PublicKey, 
 	expect := crypto.SHA256.New()
 	expect.Write(message.Bytes)
 
-	err := rsa.VerifyPKCS1v15(kr.PublicKey.(*rsa.PublicKey), crypto.SHA256, expect.Sum(nil)[:], signature.Bytes)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "verification error")
-	}
+	switch cert.PublicKeyAlgorithm {
+	case x509.RSA:
+		key := cert.PublicKey.(*rsa.PublicKey)
 
-	return kr, message.Bytes, rest, nil
+		err := rsa.VerifyPKCS1v15(key, crypto.SHA256, expect.Sum(nil)[:], signature.Bytes)
+		return cert, message.Bytes, rest, errors.Wrap(err, "rsa verification error")
+
+	case x509.ECDSA:
+		key := cert.PublicKey.(*ecdsa.PublicKey)
+
+		var err error
+		if !ecdsa.VerifyASN1(key, expect.Sum(nil)[:], signature.Bytes) {
+			err = errors.Errorf("verify function returned false")
+		}
+
+		return cert, message.Bytes, rest, errors.Wrap(err, "ecdsa verification error")
+	case x509.Ed25519:
+		key := cert.PublicKey.(*ed25519.PublicKey)
+
+		var err error
+		if !ed25519.Verify(*key, expect.Sum(nil)[:], signature.Bytes) {
+			err = errors.Errorf("verify function returned false")
+		}
+
+		return cert, message.Bytes, rest, errors.Wrap(err, "ed25519 verification error")
+
+	default:
+		return nil, nil, nil, errors.Errorf("Algorithm %s is not supported", cert.PublicKeyAlgorithm.String())
+	}
 }
 
 // isLegacySignature reads the first clearsigned message in data, and returns true if the plaintext
