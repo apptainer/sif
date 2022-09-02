@@ -9,7 +9,7 @@ siftool add image.sif rootfs.squashfs --datatype 4 --parttype 1 --partfs 1 ----p
 siftool add image.sif signature.bin -datatype 5 --signentity 433FE984155206BD962725E20E8713472A879943 --signhash 1
 
 Flags:
-      --alignment int       set alignment constraint [default: aligned on page size]
+      --alignment int       set alignment [default: 4096 with -datatype 4-Partition, 0 otherwise]
       --datatype int        the type of data to add
                             [NEEDED, no default]:
                               1-Deffile,   2-EnvVar,    3-Labels,

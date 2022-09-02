@@ -5,4 +5,4 @@ ID   |GROUP   |LINK    |SIF POSITION (start-end)  |TYPE
 2    |1       |NONE    |36864-40960               |FS (Squashfs/*System/386)
 3    |2       |NONE    |40960-303104              |FS (Ext3/System/amd64)
 4    |NONE    |1   (G) |303104-304158             |Signature (SHA-256)
-5    |NONE    |2   (G) |307200-308055             |Signature (SHA-256)
+5    |NONE    |2   (G) |304158-305013             |Signature (SHA-256)

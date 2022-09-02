@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -78,7 +78,7 @@ func TestNewLegacyDigest(t *testing.T) {
 		{
 			name: "SHA512",
 			ht:   crypto.SHA512,
-			text: "SIFHASH:\nee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac185f8a0e1d5f84f88bc887fd67b143732c304cc5fa9ad8e6f57f50028a8ff\n", // nolint:lll
+			text: "SIFHASH:\nee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac185f8a0e1d5f84f88bc887fd67b143732c304cc5fa9ad8e6f57f50028a8ff\n", //nolint:lll
 			wantDigest: digest{
 				hash: crypto.SHA512,
 				value: []byte{
@@ -145,7 +145,7 @@ func TestDigest_MarshalJSON(t *testing.T) {
 		{
 			name:  "SHA512",
 			hash:  crypto.SHA512,
-			value: "db3974a97f2407b7cae1ae637c0030687a11913274d578492558e39c16c017de84eacdc8c62fe34ee4e12b4b1428817f09b6a2760c3f8a664ceae94d2434a593", // nolint:lll
+			value: "db3974a97f2407b7cae1ae637c0030687a11913274d578492558e39c16c017de84eacdc8c62fe34ee4e12b4b1428817f09b6a2760c3f8a664ceae94d2434a593", //nolint:lll
 		},
 	}
 
@@ -231,15 +231,15 @@ func TestDigest_UnmarshalJSON(t *testing.T) {
 		},
 		{
 			name:      "SHA384",
-			r:         strings.NewReader(`"sha384:6b3b69ff0a404f28d75e98a066d3fc64fffd9940870cc68bece28545b9a75086b343d7a1366838083e4b8f3ca6fd3c80"`), // nolint:lll
+			r:         strings.NewReader(`"sha384:6b3b69ff0a404f28d75e98a066d3fc64fffd9940870cc68bece28545b9a75086b343d7a1366838083e4b8f3ca6fd3c80"`), //nolint:lll
 			wantHash:  crypto.SHA1,
 			wantValue: "6b3b69ff0a404f28d75e98a066d3fc64fffd9940870cc68bece28545b9a75086b343d7a1366838083e4b8f3ca6fd3c80",
 		},
 		{
 			name:      "SHA512",
-			r:         strings.NewReader(`"sha512:db3974a97f2407b7cae1ae637c0030687a11913274d578492558e39c16c017de84eacdc8c62fe34ee4e12b4b1428817f09b6a2760c3f8a664ceae94d2434a593"`), // nolint:lll
+			r:         strings.NewReader(`"sha512:db3974a97f2407b7cae1ae637c0030687a11913274d578492558e39c16c017de84eacdc8c62fe34ee4e12b4b1428817f09b6a2760c3f8a664ceae94d2434a593"`), //nolint:lll
 			wantHash:  crypto.SHA1,
-			wantValue: "db3974a97f2407b7cae1ae637c0030687a11913274d578492558e39c16c017de84eacdc8c62fe34ee4e12b4b1428817f09b6a2760c3f8a664ceae94d2434a593", // nolint:lll
+			wantValue: "db3974a97f2407b7cae1ae637c0030687a11913274d578492558e39c16c017de84eacdc8c62fe34ee4e12b4b1428817f09b6a2760c3f8a664ceae94d2434a593", //nolint:lll
 		},
 	}
 

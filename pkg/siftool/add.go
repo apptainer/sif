@@ -80,7 +80,7 @@ func addFlags(fs *pflag.FlagSet) {
   example: 433FE984155206BD962725E20E8713472A879943`)
 	groupID = fs.Uint32("groupid", 0, "set groupid [default: 0]")
 	linkID = fs.Uint32("link", 0, "set link pointer [default: 0]")
-	alignment = fs.Int("alignment", 0, "set alignment constraint [default: aligned on page size]")
+	alignment = fs.Int("alignment", 0, "set alignment [default: 4096 with -datatype 4-Partition, 0 otherwise]")
 	name = fs.String("filename", "", "set logical filename/handle [default: input filename]")
 }
 
