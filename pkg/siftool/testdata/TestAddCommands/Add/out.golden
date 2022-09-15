@@ -12,9 +12,9 @@ Flags:
       --alignment int       set alignment [default: 4096 with -datatype 4-Partition, 0 otherwise]
       --datatype int        the type of data to add
                             [NEEDED, no default]:
-                              1-Deffile,   2-EnvVar,    3-Labels,
-                              4-Partition, 5-Signature, 6-GenericJSON,
-                              7-Generic,   8-CryptoMessage
+                              1-Deffile,       2-EnvVar,        3-Labels,
+                              4-Partition,     5-Signature,     6-GenericJSON,
+                              7-Generic,       8-CryptoMessage, 9-SBOM
       --filename string     set logical filename/handle [default: input filename]
       --groupid uint32      set groupid [default: 0]
   -h, --help                help for add
@@ -33,6 +33,10 @@ Flags:
                             [NEEDED, no default]:
                               1-System,    2-PrimSys,   3-Data,
                               4-Overlay
+      --sbomformat string   the SBOM format (with -datatype 9-sbom):
+                              cyclonedx-json, cyclonedx-xml,  github-json,
+                              spdx-json,      spdx-rdf,       spdx-tag-value,
+                              spdx-yaml,      syft-json
       --signentity string   the entity that signs (with -datatype 5-Signature)
                             [NEEDED, no default]:
                               example: 433FE984155206BD962725E20E8713472A879943

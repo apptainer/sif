@@ -31,6 +31,7 @@ var (
 	partArch   *int32
 	signHash   *int32
 	signEntity *string
+	sbomFormat *string
 	groupID    *uint32
 	linkID     *uint32
 	alignment  *int
@@ -54,9 +55,9 @@ func getAddExamples(rootPath string) string {
 func addFlags(fs *pflag.FlagSet) {
 	dataType = fs.Int("datatype", 0, `the type of data to add
 [NEEDED, no default]:
-  1-Deffile,   2-EnvVar,    3-Labels,
-  4-Partition, 5-Signature, 6-GenericJSON,
-  7-Generic,   8-CryptoMessage`)
+  1-Deffile,       2-EnvVar,        3-Labels,
+  4-Partition,     5-Signature,     6-GenericJSON,
+  7-Generic,       8-CryptoMessage, 9-SBOM`)
 	partType = fs.Int32("parttype", 0, `the type of partition (with -datatype 4-Partition)
 [NEEDED, no default]:
   1-System,    2-PrimSys,   3-Data,
@@ -78,6 +79,10 @@ func addFlags(fs *pflag.FlagSet) {
 	signEntity = fs.String("signentity", "", `the entity that signs (with -datatype 5-Signature)
 [NEEDED, no default]:
   example: 433FE984155206BD962725E20E8713472A879943`)
+	sbomFormat = fs.String("sbomformat", "", `the SBOM format (with -datatype 9-sbom):
+  cyclonedx-json, cyclonedx-xml,  github-json,
+  spdx-json,      spdx-rdf,       spdx-tag-value,
+  spdx-yaml,      syft-json`)
 	groupID = fs.Uint32("groupid", 0, "set groupid [default: 0]")
 	linkID = fs.Uint32("link", 0, "set link pointer [default: 0]")
 	alignment = fs.Int("alignment", 0, "set alignment [default: 4096 with -datatype 4-Partition, 0 otherwise]")
@@ -105,6 +110,8 @@ func getDataType() (sif.DataType, error) {
 		return sif.DataGeneric, nil
 	case 8:
 		return sif.DataCryptoMessage, nil
+	case 9:
+		return sif.DataSBOM, nil
 	default:
 		return 0, errDataTypeRequired
 	}
@@ -160,9 +167,35 @@ func getHashType() (crypto.Hash, error) {
 	}
 }
 
+var errInvalidSBOMFormat = errors.New("invalid SBOM format")
+
+func getSBOMFormat() (sif.SBOMFormat, error) {
+	switch *sbomFormat {
+	case "cyclonedx-json":
+		return sif.SBOMFormatCycloneDXJSON, nil
+	case "cyclonedx-xml":
+		return sif.SBOMFormatCycloneDXXML, nil
+	case "github", "github-json":
+		return sif.SBOMFormatGitHubJSON, nil
+	case "spdx-json":
+		return sif.SBOMFormatSPDXJSON, nil
+	case "spdx-rdf":
+		return sif.SBOMFormatSPDXRDF, nil
+	case "spdx-tag-value":
+		return sif.SBOMFormatSPDXTagValue, nil
+	case "spdx-yaml":
+		return sif.SBOMFormatSPDXYAML, nil
+	case "syft-json":
+		return sif.SBOMFormatSyftJSON, nil
+	default:
+		return 0, fmt.Errorf("%w: %v", errInvalidSBOMFormat, *sbomFormat)
+	}
+}
+
 var (
 	errPartitionArgs            = errors.New("with partition datatype, -partfs, -parttype and -partarch must be passed")
 	errInvalidFingerprintLength = errors.New("invalid signing entity fingerprint length")
+	errSBOMArgs                 = errors.New("with SBOM datatype, -sbomformat must be passed")
 )
 
 func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, error) {
@@ -186,7 +219,8 @@ func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, e
 		opts = append(opts, sif.OptObjectName(*name))
 	}
 
-	if dt == sif.DataPartition {
+	switch dt {
+	case sif.DataPartition:
 		if *partType == 0 || *partFS == 0 || *partArch == 0 {
 			return nil, errPartitionArgs
 		}
@@ -194,9 +228,8 @@ func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, e
 		opts = append(opts,
 			sif.OptPartitionMetadata(sif.FSType(*partFS), sif.PartType(*partType), getArch()),
 		)
-	}
 
-	if dt == sif.DataSignature {
+	case sif.DataSignature:
 		b, err := hex.DecodeString(*signEntity)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode signing entity fingerprint: %w", err)
@@ -214,6 +247,18 @@ func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, e
 		copy(fp, b)
 
 		opts = append(opts, sif.OptSignatureMetadata(ht, fp))
+
+	case sif.DataSBOM:
+		if *sbomFormat == "" {
+			return nil, errSBOMArgs
+		}
+
+		f, err := getSBOMFormat()
+		if err != nil {
+			return nil, err
+		}
+
+		opts = append(opts, sif.OptSBOMMetadata(f))
 	}
 
 	return opts, nil
