@@ -121,6 +121,10 @@ func TestApp_Header(t *testing.T) {
 			path: filepath.Join(corpus, "one-group-signed.sif"),
 		},
 		{
+			name: "OneGroupSignedX509",
+			path: filepath.Join(corpus, "one-group-signed-x509.sif"),
+		},
+		{
 			name: "OneGroupSignedLegacy",
 			path: filepath.Join(corpus, "one-group-signed-legacy.sif"),
 		},
@@ -139,6 +143,10 @@ func TestApp_Header(t *testing.T) {
 		{
 			name: "TwoGroupsSigned",
 			path: filepath.Join(corpus, "two-groups-signed.sif"),
+		},
+		{
+			name: "TwoGroupsSignedX509",
+			path: filepath.Join(corpus, "two-groups-signed-x509.sif"),
 		},
 		{
 			name: "TwoGroupsSignedLegacy",
@@ -219,6 +227,10 @@ func TestApp_List(t *testing.T) {
 			path: filepath.Join(corpus, "one-group-signed.sif"),
 		},
 		{
+			name: "OneGroupSignedX509",
+			path: filepath.Join(corpus, "one-group-signed-x509.sif"),
+		},
+		{
 			name: "OneGroupSignedLegacy",
 			path: filepath.Join(corpus, "one-group-signed-legacy.sif"),
 		},
@@ -237,6 +249,10 @@ func TestApp_List(t *testing.T) {
 		{
 			name: "TwoGroupsSigned",
 			path: filepath.Join(corpus, "two-groups-signed.sif"),
+		},
+		{
+			name: "TwoGroupsSignedX509",
+			path: filepath.Join(corpus, "two-groups-signed-x509.sif"),
 		},
 		{
 			name: "TwoGroupsSignedLegacy",
@@ -317,6 +333,11 @@ func TestApp_Info(t *testing.T) {
 		{
 			name: "DataSignature",
 			path: filepath.Join(corpus, "two-groups-signed.sif"),
+			id:   4,
+		},
+		{
+			name: "DataSignatureX509",
+			path: filepath.Join(corpus, "two-groups-signed-x509.sif"),
 			id:   4,
 		},
 	}

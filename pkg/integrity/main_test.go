@@ -10,6 +10,9 @@
 package integrity
 
 import (
+	"crypto"
+	"crypto/x509"
+	"encoding/pem"
 	"os"
 	"path/filepath"
 	"testing"
@@ -43,8 +46,82 @@ func loadContainer(t *testing.T, path string) *sif.FileImage {
 	return f
 }
 
-// getTestEntity returns a fixed test PGP entity.
-func getTestEntity(t *testing.T) *openpgp.Entity {
+func getX509Signer(t *testing.T) *X509Signer {
+	return &X509Signer{
+		Signer:      getTestPKCS8Key(t),
+		Certificate: getTextX509Certificate(t),
+	}
+}
+
+func getTestPKCS8Key(t *testing.T) crypto.Signer {
+	path := filepath.Join("..", "..", "test", "keys", "pkcs8.key")
+
+	// open raw data
+	rawPrivKey, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+
+	var tryWith []byte
+
+	// try to decode raw data as PEM
+	block, _ := pem.Decode(rawPrivKey)
+	if block == nil || block.Type != "PRIVATE KEY" {
+		tryWith = rawPrivKey
+	} else {
+		tryWith = block.Bytes
+	}
+
+	// decode raw data as DER
+	key, err := x509.ParsePKCS8PrivateKey(tryWith)
+	if err != nil {
+		t.Fatalf("failed to decode private key from '%s'", path)
+	}
+
+	return key.(crypto.Signer)
+}
+
+func getTextX509Certificate(t *testing.T) *x509.Certificate {
+	path := filepath.Join("..", "..", "test", "keys", "x509.pem")
+
+	// open raw data
+	rawCert, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+
+	var tryWith []byte
+
+	// try to decode raw data as PEM
+	block, _ := pem.Decode(rawCert)
+	if block == nil || block.Type != "CERTIFICATE" {
+		tryWith = rawCert
+	} else {
+		tryWith = block.Bytes
+	}
+
+	// decode raw data as DER
+	cert, err := x509.ParseCertificate(tryWith)
+	if err != nil {
+		t.Fatalf("failed to decode certificate from '%s'", path)
+	}
+
+	// check validity period
+	// to run tests use:
+	// now, _ := time.Parse(time.RFC1123, "Mon, 02 Jan 2000 15:04:05 MST")
+	now := time.Now()
+	switch {
+	case now.Before(cert.NotBefore):
+		t.Fatalf("certificate is not yet valid")
+	case now.After(cert.NotAfter):
+		t.Fatalf("certificate has expired")
+	}
+
+	return cert
+}
+
+// getTestPGPEntity returns a fixed test SignPGP entity.
+func getTestPGPEntity(t *testing.T) *openpgp.Entity {
 	t.Helper()
 
 	f, err := os.Open(filepath.Join("..", "..", "test", "keys", "private.asc"))

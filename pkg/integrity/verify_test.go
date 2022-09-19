@@ -10,7 +10,9 @@
 package integrity
 
 import (
+	"crypto/x509"
 	"errors"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"io"
 	"path/filepath"
 	"reflect"
@@ -23,9 +25,11 @@ import (
 
 func TestGroupVerifier_fingerprints(t *testing.T) {
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
-	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed.sif"))
+	oneGroupPGPSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed.sif"))
+	oneGroupX509SignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed-x509.sif"))
 
-	e := getTestEntity(t)
+	ePGP := getTestPGPEntity(t)
+	eX509 := getTextX509Certificate(t)
 
 	tests := []struct {
 		name    string
@@ -41,9 +45,15 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 		},
 		{
 			name:    "Signed",
-			f:       oneGroupSignedImage,
+			f:       oneGroupPGPSignedImage,
 			groupID: 1,
-			wantFPs: [][]byte{e.PrimaryKey.Fingerprint},
+			wantFPs: [][]byte{ePGP.PrimaryKey.Fingerprint},
+		},
+		{
+			name:    "SignedX509",
+			f:       oneGroupX509SignedImage,
+			groupID: 1,
+			wantFPs: [][]byte{eX509.SubjectKeyId},
 		},
 	}
 
@@ -72,7 +82,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
 	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed.sif"))
 
-	e := getTestEntity(t)
+	e := getTestPGPEntity(t)
 	kr := openpgp.EntityList{e}
 
 	tests := []struct {
@@ -217,7 +227,163 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 				subsetOK: tt.subsetOK,
 			}
 
-			if got, want := v.verifyWithKeyRing(tt.kr), tt.wantErr; !errors.Is(got, want) {
+			if got, want := v.verifyPGPWithKeyRing(tt.kr), tt.wantErr; !errors.Is(got, want) {
+				t.Errorf("got error %v, want %v", got, want)
+			}
+		})
+	}
+}
+
+func TestGroupVerifier_verifyX509(t *testing.T) {
+	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
+	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed-x509.sif"))
+
+	e := getTextX509Certificate(t)
+	kr := e
+
+	tests := []struct {
+		name            string
+		f               *sif.FileImage
+		testCallback    bool
+		ignoreError     bool
+		groupID         uint32
+		objectIDs       []uint32
+		subsetOK        bool
+		kr              *x509.Certificate
+		wantCBSignature uint32
+		wantCBVerified  []uint32
+		wantCBEntity    *x509.Certificate
+		wantCBErr       error
+		wantErr         error
+	}{
+		{
+			name:      "SignatureNotFound",
+			f:         oneGroupImage,
+			groupID:   1,
+			objectIDs: []uint32{1, 2},
+			kr:        kr,
+			wantErr:   &SignatureNotFoundError{},
+		},
+		{
+			name:      "SignedObjectNotFound",
+			f:         oneGroupSignedImage,
+			groupID:   1,
+			objectIDs: []uint32{1},
+			kr:        kr,
+			wantErr:   errSignedObjectNotFound,
+		},
+		{
+			name:      "UnknownIssuer",
+			f:         oneGroupSignedImage,
+			groupID:   1,
+			objectIDs: []uint32{1, 2},
+			kr:        nil,
+			wantErr:   &SignatureNotValidError{ID: 3, Err: x509.UnknownAuthorityError{}},
+		},
+		{
+			name:            "IgnoreError",
+			f:               oneGroupSignedImage,
+			testCallback:    true,
+			ignoreError:     true,
+			groupID:         1,
+			objectIDs:       []uint32{1, 2},
+			kr:              nil,
+			wantCBSignature: 3,
+			wantCBErr:       &SignatureNotValidError{ID: 3, Err: pgperrors.ErrUnknownIssuer},
+			wantErr:         nil,
+		},
+		{
+			name:      "OneGroupSigned",
+			f:         oneGroupSignedImage,
+			groupID:   1,
+			objectIDs: []uint32{1, 2},
+			kr:        kr,
+		},
+		{
+			name:            "OneGroupSignedWithCallback",
+			f:               oneGroupSignedImage,
+			testCallback:    true,
+			groupID:         1,
+			objectIDs:       []uint32{1, 2},
+			kr:              kr,
+			wantCBSignature: 3,
+			wantCBVerified:  []uint32{1, 2},
+			wantCBEntity:    e,
+		},
+		{
+			name:      "OneGroupSignedSubset",
+			f:         oneGroupSignedImage,
+			groupID:   1,
+			objectIDs: []uint32{1},
+			subsetOK:  true,
+			kr:        kr,
+		},
+		{
+			name:            "OneGroupSignedSubsetWithCallback",
+			f:               oneGroupSignedImage,
+			testCallback:    true,
+			groupID:         1,
+			objectIDs:       []uint32{1},
+			subsetOK:        true,
+			kr:              kr,
+			wantCBSignature: 3,
+			wantCBVerified:  []uint32{1},
+			wantCBEntity:    e,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			ods := make([]sif.Descriptor, len(tt.objectIDs))
+			for i, id := range tt.objectIDs {
+				od, err := tt.f.GetDescriptor(sif.WithID(id))
+				if err != nil {
+					t.Fatal(err)
+				}
+				ods[i] = od
+			}
+
+			// Test callback functionality, if requested.
+			var cb VerifyCallback
+
+			//nolint:dupl
+			if tt.testCallback {
+				cb = func(r VerifyResult) bool {
+					if got, want := r.Signature().ID(), tt.wantCBSignature; got != want {
+						t.Errorf("got signature %v, want %v", got, want)
+					}
+
+					if got, want := len(r.Verified()), len(tt.wantCBVerified); got != want {
+						t.Fatalf("got %v verified objects, want %v", got, want)
+					}
+					for i, od := range r.Verified() {
+						if got, want := od.ID(), tt.wantCBVerified[i]; got != want {
+							t.Errorf("got verified ID %v, want %v", got, want)
+						}
+					}
+
+					if got, want := r.Entity(), tt.wantCBEntity; got != want {
+						t.Errorf("got entity %v, want %v", got, want)
+					}
+
+					if got, want := r.Error(), tt.wantCBErr; !errors.Is(got, want) {
+						t.Errorf("got error %v, want %v", got, want)
+					}
+
+					return tt.ignoreError
+				}
+			}
+
+			v := &groupVerifier{
+				f:        tt.f,
+				cb:       cb,
+				groupID:  tt.groupID,
+				ods:      ods,
+				subsetOK: tt.subsetOK,
+			}
+
+			if got, want := v.verifyX509WithRoots(tt.kr), tt.wantErr; !errors.Is(got, want) {
 				t.Errorf("got error %v, want %v", got, want)
 			}
 		})
@@ -228,7 +394,7 @@ func TestLegacyGroupVerifier_fingerprints(t *testing.T) {
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
 	oneGroupImageSigned := loadContainer(t, filepath.Join(corpus, "one-group-signed-legacy-group.sif"))
 
-	e := getTestEntity(t)
+	e := getTestPGPEntity(t)
 
 	tests := []struct {
 		name    string
@@ -275,7 +441,7 @@ func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
 	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed-legacy-group.sif"))
 
-	e := getTestEntity(t)
+	e := getTestPGPEntity(t)
 	kr := openpgp.EntityList{e}
 
 	tests := []struct {
@@ -396,7 +562,7 @@ func TestLegacyGroupVerifier_verifyWithKeyRing(t *testing.T) {
 				ods:     ods,
 			}
 
-			if got, want := v.verifyWithKeyRing(tt.kr), tt.wantErr; !errors.Is(got, want) {
+			if got, want := v.verifyPGPWithKeyRing(tt.kr), tt.wantErr; !errors.Is(got, want) {
 				t.Errorf("got error %v, want %v", got, want)
 			}
 		})
@@ -407,7 +573,7 @@ func TestLegacyObjectVerifier_fingerprints(t *testing.T) {
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
 	oneGroupImageSigned := loadContainer(t, filepath.Join(corpus, "one-group-signed-legacy-all.sif"))
 
-	e := getTestEntity(t)
+	e := getTestPGPEntity(t)
 
 	tests := []struct {
 		name    string
@@ -459,7 +625,7 @@ func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
 	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed-legacy-all.sif"))
 
-	e := getTestEntity(t)
+	e := getTestPGPEntity(t)
 	kr := openpgp.EntityList{e}
 
 	tests := []struct {
@@ -579,7 +745,7 @@ func TestLegacyObjectVerifier_verifyWithKeyRing(t *testing.T) {
 				od: od,
 			}
 
-			if got, want := v.verifyWithKeyRing(tt.kr), tt.wantErr; !errors.Is(got, want) {
+			if got, want := v.verifyPGPWithKeyRing(tt.kr), tt.wantErr; !errors.Is(got, want) {
 				t.Errorf("got error %v, want %v", got, want)
 			}
 		})
@@ -591,7 +757,7 @@ func TestNewVerifier(t *testing.T) {
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
 	twoGroupImage := loadContainer(t, filepath.Join(corpus, "two-groups.sif"))
 
-	kr := openpgp.EntityList{getTestEntity(t)}
+	kr := openpgp.EntityList{getTestPGPEntity(t)}
 
 	cb := func(r VerifyResult) bool { return false }
 
@@ -628,19 +794,19 @@ func TestNewVerifier(t *testing.T) {
 		{
 			name:    "NoObjects",
 			fi:      emptyImage,
-			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(1)},
+			opts:    []VerifierOpt{OptVerifyWithSigner(kr), OptVerifyGroup(1)},
 			wantErr: sif.ErrNoObjects,
 		},
 		{
 			name:    "GroupNotFound",
 			fi:      oneGroupImage,
-			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(2)},
+			opts:    []VerifierOpt{OptVerifyWithSigner(kr), OptVerifyGroup(2)},
 			wantErr: errGroupNotFound,
 		},
 		{
 			name:    "GroupNotFoundLegacy",
 			fi:      oneGroupImage,
-			opts:    []VerifierOpt{OptVerifyWithKeyRing(kr), OptVerifyGroup(2), OptVerifyLegacy()},
+			opts:    []VerifierOpt{OptVerifyWithSigner(kr), OptVerifyGroup(2), OptVerifyLegacy()},
 			wantErr: errGroupNotFound,
 		},
 		{
@@ -676,9 +842,9 @@ func TestNewVerifier(t *testing.T) {
 			wantTasks:  2,
 		},
 		{
-			name:        "OptVerifyWithKeyRing",
+			name:        "OptVerifyWithSigner",
 			fi:          twoGroupImage,
-			opts:        []VerifierOpt{OptVerifyWithKeyRing(kr)},
+			opts:        []VerifierOpt{OptVerifyWithSigner(kr)},
 			wantKeyring: kr,
 			wantGroups:  []uint32{1, 2},
 			wantTasks:   2,
@@ -823,7 +989,15 @@ func (v mockVerifier) fingerprints() ([][]byte, error) {
 	return v.fps, v.err
 }
 
-func (v mockVerifier) verifyWithKeyRing(kr openpgp.KeyRing) error {
+func (v mockVerifier) verifySignature(signer interface{}) error {
+	return v.err
+}
+
+func (v mockVerifier) verifyPGPWithKeyRing(kr openpgp.KeyRing) error {
+	return v.err
+}
+
+func (v mockVerifier) verifyX509WithRoots(signer *packet.PublicKey) error {
 	return v.err
 }
 
@@ -1004,12 +1178,15 @@ func TestVerifier_AllSignedBy(t *testing.T) {
 func TestVerifier_Verify(t *testing.T) {
 	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed.sif"))
 
-	kr := openpgp.EntityList{getTestEntity(t)}
+	oneGroupSignedX509Image := loadContainer(t, filepath.Join(corpus, "one-group-signed-x509.sif"))
+
+	kr := openpgp.EntityList{getTestPGPEntity(t)}
+	eX509 := getTextX509Certificate(t)
 
 	tests := []struct {
 		name    string
 		f       *sif.FileImage
-		kr      openpgp.KeyRing
+		signer  interface{}
 		tasks   []verifyTask
 		wantErr error
 	}{
@@ -1022,15 +1199,21 @@ func TestVerifier_Verify(t *testing.T) {
 		{
 			name:    "EOF",
 			f:       oneGroupSignedImage,
-			kr:      kr,
+			signer:  kr,
 			tasks:   []verifyTask{mockVerifier{err: io.EOF}},
 			wantErr: io.EOF,
 		},
 		{
-			name:  "OK",
-			f:     oneGroupSignedImage,
-			kr:    kr,
-			tasks: []verifyTask{mockVerifier{}},
+			name:   "OK",
+			f:      oneGroupSignedImage,
+			signer: kr,
+			tasks:  []verifyTask{mockVerifier{}},
+		},
+		{
+			name:   "OKX509",
+			f:      oneGroupSignedX509Image,
+			signer: eX509,
+			tasks:  []verifyTask{mockVerifier{}},
 		},
 	}
 
@@ -1039,7 +1222,7 @@ func TestVerifier_Verify(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			v := Verifier{
 				f:     tt.f,
-				kr:    tt.kr,
+				kr:    tt.signer,
 				tasks: tt.tasks,
 			}
 
