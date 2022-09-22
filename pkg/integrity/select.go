@@ -120,7 +120,6 @@ func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]sif.De
 			return isLegacy == legacy, err
 		},
 	)
-
 	if err != nil {
 		return nil, err
 	}
