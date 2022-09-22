@@ -13,8 +13,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/apptainer/sif/v2/pkg/sif"
 	"sort"
+
+	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
 var (
@@ -115,13 +116,8 @@ func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]sif.De
 				return false, err
 			}
 
-			_ = b
-			return true, nil
-			// fixme: should I add it?
-			/*
-				isLegacy, err := isLegacySignature(b)
-				return isLegacy == legacy, err
-			*/
+			isLegacy, err := isLegacySignature(b)
+			return isLegacy == legacy, err
 		},
 	)
 

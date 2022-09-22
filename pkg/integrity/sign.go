@@ -12,11 +12,11 @@ package integrity
 import (
 	"bytes"
 	"crypto"
-	"crypto/x509"
 	"fmt"
-	"github.com/pkg/errors"
 	"sort"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
@@ -27,15 +27,11 @@ var (
 	errNoObjectsSpecified = errors.New("no objects specified")
 	errUnexpectedGroupID  = errors.New("unexpected group ID")
 	errNilFileImage       = errors.New("nil file image")
+	errNilCertificate     = errors.New("nil certificate")
 )
 
 // ErrNoKeyMaterial is the error returned when no key material was provided.
 var ErrNoKeyMaterial = errors.New("key material not provided")
-
-type X509Signer struct {
-	Signer      crypto.Signer
-	Certificate *x509.Certificate
-}
 
 type groupSigner struct {
 	f         *sif.FileImage   // SIF image to sign.

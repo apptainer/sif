@@ -12,11 +12,12 @@ package integrity
 import (
 	"crypto/x509"
 	"errors"
-	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"io"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	pgperrors "github.com/ProtonMail/go-crypto/openpgp/errors"
@@ -29,7 +30,7 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 	oneGroupX509SignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed-x509.sif"))
 
 	ePGP := getTestPGPEntity(t)
-	eX509 := getTextX509Certificate(t)
+	eX509 := getTestX509Signer(t)
 
 	tests := []struct {
 		name    string
@@ -53,7 +54,7 @@ func TestGroupVerifier_fingerprints(t *testing.T) {
 			name:    "SignedX509",
 			f:       oneGroupX509SignedImage,
 			groupID: 1,
-			wantFPs: [][]byte{eX509.SubjectKeyId},
+			wantFPs: [][]byte{eX509.Certificate.SubjectKeyId},
 		},
 	}
 
@@ -238,8 +239,7 @@ func TestGroupVerifier_verifyX509(t *testing.T) {
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
 	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed-x509.sif"))
 
-	e := getTextX509Certificate(t)
-	kr := e
+	certificate := getTestX509Signer(t).Certificate
 
 	tests := []struct {
 		name            string
@@ -249,7 +249,7 @@ func TestGroupVerifier_verifyX509(t *testing.T) {
 		groupID         uint32
 		objectIDs       []uint32
 		subsetOK        bool
-		kr              *x509.Certificate
+		certificate     *x509.Certificate
 		wantCBSignature uint32
 		wantCBVerified  []uint32
 		wantCBEntity    *x509.Certificate
@@ -257,28 +257,28 @@ func TestGroupVerifier_verifyX509(t *testing.T) {
 		wantErr         error
 	}{
 		{
-			name:      "SignatureNotFound",
-			f:         oneGroupImage,
-			groupID:   1,
-			objectIDs: []uint32{1, 2},
-			kr:        kr,
-			wantErr:   &SignatureNotFoundError{},
+			name:        "SignatureNotFound",
+			f:           oneGroupImage,
+			groupID:     1,
+			objectIDs:   []uint32{1, 2},
+			certificate: certificate,
+			wantErr:     &SignatureNotFoundError{},
 		},
 		{
-			name:      "SignedObjectNotFound",
-			f:         oneGroupSignedImage,
-			groupID:   1,
-			objectIDs: []uint32{1},
-			kr:        kr,
-			wantErr:   errSignedObjectNotFound,
+			name:        "SignedObjectNotFound",
+			f:           oneGroupSignedImage,
+			groupID:     1,
+			objectIDs:   []uint32{1},
+			certificate: certificate,
+			wantErr:     errSignedObjectNotFound,
 		},
 		{
-			name:      "UnknownIssuer",
-			f:         oneGroupSignedImage,
-			groupID:   1,
-			objectIDs: []uint32{1, 2},
-			kr:        nil,
-			wantErr:   &SignatureNotValidError{ID: 3, Err: x509.UnknownAuthorityError{}},
+			name:        "UnknownIssuer",
+			f:           oneGroupSignedImage,
+			groupID:     1,
+			objectIDs:   []uint32{1, 2},
+			certificate: &x509.Certificate{},
+			wantErr:     &SignatureNotValidError{ID: 3, Err: x509.UnknownAuthorityError{}},
 		},
 		{
 			name:            "IgnoreError",
@@ -287,17 +287,18 @@ func TestGroupVerifier_verifyX509(t *testing.T) {
 			ignoreError:     true,
 			groupID:         1,
 			objectIDs:       []uint32{1, 2},
-			kr:              nil,
+			certificate:     nil,
 			wantCBSignature: 3,
-			wantCBErr:       &SignatureNotValidError{ID: 3, Err: pgperrors.ErrUnknownIssuer},
+			wantCBVerified:  []uint32{3},
+			wantCBErr:       &SignatureNotValidError{ID: 3, Err: x509.UnknownAuthorityError{}},
 			wantErr:         nil,
 		},
 		{
-			name:      "OneGroupSigned",
-			f:         oneGroupSignedImage,
-			groupID:   1,
-			objectIDs: []uint32{1, 2},
-			kr:        kr,
+			name:        "OneGroupSigned",
+			f:           oneGroupSignedImage,
+			groupID:     1,
+			objectIDs:   []uint32{1, 2},
+			certificate: certificate,
 		},
 		{
 			name:            "OneGroupSignedWithCallback",
@@ -305,18 +306,18 @@ func TestGroupVerifier_verifyX509(t *testing.T) {
 			testCallback:    true,
 			groupID:         1,
 			objectIDs:       []uint32{1, 2},
-			kr:              kr,
+			certificate:     certificate,
 			wantCBSignature: 3,
 			wantCBVerified:  []uint32{1, 2},
-			wantCBEntity:    e,
+			wantCBEntity:    certificate,
 		},
 		{
-			name:      "OneGroupSignedSubset",
-			f:         oneGroupSignedImage,
-			groupID:   1,
-			objectIDs: []uint32{1},
-			subsetOK:  true,
-			kr:        kr,
+			name:        "OneGroupSignedSubset",
+			f:           oneGroupSignedImage,
+			groupID:     1,
+			objectIDs:   []uint32{1},
+			subsetOK:    true,
+			certificate: certificate,
 		},
 		{
 			name:            "OneGroupSignedSubsetWithCallback",
@@ -325,10 +326,10 @@ func TestGroupVerifier_verifyX509(t *testing.T) {
 			groupID:         1,
 			objectIDs:       []uint32{1},
 			subsetOK:        true,
-			kr:              kr,
+			certificate:     certificate,
 			wantCBSignature: 3,
 			wantCBVerified:  []uint32{1},
-			wantCBEntity:    e,
+			wantCBEntity:    certificate,
 		},
 	}
 
@@ -383,7 +384,7 @@ func TestGroupVerifier_verifyX509(t *testing.T) {
 				subsetOK: tt.subsetOK,
 			}
 
-			if got, want := v.verifyX509WithRoots(tt.kr), tt.wantErr; !errors.Is(got, want) {
+			if got, want := v.verifyX509WithRoots(tt.certificate), tt.wantErr; !errors.Is(got, want) {
 				t.Errorf("got error %v, want %v", got, want)
 			}
 		})
@@ -1181,7 +1182,7 @@ func TestVerifier_Verify(t *testing.T) {
 	oneGroupSignedX509Image := loadContainer(t, filepath.Join(corpus, "one-group-signed-x509.sif"))
 
 	kr := openpgp.EntityList{getTestPGPEntity(t)}
-	eX509 := getTextX509Certificate(t)
+	eX509 := getTestX509Signer(t)
 
 	tests := []struct {
 		name    string

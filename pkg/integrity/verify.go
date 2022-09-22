@@ -14,8 +14,6 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"fmt"
-	"github.com/ProtonMail/go-crypto/openpgp/packet"
-	"github.com/pkg/errors"
 	"io"
 	"sort"
 	"strings"
@@ -23,6 +21,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/apptainer/sif/v2/pkg/sif"
 	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -113,7 +112,7 @@ func (v *groupVerifier) fingerprints() ([][]byte, error) {
 func (v *groupVerifier) verifySignature(signer interface{}) error {
 	switch s := signer.(type) {
 	case openpgp.KeyRing:
-		return v.verifyWithKeyRing(s)
+		return v.verifyPGPWithKeyRing(s)
 	case *x509.Certificate:
 		return v.verifyX509WithRoots(s)
 	default:
@@ -209,6 +208,10 @@ func (v *groupVerifier) verifyPGPWithKeyRing(kr openpgp.KeyRing) error {
 }
 
 func (v *groupVerifier) verifyX509Signature(sig sif.Descriptor, cert *x509.Certificate) ([]sif.Descriptor, *x509.Certificate, error) { // nolint:lll
+	if cert == nil || (*cert).Raw == nil {
+		return []sif.Descriptor{sig}, cert, &SignatureNotValidError{ID: sig.ID(), Err: x509.UnknownAuthorityError{}}
+	}
+
 	b, err := sig.GetData()
 	if err != nil {
 		return nil, nil, err
@@ -313,7 +316,7 @@ func (v *legacyGroupVerifier) verifySignature(signer interface{}) error {
 	switch s := signer.(type) {
 	case openpgp.KeyRing:
 		return v.verifyPGPWithKeyRing(s)
-	case *packet.PublicKey:
+	case *x509.Certificate:
 		return errors.Errorf("X509 method not supported for legacyGroupVerifier")
 	default:
 		return errors.Errorf("Unknown signer %s", signer)

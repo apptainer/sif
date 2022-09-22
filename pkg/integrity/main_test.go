@@ -10,9 +10,6 @@
 package integrity
 
 import (
-	"crypto"
-	"crypto/x509"
-	"encoding/pem"
 	"os"
 	"path/filepath"
 	"testing"
@@ -46,78 +43,16 @@ func loadContainer(t *testing.T, path string) *sif.FileImage {
 	return f
 }
 
-func getX509Signer(t *testing.T) *X509Signer {
-	return &X509Signer{
-		Signer:      getTestPKCS8Key(t),
-		Certificate: getTextX509Certificate(t),
-	}
-}
+func getTestX509Signer(t *testing.T) *X509Signer {
+	priKeyPath := filepath.Join("..", "..", "test", "keys", "x509", "example.key")
+	certPath := filepath.Join("..", "..", "test", "keys", "x509", "example.crt")
 
-func getTestPKCS8Key(t *testing.T) crypto.Signer {
-	path := filepath.Join("..", "..", "test", "keys", "pkcs8.key")
-
-	// open raw data
-	rawPrivKey, err := os.ReadFile(path)
+	signer, err := GetX509Signer(priKeyPath, certPath)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
-	var tryWith []byte
-
-	// try to decode raw data as PEM
-	block, _ := pem.Decode(rawPrivKey)
-	if block == nil || block.Type != "PRIVATE KEY" {
-		tryWith = rawPrivKey
-	} else {
-		tryWith = block.Bytes
-	}
-
-	// decode raw data as DER
-	key, err := x509.ParsePKCS8PrivateKey(tryWith)
-	if err != nil {
-		t.Fatalf("failed to decode private key from '%s'", path)
-	}
-
-	return key.(crypto.Signer)
-}
-
-func getTextX509Certificate(t *testing.T) *x509.Certificate {
-	path := filepath.Join("..", "..", "test", "keys", "x509.pem")
-
-	// open raw data
-	rawCert, err := os.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-
-	var tryWith []byte
-
-	// try to decode raw data as PEM
-	block, _ := pem.Decode(rawCert)
-	if block == nil || block.Type != "CERTIFICATE" {
-		tryWith = rawCert
-	} else {
-		tryWith = block.Bytes
-	}
-
-	// decode raw data as DER
-	cert, err := x509.ParseCertificate(tryWith)
-	if err != nil {
-		t.Fatalf("failed to decode certificate from '%s'", path)
-	}
-
-	// check validity period
-	// to run tests use:
-	// now, _ := time.Parse(time.RFC1123, "Mon, 02 Jan 2000 15:04:05 MST")
-	now := time.Now()
-	switch {
-	case now.Before(cert.NotBefore):
-		t.Fatalf("certificate is not yet valid")
-	case now.After(cert.NotAfter):
-		t.Fatalf("certificate has expired")
-	}
-
-	return cert
+	return signer
 }
 
 // getTestPGPEntity returns a fixed test SignPGP entity.

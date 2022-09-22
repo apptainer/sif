@@ -11,16 +11,12 @@ package main
 
 import (
 	"bytes"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
-	"github.com/ProtonMail/go-crypto/openpgp/packet"
-	"github.com/pkg/errors"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/apptainer/sif/v2/pkg/integrity"
@@ -37,22 +33,10 @@ const (
 var errUnexpectedNumEntities = errors.New("unexpected number of entities")
 
 func getX509Signer() (*integrity.X509Signer, error) {
-	rawPrivKey, err := ioutil.ReadFile(filepath.Join("keys", "private.key"))
-	if err != nil {
-		return nil, err
-	}
+	priKeyPath := filepath.Join("keys", "x509", "example.key")
+	certPath := filepath.Join("keys", "x509", "example.crt")
 
-	block, _ := pem.Decode(rawPrivKey)
-	if block == nil {
-		return nil, err
-	}
-
-	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return packet.NewRSAPrivateKey(time.Time{}, key.(*rsa.PrivateKey)), nil
+	return integrity.GetX509Signer(priKeyPath, certPath)
 }
 
 func getPGPEntity() (*openpgp.Entity, error) {
@@ -248,6 +232,7 @@ func generateImages() error {
 		if err != nil {
 			return err
 		}
+
 		defer func() {
 			if err := f.UnloadContainer(); err != nil {
 				log.Printf("failed to unload container: %v", err)

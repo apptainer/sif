@@ -19,11 +19,12 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"io"
+
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/clearsign"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/pkg/errors"
-	"io"
 )
 
 var errClearsignedMsgNotFound = errors.New("clearsigned message not found")
@@ -76,7 +77,6 @@ func verifyPGPAndDecode(data []byte, kr openpgp.KeyRing) (*openpgp.Entity, []byt
 // signX509AndEncodeJSON encodes v, clear-signs it with privateKey, and writes it to w. If config is
 // nil, sensible defaults are used.
 func signX509AndEncodeJSON(w io.Writer, v interface{}, signer *X509Signer) error {
-
 	/* Create Message */
 	message, err := json.Marshal(v)
 	if err != nil {
@@ -128,6 +128,22 @@ func verifyX509AndDecodeJSON(data []byte, v interface{}, cert *x509.Certificate)
 	return e, rest, err
 }
 
+func extractMsgAndX509Signature(data []byte) (message *pem.Block, signature *pem.Block, rest []byte, err error) {
+	/* Extract Message */
+	msgBlock, rest := pem.Decode(data)
+	if msgBlock == nil {
+		return nil, nil, rest, errors.Errorf("X509 message not found")
+	}
+
+	/* Extract Signature */
+	sigBlock, rest := pem.Decode(rest)
+	if sigBlock == nil {
+		return msgBlock, nil, rest, errors.Errorf("x509 signature not found")
+	}
+
+	return msgBlock, sigBlock, rest, nil
+}
+
 // verifyX509AndDecode reads the first clearsigned message in data, verifies its signature, and returns
 // the signing entity, plaintext and suffix of data which follows the message.
 func verifyX509AndDecode(data []byte, cert *x509.Certificate) (*x509.Certificate, []byte, []byte, error) {
@@ -135,16 +151,9 @@ func verifyX509AndDecode(data []byte, cert *x509.Certificate) (*x509.Certificate
 		return nil, nil, nil, x509.UnknownAuthorityError{}
 	}
 
-	/* Extract Message */
-	message, rest := pem.Decode(data)
-	if message == nil {
-		return nil, nil, rest, errClearsignedMsgNotFound
-	}
-
-	/* Extract Signature */
-	signature, rest := pem.Decode(rest)
-	if signature == nil {
-		return nil, nil, rest, errClearsignedMsgNotFound
+	message, signature, rest, err := extractMsgAndX509Signature(data)
+	if err != nil {
+		return nil, nil, rest, err
 	}
 
 	/* Check Signature */
@@ -185,6 +194,11 @@ func verifyX509AndDecode(data []byte, cert *x509.Certificate) (*x509.Certificate
 // isLegacySignature reads the first clearsigned message in data, and returns true if the plaintext
 // contains a legacy signature.
 func isLegacySignature(data []byte) (bool, error) {
+	// Try to decode as X509
+	if _, _, _, err := extractMsgAndX509Signature(data); err == nil {
+		return false, nil
+	}
+
 	// Try to decode PGP
 	b, _ := clearsign.Decode(data)
 	if b == nil {
