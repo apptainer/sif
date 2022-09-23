@@ -10,7 +10,6 @@ linters:
     - bodyclose
     - containedctx
     - contextcheck
-    - deadcode
     - decorder
     - depguard
     - dogsled
@@ -34,6 +33,7 @@ linters:
     - govet
     - grouper
     - ineffassign
+    - interfacebloat
     - ireturn
     - lll
     - maintidx
@@ -42,16 +42,14 @@ linters:
     - nolintlint
     - nonamedreturns
     - prealloc
+    - reassign
     - revive
-    - rowserrcheck
     - staticcheck
-    - structcheck
     - tenv
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
     - whitespace
 
 linters-settings:

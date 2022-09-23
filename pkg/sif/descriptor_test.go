@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -285,6 +285,56 @@ func TestDescriptor_CryptoMessageMetadata(t *testing.T) {
 
 				if got, want := mt, tt.wantMT; got != want {
 					t.Fatalf("got message type %v, want %v", got, want)
+				}
+			}
+		})
+	}
+}
+
+func TestDescriptor_SBOMMetadata(t *testing.T) {
+	m := sbom{
+		Format: SBOMFormatCycloneDXJSON,
+	}
+
+	rd := rawDescriptor{
+		DataType: DataSBOM,
+	}
+	if err := rd.setExtra(m); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name       string
+		rd         rawDescriptor
+		wantFormat SBOMFormat
+		wantErr    error
+	}{
+		{
+			name: "UnexpectedDataType",
+			rd: rawDescriptor{
+				DataType: DataGeneric,
+			},
+			wantErr: &unexpectedDataTypeError{DataGeneric, []DataType{DataSBOM}},
+		},
+		{
+			name:       "OK",
+			rd:         rd,
+			wantFormat: SBOMFormatCycloneDXJSON,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := Descriptor{raw: tt.rd}
+
+			f, err := d.SBOMMetadata()
+
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+
+			if err == nil {
+				if got, want := f, tt.wantFormat; got != want {
+					t.Fatalf("got format %v, want %v", got, want)
 				}
 			}
 		})
