@@ -17,8 +17,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ProtonMail/go-crypto/openpgp/packet"
-
 	"github.com/ProtonMail/go-crypto/openpgp"
 	pgperrors "github.com/ProtonMail/go-crypto/openpgp/errors"
 	"github.com/apptainer/sif/v2/pkg/sif"
@@ -177,6 +175,7 @@ func TestGroupVerifier_verifyWithKeyRing(t *testing.T) {
 		},
 	}
 
+	//nolint:dupl
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
@@ -333,6 +332,7 @@ func TestGroupVerifier_verifyX509(t *testing.T) {
 		},
 	}
 
+	//nolint:dupl
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
@@ -990,15 +990,7 @@ func (v mockVerifier) fingerprints() ([][]byte, error) {
 	return v.fps, v.err
 }
 
-func (v mockVerifier) verifySignature(signer interface{}) error {
-	return v.err
-}
-
-func (v mockVerifier) verifyPGPWithKeyRing(kr openpgp.KeyRing) error {
-	return v.err
-}
-
-func (v mockVerifier) verifyX509WithRoots(signer *packet.PublicKey) error {
+func (v mockVerifier) verifySignature(interface{}) error {
 	return v.err
 }
 
