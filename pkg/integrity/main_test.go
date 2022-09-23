@@ -43,8 +43,20 @@ func loadContainer(t *testing.T, path string) *sif.FileImage {
 	return f
 }
 
-// getTestEntity returns a fixed test PGP entity.
-func getTestEntity(t *testing.T) *openpgp.Entity {
+func getTestX509Signer(t *testing.T) *X509Signer {
+	priKeyPath := filepath.Join("..", "..", "test", "keys", "x509", "example.key")
+	certPath := filepath.Join("..", "..", "test", "keys", "x509", "example.crt")
+
+	signer, err := GetX509Signer(priKeyPath, certPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return signer
+}
+
+// getTestPGPEntity returns a fixed test SignPGP entity.
+func getTestPGPEntity(t *testing.T) *openpgp.Entity {
 	t.Helper()
 
 	f, err := os.Open(filepath.Join("..", "..", "test", "keys", "private.asc"))

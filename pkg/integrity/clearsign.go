@@ -11,20 +11,27 @@ package integrity
 
 import (
 	"bytes"
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	cryptorand "crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
-	"errors"
+	"encoding/pem"
 	"io"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/clearsign"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
+	"github.com/pkg/errors"
 )
 
 var errClearsignedMsgNotFound = errors.New("clearsigned message not found")
 
-// signAndEncodeJSON encodes v, clear-signs it with privateKey, and writes it to w. If config is
+// signPGPAndEncodeJSON encodes v, clear-signs it with privateKey, and writes it to w. If config is
 // nil, sensible defaults are used.
-func signAndEncodeJSON(w io.Writer, v interface{}, privateKey *packet.PrivateKey, config *packet.Config) error {
+func signPGPAndEncodeJSON(w io.Writer, v interface{}, privateKey *packet.PrivateKey, config *packet.Config) error {
 	// Get clearsign encoder.
 	plaintext, err := clearsign.Encode(w, privateKey, config)
 	if err != nil {
@@ -36,12 +43,12 @@ func signAndEncodeJSON(w io.Writer, v interface{}, privateKey *packet.PrivateKey
 	return json.NewEncoder(plaintext).Encode(v)
 }
 
-// verifyAndDecodeJSON reads the first clearsigned message in data, verifies its signature, and
+// verifyPGPAndDecodeJSON reads the first clearsigned message in data, verifies its signature, and
 // returns the signing entity any suffix of data which follows the message. The plaintext is
 // unmarshalled to v (if not nil).
-func verifyAndDecodeJSON(data []byte, v interface{}, kr openpgp.KeyRing) (*openpgp.Entity, []byte, error) {
+func verifyPGPAndDecodeJSON(data []byte, v interface{}, kr openpgp.KeyRing) (*openpgp.Entity, []byte, error) {
 	// Decode clearsign block and check signature.
-	e, plaintext, rest, err := verifyAndDecode(data, kr)
+	e, plaintext, rest, err := verifyPGPAndDecode(data, kr)
 	if err != nil {
 		return e, rest, err
 	}
@@ -53,9 +60,9 @@ func verifyAndDecodeJSON(data []byte, v interface{}, kr openpgp.KeyRing) (*openp
 	return e, rest, err
 }
 
-// verifyAndDecode reads the first clearsigned message in data, verifies its signature, and returns
+// verifyPGPAndDecode reads the first clearsigned message in data, verifies its signature, and returns
 // the signing entity, plaintext and suffix of data which follows the message.
-func verifyAndDecode(data []byte, kr openpgp.KeyRing) (*openpgp.Entity, []byte, []byte, error) {
+func verifyPGPAndDecode(data []byte, kr openpgp.KeyRing) (*openpgp.Entity, []byte, []byte, error) {
 	// Decode clearsign block.
 	b, rest := clearsign.Decode(data)
 	if b == nil {
@@ -67,10 +74,133 @@ func verifyAndDecode(data []byte, kr openpgp.KeyRing) (*openpgp.Entity, []byte, 
 	return e, b.Plaintext, rest, err
 }
 
+// signX509AndEncodeJSON encodes v, clear-signs it with privateKey, and writes it to w. If config is
+// nil, sensible defaults are used.
+func signX509AndEncodeJSON(w io.Writer, v interface{}, signer *X509Signer) error {
+	/* Create Message */
+	message, err := json.Marshal(v)
+	if err != nil {
+		return errors.Wrap(err, "create message")
+	}
+
+	if err := pem.Encode(w, &pem.Block{Type: "SIGNED MESSAGE", Bytes: message}); err != nil {
+		return errors.Wrap(err, "cannot encode PEM")
+	}
+
+	/* Create Signature */
+	d := crypto.SHA256.New()
+	d.Write(message)
+
+	var signerOpts crypto.SignerOpts
+
+	switch signer.Certificate.PublicKeyAlgorithm {
+	case x509.Ed25519: // https://pkg.go.dev/crypto/ed25519#PrivateKey.Sign
+		signerOpts = crypto.Hash(0)
+	default:
+		signerOpts = crypto.SHA256
+	}
+
+	signature, err := signer.Signer.Sign(cryptorand.Reader, d.Sum(nil), signerOpts)
+	if err != nil {
+		return errors.Wrap(err, "signing error")
+	}
+
+	if err := pem.Encode(w, &pem.Block{Type: "SIGNATURE", Bytes: signature}); err != nil {
+		return errors.Wrap(err, "cannot encode PEM")
+	}
+
+	return nil
+}
+
+// verifyX509AndDecodeJSON reads the first clearsigned message in data, verifies its signature, and returns
+// the signing entity, plaintext and suffix of data which follows the message.
+func verifyX509AndDecodeJSON(data []byte, v interface{}, cert *x509.Certificate) (*x509.Certificate, []byte, error) {
+	// Decode clearsign block and check signature.
+	e, plaintext, rest, err := verifyX509AndDecode(data, cert)
+	if err != nil {
+		return e, rest, err
+	}
+
+	// Unmarshal plaintext, if requested.
+	if v != nil {
+		err = json.Unmarshal(plaintext, v)
+	}
+	return e, rest, err
+}
+
+// extractMsgAndX509Signature returns the (message, signature, rest, err).
+func extractMsgAndX509Signature(data []byte) (*pem.Block, *pem.Block, []byte, error) {
+	/* Extract Message */
+	msgBlock, rest := pem.Decode(data)
+	if msgBlock == nil {
+		return nil, nil, rest, errors.Errorf("X509 message not found")
+	}
+
+	/* Extract Signature */
+	sigBlock, rest := pem.Decode(rest)
+	if sigBlock == nil {
+		return msgBlock, nil, rest, errors.Errorf("x509 signature not found")
+	}
+
+	return msgBlock, sigBlock, rest, nil
+}
+
+// verifyX509AndDecode reads the first clearsigned message in data, verifies its signature, and returns
+// the signing entity, plaintext and suffix of data which follows the message.
+func verifyX509AndDecode(data []byte, cert *x509.Certificate) (*x509.Certificate, []byte, []byte, error) {
+	if cert == nil {
+		return nil, nil, nil, x509.UnknownAuthorityError{}
+	}
+
+	message, signature, rest, err := extractMsgAndX509Signature(data)
+	if err != nil {
+		return nil, nil, rest, err
+	}
+
+	/* Check Signature */
+	expect := crypto.SHA256.New()
+	expect.Write(message.Bytes)
+
+	switch cert.PublicKeyAlgorithm {
+	case x509.RSA:
+		key := cert.PublicKey.(*rsa.PublicKey)
+
+		err := rsa.VerifyPKCS1v15(key, crypto.SHA256, expect.Sum(nil), signature.Bytes)
+		return cert, message.Bytes, rest, errors.Wrap(err, "rsa verification error")
+
+	case x509.ECDSA:
+		key := cert.PublicKey.(*ecdsa.PublicKey)
+
+		var err error
+		if !ecdsa.VerifyASN1(key, expect.Sum(nil), signature.Bytes) {
+			err = errors.Errorf("verify function returned false")
+		}
+
+		return cert, message.Bytes, rest, errors.Wrap(err, "ecdsa verification error")
+	case x509.Ed25519:
+		key := cert.PublicKey.(*ed25519.PublicKey)
+
+		var err error
+		if !ed25519.Verify(*key, expect.Sum(nil), signature.Bytes) {
+			err = errors.Errorf("verify function returned false")
+		}
+
+		return cert, message.Bytes, rest, errors.Wrap(err, "ed25519 verification error")
+
+	default:
+		return nil, nil, nil, errors.Errorf("Algorithm %s is not supported", cert.PublicKeyAlgorithm.String())
+	}
+}
+
 // isLegacySignature reads the first clearsigned message in data, and returns true if the plaintext
 // contains a legacy signature.
 func isLegacySignature(data []byte) (bool, error) {
-	// Decode clearsign block.
+	// Try to decode as X509
+	if _, _, _, err := extractMsgAndX509Signature(data); err == nil {
+		return false, nil
+	}
+
+	// Try to decode PGP
 	b, _ := clearsign.Decode(data)
 	if b == nil {
 		return false, errClearsignedMsgNotFound

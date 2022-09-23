@@ -31,7 +31,7 @@ type testType struct {
 }
 
 func TestSignAndEncodeJSON(t *testing.T) {
-	e := getTestEntity(t)
+	e := getTestPGPEntity(t)
 
 	// Fake an encrypted key.
 	encryptedKey := *e.PrivateKey
@@ -62,7 +62,7 @@ func TestSignAndEncodeJSON(t *testing.T) {
 				Time:        fixedTime,
 			}
 
-			err := signAndEncodeJSON(&b, testType{1, 2}, tt.key, &config)
+			err := signPGPAndEncodeJSON(&b, testType{1, 2}, tt.key, &config)
 			if got, want := err, tt.wantErr; (got != nil) != want {
 				t.Fatalf("got error %v, wantErr %v", got, want)
 			}
@@ -76,7 +76,7 @@ func TestSignAndEncodeJSON(t *testing.T) {
 }
 
 func TestVerifyAndDecodeJSON(t *testing.T) {
-	e := getTestEntity(t)
+	e := getTestPGPEntity(t)
 
 	testValue := testType{1, 2}
 
@@ -140,7 +140,7 @@ func TestVerifyAndDecodeJSON(t *testing.T) {
 			config := packet.Config{
 				DefaultHash: tt.hash,
 			}
-			err := signAndEncodeJSON(&b, testValue, e.PrivateKey, &config)
+			err := signPGPAndEncodeJSON(&b, testValue, e.PrivateKey, &config)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -155,7 +155,7 @@ func TestVerifyAndDecodeJSON(t *testing.T) {
 			}
 
 			// Verify and decode.
-			e, rest, err := verifyAndDecodeJSON(b.Bytes(), tt.output, tt.el)
+			e, rest, err := verifyPGPAndDecodeJSON(b.Bytes(), tt.output, tt.el)
 
 			// Shouldn't be any trailing bytes.
 			if n := len(rest); n != 0 {
