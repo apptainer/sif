@@ -127,7 +127,7 @@ func (v *groupVerifier) verifySignature(signer interface{}) error {
 // If verification of the SIF global header fails, ErrHeaderIntegrity is returned. If verification
 // of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
 // data object fails, a ObjectIntegrityError is returned.
-func (v *groupVerifier) verifyPGPSignature(sig sif.Descriptor, kr openpgp.KeyRing) ([]sif.Descriptor, *openpgp.Entity, error) { // nolint:lll
+func (v *groupVerifier) verifyPGPSignature(sig sif.Descriptor, kr openpgp.KeyRing) ([]sif.Descriptor, *openpgp.Entity, error) { //nolint:lll
 	b, err := sig.GetData()
 	if err != nil {
 		return nil, nil, err
@@ -188,7 +188,7 @@ func (v *groupVerifier) verifyPGPWithKeyRing(kr openpgp.KeyRing) error {
 		return err
 	}
 
-	var errors *multierror.Error
+	var multiErrors *multierror.Error
 	for _, sig := range sigs {
 		verified, e, err := v.verifyPGPSignature(sig, kr)
 
@@ -201,14 +201,14 @@ func (v *groupVerifier) verifyPGPWithKeyRing(kr openpgp.KeyRing) error {
 		}
 
 		if err != nil {
-			errors = multierror.Append(errors, err)
+			multiErrors = multierror.Append(multiErrors, err)
 		}
 	}
-	return errors.ErrorOrNil()
+	return multiErrors.ErrorOrNil()
 }
 
-func (v *groupVerifier) verifyX509Signature(sig sif.Descriptor, cert *x509.Certificate) ([]sif.Descriptor, *x509.Certificate, error) { // nolint:lll
-	if cert == nil || (*cert).Raw == nil {
+func (v *groupVerifier) verifyX509Signature(sig sif.Descriptor, cert *x509.Certificate) ([]sif.Descriptor, *x509.Certificate, error) { //nolint:lll
+	if cert == nil || cert.Raw == nil {
 		return []sif.Descriptor{sig}, cert, &SignatureNotValidError{ID: sig.ID(), Err: x509.UnknownAuthorityError{}}
 	}
 
@@ -265,7 +265,7 @@ func (v *groupVerifier) verifyX509WithRoots(signer *x509.Certificate) error {
 		return err
 	}
 
-	var errors *multierror.Error
+	var multiErrors *multierror.Error
 	for _, sig := range sigs {
 		verified, e, err := v.verifyX509Signature(sig, signer)
 
@@ -278,10 +278,10 @@ func (v *groupVerifier) verifyX509WithRoots(signer *x509.Certificate) error {
 		}
 
 		if err != nil {
-			errors = multierror.Append(errors, err)
+			multiErrors = multierror.Append(multiErrors, err)
 		}
 	}
-	return errors.ErrorOrNil()
+	return multiErrors.ErrorOrNil()
 }
 
 type legacyGroupVerifier struct {

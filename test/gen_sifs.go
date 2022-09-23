@@ -44,6 +44,7 @@ func getPGPEntity() (*openpgp.Entity, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	defer f.Close()
 
 	el, err := openpgp.ReadArmoredKeyRing(f)

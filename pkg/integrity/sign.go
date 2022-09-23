@@ -27,7 +27,6 @@ var (
 	errNoObjectsSpecified = errors.New("no objects specified")
 	errUnexpectedGroupID  = errors.New("unexpected group ID")
 	errNilFileImage       = errors.New("nil file image")
-	errNilCertificate     = errors.New("nil certificate")
 )
 
 // ErrNoKeyMaterial is the error returned when no key material was provided.

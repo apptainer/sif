@@ -128,7 +128,8 @@ func verifyX509AndDecodeJSON(data []byte, v interface{}, cert *x509.Certificate)
 	return e, rest, err
 }
 
-func extractMsgAndX509Signature(data []byte) (message *pem.Block, signature *pem.Block, rest []byte, err error) {
+// extractMsgAndX509Signature returns the (message, signature, rest, err).
+func extractMsgAndX509Signature(data []byte) (*pem.Block, *pem.Block, []byte, error) {
 	/* Extract Message */
 	msgBlock, rest := pem.Decode(data)
 	if msgBlock == nil {
@@ -164,14 +165,14 @@ func verifyX509AndDecode(data []byte, cert *x509.Certificate) (*x509.Certificate
 	case x509.RSA:
 		key := cert.PublicKey.(*rsa.PublicKey)
 
-		err := rsa.VerifyPKCS1v15(key, crypto.SHA256, expect.Sum(nil)[:], signature.Bytes)
+		err := rsa.VerifyPKCS1v15(key, crypto.SHA256, expect.Sum(nil), signature.Bytes)
 		return cert, message.Bytes, rest, errors.Wrap(err, "rsa verification error")
 
 	case x509.ECDSA:
 		key := cert.PublicKey.(*ecdsa.PublicKey)
 
 		var err error
-		if !ecdsa.VerifyASN1(key, expect.Sum(nil)[:], signature.Bytes) {
+		if !ecdsa.VerifyASN1(key, expect.Sum(nil), signature.Bytes) {
 			err = errors.Errorf("verify function returned false")
 		}
 
@@ -180,7 +181,7 @@ func verifyX509AndDecode(data []byte, cert *x509.Certificate) (*x509.Certificate
 		key := cert.PublicKey.(*ed25519.PublicKey)
 
 		var err error
-		if !ed25519.Verify(*key, expect.Sum(nil)[:], signature.Bytes) {
+		if !ed25519.Verify(*key, expect.Sum(nil), signature.Bytes) {
 			err = errors.Errorf("verify function returned false")
 		}
 

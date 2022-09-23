@@ -165,7 +165,7 @@ func (chain ChainedCertificates) Verify(intermediateCerts, rootCerts ChainedCert
 	if len(rootCerts) == 0 {
 		pool, err := x509.SystemCertPool()
 		if err != nil {
-			return errors.Wrapf(err, "cannot create system cert pool.")
+			return errors.Wrapf(err, "cannot create system cert pool")
 		}
 
 		rootCAs = pool
@@ -173,7 +173,7 @@ func (chain ChainedCertificates) Verify(intermediateCerts, rootCerts ChainedCert
 		// ensure that all trusted certs are CA
 		for _, cert := range rootCerts {
 			if !cert.IsCA {
-				return errors.Errorf("trusted certificate may belong only to a Root CA.")
+				return errors.Errorf("trusted certificate may belong only to a Root CA")
 			}
 		}
 
@@ -193,8 +193,7 @@ func (chain ChainedCertificates) Verify(intermediateCerts, rootCerts ChainedCert
 
 	for _, cert := range chain {
 		for _, extension := range cert.Extensions {
-			switch extension.Id.String() {
-			case PKIXOCSPNoCheck:
+			if extension.Id.String() == PKIXOCSPNoCheck {
 				// The CA requires us to explicitly trust this certificate
 				// RFC-6960 Section: 4.2.2.2.1
 				goto skipVerify
@@ -272,25 +271,25 @@ func (chain ChainedCertificates) RevocationCheck(intermediateCerts, rootCerts Ch
 }
 
 func (chain ChainedCertificates) AppendCertFromURLs(urls ...string) (ChainedCertificates, error) {
-	for _, certUrl := range urls {
-
-		// Get the data
-		resp, err := http.Get(certUrl)
+	for _, certURL := range urls {
+		//nolint:gosec
+		// Alternative:  GOSEC=gosec -quiet -exclude=G104,G107
+		resp, err := http.Get(certURL)
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot get certificate from '%s'", certUrl)
+			return nil, errors.Wrapf(err, "cannot get certificate from '%s'", certURL)
 		}
 
 		defer resp.Body.Close()
 
 		caCertBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot read CA certificate's body frin '%s'", certUrl)
+			return nil, errors.Wrapf(err, "cannot read CA certificate's body frin '%s'", certURL)
 		}
 
 		// decode raw data as DER
 		cert, err := x509.ParseCertificate(caCertBody)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to decode certificate from '%s'", certUrl)
+			return nil, errors.Wrapf(err, "failed to decode certificate from '%s'", certURL)
 		}
 
 		// add certs to the chain
@@ -308,8 +307,8 @@ func (chain ChainedCertificates) AppendCerts(certs ...*x509.Certificate) Chained
 	return chain
 }
 
-func checkRevocation(cert, issuer *x509.Certificate) (ocspChain ChainedCertificates, err error) {
-	ocspChain = ChainedCertificates{}
+func checkRevocation(cert, issuer *x509.Certificate) (ChainedCertificates, error) {
+	ocspChain := ChainedCertificates{}
 
 	// Parse OCSP Server
 	ocspURL, err := url.Parse(cert.OCSPServer[0])
