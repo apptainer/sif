@@ -118,14 +118,14 @@ func TestDigest_MarshalJSON(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:    "UnsupportedHash",
+			name:    "HashUnsupportedMD5",
 			hash:    crypto.MD5,
 			wantErr: errHashUnsupported,
 		},
 		{
-			name:  "SHA1",
-			hash:  crypto.SHA1,
-			value: "597f6a540010f94c15d71806a99a2c8710e747bd",
+			name:    "HashUnsupportedSHA1",
+			hash:    crypto.SHA1,
+			wantErr: errHashUnsupported,
 		},
 		{
 			name:  "SHA224",
@@ -146,6 +146,16 @@ func TestDigest_MarshalJSON(t *testing.T) {
 			name:  "SHA512",
 			hash:  crypto.SHA512,
 			value: "db3974a97f2407b7cae1ae637c0030687a11913274d578492558e39c16c017de84eacdc8c62fe34ee4e12b4b1428817f09b6a2760c3f8a664ceae94d2434a593", //nolint:lll
+		},
+		{
+			name:  "SHA512_224",
+			hash:  crypto.SHA512_224,
+			value: "06001bf08dfb17d2b54925116823be230e98b5c6c278303bc4909a8c",
+		},
+		{
+			name:  "SHA512_256",
+			hash:  crypto.SHA512_256,
+			value: "3d37fe58435e0d87323dee4a2c1b339ef954de63716ee79f5747f94d974f913f",
 		},
 	}
 
@@ -197,49 +207,60 @@ func TestDigest_UnmarshalJSON(t *testing.T) {
 			wantErr: errDigestMalformed,
 		},
 		{
-			name:    "UnsupportedHash",
+			name:    "HashUnsupportedMD5",
 			r:       strings.NewReader(`"md5:b0804ec967f48520697662a204f5fe72"`),
 			wantErr: errHashUnsupported,
 		},
 		{
+			name:    "HashUnsupportedSHA1",
+			r:       strings.NewReader(`"sha1:597f6a540010f94c15d71806a99a2c8710e747bd"`),
+			wantErr: errHashUnsupported,
+		},
+		{
 			name:    "DigestMalformedNotHex",
-			r:       strings.NewReader(`"sha1:oops"`),
+			r:       strings.NewReader(`"sha256:oops"`),
 			wantErr: errDigestMalformed,
 		},
 		{
 			name:    "DigestMalformedIncorrectLen",
-			r:       strings.NewReader(`"sha1:597f"`),
+			r:       strings.NewReader(`"sha256:597f"`),
 			wantErr: errDigestMalformed,
-		},
-		{
-			name:      "SHA1",
-			r:         strings.NewReader(`"sha1:597f6a540010f94c15d71806a99a2c8710e747bd"`),
-			wantHash:  crypto.SHA1,
-			wantValue: "597f6a540010f94c15d71806a99a2c8710e747bd",
 		},
 		{
 			name:      "SHA224",
 			r:         strings.NewReader(`"sha224:95041dd60ab08c0bf5636d50be85fe9790300f39eb84602858a9b430"`),
-			wantHash:  crypto.SHA1,
+			wantHash:  crypto.SHA224,
 			wantValue: "95041dd60ab08c0bf5636d50be85fe9790300f39eb84602858a9b430",
 		},
 		{
 			name:      "SHA256",
 			r:         strings.NewReader(`"sha256:a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447"`),
-			wantHash:  crypto.SHA1,
+			wantHash:  crypto.SHA256,
 			wantValue: "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447",
 		},
 		{
 			name:      "SHA384",
 			r:         strings.NewReader(`"sha384:6b3b69ff0a404f28d75e98a066d3fc64fffd9940870cc68bece28545b9a75086b343d7a1366838083e4b8f3ca6fd3c80"`), //nolint:lll
-			wantHash:  crypto.SHA1,
+			wantHash:  crypto.SHA384,
 			wantValue: "6b3b69ff0a404f28d75e98a066d3fc64fffd9940870cc68bece28545b9a75086b343d7a1366838083e4b8f3ca6fd3c80",
 		},
 		{
 			name:      "SHA512",
 			r:         strings.NewReader(`"sha512:db3974a97f2407b7cae1ae637c0030687a11913274d578492558e39c16c017de84eacdc8c62fe34ee4e12b4b1428817f09b6a2760c3f8a664ceae94d2434a593"`), //nolint:lll
-			wantHash:  crypto.SHA1,
+			wantHash:  crypto.SHA512,
 			wantValue: "db3974a97f2407b7cae1ae637c0030687a11913274d578492558e39c16c017de84eacdc8c62fe34ee4e12b4b1428817f09b6a2760c3f8a664ceae94d2434a593", //nolint:lll
+		},
+		{
+			name:      "SHA512_224",
+			r:         strings.NewReader(`"sha512_224:06001bf08dfb17d2b54925116823be230e98b5c6c278303bc4909a8c"`),
+			wantHash:  crypto.SHA512_224,
+			wantValue: "06001bf08dfb17d2b54925116823be230e98b5c6c278303bc4909a8c",
+		},
+		{
+			name:      "SHA512_256",
+			r:         strings.NewReader(`"sha512_256:3d37fe58435e0d87323dee4a2c1b339ef954de63716ee79f5747f94d974f913f"`),
+			wantHash:  crypto.SHA512_256,
+			wantValue: "3d37fe58435e0d87323dee4a2c1b339ef954de63716ee79f5747f94d974f913f",
 		},
 	}
 
@@ -247,9 +268,18 @@ func TestDigest_UnmarshalJSON(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			var d digest
+
 			err := json.NewDecoder(tt.r).Decode(&d)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
+			}
+
+			if got, want := d.hash, tt.wantHash; got != want {
+				t.Errorf("got hash %v, want %v", got, want)
+			}
+
+			if got, want := hex.EncodeToString(d.value), tt.wantValue; got != want {
+				t.Errorf("got value %v, want %v", got, want)
 			}
 		})
 	}

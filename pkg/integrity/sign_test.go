@@ -276,7 +276,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					Time: fixedTime,
 				},
@@ -289,7 +289,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d2},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					Time: fixedTime,
 				},
@@ -302,7 +302,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					Time: fixedTime,
 				},
@@ -315,7 +315,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     2,
 				ods:    []sif.Descriptor{d3},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					Time: fixedTime,
 				},
@@ -328,7 +328,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					DefaultHash: crypto.SHA224,
 					Time:        fixedTime,
@@ -342,7 +342,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					DefaultHash: crypto.SHA256,
 					Time:        fixedTime,
@@ -356,7 +356,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					DefaultHash: crypto.SHA384,
 					Time:        fixedTime,
@@ -370,7 +370,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					DefaultHash: crypto.SHA512,
 					Time:        fixedTime,
