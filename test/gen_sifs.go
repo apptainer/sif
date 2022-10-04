@@ -22,9 +22,23 @@ import (
 	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
+type SignMethod string
+
+const (
+	SignX509 SignMethod = "SignX509"
+	SignPGP  SignMethod = "SignPGP"
+)
+
 var errUnexpectedNumEntities = errors.New("unexpected number of entities")
 
-func getEntity() (*openpgp.Entity, error) {
+func getX509Signer() (*integrity.X509Signer, error) {
+	priKeyPath := filepath.Join("keys", "x509", "example.key")
+	certPath := filepath.Join("keys", "x509", "example.crt")
+
+	return integrity.GetX509Signer(priKeyPath, certPath)
+}
+
+func getPGPEntity() (*openpgp.Entity, error) {
 	f, err := os.Open(filepath.Join("keys", "private.asc"))
 	if err != nil {
 		return nil, err
@@ -43,7 +57,12 @@ func getEntity() (*openpgp.Entity, error) {
 }
 
 func generateImages() error {
-	e, err := getEntity()
+	pgpEntity, err := getPGPEntity()
+	if err != nil {
+		return err
+	}
+
+	x509Issuer, err := getX509Signer()
 	if err != nil {
 		return err
 	}
@@ -96,7 +115,7 @@ func generateImages() error {
 		path  string
 		diFns []func() (sif.DescriptorInput, error)
 		opts  []sif.CreateOpt
-		sign  bool
+		sign  SignMethod
 	}{
 		// Images with no objects.
 		{
@@ -152,7 +171,15 @@ func generateImages() error {
 				partSystem,
 				partPrimSys,
 			},
-			sign: true,
+			sign: SignPGP,
+		},
+		{
+			path: "one-group-signed-x509.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				partSystem,
+				partPrimSys,
+			},
+			sign: SignX509,
 		},
 
 		// Images with three partitions in two groups.
@@ -171,7 +198,16 @@ func generateImages() error {
 				partPrimSys,
 				partSystemGroup2,
 			},
-			sign: true,
+			sign: SignPGP,
+		},
+		{
+			path: "two-groups-signed-x509.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				partSystem,
+				partPrimSys,
+				partSystemGroup2,
+			},
+			sign: SignX509,
 		},
 	}
 
@@ -201,9 +237,24 @@ func generateImages() error {
 			}
 		}()
 
-		if image.sign {
+		switch image.sign {
+		case SignPGP:
 			s, err := integrity.NewSigner(f,
-				integrity.OptSignWithEntity(e),
+				integrity.OptSignWithEntity(pgpEntity),
+				integrity.OptSignWithTime(func() time.Time { return time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC) }),
+				integrity.OptSignDeterministic(),
+			)
+			if err != nil {
+				return err
+			}
+
+			if err := s.Sign(); err != nil {
+				return err
+			}
+
+		case SignX509:
+			s, err := integrity.NewSigner(f,
+				integrity.OptSignWithX509Issuer(x509Issuer),
 				integrity.OptSignWithTime(func() time.Time { return time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC) }),
 				integrity.OptSignDeterministic(),
 			)

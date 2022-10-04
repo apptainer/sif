@@ -31,7 +31,7 @@ type testType struct {
 }
 
 func TestSignAndEncodeJSON(t *testing.T) {
-	e := getTestEntity(t)
+	e := getTestPGPEntity(t)
 
 	// Fake an encrypted key.
 	encryptedKey := *e.PrivateKey
@@ -76,7 +76,7 @@ func TestSignAndEncodeJSON(t *testing.T) {
 }
 
 func TestVerifyAndDecodeJSON(t *testing.T) {
-	e := getTestEntity(t)
+	e := getTestPGPEntity(t)
 
 	testValue := testType{1, 2}
 

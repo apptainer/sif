@@ -12,7 +12,12 @@ package integrity
 import (
 	"bytes"
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	cryptorand "crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"io"
 	"net/http"
@@ -78,6 +83,128 @@ func GetPKCS8Key(filepath string) (crypto.Signer, error) {
 }
 
 /*****************************************
+	Sign/Verification Methods
+*****************************************/
+
+// signX509AndEncodeJSON encodes v, clear-signs it with privateKey, and writes it to w. If config is
+// nil, sensible defaults are used.
+func signX509AndEncodeJSON(w io.Writer, v interface{}, signer *X509Signer) error {
+	/* Create Message */
+	message, err := json.Marshal(v)
+	if err != nil {
+		return errors.Wrap(err, "create message")
+	}
+
+	if err := pem.Encode(w, &pem.Block{Type: "SIGNED MESSAGE", Bytes: message}); err != nil {
+		return errors.Wrap(err, "cannot encode PEM")
+	}
+
+	/* Create Signature */
+	d := crypto.SHA256.New()
+	d.Write(message)
+
+	var signerOpts crypto.SignerOpts
+
+	switch signer.Certificate.PublicKeyAlgorithm {
+	case x509.Ed25519: // https://pkg.go.dev/crypto/ed25519#PrivateKey.Sign
+		signerOpts = crypto.Hash(0)
+	default:
+		signerOpts = crypto.SHA256
+	}
+
+	signature, err := signer.Signer.Sign(cryptorand.Reader, d.Sum(nil), signerOpts)
+	if err != nil {
+		return errors.Wrap(err, "signing error")
+	}
+
+	if err := pem.Encode(w, &pem.Block{Type: "SIGNATURE", Bytes: signature}); err != nil {
+		return errors.Wrap(err, "cannot encode PEM")
+	}
+
+	return nil
+}
+
+// extractMsgAndX509Signature returns the (message, signature, rest, err).
+func extractMsgAndX509Signature(data []byte) (*pem.Block, *pem.Block, []byte, error) {
+	/* Extract Message */
+	msgBlock, rest := pem.Decode(data)
+	if msgBlock == nil {
+		return nil, nil, rest, errors.Errorf("X509 message not found")
+	}
+
+	/* Extract Signature */
+	sigBlock, rest := pem.Decode(rest)
+	if sigBlock == nil {
+		return msgBlock, nil, rest, errors.Errorf("x509 signature not found")
+	}
+
+	return msgBlock, sigBlock, rest, nil
+}
+
+// verifyX509AndDecodeJSON reads the first clearsigned message in data, verifies its signature, and returns
+// the signing entity, plaintext and suffix of data which follows the message.
+func verifyX509AndDecodeJSON(data []byte, v interface{}, cert *x509.Certificate) (*x509.Certificate, []byte, error) {
+	// Decode clearsign block and check signature.
+	e, plaintext, rest, err := verifyX509AndDecode(data, cert)
+	if err != nil {
+		return e, rest, err
+	}
+
+	// Unmarshal plaintext, if requested.
+	if v != nil {
+		err = json.Unmarshal(plaintext, v)
+	}
+	return e, rest, err
+}
+
+// verifyX509AndDecode reads the first clearsigned message in data, verifies its signature, and returns
+// the signing entity, plaintext and suffix of data which follows the message.
+func verifyX509AndDecode(data []byte, cert *x509.Certificate) (*x509.Certificate, []byte, []byte, error) {
+	if cert == nil {
+		return nil, nil, nil, x509.UnknownAuthorityError{}
+	}
+
+	message, signature, rest, err := extractMsgAndX509Signature(data)
+	if err != nil {
+		return nil, nil, rest, err
+	}
+
+	/* Check Signature */
+	expect := crypto.SHA256.New()
+	expect.Write(message.Bytes)
+
+	switch cert.PublicKeyAlgorithm {
+	case x509.RSA:
+		key := cert.PublicKey.(*rsa.PublicKey)
+
+		err := rsa.VerifyPKCS1v15(key, crypto.SHA256, expect.Sum(nil), signature.Bytes)
+		return cert, message.Bytes, rest, errors.Wrap(err, "rsa verification error")
+
+	case x509.ECDSA:
+		key := cert.PublicKey.(*ecdsa.PublicKey)
+
+		var err error
+		if !ecdsa.VerifyASN1(key, expect.Sum(nil), signature.Bytes) {
+			err = errors.Errorf("verify function returned false")
+		}
+
+		return cert, message.Bytes, rest, errors.Wrap(err, "ecdsa verification error")
+	case x509.Ed25519:
+		key := cert.PublicKey.(*ed25519.PublicKey)
+
+		var err error
+		if !ed25519.Verify(*key, expect.Sum(nil), signature.Bytes) {
+			err = errors.Errorf("verify function returned false")
+		}
+
+		return cert, message.Bytes, rest, errors.Wrap(err, "ed25519 verification error")
+
+	default:
+		return nil, nil, nil, errors.Errorf("Algorithm %s is not supported", cert.PublicKeyAlgorithm.String())
+	}
+}
+
+/*****************************************
 	Intermediate / RootCA Certificates
 *****************************************/
 
@@ -119,6 +246,17 @@ func NewChainedCertificates(filepath string) (ChainedCertificates, error) {
 			return nil, errors.Wrapf(err, "failed to decode certificate from %s", filepath)
 		}
 
+		// check validity period
+		// to run tests use:
+		// now, _ := time.Parse(time.RFC1123, "Mon, 02 Jan 2000 15:04:05 MST")
+		now := time.Now()
+		switch {
+		case now.Before(cert.NotBefore):
+			return nil, errors.Errorf("one of the certificates is not yet valid")
+		case now.After(cert.NotAfter):
+			return nil, errors.Errorf("one of the certificates has expired")
+		}
+
 		// add certs to the chain
 		chain[string(cert.SubjectKeyId)] = cert
 
@@ -134,6 +272,7 @@ func (chain ChainedCertificates) GetCertificate() (*x509.Certificate, error) {
 		return nil, errors.Errorf("Expected 1 certificate but found '%d'", len(chain))
 	}
 
+	// get the first element from a map
 	for _, cert := range chain {
 		return cert, nil
 	}

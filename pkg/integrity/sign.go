@@ -12,7 +12,6 @@ package integrity
 import (
 	"bytes"
 	"crypto"
-	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -20,6 +19,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/apptainer/sif/v2/pkg/sif"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -141,7 +141,7 @@ func (gs *groupSigner) addObject(od sif.Descriptor) error {
 }
 
 // signWithEntity signs the objects specified by gs with e.
-func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, error) {
+func (gs *groupSigner) signWithEntity(e interface{}) (sif.DescriptorInput, error) {
 	// Get minimum object ID in group. Object IDs in the image metadata will be relative to this.
 	minID, err := getGroupMinObjectID(gs.f, gs.id)
 	if err != nil {
@@ -154,22 +154,42 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 		return sif.DescriptorInput{}, fmt.Errorf("failed to get image metadata: %w", err)
 	}
 
-	// Sign and encode image metadata.
-	b := bytes.Buffer{}
-	if err := signAndEncodeJSON(&b, md, e.PrivateKey, gs.sigConfig); err != nil {
-		return sif.DescriptorInput{}, fmt.Errorf("failed to encode signature: %w", err)
-	}
+	switch v := e.(type) {
+	case *openpgp.Entity:
+		// Sign and encode image metadata.
+		b := bytes.Buffer{}
+		if err := signAndEncodeJSON(&b, md, v.PrivateKey, gs.sigConfig); err != nil {
+			return sif.DescriptorInput{}, fmt.Errorf("failed to encode signature: %w", err)
+		}
 
-	// Prepare SIF data object descriptor.
-	return sif.NewDescriptorInput(sif.DataSignature, &b,
-		sif.OptNoGroup(),
-		sif.OptLinkedGroupID(gs.id),
-		sif.OptSignatureMetadata(gs.sigConfig.Hash(), e.PrimaryKey.Fingerprint),
-	)
+		// Prepare SIF data object descriptor.
+		return sif.NewDescriptorInput(sif.DataSignature, &b,
+			sif.OptNoGroup(),
+			sif.OptLinkedGroupID(gs.id),
+			sif.OptSignatureMetadata(gs.sigConfig.Hash(), v.PrimaryKey.Fingerprint),
+		)
+
+	case *X509Signer:
+		// Sign and encode image metadata.
+		b := bytes.Buffer{}
+		if err := signX509AndEncodeJSON(&b, md, v); err != nil {
+			return sif.DescriptorInput{}, fmt.Errorf("failed to encode signature: %w", err)
+		}
+
+		// Prepare SIF data object descriptor.
+		return sif.NewDescriptorInput(sif.DataSignature, &b,
+			sif.OptNoGroup(),
+			sif.OptLinkedGroupID(gs.id),
+			sif.OptSignatureMetadata(gs.sigConfig.Hash(), v.Certificate.SubjectKeyId),
+		)
+
+	default:
+		panic(errors.Errorf("Unsupported method: %T", e))
+	}
 }
 
 type signOpts struct {
-	e             *openpgp.Entity
+	e             interface{}
 	groupIDs      []uint32
 	objectIDs     [][]uint32
 	timeFunc      func() time.Time
@@ -181,6 +201,14 @@ type SignerOpt func(so *signOpts) error
 
 // OptSignWithEntity specifies e as the entity to use to generate signature(s).
 func OptSignWithEntity(e *openpgp.Entity) SignerOpt {
+	return func(so *signOpts) error {
+		so.e = e
+		return nil
+	}
+}
+
+// OptSignWithX509Issuer specifies e as the certificate to use to generate signature(s).
+func OptSignWithX509Issuer(e *X509Signer) SignerOpt {
 	return func(so *signOpts) error {
 		so.e = e
 		return nil
