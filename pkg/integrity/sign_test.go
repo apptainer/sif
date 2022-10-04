@@ -231,9 +231,9 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	e := getTestEntity(t)
+	e := getTestPGPEntity(t)
 
-	encrypted := getTestEntity(t)
+	encrypted := getTestPGPEntity(t)
 	encrypted.PrivateKey.Encrypted = true
 
 	tests := []struct {
@@ -406,7 +406,8 @@ func TestNewSigner(t *testing.T) {
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
 	twoGroupImage := loadContainer(t, filepath.Join(corpus, "two-groups.sif"))
 
-	e := getTestEntity(t)
+	ePGP := getTestPGPEntity(t)
+	eX509 := getTestX509Signer(t)
 
 	tests := []struct {
 		name             string
@@ -414,7 +415,7 @@ func TestNewSigner(t *testing.T) {
 		opts             []SignerOpt
 		wantErr          error
 		wantGroupObjects map[uint32][]uint32
-		wantEntity       *openpgp.Entity
+		wantEntity       interface{}
 	}{
 		{
 			name:    "NilFileImage",
@@ -463,11 +464,18 @@ func TestNewSigner(t *testing.T) {
 			wantGroupObjects: map[uint32][]uint32{1: {1, 2}, 2: {3}},
 		},
 		{
-			name:             "OptSignWithEntity",
+			name:             "OptSignPGPWithEntity",
 			fi:               twoGroupImage,
-			opts:             []SignerOpt{OptSignWithEntity(e)},
+			opts:             []SignerOpt{OptSignWithEntity(ePGP)},
 			wantGroupObjects: map[uint32][]uint32{1: {1, 2}, 2: {3}},
-			wantEntity:       e,
+			wantEntity:       ePGP,
+		},
+		{
+			name:             "OptSignX509WithEntity",
+			fi:               twoGroupImage,
+			opts:             []SignerOpt{OptSignWithEntity(eX509)},
+			wantGroupObjects: map[uint32][]uint32{1: {1, 2}, 2: {3}},
+			wantEntity:       eX509,
 		},
 		{
 			name:             "OptSignGroup1",
@@ -546,10 +554,12 @@ func TestNewSigner(t *testing.T) {
 }
 
 func TestSigner_Sign(t *testing.T) {
-	e := getTestEntity(t)
+	ePGP := getTestPGPEntity(t)
 
-	encrypted := getTestEntity(t)
+	encrypted := getTestPGPEntity(t)
 	encrypted.PrivateKey.Encrypted = true
+
+	eX509 := getTestX509Signer(t)
 
 	tests := []struct {
 		name      string
@@ -572,7 +582,15 @@ func TestSigner_Sign(t *testing.T) {
 			name:      "OneGroup",
 			inputFile: "one-group.sif",
 			opts: []SignerOpt{
-				OptSignWithEntity(e),
+				OptSignWithEntity(ePGP),
+				OptSignWithTime(fixedTime),
+			},
+		},
+		{
+			name:      "OneGroupX509",
+			inputFile: "one-group.sif",
+			opts: []SignerOpt{
+				OptSignWithEntity(eX509),
 				OptSignWithTime(fixedTime),
 			},
 		},
@@ -580,7 +598,7 @@ func TestSigner_Sign(t *testing.T) {
 			name:      "TwoGroups",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
-				OptSignWithEntity(e),
+				OptSignWithEntity(ePGP),
 				OptSignWithTime(fixedTime),
 			},
 		},
@@ -588,7 +606,16 @@ func TestSigner_Sign(t *testing.T) {
 			name:      "OptSignGroup1",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
-				OptSignWithEntity(e),
+				OptSignWithEntity(ePGP),
+				OptSignWithTime(fixedTime),
+				OptSignGroup(1),
+			},
+		},
+		{
+			name:      "OptSignGroup1X509",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithEntity(eX509),
 				OptSignWithTime(fixedTime),
 				OptSignGroup(1),
 			},
@@ -597,7 +624,16 @@ func TestSigner_Sign(t *testing.T) {
 			name:      "OptSignGroup2",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
-				OptSignWithEntity(e),
+				OptSignWithEntity(ePGP),
+				OptSignWithTime(fixedTime),
+				OptSignGroup(2),
+			},
+		},
+		{
+			name:      "OptSignGroup2X509",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithEntity(eX509),
 				OptSignWithTime(fixedTime),
 				OptSignGroup(2),
 			},
@@ -606,7 +642,16 @@ func TestSigner_Sign(t *testing.T) {
 			name:      "OptSignObject1",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
-				OptSignWithEntity(e),
+				OptSignWithEntity(ePGP),
+				OptSignWithTime(fixedTime),
+				OptSignObjects(1),
+			},
+		},
+		{
+			name:      "OptSignObject1X509",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithEntity(eX509),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(1),
 			},
@@ -615,7 +660,16 @@ func TestSigner_Sign(t *testing.T) {
 			name:      "OptSignObject2",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
-				OptSignWithEntity(e),
+				OptSignWithEntity(ePGP),
+				OptSignWithTime(fixedTime),
+				OptSignObjects(2),
+			},
+		},
+		{
+			name:      "OptSignObject2X509",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithEntity(eX509),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(2),
 			},
@@ -624,7 +678,16 @@ func TestSigner_Sign(t *testing.T) {
 			name:      "OptSignObject3",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
-				OptSignWithEntity(e),
+				OptSignWithEntity(ePGP),
+				OptSignWithTime(fixedTime),
+				OptSignObjects(3),
+			},
+		},
+		{
+			name:      "OptSignObject3X509",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithEntity(eX509),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(3),
 			},
@@ -633,7 +696,16 @@ func TestSigner_Sign(t *testing.T) {
 			name:      "OptSignObjects",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
-				OptSignWithEntity(e),
+				OptSignWithEntity(ePGP),
+				OptSignWithTime(fixedTime),
+				OptSignObjects(1, 2, 3),
+			},
+		},
+		{
+			name:      "OptSignObjectsX509",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithEntity(eX509),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(1, 2, 3),
 			},
@@ -642,7 +714,16 @@ func TestSigner_Sign(t *testing.T) {
 			name:      "OptSignDeterministic",
 			inputFile: "one-group.sif",
 			opts: []SignerOpt{
-				OptSignWithEntity(e),
+				OptSignWithEntity(ePGP),
+				OptSignWithTime(fixedTime),
+				OptSignDeterministic(),
+			},
+		},
+		{
+			name:      "OptSignDeterministicX509",
+			inputFile: "one-group.sif",
+			opts: []SignerOpt{
+				OptSignWithEntity(eX509),
 				OptSignWithTime(fixedTime),
 				OptSignDeterministic(),
 			},

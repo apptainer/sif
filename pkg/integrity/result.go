@@ -10,7 +10,6 @@
 package integrity
 
 import (
-	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
@@ -18,7 +17,7 @@ import (
 type VerifyResult struct {
 	sig      sif.Descriptor
 	verified []sif.Descriptor
-	e        *openpgp.Entity
+	e        interface{}
 	err      error
 }
 
@@ -33,7 +32,7 @@ func (r VerifyResult) Verified() []sif.Descriptor {
 }
 
 // Entity returns the signing entity, or nil if the signing entity could not be determined.
-func (r VerifyResult) Entity() *openpgp.Entity {
+func (r VerifyResult) Entity() interface{} {
 	return r.e
 }
 
