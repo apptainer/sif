@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/apptainer/sif/v2/pkg/sif"
 	"github.com/sebdah/goldie/v2"
 )
@@ -245,13 +244,11 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 		{
 			name: "HashUnavailable",
 			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d1},
-				mdHash: crypto.MD4,
-				sigConfig: &packet.Config{
-					Time: fixedTime,
-				},
+				f:        twoGroups,
+				id:       1,
+				ods:      []sif.Descriptor{d1},
+				mdHash:   crypto.MD4,
+				timeFunc: fixedTime,
 			},
 			e:       e,
 			wantErr: true,
@@ -259,13 +256,11 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 		{
 			name: "EncryptedKey",
 			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d1},
-				mdHash: crypto.SHA1,
-				sigConfig: &packet.Config{
-					Time: fixedTime,
-				},
+				f:        twoGroups,
+				id:       1,
+				ods:      []sif.Descriptor{d1},
+				mdHash:   crypto.SHA1,
+				timeFunc: fixedTime,
 			},
 			e:       encrypted,
 			wantErr: true,
@@ -273,108 +268,44 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 		{
 			name: "Object1",
 			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d1},
-				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					Time: fixedTime,
-				},
+				f:        twoGroups,
+				id:       1,
+				ods:      []sif.Descriptor{d1},
+				mdHash:   crypto.SHA256,
+				timeFunc: fixedTime,
 			},
 			e: e,
 		},
 		{
 			name: "Object2",
 			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d2},
-				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					Time: fixedTime,
-				},
+				f:        twoGroups,
+				id:       1,
+				ods:      []sif.Descriptor{d2},
+				mdHash:   crypto.SHA256,
+				timeFunc: fixedTime,
 			},
 			e: e,
 		},
 		{
 			name: "Group1",
 			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					Time: fixedTime,
-				},
+				f:        twoGroups,
+				id:       1,
+				ods:      []sif.Descriptor{d1, d2},
+				mdHash:   crypto.SHA256,
+				timeFunc: fixedTime,
 			},
 			e: e,
 		},
 		{
 			name: "Group2",
 			gs: groupSigner{
-				f:      twoGroups,
-				id:     2,
-				ods:    []sif.Descriptor{d3},
-				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					Time: fixedTime,
-				},
-			},
-			e: e,
-		},
-		{
-			name: "SignatureConfigSHA224",
-			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					DefaultHash: crypto.SHA224,
-					Time:        fixedTime,
-				},
-			},
-			e: e,
-		},
-		{
-			name: "SignatureConfigSHA256",
-			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					DefaultHash: crypto.SHA256,
-					Time:        fixedTime,
-				},
-			},
-			e: e,
-		},
-		{
-			name: "SignatureConfigSHA384",
-			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					DefaultHash: crypto.SHA384,
-					Time:        fixedTime,
-				},
-			},
-			e: e,
-		},
-		{
-			name: "SignatureConfigSHA512",
-			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					DefaultHash: crypto.SHA512,
-					Time:        fixedTime,
-				},
+				f:        twoGroups,
+				id:       2,
+				ods:      []sif.Descriptor{d3},
+				mdHash:   crypto.SHA256,
+				timeFunc: fixedTime,
 			},
 			e: e,
 		},

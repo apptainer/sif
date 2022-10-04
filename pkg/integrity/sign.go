@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -32,11 +32,11 @@ var (
 var ErrNoKeyMaterial = errors.New("key material not provided")
 
 type groupSigner struct {
-	f         *sif.FileImage   // SIF image to sign.
-	id        uint32           // Group ID.
-	ods       []sif.Descriptor // Descriptors of object(s) to sign.
-	mdHash    crypto.Hash      // Hash type for metadata.
-	sigConfig *packet.Config   // Configuration for signature.
+	f        *sif.FileImage   // SIF image to sign.
+	id       uint32           // Group ID.
+	ods      []sif.Descriptor // Descriptors of object(s) to sign.
+	mdHash   crypto.Hash      // Hash type for metadata.
+	timeFunc func() time.Time // Function to get signature timestamp.
 }
 
 // groupSignerOpt are used to configure gs.
@@ -72,10 +72,10 @@ func optSignGroupMetadataHash(h crypto.Hash) groupSignerOpt {
 	}
 }
 
-// optSignGroupSignatureConfig sets c as the configuration used for signature generation.
-func optSignGroupSignatureConfig(c *packet.Config) groupSignerOpt {
+// optSignGroupWithTime specifies fn as the func to obtain signature timestamp(s).
+func optSignGroupWithTime(fn func() time.Time) groupSignerOpt {
 	return func(gs *groupSigner) error {
-		gs.sigConfig = c
+		gs.timeFunc = fn
 		return nil
 	}
 }
@@ -85,8 +85,7 @@ func optSignGroupSignatureConfig(c *packet.Config) groupSignerOpt {
 //
 // By default, all data objects in the group will be signed. To override this behavior, use
 // optSignGroupObjects(). To override the default metadata hash algorithm, use
-// optSignGroupMetadataHash(). To override the default PGP configuration for signature generation,
-// use optSignGroupSignatureConfig().
+// optSignGroupMetadataHash(). To override signature timestamp(s), use optSignGroupWithTime().
 func newGroupSigner(f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*groupSigner, error) {
 	if groupID == 0 {
 		return nil, sif.ErrInvalidGroupID
@@ -154,9 +153,13 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 		return sif.DescriptorInput{}, fmt.Errorf("failed to get image metadata: %w", err)
 	}
 
+	config := packet.Config{
+		Time: gs.timeFunc,
+	}
+
 	// Sign and encode image metadata.
 	b := bytes.Buffer{}
-	if err := signAndEncodeJSON(&b, md, e.PrivateKey, gs.sigConfig); err != nil {
+	if err := signAndEncodeJSON(&b, md, e.PrivateKey, &config); err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("failed to encode signature: %w", err)
 	}
 
@@ -164,7 +167,7 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 	return sif.NewDescriptorInput(sif.DataSignature, &b,
 		sif.OptNoGroup(),
 		sif.OptLinkedGroupID(gs.id),
-		sif.OptSignatureMetadata(gs.sigConfig.Hash(), e.PrimaryKey.Fingerprint),
+		sif.OptSignatureMetadata(config.Hash(), e.PrimaryKey.Fingerprint),
 	)
 }
 
@@ -299,9 +302,7 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 	}
 
 	commonOpts := []groupSignerOpt{
-		optSignGroupSignatureConfig(&packet.Config{
-			Time: so.timeFunc,
-		}),
+		optSignGroupWithTime(so.timeFunc),
 	}
 
 	// Add signer for each groupID.
