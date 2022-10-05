@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/ProtonMail/go-crypto/openpgp/clearsign"
 	pgperrors "github.com/ProtonMail/go-crypto/openpgp/errors"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/sebdah/goldie/v2"
@@ -32,26 +31,33 @@ type testType struct {
 	Two int
 }
 
-func TestSignAndEncodeJSON(t *testing.T) {
+func Test_clearsignEncoder_signMessage(t *testing.T) {
 	e := getTestEntity(t)
 
-	// Fake an encrypted key.
-	encryptedKey := *e.PrivateKey
-	encryptedKey.Encrypted = true
+	encrypted := getTestEntity(t)
+	encrypted.PrivateKey.Encrypted = true
 
 	tests := []struct {
-		name    string
-		key     *packet.PrivateKey
-		hash    crypto.Hash
-		wantErr bool
+		name     string
+		en       *clearsignEncoder
+		r        io.Reader
+		wantErr  bool
+		wantHash crypto.Hash
+		wantFP   []byte
 	}{
-		{name: "EncryptedKey", key: &encryptedKey, wantErr: true},
-		{name: "DefaultHash", key: e.PrivateKey},
-		{name: "SHA1", key: e.PrivateKey, hash: crypto.SHA1, wantErr: true},
-		{name: "SHA224", key: e.PrivateKey, hash: crypto.SHA224},
-		{name: "SHA256", key: e.PrivateKey, hash: crypto.SHA256},
-		{name: "SHA384", key: e.PrivateKey, hash: crypto.SHA384},
-		{name: "SHA512", key: e.PrivateKey, hash: crypto.SHA512},
+		{
+			name:    "EncryptedKey",
+			en:      newClearsignEncoder(encrypted, fixedTime),
+			r:       strings.NewReader(`{"One":1,"Two":2}`),
+			wantErr: true,
+		},
+		{
+			name:     "OK",
+			en:       newClearsignEncoder(e, fixedTime),
+			r:        strings.NewReader(`{"One":1,"Two":2}`),
+			wantHash: crypto.SHA256,
+			wantFP:   e.PrimaryKey.Fingerprint,
+		},
 	}
 
 	for _, tt := range tests {
@@ -59,17 +65,20 @@ func TestSignAndEncodeJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			b := bytes.Buffer{}
 
-			config := packet.Config{
-				DefaultHash: tt.hash,
-				Time:        fixedTime,
-			}
-
-			err := signAndEncodeJSON(&b, testType{1, 2}, tt.key, &config)
+			ht, fp, err := tt.en.signMessage(&b, tt.r)
 			if got, want := err, tt.wantErr; (got != nil) != want {
 				t.Fatalf("got error %v, wantErr %v", got, want)
 			}
 
 			if err == nil {
+				if got, want := ht, tt.wantHash; got != want {
+					t.Errorf("got hash %v, want %v", got, want)
+				}
+
+				if got, want := fp, tt.wantFP; !bytes.Equal(got, want) {
+					t.Errorf("got fingerprint %v, want %v", got, want)
+				}
+
 				g := goldie.New(t, goldie.WithTestNameForDir(true))
 				g.Assert(t, tt.name, b.Bytes())
 			}
@@ -81,6 +90,11 @@ func TestVerifyAndDecodeJSON(t *testing.T) {
 	e := getTestEntity(t)
 
 	testValue := testType{1, 2}
+
+	testMessage, err := json.Marshal(testValue)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// This is used to corrupt the plaintext.
 	corruptClearsign := func(w io.Writer, s string) error {
@@ -139,20 +153,17 @@ func TestVerifyAndDecodeJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			b := bytes.Buffer{}
 
-			config := packet.Config{
-				DefaultHash: tt.hash,
+			cs := clearsignEncoder{
+				e: e,
+				config: &packet.Config{
+					DefaultHash: tt.hash,
+					Time:        fixedTime,
+				},
 			}
-
-			// Manually sign and encode rather than calling signAndEncodeJSON, since we want to
-			// test unsupported hash algorithms.
-			plaintext, err := clearsign.Encode(&b, e.PrivateKey, &config)
+			_, _, err := cs.signMessage(&b, bytes.NewReader(testMessage))
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := json.NewEncoder(plaintext).Encode(testValue); err != nil {
-				t.Fatal(err)
-			}
-			plaintext.Close()
 
 			// Introduce corruption, if applicable.
 			if tt.corrupter != nil {

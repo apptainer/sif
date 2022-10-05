@@ -12,13 +12,14 @@ package integrity
 import (
 	"bytes"
 	"crypto"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"sort"
 	"time"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
@@ -31,12 +32,18 @@ var (
 // ErrNoKeyMaterial is the error returned when no key material was provided.
 var ErrNoKeyMaterial = errors.New("key material not provided")
 
+type encoder interface {
+	// signMessage signs the message from r, and writes the result to w. On success, the hash
+	// function and fingerprint of the signing key are returned.
+	signMessage(w io.Writer, r io.Reader) (ht crypto.Hash, fp []byte, err error)
+}
+
 type groupSigner struct {
-	f        *sif.FileImage   // SIF image to sign.
-	id       uint32           // Group ID.
-	ods      []sif.Descriptor // Descriptors of object(s) to sign.
-	mdHash   crypto.Hash      // Hash type for metadata.
-	timeFunc func() time.Time // Function to get signature timestamp.
+	en     encoder          // Message encoder.
+	f      *sif.FileImage   // SIF image to sign.
+	id     uint32           // Group ID.
+	ods    []sif.Descriptor // Descriptors of object(s) to sign.
+	mdHash crypto.Hash      // Hash type for metadata.
 }
 
 // groupSignerOpt are used to configure gs.
@@ -72,26 +79,19 @@ func optSignGroupMetadataHash(h crypto.Hash) groupSignerOpt {
 	}
 }
 
-// optSignGroupWithTime specifies fn as the func to obtain signature timestamp(s).
-func optSignGroupWithTime(fn func() time.Time) groupSignerOpt {
-	return func(gs *groupSigner) error {
-		gs.timeFunc = fn
-		return nil
-	}
-}
-
-// newGroupSigner returns a new groupSigner to add a digital signature for the specified group to
-// f, according to opts.
+// newGroupSigner returns a new groupSigner to add a digital signature using en for the specified
+// group to f, according to opts.
 //
 // By default, all data objects in the group will be signed. To override this behavior, use
 // optSignGroupObjects(). To override the default metadata hash algorithm, use
-// optSignGroupMetadataHash(). To override signature timestamp(s), use optSignGroupWithTime().
-func newGroupSigner(f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*groupSigner, error) {
+// optSignGroupMetadataHash().
+func newGroupSigner(en encoder, f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*groupSigner, error) {
 	if groupID == 0 {
 		return nil, sif.ErrInvalidGroupID
 	}
 
 	gs := groupSigner{
+		en:     en,
 		f:      f,
 		id:     groupID,
 		mdHash: crypto.SHA256,
@@ -139,8 +139,8 @@ func (gs *groupSigner) addObject(od sif.Descriptor) error {
 	return nil
 }
 
-// signWithEntity signs the objects specified by gs with e.
-func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, error) {
+// sign creates a digital signature as specified by gs.
+func (gs *groupSigner) sign() (sif.DescriptorInput, error) {
 	// Get minimum object ID in group. Object IDs in the image metadata will be relative to this.
 	minID, err := getGroupMinObjectID(gs.f, gs.id)
 	if err != nil {
@@ -153,21 +153,24 @@ func (gs *groupSigner) signWithEntity(e *openpgp.Entity) (sif.DescriptorInput, e
 		return sif.DescriptorInput{}, fmt.Errorf("failed to get image metadata: %w", err)
 	}
 
-	config := packet.Config{
-		Time: gs.timeFunc,
+	// Encode image metadata.
+	enc, err := json.Marshal(md)
+	if err != nil {
+		return sif.DescriptorInput{}, fmt.Errorf("failed to encode image metadata: %w", err)
 	}
 
-	// Sign and encode image metadata.
+	// Sign image metadata.
 	b := bytes.Buffer{}
-	if err := signAndEncodeJSON(&b, md, e.PrivateKey, &config); err != nil {
-		return sif.DescriptorInput{}, fmt.Errorf("failed to encode signature: %w", err)
+	ht, fp, err := gs.en.signMessage(&b, bytes.NewReader(enc))
+	if err != nil {
+		return sif.DescriptorInput{}, fmt.Errorf("failed to sign message: %w", err)
 	}
 
 	// Prepare SIF data object descriptor.
 	return sif.NewDescriptorInput(sif.DataSignature, &b,
 		sif.OptNoGroup(),
 		sif.OptLinkedGroupID(gs.id),
-		sif.OptSignatureMetadata(config.Hash(), e.PrimaryKey.Fingerprint),
+		sif.OptSignatureMetadata(ht, fp),
 	)
 }
 
@@ -271,9 +274,10 @@ type Signer struct {
 	signers []*groupSigner
 }
 
-// NewSigner returns a Signer to add digital signature(s) to f, according to opts.
+// NewSigner returns a Signer to add digital signature(s) to f, according to opts. Key material
+// must be provided, or an error wrapping ErrNoKeyMaterial is returned.
 //
-// Sign requires key material be provided. OptSignWithEntity can be used for this purpose.
+// To use key material from an OpenPGP entity, use OptSignWithEntity.
 //
 // By default, one digital signature is added per object group in f. To override this behavior,
 // consider using OptSignGroup and/or OptSignObjects.
@@ -301,13 +305,18 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 		opts: so,
 	}
 
-	commonOpts := []groupSignerOpt{
-		optSignGroupWithTime(so.timeFunc),
+	// Get message encoder.
+	var en encoder
+	switch {
+	case so.e != nil:
+		en = newClearsignEncoder(so.e, so.timeFunc)
+	default:
+		return nil, fmt.Errorf("integrity: %w", ErrNoKeyMaterial)
 	}
 
 	// Add signer for each groupID.
 	for _, groupID := range so.groupIDs {
-		gs, err := newGroupSigner(f, groupID, commonOpts...)
+		gs, err := newGroupSigner(en, f, groupID)
 		if err != nil {
 			return nil, fmt.Errorf("integrity: %w", err)
 		}
@@ -317,10 +326,7 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 	// Add signer(s) for each list of object IDs.
 	for _, ids := range so.objectIDs {
 		err := withGroupedObjects(f, ids, func(groupID uint32, ids []uint32) error {
-			opts := commonOpts
-			opts = append(opts, optSignGroupObjects(ids...))
-
-			gs, err := newGroupSigner(f, groupID, opts...)
+			gs, err := newGroupSigner(en, f, groupID, optSignGroupObjects(ids...))
 			if err != nil {
 				return err
 			}
@@ -341,7 +347,7 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 		}
 
 		for _, id := range ids {
-			gs, err := newGroupSigner(f, id, commonOpts...)
+			gs, err := newGroupSigner(en, f, id)
 			if err != nil {
 				return nil, fmt.Errorf("integrity: %w", err)
 			}
@@ -353,16 +359,9 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 }
 
 // Sign adds digital signatures as specified by s.
-//
-// If key material was not provided when s was created, Sign returns an error wrapping
-// ErrNoKeyMaterial.
 func (s *Signer) Sign() error {
-	if s.opts.e == nil {
-		return fmt.Errorf("integrity: %w", ErrNoKeyMaterial)
-	}
-
 	for _, gs := range s.signers {
-		di, err := gs.signWithEntity(s.opts.e)
+		di, err := gs.sign()
 		if err != nil {
 			return fmt.Errorf("integrity: %w", err)
 		}

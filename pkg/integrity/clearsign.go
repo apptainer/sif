@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"time"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/clearsign"
@@ -32,32 +33,33 @@ var supportedPGPAlgorithms = []crypto.Hash{
 	crypto.SHA512,
 }
 
-// hashAlgorithmSupported returns whether h is a supported PGP hash function.
-func hashAlgorithmSupported(h crypto.Hash) bool {
-	for _, alg := range supportedPGPAlgorithms {
-		if alg == h {
-			return true
-		}
-	}
-	return false
+type clearsignEncoder struct {
+	e      *openpgp.Entity
+	config *packet.Config
 }
 
-// signAndEncodeJSON encodes v, clear-signs it with privateKey, and writes it to w. If config is
-// nil, sensible defaults are used.
-func signAndEncodeJSON(w io.Writer, v interface{}, privateKey *packet.PrivateKey, config *packet.Config) error {
-	if !hashAlgorithmSupported(config.Hash()) {
-		return errHashUnsupported
+// newClearsignEncoder returns an encoder that signs messages in clear-sign format using entity e. If
+// timeFunc is not nil, it is used to generate signature timestamps.
+func newClearsignEncoder(e *openpgp.Entity, timeFunc func() time.Time) *clearsignEncoder {
+	return &clearsignEncoder{
+		e: e,
+		config: &packet.Config{
+			Time: timeFunc,
+		},
 	}
+}
 
-	// Get clearsign encoder.
-	plaintext, err := clearsign.Encode(w, privateKey, config)
+// signMessage signs the message from r in clear-sign format, and writes the result to w. On
+// success, the hash function and fingerprint of the signing key are returned.
+func (s *clearsignEncoder) signMessage(w io.Writer, r io.Reader) (crypto.Hash, []byte, error) {
+	plaintext, err := clearsign.Encode(w, s.e.PrivateKey, s.config)
 	if err != nil {
-		return err
+		return 0, nil, err
 	}
 	defer plaintext.Close()
 
-	// Wrap clearsign encoder with JSON encoder.
-	return json.NewEncoder(plaintext).Encode(v)
+	_, err = io.Copy(plaintext, r)
+	return s.config.Hash(), s.e.PrimaryKey.Fingerprint, err
 }
 
 // verifyAndDecodeJSON reads the first clearsigned message in data, verifies its signature, and
