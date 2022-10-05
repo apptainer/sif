@@ -70,7 +70,12 @@ func verifyAndDecode(data []byte, kr openpgp.KeyRing) (*openpgp.Entity, []byte, 
 // isLegacySignature reads the first clearsigned message in data, and returns true if the plaintext
 // contains a legacy signature.
 func isLegacySignature(data []byte) (bool, error) {
-	// Decode clearsign block.
+	// Try to decode as X509
+	if msg, sig, _, err := extractMsgAndX509Signature(data); err == nil && msg != nil && sig != nil {
+		return false, nil
+	}
+
+	// Try to decode as PGP clearsign block
 	b, _ := clearsign.Decode(data)
 	if b == nil {
 		return false, errClearsignedMsgNotFound
