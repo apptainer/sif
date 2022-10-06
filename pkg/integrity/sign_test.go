@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -276,7 +276,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					Time: fixedTime,
 				},
@@ -289,7 +289,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d2},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					Time: fixedTime,
 				},
@@ -302,7 +302,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					Time: fixedTime,
 				},
@@ -315,9 +315,23 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     2,
 				ods:    []sif.Descriptor{d3},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					Time: fixedTime,
+				},
+			},
+			e: e,
+		},
+		{
+			name: "SignatureConfigSHA224",
+			gs: groupSigner{
+				f:      twoGroups,
+				id:     1,
+				ods:    []sif.Descriptor{d1, d2},
+				mdHash: crypto.SHA256,
+				sigConfig: &packet.Config{
+					DefaultHash: crypto.SHA224,
+					Time:        fixedTime,
 				},
 			},
 			e: e,
@@ -328,7 +342,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					DefaultHash: crypto.SHA256,
 					Time:        fixedTime,
@@ -342,7 +356,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					DefaultHash: crypto.SHA384,
 					Time:        fixedTime,
@@ -356,7 +370,7 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA1,
+				mdHash: crypto.SHA256,
 				sigConfig: &packet.Config{
 					DefaultHash: crypto.SHA512,
 					Time:        fixedTime,
