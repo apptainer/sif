@@ -26,12 +26,14 @@ var (
 	errDigestMalformed = errors.New("digest malformed")
 )
 
-var supportedAlgorithms = map[crypto.Hash]string{
-	crypto.SHA1:   "sha1",
-	crypto.SHA224: "sha224",
-	crypto.SHA256: "sha256",
-	crypto.SHA384: "sha384",
-	crypto.SHA512: "sha512",
+// Hash functions supported for digests.
+var supportedDigestAlgorithms = map[crypto.Hash]string{
+	crypto.SHA224:     "sha224",
+	crypto.SHA256:     "sha256",
+	crypto.SHA384:     "sha384",
+	crypto.SHA512:     "sha512",
+	crypto.SHA512_224: "sha512_224",
+	crypto.SHA512_256: "sha512_256",
 }
 
 // hashValue calculates a digest by applying hash function h to the contents read from r. If h is
@@ -56,7 +58,7 @@ type digest struct {
 // newDigest returns a new digest. If h is not supported, errHashUnsupported is returned. If digest
 // is malformed, errDigestMalformed is returned.
 func newDigest(h crypto.Hash, value []byte) (digest, error) {
-	if _, ok := supportedAlgorithms[h]; !ok {
+	if _, ok := supportedDigestAlgorithms[h]; !ok {
 		return digest{}, errHashUnsupported
 	}
 
@@ -108,7 +110,7 @@ func (d digest) matches(r io.Reader) (bool, error) {
 
 // MarshalJSON marshals d into string of format "alg:value".
 func (d digest) MarshalJSON() ([]byte, error) {
-	n, ok := supportedAlgorithms[d.hash]
+	n, ok := supportedDigestAlgorithms[d.hash]
 	if !ok {
 		return nil, errHashUnsupported
 	}
@@ -134,7 +136,7 @@ func (d *digest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("%w: %v", errDigestMalformed, err)
 	}
 
-	for h, n := range supportedAlgorithms {
+	for h, n := range supportedDigestAlgorithms {
 		if n == name {
 			digest, err := newDigest(h, v)
 			if err != nil {

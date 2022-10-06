@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -11,6 +11,7 @@ package integrity
 
 import (
 	"bytes"
+	"crypto"
 	"encoding/json"
 	"errors"
 	"io"
@@ -22,9 +23,32 @@ import (
 
 var errClearsignedMsgNotFound = errors.New("clearsigned message not found")
 
+// Hash functions specified for OpenPGP in RFC4880, excluding those that are not currently
+// recommended by NIST.
+var supportedPGPAlgorithms = []crypto.Hash{
+	crypto.SHA224,
+	crypto.SHA256,
+	crypto.SHA384,
+	crypto.SHA512,
+}
+
+// hashAlgorithmSupported returns whether h is a supported PGP hash function.
+func hashAlgorithmSupported(h crypto.Hash) bool {
+	for _, alg := range supportedPGPAlgorithms {
+		if alg == h {
+			return true
+		}
+	}
+	return false
+}
+
 // signAndEncodeJSON encodes v, clear-signs it with privateKey, and writes it to w. If config is
 // nil, sensible defaults are used.
 func signAndEncodeJSON(w io.Writer, v interface{}, privateKey *packet.PrivateKey, config *packet.Config) error {
+	if !hashAlgorithmSupported(config.Hash()) {
+		return errHashUnsupported
+	}
+
 	// Get clearsign encoder.
 	plaintext, err := clearsign.Encode(w, privateKey, config)
 	if err != nil {
@@ -63,7 +87,13 @@ func verifyAndDecode(data []byte, kr openpgp.KeyRing) (*openpgp.Entity, []byte, 
 	}
 
 	// Check signature.
-	e, err := openpgp.CheckDetachedSignature(kr, bytes.NewReader(b.Bytes), b.ArmoredSignature.Body, nil)
+	e, err := openpgp.CheckDetachedSignatureAndHash(
+		kr,
+		bytes.NewReader(b.Bytes),
+		b.ArmoredSignature.Body,
+		supportedPGPAlgorithms,
+		nil,
+	)
 	return e, b.Plaintext, rest, err
 }
 
