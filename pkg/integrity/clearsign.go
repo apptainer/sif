@@ -12,7 +12,6 @@ package integrity
 import (
 	"bytes"
 	"crypto"
-	"encoding/json"
 	"errors"
 	"io"
 	"time"
@@ -24,22 +23,13 @@ import (
 
 var errClearsignedMsgNotFound = errors.New("clearsigned message not found")
 
-// Hash functions specified for OpenPGP in RFC4880, excluding those that are not currently
-// recommended by NIST.
-var supportedPGPAlgorithms = []crypto.Hash{
-	crypto.SHA224,
-	crypto.SHA256,
-	crypto.SHA384,
-	crypto.SHA512,
-}
-
 type clearsignEncoder struct {
 	e      *openpgp.Entity
 	config *packet.Config
 }
 
-// newClearsignEncoder returns an encoder that signs messages in clear-sign format using entity e. If
-// timeFunc is not nil, it is used to generate signature timestamps.
+// newClearsignEncoder returns an encoder that signs messages in clear-sign format using entity e.
+// If timeFunc is not nil, it is used to generate signature timestamps.
 func newClearsignEncoder(e *openpgp.Entity, timeFunc func() time.Time) *clearsignEncoder {
 	return &clearsignEncoder{
 		e: e,
@@ -62,53 +52,52 @@ func (en *clearsignEncoder) signMessage(w io.Writer, r io.Reader) (crypto.Hash, 
 	return en.config.Hash(), err
 }
 
-// verifyAndDecodeJSON reads the first clearsigned message in data, verifies its signature, and
-// returns the signing entity any suffix of data which follows the message. The plaintext is
-// unmarshalled to v (if not nil).
-func verifyAndDecodeJSON(data []byte, v interface{}, kr openpgp.KeyRing) (*openpgp.Entity, []byte, error) {
-	// Decode clearsign block and check signature.
-	e, plaintext, rest, err := verifyAndDecode(data, kr)
+type clearsignDecoder struct {
+	kr openpgp.KeyRing
+}
+
+// newClearsignDecoder returns a decoder that verifies messages in clear-signe format using key
+// material from kr.
+func newClearsignDecoder(kr openpgp.KeyRing) *clearsignDecoder {
+	return &clearsignDecoder{
+		kr: kr,
+	}
+}
+
+// verifyMessage reads a message from r, verifies its signature, and returns the message contents.
+// On success, the signing entity is set in vr.
+func (de *clearsignDecoder) verifyMessage(r io.Reader, h crypto.Hash, vr *VerifyResult) ([]byte, error) {
+	data, err := io.ReadAll(r)
 	if err != nil {
-		return e, rest, err
+		return nil, err
 	}
 
-	// Unmarshal plaintext, if requested.
-	if v != nil {
-		err = json.Unmarshal(plaintext, v)
-	}
-	return e, rest, err
-}
-
-// verifyAndDecode reads the first clearsigned message in data, verifies its signature, and returns
-// the signing entity, plaintext and suffix of data which follows the message.
-func verifyAndDecode(data []byte, kr openpgp.KeyRing) (*openpgp.Entity, []byte, []byte, error) {
-	// Decode clearsign block.
-	b, rest := clearsign.Decode(data)
-	if b == nil {
-		return nil, nil, rest, errClearsignedMsgNotFound
-	}
-
-	// Check signature.
-	e, err := openpgp.CheckDetachedSignatureAndHash(
-		kr,
-		bytes.NewReader(b.Bytes),
-		b.ArmoredSignature.Body,
-		supportedPGPAlgorithms,
-		nil,
-	)
-	return e, b.Plaintext, rest, err
-}
-
-// isLegacySignature reads the first clearsigned message in data, and returns true if the plaintext
-// contains a legacy signature.
-func isLegacySignature(data []byte) (bool, error) {
 	// Decode clearsign block.
 	b, _ := clearsign.Decode(data)
 	if b == nil {
-		return false, errClearsignedMsgNotFound
+		return nil, errClearsignedMsgNotFound
 	}
 
-	// The plaintext of legacy signatures always begins with "SIFHASH", and non-legacy signatures
-	// never do, as they are JSON.
-	return bytes.HasPrefix(b.Plaintext, []byte("SIFHASH:\n")), nil
+	// Hash functions specified for OpenPGP in RFC4880, excluding those that are not currently
+	// recommended by NIST.
+	expectedHashes := []crypto.Hash{
+		crypto.SHA224,
+		crypto.SHA256,
+		crypto.SHA384,
+		crypto.SHA512,
+	}
+
+	// Check signature.
+	vr.e, err = openpgp.CheckDetachedSignatureAndHash(
+		de.kr,
+		bytes.NewReader(b.Bytes),
+		b.ArmoredSignature.Body,
+		expectedHashes,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return b.Plaintext, err
 }

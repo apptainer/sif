@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/ProtonMail/go-crypto/openpgp/clearsign"
 	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
@@ -101,6 +102,19 @@ func getObjectSignatures(f *sif.FileImage, id uint32) ([]sif.Descriptor, error) 
 	return sigs, nil
 }
 
+// isLegacySignature returns true if data contains a legacy signature.
+func isLegacySignature(data []byte) bool {
+	// Legacy signatures always encoded in clear-sign format.
+	b, _ := clearsign.Decode(data)
+	if b == nil {
+		return false
+	}
+
+	// The plaintext of legacy signatures always begins with "SIFHASH", and non-legacy signatures
+	// never do, as they are JSON.
+	return bytes.HasPrefix(b.Plaintext, []byte("SIFHASH:\n"))
+}
+
 // getGroupSignatures returns descriptors in f that contain signature objects linked to the object
 // group with identifier groupID. If legacy is true, only legacy signatures are considered.
 // Otherwise, only non-legacy signatures are considered. If no such signatures are found, a
@@ -116,8 +130,7 @@ func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]sif.De
 				return false, err
 			}
 
-			isLegacy, err := isLegacySignature(b)
-			return isLegacy == legacy, err
+			return isLegacySignature(b) == legacy, err
 		},
 	)
 	if err != nil {
