@@ -4,9 +4,4 @@ updates:
   directory: "/"
   schedule:
     interval: daily
-  target-branch: v1
-- package-ecosystem: gomod
-  directory: "/"
-  schedule:
-    interval: daily
   target-branch: main
