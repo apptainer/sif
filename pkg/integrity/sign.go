@@ -33,9 +33,9 @@ var (
 var ErrNoKeyMaterial = errors.New("key material not provided")
 
 type encoder interface {
-	// signMessage signs the message from r, and writes the result to w. On success, the hash
-	// function and fingerprint of the signing key are returned.
-	signMessage(w io.Writer, r io.Reader) (ht crypto.Hash, fp []byte, err error)
+	// signMessage signs the message from r, and writes the result to w. On success, the signature
+	// hash function is returned.
+	signMessage(w io.Writer, r io.Reader) (ht crypto.Hash, err error)
 }
 
 type groupSigner struct {
@@ -44,6 +44,7 @@ type groupSigner struct {
 	id     uint32           // Group ID.
 	ods    []sif.Descriptor // Descriptors of object(s) to sign.
 	mdHash crypto.Hash      // Hash type for metadata.
+	fp     []byte           // Fingerprint of signing entity.
 }
 
 // groupSignerOpt are used to configure gs.
@@ -79,12 +80,23 @@ func optSignGroupMetadataHash(h crypto.Hash) groupSignerOpt {
 	}
 }
 
+// optSignGroupFingerprint sets fp as the fingerprint of the signing entity.
+func optSignGroupFingerprint(fp []byte) groupSignerOpt {
+	return func(gs *groupSigner) error {
+		gs.fp = fp
+		return nil
+	}
+}
+
 // newGroupSigner returns a new groupSigner to add a digital signature using en for the specified
 // group to f, according to opts.
 //
 // By default, all data objects in the group will be signed. To override this behavior, use
 // optSignGroupObjects(). To override the default metadata hash algorithm, use
 // optSignGroupMetadataHash().
+//
+// By default, the fingerprint of the signing entity is not set. To override this behavior, use
+// optSignGroupFingerprint.
 func newGroupSigner(en encoder, f *sif.FileImage, groupID uint32, opts ...groupSignerOpt) (*groupSigner, error) {
 	if groupID == 0 {
 		return nil, sif.ErrInvalidGroupID
@@ -161,7 +173,7 @@ func (gs *groupSigner) sign() (sif.DescriptorInput, error) {
 
 	// Sign image metadata.
 	b := bytes.Buffer{}
-	ht, fp, err := gs.en.signMessage(&b, bytes.NewReader(enc))
+	ht, err := gs.en.signMessage(&b, bytes.NewReader(enc))
 	if err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("failed to sign message: %w", err)
 	}
@@ -170,7 +182,7 @@ func (gs *groupSigner) sign() (sif.DescriptorInput, error) {
 	return sif.NewDescriptorInput(sif.DataSignature, &b,
 		sif.OptNoGroup(),
 		sif.OptLinkedGroupID(gs.id),
-		sif.OptSignatureMetadata(ht, fp),
+		sif.OptSignatureMetadata(ht, gs.fp),
 	)
 }
 
@@ -305,18 +317,21 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 		opts: so,
 	}
 
+	var commonOpts []groupSignerOpt
+
 	// Get message encoder.
 	var en encoder
 	switch {
 	case so.e != nil:
 		en = newClearsignEncoder(so.e, so.timeFunc)
+		commonOpts = append(commonOpts, optSignGroupFingerprint(so.e.PrimaryKey.Fingerprint))
 	default:
 		return nil, fmt.Errorf("integrity: %w", ErrNoKeyMaterial)
 	}
 
 	// Add signer for each groupID.
 	for _, groupID := range so.groupIDs {
-		gs, err := newGroupSigner(en, f, groupID)
+		gs, err := newGroupSigner(en, f, groupID, commonOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("integrity: %w", err)
 		}
@@ -326,7 +341,10 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 	// Add signer(s) for each list of object IDs.
 	for _, ids := range so.objectIDs {
 		err := withGroupedObjects(f, ids, func(groupID uint32, ids []uint32) error {
-			gs, err := newGroupSigner(en, f, groupID, optSignGroupObjects(ids...))
+			opts := commonOpts
+			opts = append(opts, optSignGroupObjects(ids...))
+
+			gs, err := newGroupSigner(en, f, groupID, opts...)
 			if err != nil {
 				return err
 			}
@@ -347,7 +365,7 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 		}
 
 		for _, id := range ids {
-			gs, err := newGroupSigner(en, f, id)
+			gs, err := newGroupSigner(en, f, id, commonOpts...)
 			if err != nil {
 				return nil, fmt.Errorf("integrity: %w", err)
 			}

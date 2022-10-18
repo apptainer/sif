@@ -50,16 +50,16 @@ func newClearsignEncoder(e *openpgp.Entity, timeFunc func() time.Time) *clearsig
 }
 
 // signMessage signs the message from r in clear-sign format, and writes the result to w. On
-// success, the hash function and fingerprint of the signing key are returned.
-func (s *clearsignEncoder) signMessage(w io.Writer, r io.Reader) (crypto.Hash, []byte, error) {
-	plaintext, err := clearsign.Encode(w, s.e.PrivateKey, s.config)
+// success, the hash function is returned.
+func (en *clearsignEncoder) signMessage(w io.Writer, r io.Reader) (crypto.Hash, error) {
+	plaintext, err := clearsign.Encode(w, en.e.PrivateKey, en.config)
 	if err != nil {
-		return 0, nil, err
+		return 0, err
 	}
 	defer plaintext.Close()
 
 	_, err = io.Copy(plaintext, r)
-	return s.config.Hash(), s.e.PrimaryKey.Fingerprint, err
+	return en.config.Hash(), err
 }
 
 // verifyAndDecodeJSON reads the first clearsigned message in data, verifies its signature, and

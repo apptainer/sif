@@ -10,6 +10,7 @@
 package integrity
 
 import (
+	"bytes"
 	"crypto"
 	"errors"
 	"os"
@@ -105,6 +106,7 @@ func TestNewGroupSigner(t *testing.T) {
 		wantErr     error
 		wantObjects []uint32
 		wantMDHash  crypto.Hash
+		wantFP      []byte
 	}{
 		{
 			name:    "InvalidGroupID",
@@ -177,6 +179,23 @@ func TestNewGroupSigner(t *testing.T) {
 			wantObjects: []uint32{1, 2},
 			wantMDHash:  crypto.SHA1,
 		},
+		{
+			name:    "OptSignGroupMetadataHash",
+			fi:      twoGroupImage,
+			groupID: 1,
+			opts: []groupSignerOpt{
+				optSignGroupFingerprint([]byte{
+					0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
+					0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,
+				}),
+			},
+			wantObjects: []uint32{1, 2},
+			wantMDHash:  crypto.SHA256,
+			wantFP: []byte{
+				0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
+				0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -213,6 +232,10 @@ func TestNewGroupSigner(t *testing.T) {
 				if got, want := s.mdHash, tt.wantMDHash; got != want {
 					t.Errorf("got metadata hash %v, want %v", got, want)
 				}
+
+				if got, want := s.fp, tt.wantFP; !bytes.Equal(got, want) {
+					t.Errorf("got fingerprint %v, want %v", got, want)
+				}
 			}
 		})
 	}
@@ -236,7 +259,8 @@ func TestGroupSigner_Sign(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	clearsign := newClearsignEncoder(getTestEntity(t), fixedTime)
+	e := getTestEntity(t)
+	clearsign := newClearsignEncoder(e, fixedTime)
 
 	encrypted := getTestEntity(t)
 	encrypted.PrivateKey.Encrypted = true
@@ -256,6 +280,7 @@ func TestGroupSigner_Sign(t *testing.T) {
 				id:     1,
 				ods:    []sif.Descriptor{d1},
 				mdHash: crypto.MD4,
+				fp:     e.PrimaryKey.Fingerprint,
 			},
 			wantErr: true,
 		},
@@ -267,6 +292,7 @@ func TestGroupSigner_Sign(t *testing.T) {
 				id:     1,
 				ods:    []sif.Descriptor{d1},
 				mdHash: crypto.SHA1,
+				fp:     encrypted.PrimaryKey.Fingerprint,
 			},
 			wantErr: true,
 		},
@@ -278,6 +304,7 @@ func TestGroupSigner_Sign(t *testing.T) {
 				id:     1,
 				ods:    []sif.Descriptor{d1},
 				mdHash: crypto.SHA256,
+				fp:     e.PrimaryKey.Fingerprint,
 			},
 		},
 		{
@@ -288,6 +315,7 @@ func TestGroupSigner_Sign(t *testing.T) {
 				id:     1,
 				ods:    []sif.Descriptor{d2},
 				mdHash: crypto.SHA256,
+				fp:     e.PrimaryKey.Fingerprint,
 			},
 		},
 		{
@@ -298,6 +326,7 @@ func TestGroupSigner_Sign(t *testing.T) {
 				id:     1,
 				ods:    []sif.Descriptor{d1, d2},
 				mdHash: crypto.SHA256,
+				fp:     e.PrimaryKey.Fingerprint,
 			},
 		},
 		{
@@ -308,6 +337,7 @@ func TestGroupSigner_Sign(t *testing.T) {
 				id:     2,
 				ods:    []sif.Descriptor{d3},
 				mdHash: crypto.SHA256,
+				fp:     e.PrimaryKey.Fingerprint,
 			},
 		},
 	}

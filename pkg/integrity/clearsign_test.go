@@ -43,7 +43,6 @@ func Test_clearsignEncoder_signMessage(t *testing.T) {
 		r        io.Reader
 		wantErr  bool
 		wantHash crypto.Hash
-		wantFP   []byte
 	}{
 		{
 			name:    "EncryptedKey",
@@ -56,7 +55,6 @@ func Test_clearsignEncoder_signMessage(t *testing.T) {
 			en:       newClearsignEncoder(e, fixedTime),
 			r:        strings.NewReader(`{"One":1,"Two":2}`),
 			wantHash: crypto.SHA256,
-			wantFP:   e.PrimaryKey.Fingerprint,
 		},
 	}
 
@@ -65,7 +63,7 @@ func Test_clearsignEncoder_signMessage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			b := bytes.Buffer{}
 
-			ht, fp, err := tt.en.signMessage(&b, tt.r)
+			ht, err := tt.en.signMessage(&b, tt.r)
 			if got, want := err, tt.wantErr; (got != nil) != want {
 				t.Fatalf("got error %v, wantErr %v", got, want)
 			}
@@ -73,10 +71,6 @@ func Test_clearsignEncoder_signMessage(t *testing.T) {
 			if err == nil {
 				if got, want := ht, tt.wantHash; got != want {
 					t.Errorf("got hash %v, want %v", got, want)
-				}
-
-				if got, want := fp, tt.wantFP; !bytes.Equal(got, want) {
-					t.Errorf("got fingerprint %v, want %v", got, want)
 				}
 
 				g := goldie.New(t, goldie.WithTestNameForDir(true))
@@ -160,7 +154,7 @@ func TestVerifyAndDecodeJSON(t *testing.T) {
 					Time:        fixedTime,
 				},
 			}
-			_, _, err := cs.signMessage(&b, bytes.NewReader(testMessage))
+			_, err := cs.signMessage(&b, bytes.NewReader(testMessage))
 			if err != nil {
 				t.Fatal(err)
 			}
