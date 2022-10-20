@@ -56,7 +56,7 @@ type clearsignDecoder struct {
 	kr openpgp.KeyRing
 }
 
-// newClearsignDecoder returns a decoder that verifies messages in clear-signe format using key
+// newClearsignDecoder returns a decoder that verifies messages in clear-sign format using key
 // material from kr.
 func newClearsignDecoder(kr openpgp.KeyRing) *clearsignDecoder {
 	return &clearsignDecoder{
