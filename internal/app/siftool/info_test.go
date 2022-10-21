@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -113,6 +113,10 @@ func TestApp_Header(t *testing.T) {
 			path: filepath.Join(corpus, "one-object-crypt-message.sif"),
 		},
 		{
+			name: "OneObjectSBOM",
+			path: filepath.Join(corpus, "one-object-sbom.sif"),
+		},
+		{
 			name: "OneGroup",
 			path: filepath.Join(corpus, "one-group.sif"),
 		},
@@ -211,6 +215,10 @@ func TestApp_List(t *testing.T) {
 			path: filepath.Join(corpus, "one-object-crypt-message.sif"),
 		},
 		{
+			name: "OneObjectSBOM",
+			path: filepath.Join(corpus, "one-object-sbom.sif"),
+		},
+		{
 			name: "OneGroup",
 			path: filepath.Join(corpus, "one-group.sif"),
 		},
@@ -297,6 +305,11 @@ func TestApp_Info(t *testing.T) {
 		{
 			name: "CryptMessage",
 			path: filepath.Join(corpus, "one-object-crypt-message.sif"),
+			id:   1,
+		},
+		{
+			name: "SBOM",
+			path: filepath.Join(corpus, "one-object-sbom.sif"),
 			id:   1,
 		},
 		{

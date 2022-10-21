@@ -62,6 +62,17 @@ func generateImages() error {
 		)
 	}
 
+	objectSBOM := func() (sif.DescriptorInput, error) {
+		b, err := os.ReadFile(filepath.Join("input", "sbom.cdx.json"))
+		if err != nil {
+			return sif.DescriptorInput{}, err
+		}
+
+		return sif.NewDescriptorInput(sif.DataSBOM, bytes.NewReader(b),
+			sif.OptSBOMMetadata(sif.SBOMFormatCycloneDXJSON),
+		)
+	}
+
 	partSystem := func() (sif.DescriptorInput, error) {
 		return sif.NewDescriptorInput(sif.DataPartition,
 			bytes.NewReader([]byte{0xfa, 0xce, 0xfe, 0xed}),
@@ -135,6 +146,12 @@ func generateImages() error {
 			path: "one-object-crypt-message.sif",
 			diFns: []func() (sif.DescriptorInput, error){
 				objectCryptoMessage,
+			},
+		},
+		{
+			path: "one-object-sbom.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				objectSBOM,
 			},
 		},
 

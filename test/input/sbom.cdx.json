@@ -1,0 +1,22 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "serialNumber": "urn:uuid:c0e8da98-7afc-4807-89a1-928a14dcd910",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2022-10-21T13:27:49Z",
+    "tools": [
+      {
+        "vendor": "anchore",
+        "name": "syft",
+        "version": "0.59.0"
+      }
+    ],
+    "component": {
+      "bom-ref": "a0f23d5d8e46dd55",
+      "type": "container",
+      "name": "image.sif"
+    }
+  },
+  "components": []
+}
