@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -10,6 +10,7 @@
 package integrity
 
 import (
+	"crypto"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,6 +18,8 @@ import (
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/apptainer/sif/v2/pkg/sif"
+	"github.com/sigstore/sigstore/pkg/cryptoutils"
+	"github.com/sigstore/sigstore/pkg/signature"
 )
 
 var corpus = filepath.Join("..", "..", "test", "images")
@@ -41,6 +44,20 @@ func loadContainer(t *testing.T, path string) *sif.FileImage {
 	})
 
 	return f
+}
+
+// getTestSignerVerifier returns a SignerVerifier read from the PEM file at path.
+func getTestSignerVerifier(t *testing.T, name string) signature.SignerVerifier { //nolint:ireturn
+	t.Helper()
+
+	path := filepath.Join("..", "..", "test", "keys", name)
+
+	sv, err := signature.LoadSignerVerifierFromPEMFile(path, crypto.SHA256, cryptoutils.SkipPassword)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return sv
 }
 
 // getTestEntity returns a fixed test PGP entity.
