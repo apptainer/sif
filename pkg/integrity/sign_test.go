@@ -10,6 +10,7 @@
 package integrity
 
 import (
+	"bytes"
 	"crypto"
 	"errors"
 	"os"
@@ -18,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/apptainer/sif/v2/pkg/sif"
 	"github.com/sebdah/goldie/v2"
 )
@@ -106,6 +106,7 @@ func TestNewGroupSigner(t *testing.T) {
 		wantErr     error
 		wantObjects []uint32
 		wantMDHash  crypto.Hash
+		wantFP      []byte
 	}{
 		{
 			name:    "InvalidGroupID",
@@ -178,17 +179,40 @@ func TestNewGroupSigner(t *testing.T) {
 			wantObjects: []uint32{1, 2},
 			wantMDHash:  crypto.SHA1,
 		},
+		{
+			name:    "OptSignGroupMetadataHash",
+			fi:      twoGroupImage,
+			groupID: 1,
+			opts: []groupSignerOpt{
+				optSignGroupFingerprint([]byte{
+					0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
+					0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,
+				}),
+			},
+			wantObjects: []uint32{1, 2},
+			wantMDHash:  crypto.SHA256,
+			wantFP: []byte{
+				0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
+				0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := newGroupSigner(tt.fi, tt.groupID, tt.opts...)
+			en := newClearsignEncoder(getTestEntity(t), fixedTime)
+
+			s, err := newGroupSigner(en, tt.fi, tt.groupID, tt.opts...)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
 			}
 
 			if err == nil {
+				if got, want := s.en, en; got != want {
+					t.Errorf("got encoder %v, want %v", got, want)
+				}
+
 				if got, want := s.f, tt.fi; got != want {
 					t.Errorf("got FileImage %v, want %v", got, want)
 				}
@@ -208,12 +232,16 @@ func TestNewGroupSigner(t *testing.T) {
 				if got, want := s.mdHash, tt.wantMDHash; got != want {
 					t.Errorf("got metadata hash %v, want %v", got, want)
 				}
+
+				if got, want := s.fp, tt.wantFP; !bytes.Equal(got, want) {
+					t.Errorf("got fingerprint %v, want %v", got, want)
+				}
 			}
 		})
 	}
 }
 
-func TestGroupSigner_SignWithEntity(t *testing.T) {
+func TestGroupSigner_Sign(t *testing.T) {
 	twoGroups := loadContainer(t, filepath.Join(corpus, "two-groups.sif"))
 
 	d1, err := twoGroups.GetDescriptor(sif.WithID(1))
@@ -232,158 +260,92 @@ func TestGroupSigner_SignWithEntity(t *testing.T) {
 	}
 
 	e := getTestEntity(t)
+	clearsign := newClearsignEncoder(e, fixedTime)
 
 	encrypted := getTestEntity(t)
 	encrypted.PrivateKey.Encrypted = true
 
+	clearsignEncrypted := newClearsignEncoder(encrypted, fixedTime)
+
 	tests := []struct {
 		name    string
 		gs      groupSigner
-		e       *openpgp.Entity
 		wantErr bool
 	}{
 		{
 			name: "HashUnavailable",
 			gs: groupSigner{
+				en:     clearsign,
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1},
 				mdHash: crypto.MD4,
-				sigConfig: &packet.Config{
-					Time: fixedTime,
-				},
+				fp:     e.PrimaryKey.Fingerprint,
 			},
-			e:       e,
 			wantErr: true,
 		},
 		{
 			name: "EncryptedKey",
 			gs: groupSigner{
+				en:     clearsignEncrypted,
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1},
 				mdHash: crypto.SHA1,
-				sigConfig: &packet.Config{
-					Time: fixedTime,
-				},
+				fp:     encrypted.PrimaryKey.Fingerprint,
 			},
-			e:       encrypted,
 			wantErr: true,
 		},
 		{
 			name: "Object1",
 			gs: groupSigner{
+				en:     clearsign,
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1},
 				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					Time: fixedTime,
-				},
+				fp:     e.PrimaryKey.Fingerprint,
 			},
-			e: e,
 		},
 		{
 			name: "Object2",
 			gs: groupSigner{
+				en:     clearsign,
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d2},
 				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					Time: fixedTime,
-				},
+				fp:     e.PrimaryKey.Fingerprint,
 			},
-			e: e,
 		},
 		{
 			name: "Group1",
 			gs: groupSigner{
+				en:     clearsign,
 				f:      twoGroups,
 				id:     1,
 				ods:    []sif.Descriptor{d1, d2},
 				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					Time: fixedTime,
-				},
+				fp:     e.PrimaryKey.Fingerprint,
 			},
-			e: e,
 		},
 		{
 			name: "Group2",
 			gs: groupSigner{
+				en:     clearsign,
 				f:      twoGroups,
 				id:     2,
 				ods:    []sif.Descriptor{d3},
 				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					Time: fixedTime,
-				},
+				fp:     e.PrimaryKey.Fingerprint,
 			},
-			e: e,
-		},
-		{
-			name: "SignatureConfigSHA224",
-			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					DefaultHash: crypto.SHA224,
-					Time:        fixedTime,
-				},
-			},
-			e: e,
-		},
-		{
-			name: "SignatureConfigSHA256",
-			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					DefaultHash: crypto.SHA256,
-					Time:        fixedTime,
-				},
-			},
-			e: e,
-		},
-		{
-			name: "SignatureConfigSHA384",
-			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					DefaultHash: crypto.SHA384,
-					Time:        fixedTime,
-				},
-			},
-			e: e,
-		},
-		{
-			name: "SignatureConfigSHA512",
-			gs: groupSigner{
-				f:      twoGroups,
-				id:     1,
-				ods:    []sif.Descriptor{d1, d2},
-				mdHash: crypto.SHA256,
-				sigConfig: &packet.Config{
-					DefaultHash: crypto.SHA512,
-					Time:        fixedTime,
-				},
-			},
-			e: e,
 		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			di, err := tt.gs.signWithEntity(tt.e)
+			di, err := tt.gs.sign()
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("got error %v, want %v", err, tt.wantErr)
 			}
@@ -431,92 +393,125 @@ func TestNewSigner(t *testing.T) {
 		wantEntity       *openpgp.Entity
 	}{
 		{
-			name:    "NilFileImage",
-			fi:      nil,
+			name: "NilFileImage",
+			fi:   nil,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+			},
 			wantErr: errNilFileImage,
 		},
 		{
-			name:    "NoGroupsFound",
-			fi:      emptyImage,
+			name: "NoGroupsFound",
+			fi:   emptyImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+			},
 			wantErr: errNoGroupsFound,
 		},
 		{
-			name:    "InvalidGroupID",
-			fi:      emptyImage,
-			opts:    []SignerOpt{OptSignGroup(0)},
+			name: "InvalidGroupID",
+			fi:   emptyImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignGroup(0),
+			},
 			wantErr: sif.ErrInvalidGroupID,
 		},
 		{
-			name:    "NoObjectsSpecified",
-			fi:      emptyImage,
-			opts:    []SignerOpt{OptSignObjects()},
+			name: "NoObjectsSpecified",
+			fi:   emptyImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignObjects(),
+			},
 			wantErr: errNoObjectsSpecified,
 		},
 		{
-			name:    "NoObjects",
-			fi:      emptyImage,
-			opts:    []SignerOpt{OptSignObjects(1)},
+			name: "NoObjects",
+			fi:   emptyImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignObjects(1),
+			},
 			wantErr: sif.ErrNoObjects,
 		},
 		{
-			name:    "InvalidObjectID",
-			fi:      oneGroupImage,
-			opts:    []SignerOpt{OptSignObjects(0)},
+			name: "InvalidObjectID",
+			fi:   oneGroupImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignObjects(0),
+			},
 			wantErr: sif.ErrInvalidObjectID,
 		},
 		{
-			name:             "OneGroupDefaultObjects",
-			fi:               oneGroupImage,
-			opts:             []SignerOpt{},
+			name: "OneGroupDefaultObjects",
+			fi:   oneGroupImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+			},
 			wantGroupObjects: map[uint32][]uint32{1: {1, 2}},
 		},
 		{
-			name:             "TwoGroupDefaultObjects",
-			fi:               twoGroupImage,
-			opts:             []SignerOpt{},
+			name: "TwoGroupDefaultObjects",
+			fi:   twoGroupImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+			},
 			wantGroupObjects: map[uint32][]uint32{1: {1, 2}, 2: {3}},
 		},
 		{
-			name:             "OptSignWithEntity",
-			fi:               twoGroupImage,
-			opts:             []SignerOpt{OptSignWithEntity(e)},
-			wantGroupObjects: map[uint32][]uint32{1: {1, 2}, 2: {3}},
-			wantEntity:       e,
-		},
-		{
-			name:             "OptSignGroup1",
-			fi:               twoGroupImage,
-			opts:             []SignerOpt{OptSignGroup(1)},
+			name: "OptSignGroup1",
+			fi:   twoGroupImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignGroup(1),
+			},
 			wantGroupObjects: map[uint32][]uint32{1: {1, 2}},
 		},
 		{
-			name:             "OptSignGroup2",
-			fi:               twoGroupImage,
-			opts:             []SignerOpt{OptSignGroup(2)},
+			name: "OptSignGroup2",
+			fi:   twoGroupImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignGroup(2),
+			},
 			wantGroupObjects: map[uint32][]uint32{2: {3}},
 		},
 		{
-			name:             "OptSignObject1",
-			fi:               twoGroupImage,
-			opts:             []SignerOpt{OptSignObjects(1)},
+			name: "OptSignObject1",
+			fi:   twoGroupImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignObjects(1),
+			},
 			wantGroupObjects: map[uint32][]uint32{1: {1}},
 		},
 		{
-			name:             "OptSignObject2",
-			fi:               twoGroupImage,
-			opts:             []SignerOpt{OptSignObjects(2)},
+			name: "OptSignObject2",
+			fi:   twoGroupImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignObjects(2),
+			},
 			wantGroupObjects: map[uint32][]uint32{1: {2}},
 		},
 		{
-			name:             "OptSignObject3",
-			fi:               twoGroupImage,
-			opts:             []SignerOpt{OptSignObjects(3)},
+			name: "OptSignObject3",
+			fi:   twoGroupImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignObjects(3),
+			},
 			wantGroupObjects: map[uint32][]uint32{2: {3}},
 		},
 		{
-			name:             "OptSignObjects",
-			fi:               twoGroupImage,
-			opts:             []SignerOpt{OptSignObjects(1, 2, 3)},
+			name: "OptSignObjects",
+			fi:   twoGroupImage,
+			opts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignObjects(1, 2, 3),
+			},
 			wantGroupObjects: map[uint32][]uint32{1: {1, 2}, 2: {3}},
 		},
 	}
@@ -571,11 +566,6 @@ func TestSigner_Sign(t *testing.T) {
 		opts      []SignerOpt
 		wantErr   bool
 	}{
-		{
-			name:      "NoKeyMaterial",
-			inputFile: "one-group.sif",
-			wantErr:   true,
-		},
 		{
 			name:      "EncryptedKey",
 			inputFile: "one-group.sif",
