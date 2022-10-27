@@ -208,7 +208,10 @@ func writeInfo(w io.Writer, v sif.Descriptor) error {
 		}
 
 		fmt.Fprintf(tw, "\tHash Type:\t%v\n", ht)
-		fmt.Fprintf(tw, "\tEntity:\t%X\n", fp)
+
+		if len(fp) > 0 {
+			fmt.Fprintf(tw, "\tEntity:\t%X\n", fp)
+		}
 
 	case sif.DataCryptoMessage:
 		ft, mt, err := v.CryptoMessageMetadata()
