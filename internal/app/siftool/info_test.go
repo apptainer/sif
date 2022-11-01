@@ -121,10 +121,6 @@ func TestApp_Header(t *testing.T) {
 			path: filepath.Join(corpus, "one-group.sif"),
 		},
 		{
-			name: "OneGroupSigned",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
-		},
-		{
 			name: "OneGroupSignedLegacy",
 			path: filepath.Join(corpus, "one-group-signed-legacy.sif"),
 		},
@@ -137,12 +133,12 @@ func TestApp_Header(t *testing.T) {
 			path: filepath.Join(corpus, "one-group-signed-legacy-group.sif"),
 		},
 		{
-			name: "TwoGroups",
-			path: filepath.Join(corpus, "two-groups.sif"),
+			name: "OneGroupSignedPGP",
+			path: filepath.Join(corpus, "one-group-signed-pgp.sif"),
 		},
 		{
-			name: "TwoGroupsSigned",
-			path: filepath.Join(corpus, "two-groups-signed.sif"),
+			name: "TwoGroups",
+			path: filepath.Join(corpus, "two-groups.sif"),
 		},
 		{
 			name: "TwoGroupsSignedLegacy",
@@ -155,6 +151,10 @@ func TestApp_Header(t *testing.T) {
 		{
 			name: "TwoGroupsSignedLegacyGroup",
 			path: filepath.Join(corpus, "two-groups-signed-legacy-group.sif"),
+		},
+		{
+			name: "TwoGroupsSignedPGP",
+			path: filepath.Join(corpus, "two-groups-signed-pgp.sif"),
 		},
 	}
 	for _, tt := range tests {
@@ -223,10 +223,6 @@ func TestApp_List(t *testing.T) {
 			path: filepath.Join(corpus, "one-group.sif"),
 		},
 		{
-			name: "OneGroupSigned",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
-		},
-		{
 			name: "OneGroupSignedLegacy",
 			path: filepath.Join(corpus, "one-group-signed-legacy.sif"),
 		},
@@ -239,12 +235,12 @@ func TestApp_List(t *testing.T) {
 			path: filepath.Join(corpus, "one-group-signed-legacy-group.sif"),
 		},
 		{
-			name: "TwoGroups",
-			path: filepath.Join(corpus, "two-groups.sif"),
+			name: "OneGroupSignedPGP",
+			path: filepath.Join(corpus, "one-group-signed-pgp.sif"),
 		},
 		{
-			name: "TwoGroupsSigned",
-			path: filepath.Join(corpus, "two-groups-signed.sif"),
+			name: "TwoGroups",
+			path: filepath.Join(corpus, "two-groups.sif"),
 		},
 		{
 			name: "TwoGroupsSignedLegacy",
@@ -257,6 +253,10 @@ func TestApp_List(t *testing.T) {
 		{
 			name: "TwoGroupsSignedLegacyGroup",
 			path: filepath.Join(corpus, "two-groups-signed-legacy-group.sif"),
+		},
+		{
+			name: "TwoGroupsSignedPGP",
+			path: filepath.Join(corpus, "two-groups-signed-pgp.sif"),
 		},
 	}
 	for _, tt := range tests {
@@ -314,22 +314,22 @@ func TestApp_Info(t *testing.T) {
 		},
 		{
 			name: "DataPartitionRaw",
-			path: filepath.Join(corpus, "two-groups-signed.sif"),
+			path: filepath.Join(corpus, "two-groups-signed-pgp.sif"),
 			id:   1,
 		},
 		{
 			name: "DataPartitionSquashFS",
-			path: filepath.Join(corpus, "two-groups-signed.sif"),
+			path: filepath.Join(corpus, "two-groups-signed-pgp.sif"),
 			id:   2,
 		},
 		{
 			name: "DataPartitionEXT3",
-			path: filepath.Join(corpus, "two-groups-signed.sif"),
+			path: filepath.Join(corpus, "two-groups-signed-pgp.sif"),
 			id:   3,
 		},
 		{
 			name: "DataSignature",
-			path: filepath.Join(corpus, "two-groups-signed.sif"),
+			path: filepath.Join(corpus, "two-groups-signed-pgp.sif"),
 			id:   4,
 		},
 	}
@@ -368,23 +368,23 @@ func TestApp_Dump(t *testing.T) {
 		},
 		{
 			name:    "InvalidObjectID",
-			path:    filepath.Join(corpus, "one-group-signed.sif"),
+			path:    filepath.Join(corpus, "one-group-signed-pgp.sif"),
 			id:      0,
 			wantErr: sif.ErrInvalidObjectID,
 		},
 		{
 			name: "One",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
+			path: filepath.Join(corpus, "one-group-signed-pgp.sif"),
 			id:   1,
 		},
 		{
 			name: "Two",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
+			path: filepath.Join(corpus, "one-group-signed-pgp.sif"),
 			id:   2,
 		},
 		{
 			name: "Three",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
+			path: filepath.Join(corpus, "one-group-signed-pgp.sif"),
 			id:   3,
 		},
 	}

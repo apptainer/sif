@@ -25,7 +25,7 @@ import (
 
 func TestGroupVerifier_signatures(t *testing.T) {
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
-	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed.sif"))
+	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed-pgp.sif"))
 
 	sigs, err := oneGroupSignedImage.GetDescriptors(sif.WithDataType(sif.DataSignature))
 	if err != nil {
@@ -75,7 +75,7 @@ func TestGroupVerifier_signatures(t *testing.T) {
 }
 
 func TestGroupVerifier_verify(t *testing.T) {
-	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed.sif"))
+	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed-pgp.sif"))
 
 	sig, err := oneGroupSignedImage.GetDescriptor(sif.WithDataType(sif.DataSignature))
 	if err != nil {
@@ -936,7 +936,7 @@ func TestVerifier_AllSignedBy(t *testing.T) {
 
 func TestVerifier_Verify(t *testing.T) {
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
-	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed.sif"))
+	oneGroupSignedImage := loadContainer(t, filepath.Join(corpus, "one-group-signed-pgp.sif"))
 
 	verified, err := oneGroupSignedImage.GetDescriptors(sif.WithGroupID(1))
 	if err != nil {

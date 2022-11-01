@@ -24,16 +24,16 @@ func Test_command_getDump(t *testing.T) {
 		{
 			name: "One",
 			id:   "1",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
+			path: filepath.Join(corpus, "one-group-signed-pgp.sif"),
 		},
 		{
 			name: "Two",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
+			path: filepath.Join(corpus, "one-group-signed-pgp.sif"),
 			id:   "2",
 		},
 		{
 			name: "Three",
-			path: filepath.Join(corpus, "one-group-signed.sif"),
+			path: filepath.Join(corpus, "one-group-signed-pgp.sif"),
 			id:   "3",
 		},
 	}
