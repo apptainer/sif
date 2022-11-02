@@ -36,8 +36,8 @@ func (r VerifyResult) Verified() []sif.Descriptor {
 	return r.verified
 }
 
-// keys returns the public key(s) used to verify the signature.
-func (r VerifyResult) keys() []crypto.PublicKey {
+// Keys returns the public key(s) used to verify the signature.
+func (r VerifyResult) Keys() []crypto.PublicKey {
 	keys := make([]crypto.PublicKey, 0, len(r.aks))
 	for _, ak := range r.aks {
 		keys = append(keys, ak.Public)

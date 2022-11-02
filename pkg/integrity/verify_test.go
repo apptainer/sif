@@ -453,10 +453,12 @@ func TestLegacyObjectVerifier_verify(t *testing.T) {
 	}
 }
 
-func TestNewVerifier(t *testing.T) {
+func TestNewVerifier(t *testing.T) { //nolint:maintidx
 	emptyImage := loadContainer(t, filepath.Join(corpus, "empty.sif"))
 	oneGroupImage := loadContainer(t, filepath.Join(corpus, "one-group.sif"))
 	twoGroupImage := loadContainer(t, filepath.Join(corpus, "two-groups.sif"))
+
+	sv := getTestSignerVerifier(t, "ed25519.pem")
 
 	kr := openpgp.EntityList{getTestEntity(t)}
 
@@ -467,7 +469,8 @@ func TestNewVerifier(t *testing.T) {
 		fi            *sif.FileImage
 		opts          []VerifierOpt
 		wantErr       error
-		wantKeyring   openpgp.KeyRing
+		wantDSSE      decoder
+		wantClearsign decoder
 		wantGroups    []uint32
 		wantObjects   []uint32
 		wantLegacy    bool
@@ -543,12 +546,32 @@ func TestNewVerifier(t *testing.T) {
 			wantTasks:  2,
 		},
 		{
-			name:        "OptVerifyWithKeyRing",
-			fi:          twoGroupImage,
-			opts:        []VerifierOpt{OptVerifyWithKeyRing(kr)},
-			wantKeyring: kr,
-			wantGroups:  []uint32{1, 2},
-			wantTasks:   2,
+			name:       "OptVerifyWithVerifier",
+			fi:         twoGroupImage,
+			opts:       []VerifierOpt{OptVerifyWithVerifier(sv)},
+			wantDSSE:   newDSSEDecoder(sv),
+			wantGroups: []uint32{1, 2},
+			wantTasks:  2,
+		},
+		{
+			name:          "OptVerifyWithKeyRing",
+			fi:            twoGroupImage,
+			opts:          []VerifierOpt{OptVerifyWithKeyRing(kr)},
+			wantClearsign: newClearsignDecoder(kr),
+			wantGroups:    []uint32{1, 2},
+			wantTasks:     2,
+		},
+		{
+			name: "OptVerifyWithVerifierAndKeyRing",
+			fi:   twoGroupImage,
+			opts: []VerifierOpt{
+				OptVerifyWithVerifier(sv),
+				OptVerifyWithKeyRing(kr),
+			},
+			wantDSSE:      newDSSEDecoder(sv),
+			wantClearsign: newClearsignDecoder(kr),
+			wantGroups:    []uint32{1, 2},
+			wantTasks:     2,
 		},
 		{
 			name:       "OptVerifyGroupDuplicate",
@@ -669,8 +692,12 @@ func TestNewVerifier(t *testing.T) {
 					t.Errorf("got FileImage %v, want %v", got, want)
 				}
 
-				if got, want := v.kr, tt.wantKeyring; !reflect.DeepEqual(got, want) {
-					t.Errorf("got key ring %v, want %v", got, want)
+				if got, want := v.dsse, tt.wantDSSE; !reflect.DeepEqual(got, want) {
+					t.Errorf("got DSSE decoder %+v, want %+v", got, want)
+				}
+
+				if got, want := v.cs, tt.wantClearsign; !reflect.DeepEqual(got, want) {
+					t.Errorf("got clear-sign decoder %+v, want %+v", got, want)
 				}
 
 				if got, want := len(v.tasks), tt.wantTasks; got != want {
@@ -956,7 +983,7 @@ func TestVerifier_Verify(t *testing.T) {
 		name            string
 		f               *sif.FileImage
 		tasks           []verifyTask
-		kr              openpgp.KeyRing
+		cs              decoder
 		testCallback    bool
 		ignoreError     bool
 		wantCBSignature sif.Descriptor
@@ -969,9 +996,11 @@ func TestVerifier_Verify(t *testing.T) {
 			name: "NoKeyMaterial",
 			f:    oneGroupSignedImage,
 			tasks: []verifyTask{
-				mockVerifier{},
+				mockVerifier{
+					sigs: []sif.Descriptor{sig},
+				},
 			},
-			wantErr: ErrNoKeyMaterial,
+			wantErr: errNoKeyMaterialPGP,
 		},
 		{
 			name: "SignatureNotFound",
@@ -981,7 +1010,7 @@ func TestVerifier_Verify(t *testing.T) {
 					sigsErr: &SignatureNotFoundError{ID: 1, IsGroup: true},
 				},
 			},
-			kr:      kr,
+			cs:      newClearsignDecoder(kr),
 			wantErr: &SignatureNotFoundError{},
 		},
 		{
@@ -993,7 +1022,7 @@ func TestVerifier_Verify(t *testing.T) {
 					verifyErr: &SignatureNotValidError{ID: 3, Err: pgperrors.ErrUnknownIssuer},
 				},
 			},
-			kr:      kr,
+			cs:      newClearsignDecoder(kr),
 			wantErr: &SignatureNotValidError{},
 		},
 		{
@@ -1007,7 +1036,7 @@ func TestVerifier_Verify(t *testing.T) {
 			},
 			testCallback:    true,
 			ignoreError:     true,
-			kr:              openpgp.EntityList{},
+			cs:              newClearsignDecoder(openpgp.EntityList{}),
 			wantCBSignature: sig,
 			wantCBErr:       &SignatureNotValidError{ID: 3, Err: pgperrors.ErrUnknownIssuer},
 			wantErr:         nil,
@@ -1021,7 +1050,7 @@ func TestVerifier_Verify(t *testing.T) {
 					verified: verified,
 				},
 			},
-			kr: kr,
+			cs: newClearsignDecoder(kr),
 		},
 		{
 			name:         "OneGroupSignedWithCallback",
@@ -1034,7 +1063,7 @@ func TestVerifier_Verify(t *testing.T) {
 					e:        e,
 				},
 			},
-			kr:              kr,
+			cs:              newClearsignDecoder(kr),
 			wantCBSignature: sig,
 			wantCBVerified:  verified,
 			wantCBEntity:    e,
@@ -1047,7 +1076,7 @@ func TestVerifier_Verify(t *testing.T) {
 			v := Verifier{
 				f:     tt.f,
 				tasks: tt.tasks,
-				kr:    tt.kr,
+				cs:    tt.cs,
 			}
 
 			// Test callback functionality, if requested.

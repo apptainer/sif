@@ -338,7 +338,7 @@ func Test_dsseDecoder_verifyMessage(t *testing.T) {
 				t.Errorf("got message %v, want %v", got, want)
 			}
 
-			if got, want := vr.keys(), tt.wantKeys; !reflect.DeepEqual(got, want) {
+			if got, want := vr.Keys(), tt.wantKeys; !reflect.DeepEqual(got, want) {
 				t.Errorf("got keys %#v, want %#v", got, want)
 			}
 		})

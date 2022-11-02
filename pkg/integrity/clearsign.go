@@ -101,3 +101,14 @@ func (de *clearsignDecoder) verifyMessage(r io.Reader, h crypto.Hash, vr *Verify
 
 	return b.Plaintext, err
 }
+
+// isClearsignSignature returns true if r contains a signature in clearsign format.
+func isClearsignSignature(r io.Reader) bool {
+	b, err := io.ReadAll(r)
+	if err != nil {
+		return false
+	}
+
+	p, _ := clearsign.Decode(b)
+	return p != nil
+}

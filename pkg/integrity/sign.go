@@ -21,6 +21,7 @@ import (
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/apptainer/sif/v2/pkg/sif"
+	"github.com/sigstore/sigstore/pkg/signature"
 )
 
 var (
@@ -187,6 +188,7 @@ func (gs *groupSigner) sign() (sif.DescriptorInput, error) {
 }
 
 type signOpts struct {
+	ss            []signature.Signer
 	e             *openpgp.Entity
 	groupIDs      []uint32
 	objectIDs     [][]uint32
@@ -196,6 +198,14 @@ type signOpts struct {
 
 // SignerOpt are used to configure so.
 type SignerOpt func(so *signOpts) error
+
+// OptSignWithSigner specifies signer(s) to use to generate signature(s).
+func OptSignWithSigner(ss ...signature.Signer) SignerOpt {
+	return func(so *signOpts) error {
+		so.ss = append(so.ss, ss...)
+		return nil
+	}
+}
 
 // OptSignWithEntity specifies e as the entity to use to generate signature(s).
 func OptSignWithEntity(e *openpgp.Entity) SignerOpt {
@@ -289,7 +299,7 @@ type Signer struct {
 // NewSigner returns a Signer to add digital signature(s) to f, according to opts. Key material
 // must be provided, or an error wrapping ErrNoKeyMaterial is returned.
 //
-// To use key material from an OpenPGP entity, use OptSignWithEntity.
+// To provide key material, consider using OptSignWithSigner or OptSignWithEntity.
 //
 // By default, one digital signature is added per object group in f. To override this behavior,
 // consider using OptSignGroup and/or OptSignObjects.
@@ -322,6 +332,12 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 	// Get message encoder.
 	var en encoder
 	switch {
+	case so.ss != nil:
+		var err error
+		en, err = newDSSEEncoder(so.ss)
+		if err != nil {
+			return nil, fmt.Errorf("integrity: %w", err)
+		}
 	case so.e != nil:
 		en = newClearsignEncoder(so.e, so.timeFunc)
 		commonOpts = append(commonOpts, optSignGroupFingerprint(so.e.PrimaryKey.Fingerprint))

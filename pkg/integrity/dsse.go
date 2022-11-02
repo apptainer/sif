@@ -215,3 +215,13 @@ func (v *dsseVerifier) Public() crypto.PublicKey {
 func (v *dsseVerifier) KeyID() (string, error) {
 	return dsse.SHA256KeyID(v.pub)
 }
+
+// isDSSESignature returns true if r contains a signature in a DSSE envelope.
+func isDSSESignature(r io.Reader) bool {
+	var e dsse.Envelope
+	if err := json.NewDecoder(r).Decode(&e); err != nil {
+		return false
+	}
+
+	return metadataMediaType == e.PayloadType
+}
