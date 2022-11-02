@@ -22,7 +22,7 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature/options"
 )
 
-var metadataMediaType = "application/vnd.sylabs.sif-metadata+json"
+const metadataMediaType = "application/vnd.sylabs.sif-metadata+json"
 
 type dsseEncoder struct {
 	es          *dsse.EnvelopeSigner
@@ -144,7 +144,8 @@ type dsseSigner struct {
 	pub  crypto.PublicKey
 }
 
-// newDSSESigner returns a dsse.SignVerifier that uses s to sign according to opts.
+// newDSSESigner returns a dsse.SignVerifier that uses s to sign according to opts. Note that the
+// returned value is suitable only for signing, and not verification.
 func newDSSESigner(s signature.Signer, opts ...signature.SignOption) (*dsseSigner, error) {
 	pub, err := s.PublicKey()
 	if err != nil {
