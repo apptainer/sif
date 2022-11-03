@@ -558,7 +558,11 @@ func TestSigner_Sign(t *testing.T) {
 	e := getTestEntity(t)
 
 	encrypted := getTestEntity(t)
-	encrypted.PrivateKey.Encrypted = true
+	if err := encrypted.PrivateKey.Encrypt([]byte("blah")); err != nil {
+		t.Fatal(err)
+	}
+
+	sv := getTestSignerVerifier(t, "ed25519.pem")
 
 	tests := []struct {
 		name      string
@@ -573,7 +577,15 @@ func TestSigner_Sign(t *testing.T) {
 			wantErr:   true,
 		},
 		{
-			name:      "OneGroup",
+			name:      "OneGroupDSSE",
+			inputFile: "one-group.sif",
+			opts: []SignerOpt{
+				OptSignWithSigner(sv),
+				OptSignWithTime(fixedTime),
+			},
+		},
+		{
+			name:      "OneGroupPGP",
 			inputFile: "one-group.sif",
 			opts: []SignerOpt{
 				OptSignWithEntity(e),
@@ -581,7 +593,15 @@ func TestSigner_Sign(t *testing.T) {
 			},
 		},
 		{
-			name:      "TwoGroups",
+			name:      "TwoGroupsDSSE",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithSigner(sv),
+				OptSignWithTime(fixedTime),
+			},
+		},
+		{
+			name:      "TwoGroupsPGP",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
 				OptSignWithEntity(e),
@@ -589,7 +609,16 @@ func TestSigner_Sign(t *testing.T) {
 			},
 		},
 		{
-			name:      "OptSignGroup1",
+			name:      "OptSignGroup1DSSE",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithSigner(sv),
+				OptSignWithTime(fixedTime),
+				OptSignGroup(1),
+			},
+		},
+		{
+			name:      "OptSignGroup1PGP",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
 				OptSignWithEntity(e),
@@ -598,7 +627,16 @@ func TestSigner_Sign(t *testing.T) {
 			},
 		},
 		{
-			name:      "OptSignGroup2",
+			name:      "OptSignGroup2DSSE",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithSigner(sv),
+				OptSignWithTime(fixedTime),
+				OptSignGroup(2),
+			},
+		},
+		{
+			name:      "OptSignGroup2PGP",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
 				OptSignWithEntity(e),
@@ -607,7 +645,16 @@ func TestSigner_Sign(t *testing.T) {
 			},
 		},
 		{
-			name:      "OptSignObject1",
+			name:      "OptSignObject1DSSE",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithSigner(sv),
+				OptSignWithTime(fixedTime),
+				OptSignObjects(1),
+			},
+		},
+		{
+			name:      "OptSignObject1PGP",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
 				OptSignWithEntity(e),
@@ -616,7 +663,16 @@ func TestSigner_Sign(t *testing.T) {
 			},
 		},
 		{
-			name:      "OptSignObject2",
+			name:      "OptSignObject2DSSE",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithSigner(sv),
+				OptSignWithTime(fixedTime),
+				OptSignObjects(2),
+			},
+		},
+		{
+			name:      "OptSignObject2PGP",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
 				OptSignWithEntity(e),
@@ -625,7 +681,16 @@ func TestSigner_Sign(t *testing.T) {
 			},
 		},
 		{
-			name:      "OptSignObject3",
+			name:      "OptSignObject3DSSE",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithSigner(sv),
+				OptSignWithTime(fixedTime),
+				OptSignObjects(3),
+			},
+		},
+		{
+			name:      "OptSignObject3PGP",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
 				OptSignWithEntity(e),
@@ -634,7 +699,16 @@ func TestSigner_Sign(t *testing.T) {
 			},
 		},
 		{
-			name:      "OptSignObjects",
+			name:      "OptSignObjectsDSSE",
+			inputFile: "two-groups.sif",
+			opts: []SignerOpt{
+				OptSignWithSigner(sv),
+				OptSignWithTime(fixedTime),
+				OptSignObjects(1, 2, 3),
+			},
+		},
+		{
+			name:      "OptSignObjectsPGP",
 			inputFile: "two-groups.sif",
 			opts: []SignerOpt{
 				OptSignWithEntity(e),
@@ -643,7 +717,16 @@ func TestSigner_Sign(t *testing.T) {
 			},
 		},
 		{
-			name:      "OptSignDeterministic",
+			name:      "OptSignDeterministicDSSE",
+			inputFile: "one-group.sif",
+			opts: []SignerOpt{
+				OptSignWithSigner(sv),
+				OptSignWithTime(fixedTime),
+				OptSignDeterministic(),
+			},
+		},
+		{
+			name:      "OptSignDeterministicPGP",
 			inputFile: "one-group.sif",
 			opts: []SignerOpt{
 				OptSignWithEntity(e),
