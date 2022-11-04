@@ -172,48 +172,51 @@ func TestDescriptor_PartitionMetadata(t *testing.T) {
 }
 
 func TestDescriptor_SignatureMetadata(t *testing.T) {
-	s := signature{
-		Hashtype: hashSHA384,
-	}
-	copy(s.Entity[:], []byte{
-		0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
-		0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,
-	})
-
-	rd := rawDescriptor{
-		DataType: DataSignature,
-	}
-	if err := rd.setExtra(s); err != nil {
-		t.Fatal(err)
-	}
-
 	tests := []struct {
 		name    string
-		rd      rawDescriptor
-		wantHT  crypto.Hash
-		wantFP  []byte
+		dt      DataType
+		ht      hashType
+		fp      []byte
 		wantErr error
+		wantHT  crypto.Hash
 	}{
 		{
-			name: "UnexpectedDataType",
-			rd: rawDescriptor{
-				DataType: DataGeneric,
-			},
+			name:    "UnexpectedDataType",
+			dt:      DataGeneric,
 			wantErr: &unexpectedDataTypeError{DataGeneric, []DataType{DataSignature}},
 		},
 		{
-			name:   "OK",
-			rd:     rd,
-			wantHT: crypto.SHA384,
-			wantFP: []byte{
+			name: "Fingerprint",
+			dt:   DataSignature,
+			ht:   hashSHA384,
+			fp: []byte{
 				0x12, 0x04, 0x5c, 0x8c, 0x0b, 0x10, 0x04, 0xd0, 0x58, 0xde,
 				0x4b, 0xed, 0xa2, 0x0c, 0x27, 0xee, 0x7f, 0xf7, 0xba, 0x84,
 			},
+			wantHT: crypto.SHA384,
+		},
+		{
+			name:   "NoFingerprint",
+			dt:     DataSignature,
+			ht:     hashSHA256,
+			wantHT: crypto.SHA256,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := Descriptor{raw: tt.rd}
+			sig := signature{
+				Hashtype: tt.ht,
+			}
+			copy(sig.Entity[:], tt.fp)
+
+			rd := rawDescriptor{
+				DataType: tt.dt,
+			}
+			if err := rd.setExtra(sig); err != nil {
+				t.Fatal(err)
+			}
+
+			d := Descriptor{raw: rd}
 
 			ht, fp, err := d.SignatureMetadata()
 
@@ -226,7 +229,7 @@ func TestDescriptor_SignatureMetadata(t *testing.T) {
 					t.Fatalf("got hash type %v, want %v", got, want)
 				}
 
-				if got, want := fp, tt.wantFP; !bytes.Equal(got, want) {
+				if got, want := fp, tt.fp; !bytes.Equal(got, want) {
 					t.Fatalf("got entity %v, want %v", got, want)
 				}
 			}
