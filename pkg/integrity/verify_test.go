@@ -986,8 +986,6 @@ func TestVerifier_Verify(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ecdsa := getTestSignerVerifier(t, "ecdsa.pem")
-
 	ed25519 := getTestSignerVerifier(t, "ed25519.pem")
 	ed25519Pub, err := ed25519.PublicKey()
 	if err != nil {
@@ -1036,7 +1034,7 @@ func TestVerifier_Verify(t *testing.T) {
 			name: "SignatureNotValidErrorDSSE",
 			f:    oneGroupSignedDSSEImage,
 			opts: []VerifierOpt{
-				OptVerifyWithVerifier(ecdsa), // Not signed with EC.
+				OptVerifyWithVerifier(getTestSignerVerifier(t, "ecdsa.pem")), // Not signed with ECDSA.
 			},
 			wantErr: &SignatureNotValidError{ID: 3},
 		},

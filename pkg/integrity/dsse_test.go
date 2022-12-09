@@ -26,11 +26,8 @@ import (
 )
 
 func Test_dsseEncoder_signMessage(t *testing.T) {
-	ecdsa := getTestSignerVerifier(t, "ecdsa.pem")
 	ed25519 := getTestSignerVerifier(t, "ed25519.pem")
 	rsa := getTestSignerVerifier(t, "rsa.pem")
-
-	fakeRand := make([]byte, 1024)
 
 	tests := []struct {
 		name     string
@@ -40,19 +37,8 @@ func Test_dsseEncoder_signMessage(t *testing.T) {
 		wantHash crypto.Hash
 	}{
 		{
-			name:    "Multi",
-			signers: []signature.Signer{ecdsa, ed25519, rsa},
-			signOpts: []signature.SignOption{
-				options.WithRand(bytes.NewReader(fakeRand)), // For deterministic ECDSA signature.
-			},
-			wantHash: crypto.SHA256,
-		},
-		{
-			name:    "ECDSA",
-			signers: []signature.Signer{ecdsa},
-			signOpts: []signature.SignOption{
-				options.WithRand(bytes.NewReader(fakeRand)), // For deterministic ECDSA signature.
-			},
+			name:     "Multi",
+			signers:  []signature.Signer{ed25519, rsa},
 			wantHash: crypto.SHA256,
 		},
 		{
