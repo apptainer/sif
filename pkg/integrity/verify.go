@@ -22,11 +22,15 @@ import (
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/apptainer/sif/v2/pkg/sif"
+	"github.com/sigstore/sigstore/pkg/signature"
 )
 
 var (
-	errFingerprintMismatch = errors.New("fingerprint in descriptor does not correspond to signing entity")
-	errNonGroupedObject    = errors.New("non-signature object not associated with object group")
+	errFingerprintMismatch          = errors.New("fingerprint in descriptor does not correspond to signing entity")
+	errNonGroupedObject             = errors.New("non-signature object not associated with object group")
+	errNoKeyMaterialDSSE            = errors.New("key material not provided for DSSE envelope signature")
+	errNoKeyMaterialPGP             = errors.New("key material not provided for PGP clear-sign signature")
+	errSignatureFormatNotRecognized = errors.New("signature format not recognized")
 )
 
 // SignatureNotValidError records an error when an invalid signature is encountered.
@@ -305,6 +309,7 @@ type verifyTask interface {
 }
 
 type verifyOpts struct {
+	vs          []signature.Verifier
 	kr          openpgp.KeyRing
 	groups      []uint32
 	objects     []uint32
@@ -315,6 +320,14 @@ type verifyOpts struct {
 
 // VerifierOpt are used to configure vo.
 type VerifierOpt func(vo *verifyOpts) error
+
+// OptVerifyWithVerifier appends verifier(s) to the sources of key material used for verification.
+func OptVerifyWithVerifier(vs ...signature.Verifier) VerifierOpt {
+	return func(vo *verifyOpts) error {
+		vo.vs = append(vo.vs, vs...)
+		return nil
+	}
+}
 
 // OptVerifyWithKeyRing sets the keyring to use for verification to kr.
 func OptVerifyWithKeyRing(kr openpgp.KeyRing) VerifierOpt {
@@ -441,16 +454,17 @@ func getLegacyTasks(f *sif.FileImage, groupIDs, objectIDs []uint32) ([]verifyTas
 type Verifier struct {
 	f     *sif.FileImage
 	tasks []verifyTask
-	kr    openpgp.KeyRing
+	dsse  decoder
+	cs    decoder
 	cb    VerifyCallback
 }
 
 // NewVerifier returns a Verifier to examine and/or verify digital signatures(s) in f according to
 // opts.
 //
-// Verify requires key material be provided. OptVerifyWithKeyRing can be used for this purpose. Key
-// material is not required for routines that do not perform cryptographic verification, such as
-// AnySignedBy or AllSignedBy.
+// Verify requires key material be provided. OptVerifyWithVerifier and/or OptVerifyWithKeyRing can
+// be used for this purpose. Key material is not required for routines that do not perform
+// cryptographic verification, such as AnySignedBy or AllSignedBy.
 //
 // By default, the returned Verifier will consider non-legacy signatures for all object groups. To
 // override this behavior, consider using OptVerifyGroup, OptVerifyObject, OptVerifyLegacy, and/or
@@ -501,9 +515,17 @@ func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 	v := Verifier{
 		f:     f,
 		tasks: t,
-		kr:    vo.kr,
 		cb:    vo.cb,
 	}
+
+	if vo.vs != nil {
+		v.dsse = newDSSEDecoder(vo.vs...)
+	}
+
+	if vo.kr != nil {
+		v.cs = newClearsignDecoder(vo.kr)
+	}
+
 	return &v, nil
 }
 
@@ -577,8 +599,7 @@ func (v *Verifier) AllSignedBy() ([][]byte, error) {
 
 // Verify performs all cryptographic verification tasks specified by v.
 //
-// If key material was not provided when v was created, Verify returns an error wrapping
-// ErrNoKeyMaterial.
+// If appropriate key material was not provided when v was created, Verify returns an error.
 //
 // If no signatures are found for a task specified by v, an error wrapping a SignatureNotFoundError
 // is returned. If an invalid signature is encountered, an error wrapping a SignatureNotValidError
@@ -589,15 +610,6 @@ func (v *Verifier) AllSignedBy() ([][]byte, error) {
 // DescriptorIntegrityError is returned. If verification of a data object fails, an error wrapping
 // a ObjectIntegrityError is returned.
 func (v *Verifier) Verify() error {
-	// Get message decoder.
-	var de decoder
-	switch {
-	case v.kr != nil:
-		de = newClearsignDecoder(v.kr)
-	default:
-		return fmt.Errorf("integrity: %w", ErrNoKeyMaterial)
-	}
-
 	// All non-signature objects must be contained in an object group.
 	ods, err := v.f.GetDescriptors(sif.WithNoGroup())
 	if err != nil {
@@ -617,6 +629,23 @@ func (v *Verifier) Verify() error {
 		}
 
 		for _, sig := range sigs {
+			// Get decoder based on signature type.
+			var de decoder
+			switch {
+			case isDSSESignature(sig.GetReader()):
+				if v.dsse == nil {
+					return fmt.Errorf("integrity: %w", errNoKeyMaterialDSSE)
+				}
+				de = v.dsse
+			case isClearsignSignature(sig.GetReader()):
+				if v.cs == nil {
+					return fmt.Errorf("integrity: %w", errNoKeyMaterialPGP)
+				}
+				de = v.cs
+			default:
+				return fmt.Errorf("integrity: %w", errSignatureFormatNotRecognized)
+			}
+
 			vr := VerifyResult{sig: sig}
 
 			// Verify signature.

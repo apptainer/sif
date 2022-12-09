@@ -23,7 +23,7 @@ import (
 
 func TestDescriptor_GetData(t *testing.T) {
 	f, err := LoadContainerFromPath(
-		filepath.Join(corpus, "one-group-signed.sif"),
+		filepath.Join(corpus, "one-group-signed-pgp.sif"),
 		OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
@@ -53,7 +53,7 @@ func TestDescriptor_GetData(t *testing.T) {
 
 func TestDescriptor_GetReader(t *testing.T) {
 	f, err := LoadContainerFromPath(
-		filepath.Join(corpus, "one-group-signed.sif"),
+		filepath.Join(corpus, "one-group-signed-pgp.sif"),
 		OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {

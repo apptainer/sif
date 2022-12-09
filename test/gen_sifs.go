@@ -11,6 +11,7 @@ package main
 
 import (
 	"bytes"
+	"crypto"
 	"errors"
 	"log"
 	"os"
@@ -20,7 +21,15 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/apptainer/sif/v2/pkg/integrity"
 	"github.com/apptainer/sif/v2/pkg/sif"
+	"github.com/sigstore/sigstore/pkg/cryptoutils"
+	"github.com/sigstore/sigstore/pkg/signature"
 )
+
+// getSignerVerifier returns a SignerVerifier read from the PEM file at path.
+func getSignerVerifier(name string) (signature.SignerVerifier, error) { //nolint:ireturn
+	path := filepath.Join("keys", name)
+	return signature.LoadSignerVerifierFromPEMFile(path, crypto.SHA256, cryptoutils.SkipPassword)
+}
 
 var errUnexpectedNumEntities = errors.New("unexpected number of entities")
 
@@ -43,6 +52,16 @@ func getEntity() (*openpgp.Entity, error) {
 }
 
 func generateImages() error {
+	ed25519, err := getSignerVerifier("ed25519.pem")
+	if err != nil {
+		return err
+	}
+
+	rsa, err := getSignerVerifier("rsa.pem")
+	if err != nil {
+		return err
+	}
+
 	e, err := getEntity()
 	if err != nil {
 		return err
@@ -104,10 +123,10 @@ func generateImages() error {
 	}
 
 	images := []struct {
-		path  string
-		diFns []func() (sif.DescriptorInput, error)
-		opts  []sif.CreateOpt
-		sign  bool
+		path     string
+		diFns    []func() (sif.DescriptorInput, error)
+		opts     []sif.CreateOpt
+		signOpts []integrity.SignerOpt
 	}{
 		// Images with no objects.
 		{
@@ -164,12 +183,24 @@ func generateImages() error {
 			},
 		},
 		{
-			path: "one-group-signed.sif",
+			path: "one-group-signed-dsse.sif",
 			diFns: []func() (sif.DescriptorInput, error){
 				partSystem,
 				partPrimSys,
 			},
-			sign: true,
+			signOpts: []integrity.SignerOpt{
+				integrity.OptSignWithSigner(ed25519, rsa),
+			},
+		},
+		{
+			path: "one-group-signed-pgp.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				partSystem,
+				partPrimSys,
+			},
+			signOpts: []integrity.SignerOpt{
+				integrity.OptSignWithEntity(e),
+			},
 		},
 
 		// Images with three partitions in two groups.
@@ -182,13 +213,26 @@ func generateImages() error {
 			},
 		},
 		{
-			path: "two-groups-signed.sif",
+			path: "two-groups-signed-dsse.sif",
 			diFns: []func() (sif.DescriptorInput, error){
 				partSystem,
 				partPrimSys,
 				partSystemGroup2,
 			},
-			sign: true,
+			signOpts: []integrity.SignerOpt{
+				integrity.OptSignWithSigner(ed25519, rsa),
+			},
+		},
+		{
+			path: "two-groups-signed-pgp.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				partSystem,
+				partPrimSys,
+				partSystemGroup2,
+			},
+			signOpts: []integrity.SignerOpt{
+				integrity.OptSignWithEntity(e),
+			},
 		},
 	}
 
@@ -218,12 +262,13 @@ func generateImages() error {
 			}
 		}()
 
-		if image.sign {
-			s, err := integrity.NewSigner(f,
-				integrity.OptSignWithEntity(e),
+		if opts := image.signOpts; opts != nil {
+			opts = append(opts,
 				integrity.OptSignWithTime(func() time.Time { return time.Date(2020, 6, 30, 0, 1, 56, 0, time.UTC) }),
 				integrity.OptSignDeterministic(),
 			)
+
+			s, err := integrity.NewSigner(f, opts...)
 			if err != nil {
 				return err
 			}
