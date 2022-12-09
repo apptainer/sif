@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -24,42 +24,61 @@ import (
 
 func writeKeys() error {
 	keys := []struct {
-		path  string
-		keyFn func() (crypto.PrivateKey, error)
+		pubPath string
+		priPath string
+		keyFn   func() (crypto.PublicKey, crypto.PrivateKey, error)
 	}{
 		{
-			path: "ecdsa.pem",
-			keyFn: func() (crypto.PrivateKey, error) {
-				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			pubPath: "ecdsa-public.pem",
+			priPath: "ecdsa-private.pem",
+			keyFn: func() (crypto.PublicKey, crypto.PrivateKey, error) {
+				pri, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+				if err != nil {
+					return nil, nil, err
+				}
+				return pri.Public(), pri, nil
 			},
 		},
 		{
-			path: "ed25519.pem",
-			keyFn: func() (crypto.PrivateKey, error) {
-				_, pri, err := ed25519.GenerateKey(rand.Reader)
-				return pri, err
+			pubPath: "ecdsa-public.pem",
+			priPath: "ecdsa-private.pem",
+			keyFn: func() (crypto.PublicKey, crypto.PrivateKey, error) {
+				return ed25519.GenerateKey(rand.Reader)
 			},
 		},
 		{
-			path: "rsa.pem",
-			keyFn: func() (crypto.PrivateKey, error) {
-				return rsa.GenerateKey(rand.Reader, 4096)
+			pubPath: "rsa-public.pem",
+			priPath: "rsa-private.pem",
+			keyFn: func() (crypto.PublicKey, crypto.PrivateKey, error) {
+				pri, err := rsa.GenerateKey(rand.Reader, 4096)
+				if err != nil {
+					return nil, nil, err
+				}
+				return pri.Public(), pri, nil
 			},
 		},
 	}
 
 	for _, key := range keys {
-		pri, err := key.keyFn()
+		pub, pri, err := key.keyFn()
 		if err != nil {
 			return err
 		}
 
-		pem, err := cryptoutils.MarshalPrivateKeyToPEM(pri)
+		pem, err := cryptoutils.MarshalPublicKeyToPEM(pub)
 		if err != nil {
 			return err
 		}
 
-		if err := os.WriteFile(key.path, pem, 0o600); err != nil {
+		if err := os.WriteFile(key.pubPath, pem, 0o600); err != nil {
+			return err
+		}
+
+		if pem, err = cryptoutils.MarshalPrivateKeyToPEM(pri); err != nil {
+			return err
+		}
+
+		if err := os.WriteFile(key.priPath, pem, 0o600); err != nil {
 			return err
 		}
 	}

@@ -25,10 +25,10 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature"
 )
 
-// getSignerVerifier returns a SignerVerifier read from the PEM file at path.
-func getSignerVerifier(name string) (signature.SignerVerifier, error) { //nolint:ireturn
+// getSigner returns a Signer read from the PEM file at path.
+func getSigner(name string) (signature.Signer, error) { //nolint:ireturn
 	path := filepath.Join("..", "keys", name)
-	return signature.LoadSignerVerifierFromPEMFile(path, crypto.SHA256, cryptoutils.SkipPassword)
+	return signature.LoadSignerFromPEMFile(path, crypto.SHA256, cryptoutils.SkipPassword)
 }
 
 var errUnexpectedNumEntities = errors.New("unexpected number of entities")
@@ -52,12 +52,12 @@ func getEntity() (*openpgp.Entity, error) {
 }
 
 func generateImages() error {
-	ed25519, err := getSignerVerifier("ed25519.pem")
+	ed25519, err := getSigner("ed25519-private.pem")
 	if err != nil {
 		return err
 	}
 
-	rsa, err := getSignerVerifier("rsa.pem")
+	rsa, err := getSigner("rsa-private.pem")
 	if err != nil {
 		return err
 	}
