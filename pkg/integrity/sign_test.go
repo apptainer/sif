@@ -562,7 +562,7 @@ func TestSigner_Sign(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sv := getTestSignerVerifier(t, "ed25519-private.pem")
+	sv := getTestSigner(t, "ed25519-private.pem", crypto.Hash(0))
 
 	tests := []struct {
 		name      string
