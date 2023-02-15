@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -26,12 +26,6 @@ import (
 )
 
 func Test_dsseEncoder_signMessage(t *testing.T) {
-	ecdsa := getTestSignerVerifier(t, "ecdsa.pem")
-	ed25519 := getTestSignerVerifier(t, "ed25519.pem")
-	rsa := getTestSignerVerifier(t, "rsa.pem")
-
-	fakeRand := make([]byte, 1024)
-
 	tests := []struct {
 		name     string
 		signers  []signature.Signer
@@ -40,50 +34,45 @@ func Test_dsseEncoder_signMessage(t *testing.T) {
 		wantHash crypto.Hash
 	}{
 		{
-			name:    "Multi",
-			signers: []signature.Signer{ecdsa, ed25519, rsa},
-			signOpts: []signature.SignOption{
-				options.WithRand(bytes.NewReader(fakeRand)), // For deterministic ECDSA signature.
+			name: "Multi",
+			signers: []signature.Signer{
+				getTestSigner(t, "rsa-private.pem", crypto.SHA256),
+				getTestSigner(t, "rsa-private.pem", crypto.SHA256),
 			},
 			wantHash: crypto.SHA256,
 		},
 		{
-			name:    "ECDSA",
-			signers: []signature.Signer{ecdsa},
+			name: "ED25519",
+			signers: []signature.Signer{
+				getTestSigner(t, "ed25519-private.pem", crypto.Hash(0)),
+			},
 			signOpts: []signature.SignOption{
-				options.WithRand(bytes.NewReader(fakeRand)), // For deterministic ECDSA signature.
+				options.WithCryptoSignerOpts(crypto.Hash(0)),
+			},
+			wantHash: crypto.Hash(0),
+		},
+		{
+			name: "RSA_SHA256",
+			signers: []signature.Signer{
+				getTestSigner(t, "rsa-private.pem", crypto.SHA256),
 			},
 			wantHash: crypto.SHA256,
 		},
 		{
-			name:     "ED25519",
-			signers:  []signature.Signer{ed25519},
-			wantHash: crypto.SHA256,
-		},
-		{
-			name:     "RSA",
-			signers:  []signature.Signer{rsa},
-			wantHash: crypto.SHA256,
-		},
-		{
-			name:    "SHA256",
-			signers: []signature.Signer{rsa},
-			signOpts: []signature.SignOption{
-				options.WithCryptoSignerOpts(crypto.SHA256),
+			name: "RSA_SHA384",
+			signers: []signature.Signer{
+				getTestSigner(t, "rsa-private.pem", crypto.SHA384),
 			},
-			wantHash: crypto.SHA256,
-		},
-		{
-			name:    "SHA384",
-			signers: []signature.Signer{rsa},
 			signOpts: []signature.SignOption{
 				options.WithCryptoSignerOpts(crypto.SHA384),
 			},
 			wantHash: crypto.SHA384,
 		},
 		{
-			name:    "SHA512",
-			signers: []signature.Signer{rsa},
+			name: "RSA_SHA512",
+			signers: []signature.Signer{
+				getTestSigner(t, "rsa-private.pem", crypto.SHA512),
+			},
 			signOpts: []signature.SignOption{
 				options.WithCryptoSignerOpts(crypto.SHA512),
 			},
@@ -161,25 +150,6 @@ func corruptSignatures(t *testing.T, _ *dsseEncoder, e *dsse.Envelope) {
 }
 
 func Test_dsseDecoder_verifyMessage(t *testing.T) {
-	ecdsa := getTestSignerVerifier(t, "ecdsa.pem")
-	ed25519 := getTestSignerVerifier(t, "ed25519.pem")
-	rsa := getTestSignerVerifier(t, "rsa.pem")
-
-	ecdsaPub, err := ecdsa.PublicKey()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ed25519Pub, err := ed25519.PublicKey()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rsaPub, err := rsa.PublicKey()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	tests := []struct {
 		name        string
 		signers     []signature.Signer
@@ -191,107 +161,157 @@ func Test_dsseDecoder_verifyMessage(t *testing.T) {
 		wantKeys    []crypto.PublicKey
 	}{
 		{
-			name:      "CorruptPayloadType",
-			signers:   []signature.Signer{rsa},
-			corrupter: corruptPayloadType,
-			de:        newDSSEDecoder(rsa),
-			wantErr:   errDSSEUnexpectedPayloadType,
-			wantKeys:  []crypto.PublicKey{rsaPub},
-		},
-		{
-			name:      "CorruptPayload",
-			signers:   []signature.Signer{rsa},
-			corrupter: corruptPayload,
-			de:        newDSSEDecoder(rsa),
-			wantErr:   errDSSEVerifyEnvelopeFailed,
-			wantKeys:  []crypto.PublicKey{},
-		},
-		{
-			name:      "CorruptSignatures",
-			signers:   []signature.Signer{rsa},
-			corrupter: corruptSignatures,
-			de:        newDSSEDecoder(rsa),
-			wantErr:   errDSSEVerifyEnvelopeFailed,
-			wantKeys:  []crypto.PublicKey{},
-		},
-		{
-			name:        "VerifyMulti",
-			signers:     []signature.Signer{ecdsa, ed25519, rsa},
-			de:          newDSSEDecoder(ecdsa, ed25519, rsa),
-			wantMessage: testMessage,
-			wantKeys:    []crypto.PublicKey{ecdsaPub, ed25519Pub, rsaPub},
-		},
-		{
-			name:        "ECDSAVerifyMulti",
-			signers:     []signature.Signer{ecdsa, ed25519, rsa},
-			de:          newDSSEDecoder(ecdsa),
-			wantMessage: testMessage,
-			wantKeys:    []crypto.PublicKey{ecdsaPub},
-		},
-		{
-			name:        "ED25519VerifyMulti",
-			signers:     []signature.Signer{ecdsa, ed25519, rsa},
-			de:          newDSSEDecoder(ed25519),
-			wantMessage: testMessage,
-			wantKeys:    []crypto.PublicKey{ed25519Pub},
-		},
-		{
-			name:        "RSAVerifyMulti",
-			signers:     []signature.Signer{ecdsa, ed25519, rsa},
-			de:          newDSSEDecoder(rsa),
-			wantMessage: testMessage,
-			wantKeys:    []crypto.PublicKey{rsaPub},
-		},
-		{
-			name:        "ECDSA",
-			signers:     []signature.Signer{ecdsa},
-			de:          newDSSEDecoder(ecdsa),
-			wantMessage: testMessage,
-			wantKeys:    []crypto.PublicKey{ecdsaPub},
-		},
-		{
-			name:        "ED25519",
-			signers:     []signature.Signer{ed25519},
-			de:          newDSSEDecoder(ed25519),
-			wantMessage: testMessage,
-			wantKeys:    []crypto.PublicKey{ed25519Pub},
-		},
-		{
-			name:        "RSA",
-			signers:     []signature.Signer{rsa},
-			de:          newDSSEDecoder(rsa),
-			wantMessage: testMessage,
-			wantKeys:    []crypto.PublicKey{rsaPub},
-		},
-		{
-			name:    "SHA256",
-			signers: []signature.Signer{rsa},
-			signOpts: []signature.SignOption{
-				options.WithCryptoSignerOpts(crypto.SHA256),
+			name: "CorruptPayloadType",
+			signers: []signature.Signer{
+				getTestSigner(t, "rsa-private.pem", crypto.SHA256),
 			},
-			de:          newDSSEDecoder(rsa),
-			wantMessage: testMessage,
-			wantKeys:    []crypto.PublicKey{rsaPub},
+			corrupter: corruptPayloadType,
+			de: newDSSEDecoder(
+				getTestVerifier(t, "rsa-public.pem", crypto.SHA256),
+			),
+			wantErr: errDSSEUnexpectedPayloadType,
+			wantKeys: []crypto.PublicKey{
+				getTestPublicKey(t, "rsa-public.pem"),
+			},
 		},
 		{
-			name:    "SHA384",
-			signers: []signature.Signer{rsa},
+			name: "CorruptPayload",
+			signers: []signature.Signer{
+				getTestSigner(t, "rsa-private.pem", crypto.SHA256),
+			},
+			corrupter: corruptPayload,
+			de: newDSSEDecoder(
+				getTestVerifier(t, "rsa-public.pem", crypto.SHA256),
+			),
+			wantErr:  errDSSEVerifyEnvelopeFailed,
+			wantKeys: []crypto.PublicKey{},
+		},
+		{
+			name: "CorruptSignatures",
+			signers: []signature.Signer{
+				getTestSigner(t, "rsa-private.pem", crypto.SHA256),
+			},
+			corrupter: corruptSignatures,
+			de: newDSSEDecoder(
+				getTestVerifier(t, "rsa-public.pem", crypto.SHA256),
+			),
+			wantErr:  errDSSEVerifyEnvelopeFailed,
+			wantKeys: []crypto.PublicKey{},
+		},
+		{
+			name: "Multi_SHA256",
+			signers: []signature.Signer{
+				getTestSigner(t, "ecdsa-private.pem", crypto.SHA256),
+				getTestSigner(t, "rsa-private.pem", crypto.SHA256),
+			},
+			de: newDSSEDecoder(
+				getTestVerifier(t, "ecdsa-public.pem", crypto.SHA256),
+				getTestVerifier(t, "rsa-public.pem", crypto.SHA256),
+			),
+			wantMessage: testMessage,
+			wantKeys: []crypto.PublicKey{
+				getTestPublicKey(t, "ecdsa-public.pem"),
+				getTestPublicKey(t, "rsa-public.pem"),
+			},
+		},
+		{
+			name: "Multi_SHA256_ECDSA",
+			signers: []signature.Signer{
+				getTestSigner(t, "ecdsa-private.pem", crypto.SHA256),
+				getTestSigner(t, "rsa-private.pem", crypto.SHA256),
+			},
+			de: newDSSEDecoder(
+				getTestVerifier(t, "ecdsa-public.pem", crypto.SHA256),
+			),
+			wantMessage: testMessage,
+			wantKeys: []crypto.PublicKey{
+				getTestPublicKey(t, "ecdsa-public.pem"),
+			},
+		},
+		{
+			name: "Multi_SHA256_RSA",
+			signers: []signature.Signer{
+				getTestSigner(t, "ecdsa-private.pem", crypto.SHA256),
+				getTestSigner(t, "rsa-private.pem", crypto.SHA256),
+			},
+			de: newDSSEDecoder(
+				getTestVerifier(t, "rsa-public.pem", crypto.SHA256),
+			),
+			wantMessage: testMessage,
+			wantKeys: []crypto.PublicKey{
+				getTestPublicKey(t, "rsa-public.pem"),
+			},
+		},
+		{
+			name: "ECDSA_SHA256",
+			signers: []signature.Signer{
+				getTestSigner(t, "ecdsa-private.pem", crypto.SHA256),
+			},
+			de: newDSSEDecoder(
+				getTestVerifier(t, "ecdsa-public.pem", crypto.SHA256),
+			),
+			wantMessage: testMessage,
+			wantKeys: []crypto.PublicKey{
+				getTestPublicKey(t, "ecdsa-public.pem"),
+			},
+		},
+		{
+			name: "ED25519",
+			signers: []signature.Signer{
+				getTestSigner(t, "ed25519-private.pem", crypto.Hash(0)),
+			},
+			de: newDSSEDecoder(
+				getTestVerifier(t, "ed25519-public.pem", crypto.Hash(0)),
+			),
+			wantMessage: testMessage,
+			wantKeys: []crypto.PublicKey{
+				getTestPublicKey(t, "ed25519-public.pem"),
+			},
+		},
+		{
+			name: "RSA_SHA256",
+			signers: []signature.Signer{
+				getTestSigner(t, "rsa-private.pem", crypto.SHA256),
+			},
+			de: newDSSEDecoder(
+				getTestVerifier(t, "rsa-public.pem", crypto.SHA256),
+			),
+			wantMessage: testMessage,
+			wantKeys: []crypto.PublicKey{
+				getTestPublicKey(t, "rsa-public.pem"),
+			},
+		},
+		{
+			name: "RSA_SHA384",
+			signers: []signature.Signer{
+				getTestSigner(t, "rsa-private.pem", crypto.SHA384),
+			},
 			signOpts: []signature.SignOption{
 				options.WithCryptoSignerOpts(crypto.SHA384),
 			},
-			de:          newDSSEDecoder(rsa),
+			de: newDSSEDecoder(
+				getTestVerifier(t, "rsa-public.pem", crypto.SHA384),
+			),
 			wantMessage: testMessage,
-			wantKeys:    []crypto.PublicKey{rsaPub},
+			wantKeys: []crypto.PublicKey{
+				getTestPublicKey(t, "rsa-public.pem"),
+			},
 		},
 		{
-			name:    "SHA512",
-			signers: []signature.Signer{rsa},
+			name: "RSA_SHA512",
+			signers: []signature.Signer{
+				getTestSigner(t, "rsa-private.pem", crypto.SHA512),
+			},
 			signOpts: []signature.SignOption{
 				options.WithCryptoSignerOpts(crypto.SHA512),
 			},
-			de:          newDSSEDecoder(rsa),
+			de: newDSSEDecoder(
+				getTestVerifier(t, "rsa-public.pem", crypto.SHA512),
+			),
 			wantMessage: testMessage,
-			wantKeys:    []crypto.PublicKey{rsaPub},
+			wantKeys: []crypto.PublicKey{
+				getTestPublicKey(t, "rsa-public.pem"),
+			},
 		},
 	}
 

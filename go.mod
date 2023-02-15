@@ -1,9 +1,9 @@
 module github.com/apptainer/sif/v2
 
-go 1.18
+go 1.19
 
 require (
-	github.com/ProtonMail/go-crypto v0.0.0-20221026131551-cf6655e29de4
+	github.com/ProtonMail/go-crypto v0.0.0-20230201104953-d1d05f4e2bfb
 	github.com/blang/semver/v4 v4.0.0
 	github.com/go-git/go-git/v5 v5.5.2
 	github.com/google/uuid v1.3.0

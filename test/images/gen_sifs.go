@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -25,16 +25,17 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature"
 )
 
-// getSignerVerifier returns a SignerVerifier read from the PEM file at path.
-func getSignerVerifier(name string) (signature.SignerVerifier, error) { //nolint:ireturn
-	path := filepath.Join("keys", name)
-	return signature.LoadSignerVerifierFromPEMFile(path, crypto.SHA256, cryptoutils.SkipPassword)
+// getSigner returns a Signer that signs with key material from the PEM file with the specified
+// name, using hash algorithm h.
+func getSigner(name string, h crypto.Hash) (signature.Signer, error) { //nolint:ireturn
+	path := filepath.Join("..", "keys", name)
+	return signature.LoadSignerFromPEMFile(path, h, cryptoutils.SkipPassword)
 }
 
 var errUnexpectedNumEntities = errors.New("unexpected number of entities")
 
 func getEntity() (*openpgp.Entity, error) {
-	f, err := os.Open(filepath.Join("keys", "private.asc"))
+	f, err := os.Open(filepath.Join("..", "keys", "private.asc"))
 	if err != nil {
 		return nil, err
 	}
@@ -52,12 +53,12 @@ func getEntity() (*openpgp.Entity, error) {
 }
 
 func generateImages() error {
-	ed25519, err := getSignerVerifier("ed25519.pem")
+	ed25519, err := getSigner("ed25519-private.pem", crypto.Hash(0))
 	if err != nil {
 		return err
 	}
 
-	rsa, err := getSignerVerifier("rsa.pem")
+	rsa, err := getSigner("rsa-private.pem", crypto.SHA256)
 	if err != nil {
 		return err
 	}
@@ -82,7 +83,7 @@ func generateImages() error {
 	}
 
 	objectSBOM := func() (sif.DescriptorInput, error) {
-		b, err := os.ReadFile(filepath.Join("input", "sbom.cdx.json"))
+		b, err := os.ReadFile(filepath.Join("..", "input", "sbom.cdx.json"))
 		if err != nil {
 			return sif.DescriptorInput{}, err
 		}
@@ -100,7 +101,7 @@ func generateImages() error {
 	}
 
 	partPrimSys := func() (sif.DescriptorInput, error) {
-		b, err := os.ReadFile(filepath.Join("input", "root.squashfs"))
+		b, err := os.ReadFile(filepath.Join("..", "input", "root.squashfs"))
 		if err != nil {
 			return sif.DescriptorInput{}, err
 		}
@@ -111,7 +112,7 @@ func generateImages() error {
 	}
 
 	partSystemGroup2 := func() (sif.DescriptorInput, error) {
-		b, err := os.ReadFile(filepath.Join("input", "root.ext3"))
+		b, err := os.ReadFile(filepath.Join("..", "input", "root.ext3"))
 		if err != nil {
 			return sif.DescriptorInput{}, err
 		}
@@ -252,7 +253,7 @@ func generateImages() error {
 		}
 		opts = append(opts, image.opts...)
 
-		f, err := sif.CreateContainerAtPath(filepath.Join("images", image.path), opts...)
+		f, err := sif.CreateContainerAtPath(image.path, opts...)
 		if err != nil {
 			return err
 		}
