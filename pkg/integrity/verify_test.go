@@ -10,6 +10,7 @@
 package integrity
 
 import (
+	"context"
 	"crypto"
 	"errors"
 	"io"
@@ -166,7 +167,7 @@ func TestGroupVerifier_verify(t *testing.T) {
 			}
 
 			var vr VerifyResult
-			err := v.verifySignature(tt.sig, tt.de, &vr)
+			err := v.verifySignature(context.Background(), tt.sig, tt.de, &vr)
 
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Errorf("got error %v, want %v", got, want)
@@ -296,7 +297,7 @@ func TestLegacyGroupVerifier_verify(t *testing.T) {
 			}
 
 			var vr VerifyResult
-			err = v.verifySignature(tt.sig, tt.de, &vr)
+			err = v.verifySignature(context.Background(), tt.sig, tt.de, &vr)
 
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Errorf("got error %v, want %v", got, want)
@@ -436,7 +437,7 @@ func TestLegacyObjectVerifier_verify(t *testing.T) {
 			}
 
 			var vr VerifyResult
-			err = v.verifySignature(tt.sig, tt.de, &vr)
+			err = v.verifySignature(context.Background(), tt.sig, tt.de, &vr)
 
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Errorf("got error %v, want %v", got, want)
@@ -721,7 +722,7 @@ func (v mockVerifier) signatures() ([]sif.Descriptor, error) {
 	return v.sigs, v.sigsErr
 }
 
-func (v mockVerifier) verifySignature(sig sif.Descriptor, de decoder, vr *VerifyResult) error {
+func (v mockVerifier) verifySignature(ctx context.Context, sig sif.Descriptor, de decoder, vr *VerifyResult) error {
 	vr.verified = v.verified
 	vr.e = v.e
 	return v.verifyErr

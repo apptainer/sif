@@ -69,13 +69,13 @@ func newDSSEEncoder(ss []signature.Signer, opts ...signature.SignOption) (*dsseE
 
 // signMessage signs the message from r in DSSE format, and writes the result to w. On success, the
 // hash function is returned.
-func (en *dsseEncoder) signMessage(w io.Writer, r io.Reader) (crypto.Hash, error) {
+func (en *dsseEncoder) signMessage(ctx context.Context, w io.Writer, r io.Reader) (crypto.Hash, error) {
 	body, err := io.ReadAll(r)
 	if err != nil {
 		return 0, err
 	}
 
-	e, err := en.es.SignPayload(context.TODO(), en.payloadType, body)
+	e, err := en.es.SignPayload(ctx, en.payloadType, body)
 	if err != nil {
 		return 0, err
 	}
@@ -106,7 +106,7 @@ var (
 
 // verifyMessage reads a message from r, verifies its signature(s), and returns the message
 // contents. On success, the accepted public keys are set in vr.
-func (de *dsseDecoder) verifyMessage(r io.Reader, h crypto.Hash, vr *VerifyResult) ([]byte, error) {
+func (de *dsseDecoder) verifyMessage(ctx context.Context, r io.Reader, h crypto.Hash, vr *VerifyResult) ([]byte, error) { //nolint:lll
 	vs := make([]dsse.Verifier, 0, len(de.vs))
 	for _, v := range de.vs {
 		dv, err := newDSSEVerifier(v, options.WithCryptoSignerOpts(h))
@@ -127,7 +127,7 @@ func (de *dsseDecoder) verifyMessage(r io.Reader, h crypto.Hash, vr *VerifyResul
 		return nil, err
 	}
 
-	vr.aks, err = v.Verify(context.TODO(), &e)
+	vr.aks, err = v.Verify(ctx, &e)
 	if err != nil {
 		//nolint:errorlint // Go 1.19 compatibility
 		return nil, fmt.Errorf("%w: %v", errDSSEVerifyEnvelopeFailed, err)

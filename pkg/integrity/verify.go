@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -11,6 +11,7 @@ package integrity
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"encoding/hex"
 	"encoding/json"
@@ -114,14 +115,14 @@ func (v *groupVerifier) signatures() ([]sif.Descriptor, error) {
 // If verification of the SIF global header fails, ErrHeaderIntegrity is returned. If verification
 // of a data object descriptor fails, a DescriptorIntegrityError is returned. If verification of a
 // data object fails, a ObjectIntegrityError is returned.
-func (v *groupVerifier) verifySignature(sig sif.Descriptor, de decoder, vr *VerifyResult) error {
+func (v *groupVerifier) verifySignature(ctx context.Context, sig sif.Descriptor, de decoder, vr *VerifyResult) error {
 	ht, fp, err := sig.SignatureMetadata()
 	if err != nil {
 		return err
 	}
 
 	// Verify signature and decode message.
-	b, err := de.verifyMessage(sig.GetReader(), ht, vr)
+	b, err := de.verifyMessage(ctx, sig.GetReader(), ht, vr)
 	if err != nil {
 		return &SignatureNotValidError{ID: sig.ID(), Err: err}
 	}
@@ -185,9 +186,9 @@ func (v *legacyGroupVerifier) signatures() ([]sif.Descriptor, error) {
 // If an invalid signature is encountered, a SignatureNotValidError is returned.
 //
 // If verification of a data object fails, a ObjectIntegrityError is returned.
-func (v *legacyGroupVerifier) verifySignature(sig sif.Descriptor, de decoder, vr *VerifyResult) error {
+func (v *legacyGroupVerifier) verifySignature(ctx context.Context, sig sif.Descriptor, de decoder, vr *VerifyResult) error { //nolint:lll
 	// Verify signature and decode message.
-	b, err := de.verifyMessage(sig.GetReader(), crypto.SHA256, vr)
+	b, err := de.verifyMessage(ctx, sig.GetReader(), crypto.SHA256, vr)
 	if err != nil {
 		return &SignatureNotValidError{ID: sig.ID(), Err: err}
 	}
@@ -250,9 +251,9 @@ func (v *legacyObjectVerifier) signatures() ([]sif.Descriptor, error) {
 // If an invalid signature is encountered, a SignatureNotValidError is returned.
 //
 // If verification of a data object fails, a ObjectIntegrityError is returned.
-func (v *legacyObjectVerifier) verifySignature(sig sif.Descriptor, de decoder, vr *VerifyResult) error {
+func (v *legacyObjectVerifier) verifySignature(ctx context.Context, sig sif.Descriptor, de decoder, vr *VerifyResult) error { //nolint:lll
 	// Verify signature and decode message.
-	b, err := de.verifyMessage(sig.GetReader(), crypto.SHA256, vr)
+	b, err := de.verifyMessage(ctx, sig.GetReader(), crypto.SHA256, vr)
 	if err != nil {
 		return &SignatureNotValidError{ID: sig.ID(), Err: err}
 	}
@@ -289,7 +290,7 @@ func (v *legacyObjectVerifier) verifySignature(sig sif.Descriptor, de decoder, v
 type decoder interface {
 	// verifyMessage reads a message from r, verifies its signature, and returns the message
 	// contents.
-	verifyMessage(r io.Reader, h crypto.Hash, vr *VerifyResult) ([]byte, error)
+	verifyMessage(ctx context.Context, r io.Reader, h crypto.Hash, vr *VerifyResult) ([]byte, error)
 }
 
 type verifyTask interface {
@@ -305,7 +306,7 @@ type verifyTask interface {
 	// If verification of the SIF global header fails, ErrHeaderIntegrity is returned. If
 	// verification of a data object descriptor fails, a DescriptorIntegrityError is returned. If
 	// verification of a data object fails, a ObjectIntegrityError is returned.
-	verifySignature(sig sif.Descriptor, de decoder, vr *VerifyResult) error
+	verifySignature(ctx context.Context, sig sif.Descriptor, de decoder, vr *VerifyResult) error
 }
 
 type verifyOpts struct {
@@ -315,6 +316,7 @@ type verifyOpts struct {
 	objects     []uint32
 	isLegacy    bool
 	isLegacyAll bool
+	ctx         context.Context //nolint:containedctx
 	cb          VerifyCallback
 }
 
@@ -389,6 +391,15 @@ func OptVerifyLegacyAll() VerifierOpt {
 	}
 }
 
+// OptVerifyWithContext specifies that the given context should be used in RPC to external
+// services.
+func OptVerifyWithContext(ctx context.Context) VerifierOpt {
+	return func(vo *verifyOpts) error {
+		vo.ctx = ctx
+		return nil
+	}
+}
+
 // OptVerifyCallback registers cb as the verification callback, which is called after each
 // signature is verified.
 func OptVerifyCallback(cb VerifyCallback) VerifierOpt {
@@ -453,10 +464,10 @@ func getLegacyTasks(f *sif.FileImage, groupIDs, objectIDs []uint32) ([]verifyTas
 // Verifier describes a SIF image verifier.
 type Verifier struct {
 	f     *sif.FileImage
+	opts  verifyOpts
 	tasks []verifyTask
 	dsse  decoder
 	cs    decoder
-	cb    VerifyCallback
 }
 
 // NewVerifier returns a Verifier to examine and/or verify digital signatures(s) in f according to
@@ -474,7 +485,9 @@ func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 		return nil, fmt.Errorf("integrity: %w", errNilFileImage)
 	}
 
-	vo := verifyOpts{}
+	vo := verifyOpts{
+		ctx: context.Background(),
+	}
 
 	// Apply options.
 	for _, o := range opts {
@@ -514,8 +527,8 @@ func NewVerifier(f *sif.FileImage, opts ...VerifierOpt) (*Verifier, error) {
 
 	v := Verifier{
 		f:     f,
+		opts:  vo,
 		tasks: t,
-		cb:    vo.cb,
 	}
 
 	if vo.vs != nil {
@@ -649,12 +662,12 @@ func (v *Verifier) Verify() error {
 			vr := VerifyResult{sig: sig}
 
 			// Verify signature.
-			err := t.verifySignature(sig, de, &vr)
+			err := t.verifySignature(v.opts.ctx, sig, de, &vr)
 
 			// Call verify callback, if applicable.
-			if v.cb != nil {
+			if v.opts.cb != nil {
 				vr.err = err
-				if ignoreError := v.cb(vr); ignoreError {
+				if ignoreError := v.opts.cb(vr); ignoreError {
 					err = nil
 				}
 			}

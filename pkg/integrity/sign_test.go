@@ -11,6 +11,7 @@ package integrity
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"errors"
 	"os"
@@ -345,7 +346,7 @@ func TestGroupSigner_Sign(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			di, err := tt.gs.sign()
+			di, err := tt.gs.sign(context.Background())
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("got error %v, want %v", err, tt.wantErr)
 			}

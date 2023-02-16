@@ -12,6 +12,7 @@ package integrity
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"crypto"
 	"errors"
 	"io"
@@ -57,7 +58,7 @@ func Test_clearsignEncoder_signMessage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			b := bytes.Buffer{}
 
-			ht, err := tt.en.signMessage(&b, strings.NewReader(testMessage))
+			ht, err := tt.en.signMessage(context.Background(), &b, strings.NewReader(testMessage))
 			if got, want := err, tt.wantErr; (got != nil) != want {
 				t.Fatalf("got error %v, wantErr %v", got, want)
 			}
@@ -177,7 +178,7 @@ func Test_clearsignDecoder_verifyMessage(t *testing.T) {
 					Time:        fixedTime,
 				},
 			}
-			h, err := en.signMessage(&b, strings.NewReader(testMessage))
+			h, err := en.signMessage(context.Background(), &b, strings.NewReader(testMessage))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -193,7 +194,7 @@ func Test_clearsignDecoder_verifyMessage(t *testing.T) {
 
 			// Decode and verify message.
 			var vr VerifyResult
-			message, err := tt.de.verifyMessage(bytes.NewReader(b.Bytes()), h, &vr)
+			message, err := tt.de.verifyMessage(context.Background(), bytes.NewReader(b.Bytes()), h, &vr)
 
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)

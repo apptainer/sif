@@ -91,7 +91,7 @@ func Test_dsseEncoder_signMessage(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			ht, err := en.signMessage(&b, strings.NewReader(testMessage))
+			ht, err := en.signMessage(context.Background(), &b, strings.NewReader(testMessage))
 			if got, want := err, tt.wantErr; (got != nil) != want {
 				t.Fatalf("got error %v, wantErr %v", got, want)
 			}
@@ -327,7 +327,7 @@ func Test_dsseDecoder_verifyMessage(t *testing.T) {
 			}
 
 			// Sign and encode message.
-			h, err := en.signMessage(&b, strings.NewReader(testMessage))
+			h, err := en.signMessage(context.Background(), &b, strings.NewReader(testMessage))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -349,7 +349,7 @@ func Test_dsseDecoder_verifyMessage(t *testing.T) {
 
 			// Decode and verify message.
 			var vr VerifyResult
-			message, err := tt.de.verifyMessage(bytes.NewReader(b.Bytes()), h, &vr)
+			message, err := tt.de.verifyMessage(context.Background(), bytes.NewReader(b.Bytes()), h, &vr)
 
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Errorf("got error %v, want %v", got, want)
