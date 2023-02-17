@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -11,6 +11,7 @@ package integrity
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"encoding/json"
 	"errors"
@@ -74,7 +75,7 @@ func (en *dsseEncoder) signMessage(w io.Writer, r io.Reader) (crypto.Hash, error
 		return 0, err
 	}
 
-	e, err := en.es.SignPayload(en.payloadType, body)
+	e, err := en.es.SignPayload(context.TODO(), en.payloadType, body)
 	if err != nil {
 		return 0, err
 	}
@@ -126,7 +127,7 @@ func (de *dsseDecoder) verifyMessage(r io.Reader, h crypto.Hash, vr *VerifyResul
 		return nil, err
 	}
 
-	vr.aks, err = v.Verify(&e)
+	vr.aks, err = v.Verify(context.TODO(), &e)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", errDSSEVerifyEnvelopeFailed, err)
 	}
@@ -160,14 +161,17 @@ func newDSSESigner(s signature.Signer, opts ...signature.SignOption) (*dsseSigne
 }
 
 // Sign signs the supplied data.
-func (s *dsseSigner) Sign(data []byte) ([]byte, error) {
-	return s.s.SignMessage(bytes.NewReader(data), s.opts...)
+func (s *dsseSigner) Sign(ctx context.Context, data []byte) ([]byte, error) {
+	opts := s.opts
+	opts = append(opts, options.WithContext(ctx))
+
+	return s.s.SignMessage(bytes.NewReader(data), opts...)
 }
 
 var errSignNotImplemented = errors.New("sign not implemented")
 
 // Verify is not implemented, but required for the dsse.SignVerifier interface.
-func (s *dsseSigner) Verify(data, sig []byte) error {
+func (s *dsseSigner) Verify(ctx context.Context, data, sig []byte) error {
 	return errSignNotImplemented
 }
 
@@ -202,8 +206,11 @@ func newDSSEVerifier(v signature.Verifier, opts ...signature.VerifyOption) (*dss
 }
 
 // Verify verifies that sig is a valid signature of data.
-func (v *dsseVerifier) Verify(data, sig []byte) error {
-	return v.v.VerifySignature(bytes.NewReader(sig), bytes.NewReader(data), v.opts...)
+func (v *dsseVerifier) Verify(ctx context.Context, data, sig []byte) error {
+	opts := v.opts
+	opts = append(opts, options.WithContext(ctx))
+
+	return v.v.VerifySignature(bytes.NewReader(sig), bytes.NewReader(data), opts...)
 }
 
 // Public returns the public key associated with v.

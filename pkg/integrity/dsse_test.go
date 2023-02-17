@@ -11,6 +11,7 @@ package integrity
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"encoding/base64"
 	"encoding/json"
@@ -115,7 +116,7 @@ func corruptPayloadType(t *testing.T, en *dsseEncoder, e *dsse.Envelope) {
 		t.Fatal(err)
 	}
 
-	bad, err := en.es.SignPayload("bad", body)
+	bad, err := en.es.SignPayload(context.Background(), "bad", body)
 	if err != nil {
 		t.Fatal(err)
 	}
