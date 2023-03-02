@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -23,7 +23,7 @@ type descriptorOpts struct {
 	linkID    uint32
 	alignment int
 	name      string
-	extra     interface{}
+	extra     any
 	t         time.Time
 }
 
@@ -92,6 +92,15 @@ func OptObjectName(name string) DescriptorInputOpt {
 func OptObjectTime(t time.Time) DescriptorInputOpt {
 	return func(_ DataType, opts *descriptorOpts) error {
 		opts.t = t
+		return nil
+	}
+}
+
+// OptMetadata sets v as the metadata for a data object. If the encoding.BinaryMarshaler interface
+// is implemented by v, it is used for marshaling. Otherwise, binary.Write() is used.
+func OptMetadata(v any) DescriptorInputOpt {
+	return func(t DataType, opts *descriptorOpts) error {
+		opts.extra = v
 		return nil
 	}
 }
@@ -263,7 +272,8 @@ const DefaultObjectGroup = 1
 //
 // It is possible (and often necessary) to store additional metadata related to certain types of
 // data objects. Consider supplying options such as OptCryptoMessageMetadata, OptPartitionMetadata,
-// OptSignatureMetadata, and OptSBOMMetadata for this purpose.
+// OptSignatureMetadata, and OptSBOMMetadata for this purpose. To set custom metadata, use
+// OptMetadata.
 //
 // By default, the data object will be placed in the default data object group (1). To override
 // this behavior, use OptNoGroup or OptGroupID. To link this data object, use OptLinkedID or

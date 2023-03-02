@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,10 +12,12 @@ package sif
 import (
 	"bytes"
 	"crypto"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/sebdah/goldie/v2"
@@ -103,6 +105,57 @@ func TestDescriptor_Name(t *testing.T) {
 	// unload the test container
 	if err = f.UnloadContainer(); err != nil {
 		t.Error("UnloadContainer(fimg):", err)
+	}
+}
+
+type testMetadata struct {
+	Value int
+}
+
+func (m testMetadata) MarshalBinary() ([]byte, error) {
+	return json.Marshal(m)
+}
+
+func (m *testMetadata) UnmarshalBinary(b []byte) error {
+	return json.Unmarshal(bytes.TrimRight(b, "\x00"), m)
+}
+
+func TestDescriptor_GetMetadata(t *testing.T) {
+	md := testMetadata{100}
+
+	rd := rawDescriptor{
+		DataType: DataGeneric,
+	}
+	if err := rd.setExtra(md); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name    string
+		rd      rawDescriptor
+		wantMD  any
+		wantErr error
+	}{
+		{
+			name:   "OK",
+			rd:     rd,
+			wantMD: md,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := Descriptor{raw: tt.rd}
+
+			var md testMetadata
+
+			if got, want := d.GetMetadata(&md), tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+
+			if got, want := md, tt.wantMD; !reflect.DeepEqual(got, want) {
+				t.Fatalf("got metadata %v, want %v", got, want)
+			}
+		})
 	}
 }
 
