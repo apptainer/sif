@@ -174,6 +174,7 @@ const (
 	FsImmuObj                             // immutable data object archive
 	FsRaw                                 // raw data
 	FsEncryptedSquashfs                   // Encrypted Squashfs file system, RDONLY
+	FsGocryptfsSquashfs                   // Gocryptfs Squashfs file system, RDONLY
 )
 
 // String returns a human-readable representation of t.
@@ -189,6 +190,8 @@ func (t FSType) String() string {
 		return "Raw"
 	case FsEncryptedSquashfs:
 		return "Encrypted squashfs"
+	case FsGocryptfsSquashfs:
+		return "Gocryptfs squashfs"
 	}
 	return "Unknown"
 }
