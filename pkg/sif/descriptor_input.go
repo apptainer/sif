@@ -11,6 +11,7 @@ package sif
 
 import (
 	"crypto"
+	"encoding"
 	"errors"
 	"fmt"
 	"io"
@@ -23,7 +24,7 @@ type descriptorOpts struct {
 	linkID    uint32
 	alignment int
 	name      string
-	extra     any
+	md        encoding.BinaryMarshaler
 	t         time.Time
 }
 
@@ -96,11 +97,10 @@ func OptObjectTime(t time.Time) DescriptorInputOpt {
 	}
 }
 
-// OptMetadata sets v as the metadata for a data object. If the encoding.BinaryMarshaler interface
-// is implemented by v, it is used for marshaling. Otherwise, binary.Write() is used.
-func OptMetadata(v any) DescriptorInputOpt {
+// OptMetadata marshals metadata from md into the "extra" field of d.
+func OptMetadata(md encoding.BinaryMarshaler) DescriptorInputOpt {
 	return func(t DataType, opts *descriptorOpts) error {
-		opts.extra = v
+		opts.md = md
 		return nil
 	}
 }
@@ -168,7 +168,7 @@ func OptCryptoMessageMetadata(ft FormatType, mt MessageType) DescriptorInputOpt 
 			Messagetype: mt,
 		}
 
-		opts.extra = m
+		opts.md = binaryMarshaler{m}
 		return nil
 	}
 }
@@ -197,7 +197,7 @@ func OptPartitionMetadata(fs FSType, pt PartType, arch string) DescriptorInputOp
 			Arch:     sifarch,
 		}
 
-		opts.extra = p
+		opts.md = p
 		return nil
 	}
 }
@@ -234,7 +234,7 @@ func OptSignatureMetadata(ht crypto.Hash, fp []byte) DescriptorInputOpt {
 		}
 		copy(s.Entity[:], fp)
 
-		opts.extra = s
+		opts.md = binaryMarshaler{s}
 		return nil
 	}
 }
@@ -252,7 +252,7 @@ func OptSBOMMetadata(f SBOMFormat) DescriptorInputOpt {
 			Format: f,
 		}
 
-		opts.extra = s
+		opts.md = binaryMarshaler{s}
 		return nil
 	}
 }
@@ -331,5 +331,5 @@ func (di DescriptorInput) fillDescriptor(t time.Time, d *rawDescriptor) error {
 		return err
 	}
 
-	return d.setExtra(di.opts.extra)
+	return d.setExtra(di.opts.md)
 }

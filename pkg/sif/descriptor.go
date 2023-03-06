@@ -49,6 +49,11 @@ type partition struct {
 	Arch     archType
 }
 
+// MarshalBinary encodes p into binary format.
+func (p partition) MarshalBinary() ([]byte, error) {
+	return binaryMarshaler{p}.MarshalBinary()
+}
+
 // signature represents the SIF signature data object descriptor.
 type signature struct {
 	Hashtype hashType
@@ -64,6 +69,26 @@ type cryptoMessage struct {
 // sbom represents the SIF SBOM data object descriptor.
 type sbom struct {
 	Format SBOMFormat
+}
+
+// The binaryMarshaler type is an adapter that allows a type suitable for use with the
+// encoding/binary package to be used as an encoding.BinaryMarshaler.
+type binaryMarshaler struct{ any }
+
+// MarshalBinary encodes m into binary format.
+func (m binaryMarshaler) MarshalBinary() ([]byte, error) {
+	var b bytes.Buffer
+	err := binary.Write(&b, binary.LittleEndian, m.any)
+	return b.Bytes(), err
+}
+
+// The binaryUnmarshaler type is an adapter that allows a type suitable for use with the
+// encoding/binary package to be used as an encoding.BinaryUnmarshaler.
+type binaryUnmarshaler struct{ any }
+
+// UnmarshalBinary decodes b into u.
+func (u binaryUnmarshaler) UnmarshalBinary(b []byte) error {
+	return binary.Read(bytes.NewReader(b), binary.LittleEndian, u.any)
 }
 
 var errNameTooLarge = errors.New("name value too large")
@@ -83,27 +108,15 @@ func (d *rawDescriptor) setName(name string) error {
 
 var errExtraTooLarge = errors.New("extra value too large")
 
-// setExtra encodes v into the extra field of d. If the encoding.BinaryMarshaler interface is
-// implemented by v, it is used for marshaling. Otherwise, binary.Write() is used.
-func (d *rawDescriptor) setExtra(v any) error {
-	if v == nil {
+// setExtra marshals metadata from md into the "extra" field of d.
+func (d *rawDescriptor) setExtra(md encoding.BinaryMarshaler) error {
+	if md == nil {
 		return nil
 	}
 
-	var extra []byte
-
-	if m, ok := v.(encoding.BinaryMarshaler); ok {
-		b, err := m.MarshalBinary()
-		if err != nil {
-			return err
-		}
-		extra = b
-	} else {
-		b := new(bytes.Buffer)
-		if err := binary.Write(b, binary.LittleEndian, v); err != nil {
-			return err
-		}
-		extra = b.Bytes()
+	extra, err := md.MarshalBinary()
+	if err != nil {
+		return err
 	}
 
 	if len(extra) > len(d.Extra) {
@@ -117,13 +130,9 @@ func (d *rawDescriptor) setExtra(v any) error {
 	return nil
 }
 
-// getExtra decodes the extra fields of d into v. If the encoding.BinaryUnmarshaler interface is
-// implemented by v, it is used for unmarshaling. Otherwise, binary.Read() is used.
-func (d *rawDescriptor) getExtra(v any) error {
-	if u, ok := v.(encoding.BinaryUnmarshaler); ok {
-		return u.UnmarshalBinary(d.Extra[:])
-	}
-	return binary.Read(bytes.NewReader(d.Extra[:]), binary.LittleEndian, v)
+// getExtra unmarshals metadata from the "extra" field of d into md.
+func (d *rawDescriptor) getExtra(md encoding.BinaryUnmarshaler) error {
+	return md.UnmarshalBinary(d.Extra[:])
 }
 
 // getPartitionMetadata gets metadata for a partition data object.
@@ -134,7 +143,7 @@ func (d rawDescriptor) getPartitionMetadata() (FSType, PartType, string, error) 
 
 	var p partition
 
-	if err := d.getExtra(&p); err != nil {
+	if err := d.getExtra(binaryUnmarshaler{&p}); err != nil {
 		return 0, 0, "", err
 	}
 
@@ -193,10 +202,9 @@ func (d Descriptor) ModifiedAt() time.Time { return time.Unix(d.raw.ModifiedAt, 
 // Name returns the name of the data object.
 func (d Descriptor) Name() string { return strings.TrimRight(string(d.raw.Name[:]), "\000") }
 
-// GetMetadata reads metadata from d into v. If the encoding.BinaryUnmarshaler interface is
-// implemented by v, it is used for unmarshaling. Otherwise, binary.Read() is used.
-func (d Descriptor) GetMetadata(v any) error {
-	if err := d.raw.getExtra(v); err != nil {
+// GetMetadata unmarshals metadata from the "extra" field of d into md.
+func (d Descriptor) GetMetadata(md encoding.BinaryUnmarshaler) error {
+	if err := d.raw.getExtra(md); err != nil {
 		return fmt.Errorf("%w", err)
 	}
 	return nil
@@ -242,7 +250,7 @@ func (d Descriptor) SignatureMetadata() (ht crypto.Hash, fp []byte, err error) {
 
 	var s signature
 
-	if err := d.raw.getExtra(&s); err != nil {
+	if err := d.raw.getExtra(binaryUnmarshaler{&s}); err != nil {
 		return ht, fp, fmt.Errorf("%w", err)
 	}
 
@@ -269,7 +277,7 @@ func (d Descriptor) CryptoMessageMetadata() (FormatType, MessageType, error) {
 
 	var m cryptoMessage
 
-	if err := d.raw.getExtra(&m); err != nil {
+	if err := d.raw.getExtra(binaryUnmarshaler{&m}); err != nil {
 		return 0, 0, fmt.Errorf("%w", err)
 	}
 
@@ -284,7 +292,7 @@ func (d Descriptor) SBOMMetadata() (SBOMFormat, error) {
 
 	var s sbom
 
-	if err := d.raw.getExtra(&s); err != nil {
+	if err := d.raw.getExtra(binaryUnmarshaler{&s}); err != nil {
 		return 0, fmt.Errorf("%w", err)
 	}
 

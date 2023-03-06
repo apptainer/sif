@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -73,7 +73,7 @@ func (f *FileImage) writeDataObject(i int, di DescriptorInput, t time.Time) erro
 
 	// If this is a primary partition, verify there isn't another primary partition, and update the
 	// architecture in the global header.
-	if p, ok := di.opts.extra.(partition); ok && p.Parttype == PartPrimSys {
+	if p, ok := di.opts.md.(partition); ok && p.Parttype == PartPrimSys {
 		if ds, err := f.GetDescriptors(WithPartitionType(PartPrimSys)); err == nil && len(ds) > 0 {
 			return errPrimaryPartition
 		}

@@ -133,7 +133,7 @@ func TestDescriptor_GetMetadata(t *testing.T) {
 	tests := []struct {
 		name    string
 		rd      rawDescriptor
-		wantMD  any
+		wantMD  testMetadata
 		wantErr error
 	}{
 		{
@@ -265,7 +265,7 @@ func TestDescriptor_SignatureMetadata(t *testing.T) {
 			rd := rawDescriptor{
 				DataType: tt.dt,
 			}
-			if err := rd.setExtra(sig); err != nil {
+			if err := rd.setExtra(binaryMarshaler{sig}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -299,7 +299,7 @@ func TestDescriptor_CryptoMessageMetadata(t *testing.T) {
 	rd := rawDescriptor{
 		DataType: DataCryptoMessage,
 	}
-	if err := rd.setExtra(m); err != nil {
+	if err := rd.setExtra(binaryMarshaler{m}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -355,7 +355,7 @@ func TestDescriptor_SBOMMetadata(t *testing.T) {
 	rd := rawDescriptor{
 		DataType: DataSBOM,
 	}
-	if err := rd.setExtra(m); err != nil {
+	if err := rd.setExtra(binaryMarshaler{m}); err != nil {
 		t.Fatal(err)
 	}
 
