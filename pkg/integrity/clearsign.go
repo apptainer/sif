@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -11,6 +11,7 @@ package integrity
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"errors"
 	"io"
@@ -41,7 +42,7 @@ func newClearsignEncoder(e *openpgp.Entity, timeFunc func() time.Time) *clearsig
 
 // signMessage signs the message from r in clear-sign format, and writes the result to w. On
 // success, the hash function is returned.
-func (en *clearsignEncoder) signMessage(w io.Writer, r io.Reader) (crypto.Hash, error) {
+func (en *clearsignEncoder) signMessage(ctx context.Context, w io.Writer, r io.Reader) (crypto.Hash, error) {
 	plaintext, err := clearsign.Encode(w, en.e.PrivateKey, en.config)
 	if err != nil {
 		return 0, err
@@ -66,7 +67,7 @@ func newClearsignDecoder(kr openpgp.KeyRing) *clearsignDecoder {
 
 // verifyMessage reads a message from r, verifies its signature, and returns the message contents.
 // On success, the signing entity is set in vr.
-func (de *clearsignDecoder) verifyMessage(r io.Reader, h crypto.Hash, vr *VerifyResult) ([]byte, error) {
+func (de *clearsignDecoder) verifyMessage(ctx context.Context, r io.Reader, h crypto.Hash, vr *VerifyResult) ([]byte, error) { //nolint:lll
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
