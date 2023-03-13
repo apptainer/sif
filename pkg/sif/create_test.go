@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -330,7 +330,6 @@ func TestAddObject(t *testing.T) {
 			},
 			di: getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
 			opts: []AddOpt{
-				OptAddDeterministic(),
 				OptAddWithTime(time.Unix(946702800, 0)),
 			},
 		},
@@ -509,7 +508,6 @@ func TestDeleteObject(t *testing.T) {
 			},
 			id: 1,
 			opts: []DeleteOpt{
-				OptDeleteDeterministic(),
 				OptDeleteWithTime(time.Unix(946702800, 0)),
 			},
 		},
@@ -575,13 +573,15 @@ func TestSetPrimPart(t *testing.T) {
 				OptCreateDeterministic(),
 				OptCreateWithDescriptors(
 					getDescriptorInput(t, DataPartition, []byte{0xfa, 0xce},
-						OptPartitionMetadata(FsRaw, PartSystem, "386"),
+						OptPartitionMetadata(FsRaw, PartPrimSys, "386"),
+					),
+					getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
+						OptPartitionMetadata(FsRaw, PartSystem, "amd64"),
 					),
 				),
 			},
-			id: 1,
+			id: 2,
 			opts: []SetOpt{
-				OptSetDeterministic(),
 				OptSetWithTime(time.Unix(946702800, 0)),
 			},
 		},
