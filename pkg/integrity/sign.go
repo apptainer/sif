@@ -314,16 +314,19 @@ type Signer struct {
 // By default, one digital signature is added per object group in f. To override this behavior,
 // consider using OptSignGroup and/or OptSignObjects.
 //
-// By default, signature, header and descriptor timestamps are set to the current time. To override
-// this behavior, consider using OptSignWithTime or OptSignDeterministic.
+// By default, signature timestamps are set to the current time. To override this behavior,
+// consider using OptSignWithTime.
+//
+// By default, header and descriptor timestamps are set to the current time for non-deterministic
+// images, and unset otherwise. To override this behavior, consider using OptSignWithTime or
+// OptSignDeterministic.
 func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 	if f == nil {
 		return nil, fmt.Errorf("integrity: %w", errNilFileImage)
 	}
 
 	so := signOpts{
-		timeFunc: time.Now,
-		ctx:      context.Background(),
+		ctx: context.Background(),
 	}
 
 	// Apply options.
@@ -350,7 +353,11 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 			return nil, fmt.Errorf("integrity: %w", err)
 		}
 	case so.e != nil:
-		en = newClearsignEncoder(so.e, so.timeFunc)
+		timeFunc := time.Now
+		if so.timeFunc != nil {
+			timeFunc = so.timeFunc
+		}
+		en = newClearsignEncoder(so.e, timeFunc)
 		commonOpts = append(commonOpts, optSignGroupFingerprint(so.e.PrimaryKey.Fingerprint))
 	default:
 		return nil, fmt.Errorf("integrity: %w", ErrNoKeyMaterial)
@@ -414,7 +421,7 @@ func (s *Signer) Sign() error {
 		var opts []sif.AddOpt
 		if s.opts.deterministic {
 			opts = append(opts, sif.OptAddDeterministic())
-		} else {
+		} else if s.opts.timeFunc != nil {
 			opts = append(opts, sif.OptAddWithTime(s.opts.timeFunc()))
 		}
 

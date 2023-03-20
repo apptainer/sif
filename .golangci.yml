@@ -50,9 +50,13 @@ linters:
     - typecheck
     - unconvert
     - unparam
-    # - unused
+    - unused
     - whitespace
 
 linters-settings:
+  errorlint:
+    # Go 1.19 compatibility (https://github.com/sylabs/sif/issues/265).
+    errorf-multi: false
+
   misspell:
     locale: US

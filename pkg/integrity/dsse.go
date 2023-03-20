@@ -129,7 +129,6 @@ func (de *dsseDecoder) verifyMessage(ctx context.Context, r io.Reader, h crypto.
 
 	vr.aks, err = v.Verify(ctx, &e)
 	if err != nil {
-		//nolint:errorlint // Go 1.19 compatibility
 		return nil, fmt.Errorf("%w: %v", errDSSEVerifyEnvelopeFailed, err)
 	}
 
@@ -172,7 +171,7 @@ func (s *dsseSigner) Sign(ctx context.Context, data []byte) ([]byte, error) {
 var errSignNotImplemented = errors.New("sign not implemented")
 
 // Verify is not implemented, but required for the dsse.SignVerifier interface.
-func (s *dsseSigner) Verify(ctx context.Context, data, sig []byte) error {
+func (s *dsseSigner) Verify(_ context.Context, _, _ []byte) error {
 	return errSignNotImplemented
 }
 

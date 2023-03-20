@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -121,7 +121,6 @@ func (d digest) MarshalJSON() ([]byte, error) {
 func (d *digest) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
-		//nolint:errorlint // Go 1.19 compatibility
 		return fmt.Errorf("%w: %v", errDigestMalformed, err)
 	}
 
@@ -134,7 +133,6 @@ func (d *digest) UnmarshalJSON(data []byte) error {
 
 	v, err := hex.DecodeString(value)
 	if err != nil {
-		//nolint:errorlint // Go 1.19 compatibility
 		return fmt.Errorf("%w: %v", errDigestMalformed, err)
 	}
 
