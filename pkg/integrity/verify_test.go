@@ -722,7 +722,7 @@ func (v mockVerifier) signatures() ([]sif.Descriptor, error) {
 	return v.sigs, v.sigsErr
 }
 
-func (v mockVerifier) verifySignature(ctx context.Context, sig sif.Descriptor, de decoder, vr *VerifyResult) error {
+func (v mockVerifier) verifySignature(_ context.Context, _ sif.Descriptor, _ decoder, vr *VerifyResult) error {
 	vr.verified = v.verified
 	vr.e = v.e
 	return v.verifyErr

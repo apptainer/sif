@@ -455,11 +455,7 @@ func (f *FileImage) isLast(d *rawDescriptor) bool {
 func (f *FileImage) truncateAt(d *rawDescriptor) error {
 	start := d.Offset + d.Size - d.SizeWithPadding
 
-	if err := f.rw.Truncate(start); err != nil {
-		return err
-	}
-
-	return nil
+	return f.rw.Truncate(start)
 }
 
 // deleteOpts accumulates object deletion options.

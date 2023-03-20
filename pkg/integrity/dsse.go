@@ -172,7 +172,7 @@ func (s *dsseSigner) Sign(ctx context.Context, data []byte) ([]byte, error) {
 var errSignNotImplemented = errors.New("sign not implemented")
 
 // Verify is not implemented, but required for the dsse.SignVerifier interface.
-func (s *dsseSigner) Verify(ctx context.Context, data, sig []byte) error {
+func (s *dsseSigner) Verify(_ context.Context, _, _ []byte) error {
 	return errSignNotImplemented
 }
 
