@@ -50,7 +50,7 @@ linters:
     - typecheck
     - unconvert
     - unparam
-    # - unused
+    - unused
     - whitespace
 
 linters-settings:
