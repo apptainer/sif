@@ -63,4 +63,4 @@ jobs:
         run: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
       - name: Test Release
-        run: curl -sL https://git.io/goreleaser | bash -s -- --snapshot --skip-publish
+        run: curl -sSfL https://goreleaser.com/static/run | bash -s -- --snapshot --skip-publish
