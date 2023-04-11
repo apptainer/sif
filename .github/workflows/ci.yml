@@ -62,5 +62,8 @@ jobs:
       - name: Install syft
         run: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
+      - name: Check Configuration
+        run: curl -sSfL https://goreleaser.com/static/run | bash -s -- check
+
       - name: Test Release
         run: curl -sSfL https://goreleaser.com/static/run | bash -s -- --snapshot --skip-publish
