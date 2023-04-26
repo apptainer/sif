@@ -40,8 +40,8 @@ func writeKeys() error {
 			},
 		},
 		{
-			pubPath: "ecdsa-public.pem",
-			priPath: "ecdsa-private.pem",
+			pubPath: "ed25519-public.pem",
+			priPath: "ed25519-private.pem",
 			keyFn: func() (crypto.PublicKey, crypto.PrivateKey, error) {
 				return ed25519.GenerateKey(rand.Reader)
 			},
