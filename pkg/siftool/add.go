@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -42,11 +42,11 @@ var (
 func getAddExamples(rootPath string) string {
 	examples := []string{
 		rootPath +
-			" add image.sif recipe.def -datatype 1",
+			" add image.sif recipe.def --datatype 1",
 		rootPath +
 			" add image.sif rootfs.squashfs --datatype 4 --parttype 1 --partfs 1 --partarch 2",
 		rootPath +
-			" add image.sif signature.bin -datatype 5 --signentity 433FE984155206BD962725E20E8713472A879943 --signhash 1",
+			" add image.sif signature.bin --datatype 5 --signentity 433FE984155206BD962725E20E8713472A879943 --signhash 1",
 	}
 	return strings.Join(examples, "\n")
 }
@@ -58,34 +58,34 @@ func addFlags(fs *pflag.FlagSet) {
   1-Deffile,       2-EnvVar,        3-Labels,
   4-Partition,     5-Signature,     6-GenericJSON,
   7-Generic,       8-CryptoMessage, 9-SBOM`)
-	partType = fs.Int32("parttype", 0, `the type of partition (with -datatype 4-Partition)
+	partType = fs.Int32("parttype", 0, `the type of partition (with --datatype 4-Partition)
 [NEEDED, no default]:
   1-System,    2-PrimSys,   3-Data,
   4-Overlay`)
-	partFS = fs.Int32("partfs", 0, `the filesystem used (with -datatype 4-Partition)
+	partFS = fs.Int32("partfs", 0, `the filesystem used (with --datatype 4-Partition)
 [NEEDED, no default]:
   1-Squash,    2-Ext3,      3-ImmuObj,
   4-Raw`)
-	partArch = fs.Int32("partarch", 0, `the main architecture used (with -datatype 4-Partition)
+	partArch = fs.Int32("partarch", 0, `the main architecture used (with --datatype 4-Partition)
 [NEEDED, no default]:
   1-386,       2-amd64,     3-arm,
   4-arm64,     5-ppc64,     6-ppc64le,
   7-mips,      8-mipsle,    9-mips64,
   10-mips64le, 11-s390x,    12-riscv64`)
-	signHash = fs.Int32("signhash", 0, `the signature hash used (with -datatype 5-Signature)
+	signHash = fs.Int32("signhash", 0, `the signature hash used (with --datatype 5-Signature)
 [NEEDED, no default]:
   1-SHA256,      2-SHA384,      3-SHA512,
   4-BLAKE2s_256, 5-BLAKE2b_256`)
-	signEntity = fs.String("signentity", "", `the entity that signs (with -datatype 5-Signature)
+	signEntity = fs.String("signentity", "", `the entity that signs (with --datatype 5-Signature)
 [NEEDED, no default]:
   example: 433FE984155206BD962725E20E8713472A879943`)
-	sbomFormat = fs.String("sbomformat", "", `the SBOM format (with -datatype 9-sbom):
+	sbomFormat = fs.String("sbomformat", "", `the SBOM format (with --datatype 9-sbom):
   cyclonedx-json, cyclonedx-xml,  github-json,
   spdx-json,      spdx-rdf,       spdx-tag-value,
   spdx-yaml,      syft-json`)
 	groupID = fs.Uint32("groupid", 0, "set groupid [default: 0]")
 	linkID = fs.Uint32("link", 0, "set link pointer [default: 0]")
-	alignment = fs.Int("alignment", 0, "set alignment [default: 4096 with -datatype 4-Partition, 0 otherwise]")
+	alignment = fs.Int("alignment", 0, "set alignment [default: 4096 with --datatype 4-Partition, 0 otherwise]")
 	name = fs.String("filename", "", "set logical filename/handle [default: input filename]")
 }
 
@@ -193,9 +193,9 @@ func getSBOMFormat() (sif.SBOMFormat, error) {
 }
 
 var (
-	errPartitionArgs            = errors.New("with partition datatype, -partfs, -parttype and -partarch must be passed")
+	errPartitionArgs            = errors.New("with partition datatype, --partfs, --parttype and --partarch must be passed")
 	errInvalidFingerprintLength = errors.New("invalid signing entity fingerprint length")
-	errSBOMArgs                 = errors.New("with SBOM datatype, -sbomformat must be passed")
+	errSBOMArgs                 = errors.New("with SBOM datatype, --sbomformat must be passed")
 )
 
 func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, error) {
