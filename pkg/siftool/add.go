@@ -44,7 +44,7 @@ func getAddExamples(rootPath string) string {
 		rootPath +
 			" add image.sif recipe.def -datatype 1",
 		rootPath +
-			" add image.sif rootfs.squashfs --datatype 4 --parttype 1 --partfs 1 ----partarch 2",
+			" add image.sif rootfs.squashfs --datatype 4 --parttype 1 --partfs 1 --partarch 2",
 		rootPath +
 			" add image.sif signature.bin -datatype 5 --signentity 433FE984155206BD962725E20E8713472A879943 --signhash 1",
 	}
