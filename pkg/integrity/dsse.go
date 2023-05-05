@@ -45,7 +45,7 @@ func newDSSEEncoder(ss []signature.Signer, opts ...signature.SignOption) (*dsseE
 		opts = append(opts, options.WithCryptoSignerOpts(so))
 	}
 
-	dss := make([]dsse.SignVerifier, 0, len(ss))
+	dss := make([]dsse.SignerVerifier, 0, len(ss))
 	for _, s := range ss {
 		ds, err := newDSSESigner(s, opts...)
 		if err != nil {
@@ -145,7 +145,7 @@ type dsseSigner struct {
 	pub  crypto.PublicKey
 }
 
-// newDSSESigner returns a dsse.SignVerifier that uses s to sign according to opts. Note that the
+// newDSSESigner returns a dsse.SignerVerifier that uses s to sign according to opts. Note that the
 // returned value is suitable only for signing, and not verification.
 func newDSSESigner(s signature.Signer, opts ...signature.SignOption) (*dsseSigner, error) {
 	pub, err := s.PublicKey()
@@ -170,7 +170,7 @@ func (s *dsseSigner) Sign(ctx context.Context, data []byte) ([]byte, error) {
 
 var errSignNotImplemented = errors.New("sign not implemented")
 
-// Verify is not implemented, but required for the dsse.SignVerifier interface.
+// Verify is not implemented, but required for the dsse.SignerVerifier interface.
 func (s *dsseSigner) Verify(_ context.Context, _, _ []byte) error {
 	return errSignNotImplemented
 }
