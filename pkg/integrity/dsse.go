@@ -168,11 +168,11 @@ func (s *dsseSigner) Sign(ctx context.Context, data []byte) ([]byte, error) {
 	return s.s.SignMessage(bytes.NewReader(data), opts...)
 }
 
-var errSignNotImplemented = errors.New("sign not implemented")
+var errVerifyNotImplemented = errors.New("verify not implemented")
 
 // Verify is not implemented, but required for the dsse.SignerVerifier interface.
 func (s *dsseSigner) Verify(_ context.Context, _, _ []byte) error {
-	return errSignNotImplemented
+	return errVerifyNotImplemented
 }
 
 // Public returns the public key associated with s.
