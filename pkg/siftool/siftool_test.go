@@ -25,9 +25,8 @@ import (
 
 var corpus = filepath.Join("..", "..", "test", "images")
 
+//nolint:thelper // Complex enough to justify keeping file/line information on error.
 func makeTestSIF(t *testing.T, withDataObject bool) string {
-	t.Helper()
-
 	tf, err := os.CreateTemp("", "sif-test-*")
 	if err != nil {
 		t.Fatal(err)
