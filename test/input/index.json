@@ -1,0 +1,29 @@
+{
+    "schemaVersion": 2,
+    "manifests": [
+      {
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "digest": "sha256:abcdef1234567890",
+        "size": 123456,
+        "annotations": {
+          "org.example.label": "Sample Label"
+        },
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        }
+      },
+      {
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "digest": "sha256:0987654321abcdef",
+        "size": 654321,
+        "annotations": {
+          "org.example.label": "Another Label"
+        },
+        "platform": {
+          "architecture": "arm64",
+          "os": "linux"
+        }
+      }
+    ]
+  }

@@ -71,6 +71,11 @@ type sbom struct {
 	Format SBOMFormat
 }
 
+// ociBlob represents the OCI Blob data object descriptor.
+type ociBlob struct {
+	Digest [descrOCIDigestLen]byte
+}
+
 // The binaryMarshaler type is an adapter that allows a type suitable for use with the
 // encoding/binary package to be used as an encoding.BinaryMarshaler.
 type binaryMarshaler struct{ any }
@@ -297,6 +302,20 @@ func (d Descriptor) SBOMMetadata() (SBOMFormat, error) {
 	}
 
 	return s.Format, nil
+}
+
+// OCIBlobMetadata returns the digest for a OCI blob object.
+func (d Descriptor) OCIBlobMetadata() (string, error) {
+	if got := d.raw.DataType; got != DataOCIRootIndex && got != DataOCIBlob {
+		return "", &unexpectedDataTypeError{got, []DataType{DataOCIRootIndex, DataOCIBlob}}
+	}
+
+	var o ociBlob
+	if err := d.raw.getExtra(binaryUnmarshaler{&o}); err != nil {
+		return "", fmt.Errorf("%w", err)
+	}
+
+	return string(bytes.TrimRight(o.Digest[:], "\x00")), nil
 }
 
 // GetData returns the data object associated with descriptor d.

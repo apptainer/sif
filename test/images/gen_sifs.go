@@ -12,7 +12,10 @@ package main
 import (
 	"bytes"
 	"crypto"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -52,6 +55,7 @@ func getEntity() (*openpgp.Entity, error) {
 	return el[0], nil
 }
 
+//nolint:maintidx
 func generateImages() error {
 	ed25519, err := getSigner("ed25519-private.pem", crypto.Hash(0))
 	if err != nil {
@@ -90,6 +94,33 @@ func generateImages() error {
 
 		return sif.NewDescriptorInput(sif.DataSBOM, bytes.NewReader(b),
 			sif.OptSBOMMetadata(sif.SBOMFormatCycloneDXJSON),
+		)
+	}
+
+	objectOCIRootIndex := func() (sif.DescriptorInput, error) {
+		b, err := os.ReadFile(filepath.Join("..", "input", "index.json"))
+		if err != nil {
+			return sif.DescriptorInput{}, err
+		}
+
+		hash := sha256.Sum256(b)
+		digest := hex.EncodeToString(hash[:])
+
+		return sif.NewDescriptorInput(sif.DataOCIRootIndex, bytes.NewReader(b),
+			sif.OptOCIBlobMetadata(fmt.Sprintf("sha256:%s", digest)),
+		)
+	}
+
+	objectOCIBlobMetadata := func() (sif.DescriptorInput, error) {
+		b, err := os.ReadFile(filepath.Join("..", "input", "oci-config.json"))
+		if err != nil {
+			return sif.DescriptorInput{}, err
+		}
+		hash := sha256.Sum256(b)
+		digest := hex.EncodeToString(hash[:])
+
+		return sif.NewDescriptorInput(sif.DataOCIBlob, bytes.NewReader(b),
+			sif.OptOCIBlobMetadata(fmt.Sprintf("sha256:%s", digest)),
 		)
 	}
 
@@ -172,6 +203,18 @@ func generateImages() error {
 			path: "one-object-sbom.sif",
 			diFns: []func() (sif.DescriptorInput, error){
 				objectSBOM,
+			},
+		},
+		{
+			path: "one-object-oci-root-index.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				objectOCIRootIndex,
+			},
+		},
+		{
+			path: "one-object-oci-blob.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				objectOCIBlobMetadata,
 			},
 		},
 
