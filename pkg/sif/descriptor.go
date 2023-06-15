@@ -337,18 +337,19 @@ func (d Descriptor) SBOMMetadata() (SBOMFormat, error) {
 	return s.Format, nil
 }
 
-// OCIBlobMetadata returns the digest for a OCI blob object.
-func (d Descriptor) OCIBlobMetadata() (string, error) {
+// OCIBlobDigest returns the digest for a OCI blob object.
+func (d Descriptor) OCIBlobDigest() (v1.Hash, error) {
 	if got := d.raw.DataType; got != DataOCIRootIndex && got != DataOCIBlob {
-		return "", &unexpectedDataTypeError{got, []DataType{DataOCIRootIndex, DataOCIBlob}}
+		return v1.Hash{}, &unexpectedDataTypeError{got, []DataType{DataOCIRootIndex, DataOCIBlob}}
 	}
 
 	var o ociBlob
+
 	if err := d.raw.getExtra(&o); err != nil {
-		return "", fmt.Errorf("%w", err)
+		return v1.Hash{}, fmt.Errorf("%w", err)
 	}
 
-	return o.digest.String(), nil
+	return o.digest, nil
 }
 
 // GetData returns the data object associated with descriptor d.

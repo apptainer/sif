@@ -230,13 +230,13 @@ func writeInfo(w io.Writer, v sif.Descriptor) error {
 
 		fmt.Fprintf(tw, "\tFormat:\t%v\n", f)
 
-	case sif.DataOCIBlob, sif.DataOCIRootIndex:
-		t, err := v.OCIBlobMetadata()
+	case sif.DataOCIRootIndex, sif.DataOCIBlob:
+		h, err := v.OCIBlobDigest()
 		if err != nil {
 			return err
 		}
 
-		fmt.Fprintf(tw, "\tDigest:\t%s\n", t)
+		fmt.Fprintf(tw, "\tDigest:\t%s\n", h)
 	}
 
 	return tw.Flush()
