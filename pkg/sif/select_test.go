@@ -12,6 +12,8 @@ package sif
 import (
 	"errors"
 	"testing"
+
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
 func TestFileImage_GetDescriptors(t *testing.T) {
@@ -162,6 +164,17 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	ociBlobDescr := rawDescriptor{
+		DataType: DataOCIBlob,
+		Used:     true,
+		ID:       4,
+		GroupID:  0 | descrGroupMask,
+	}
+
+	if err := ociBlobDescr.setExtra(newOCIBlobDigest()); err != nil {
+		t.Fatal(err)
+	}
+
 	ds := []rawDescriptor{
 		primPartDescr,
 		{
@@ -178,6 +191,7 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 			GroupID:  0 | descrGroupMask,
 			LinkedID: 1 | descrGroupMask,
 		},
+		ociBlobDescr,
 	}
 
 	f := &FileImage{
@@ -229,6 +243,16 @@ func TestFileImage_GetDescriptor(t *testing.T) {
 				WithPartitionType(PartPrimSys),
 			},
 			wantID: 1,
+		},
+		{
+			name: "OCIBlobDigest",
+			fns: []DescriptorSelectorFunc{
+				WithOCIBlobDigest(v1.Hash{
+					Algorithm: "sha256",
+					Hex:       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				}),
+			},
+			wantID: 4,
 		},
 	}
 	for _, tt := range tests {
