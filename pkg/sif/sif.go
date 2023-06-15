@@ -117,11 +117,10 @@ const (
 const CurrentVersion = version01
 
 const (
-	descrGroupMask    = 0xf0000000 // groups start at that offset
-	descrEntityLen    = 256        // len("Joe Bloe <jbloe@gmail.com>...")
-	descrNameLen      = 128        // descriptor name (string identifier)
-	descrMaxPrivLen   = 384        // size reserved for descriptor specific data
-	descrOCIDigestLen = 256        // oci digest size specification
+	descrGroupMask  = 0xf0000000 // groups start at that offset
+	descrEntityLen  = 256        // len("Joe Bloe <jbloe@gmail.com>...")
+	descrNameLen    = 128        // descriptor name (string identifier)
+	descrMaxPrivLen = 384        // size reserved for descriptor specific data
 )
 
 // DataType represents the different SIF data object types stored in the image.

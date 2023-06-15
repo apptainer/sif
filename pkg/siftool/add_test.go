@@ -10,11 +10,8 @@
 package siftool
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/sylabs/sif/v2/pkg/sif"
 )
 
 func Test_command_getAdd(t *testing.T) {
@@ -60,43 +57,6 @@ func Test_command_getAdd(t *testing.T) {
 			args = append(args, tt.flags...)
 
 			runCommand(t, cmd, args, nil)
-		})
-	}
-}
-
-func Test_getDigestFromInputFile(t *testing.T) {
-	tests := []struct {
-		name       string
-		dataType   sif.DataType
-		wantDigest string
-	}{
-		{
-			name:       "OCIRootIndex",
-			dataType:   sif.DataOCIRootIndex,
-			wantDigest: "sha256:004dfc8da678c309de28b5386a1e9efd57f536b150c40d29b31506aa0fb17ec2",
-		},
-		{
-			name:       "OCIBlob",
-			dataType:   sif.DataOCIBlob,
-			wantDigest: "sha256:004dfc8da678c309de28b5386a1e9efd57f536b150c40d29b31506aa0fb17ec2",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			f, err := os.Open(filepath.Join("testdata", "input", "input.bin"))
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			digest, err := getDigestFromInputFile(f)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if got, want := digest, tt.wantDigest; got != want {
-				t.Errorf("digest got: %s, wanted: %s", got, want)
-			}
 		})
 	}
 }

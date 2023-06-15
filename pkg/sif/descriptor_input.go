@@ -257,30 +257,6 @@ func OptSBOMMetadata(f SBOMFormat) DescriptorInputOpt {
 	}
 }
 
-var errDigestTooLarge = errors.New("digest value too large")
-
-// OptOCIBlobMetadata sets metadata for a OCI blob data object.
-//
-// If this option is applied to a data object with an incompatible type, an error is returned.
-func OptOCIBlobMetadata(digest string) DescriptorInputOpt {
-	return func(t DataType, opts *descriptorOpts) error {
-		if t != DataOCIRootIndex && t != DataOCIBlob {
-			return &unexpectedDataTypeError{t, []DataType{DataOCIRootIndex, DataOCIBlob}}
-		}
-
-		o := ociBlob{}
-
-		if len(digest) > len(o.Digest) {
-			return errDigestTooLarge
-		}
-
-		copy(o.Digest[:], digest)
-
-		opts.md = binaryMarshaler{o}
-		return nil
-	}
-}
-
 // DescriptorInput describes a new data object.
 type DescriptorInput struct {
 	dt   DataType
@@ -319,6 +295,15 @@ func NewDescriptorInput(t DataType, r io.Reader, opts ...DescriptorInputOpt) (De
 
 	if t == DataPartition {
 		dopts.alignment = 4096
+	}
+
+	// Accumulate hash for OCI blobs as they are written.
+	if t == DataOCIRootIndex || t == DataOCIBlob {
+		md := newOCIBlobDigest()
+
+		r = io.TeeReader(r, md.hasher)
+
+		dopts.md = md
 	}
 
 	for _, opt := range opts {

@@ -13,11 +13,9 @@ package siftool
 
 import (
 	"crypto"
-	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
@@ -205,7 +203,7 @@ var (
 	errSBOMArgs                 = errors.New("with SBOM datatype, --sbomformat must be passed")
 )
 
-func getOptions(dt sif.DataType, fs *pflag.FlagSet, r io.Reader) ([]sif.DescriptorInputOpt, error) {
+func getOptions(dt sif.DataType, fs *pflag.FlagSet) ([]sif.DescriptorInputOpt, error) {
 	var opts []sif.DescriptorInputOpt
 
 	if *groupID == 0 {
@@ -266,27 +264,9 @@ func getOptions(dt sif.DataType, fs *pflag.FlagSet, r io.Reader) ([]sif.Descript
 		}
 
 		opts = append(opts, sif.OptSBOMMetadata(f))
-
-	case sif.DataOCIBlob, sif.DataOCIRootIndex:
-		digest, err := getDigestFromInputFile(r)
-		if err != nil {
-			return nil, err
-		}
-
-		opts = append(opts, sif.OptOCIBlobMetadata(digest))
 	}
 
 	return opts, nil
-}
-
-func getDigestFromInputFile(r io.Reader) (string, error) {
-	hash := sha256.New()
-	_, err := io.Copy(hash, r)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("sha256:%s", hex.EncodeToString(hash.Sum(nil))), nil
 }
 
 // getAdd returns a command that adds a data object to a SIF.
@@ -313,13 +293,8 @@ func (c *command) getAdd() *cobra.Command {
 		}
 		defer f.Close()
 
-		opts, err := getOptions(dt, cmd.Flags(), f)
+		opts, err := getOptions(dt, cmd.Flags())
 		if err != nil {
-			return err
-		}
-
-		// Reset the file cursor
-		if _, err := f.Seek(0, io.SeekStart); err != nil {
 			return err
 		}
 

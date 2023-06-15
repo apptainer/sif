@@ -12,10 +12,7 @@ package main
 import (
 	"bytes"
 	"crypto"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -103,12 +100,7 @@ func generateImages() error {
 			return sif.DescriptorInput{}, err
 		}
 
-		hash := sha256.Sum256(b)
-		digest := hex.EncodeToString(hash[:])
-
-		return sif.NewDescriptorInput(sif.DataOCIRootIndex, bytes.NewReader(b),
-			sif.OptOCIBlobMetadata(fmt.Sprintf("sha256:%s", digest)),
-		)
+		return sif.NewDescriptorInput(sif.DataOCIRootIndex, bytes.NewReader(b))
 	}
 
 	objectOCIBlobMetadata := func() (sif.DescriptorInput, error) {
@@ -116,12 +108,8 @@ func generateImages() error {
 		if err != nil {
 			return sif.DescriptorInput{}, err
 		}
-		hash := sha256.Sum256(b)
-		digest := hex.EncodeToString(hash[:])
 
-		return sif.NewDescriptorInput(sif.DataOCIBlob, bytes.NewReader(b),
-			sif.OptOCIBlobMetadata(fmt.Sprintf("sha256:%s", digest)),
-		)
+		return sif.NewDescriptorInput(sif.DataOCIBlob, bytes.NewReader(b))
 	}
 
 	partSystem := func() (sif.DescriptorInput, error) {

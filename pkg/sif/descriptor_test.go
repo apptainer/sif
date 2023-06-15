@@ -398,12 +398,10 @@ func TestDescriptor_SBOMMetadata(t *testing.T) {
 }
 
 func TestDescriptor_OCIBlobMetadata(t *testing.T) {
-	o := ociBlob{}
-	copy(o.Digest[:], "sha256:8a49fdb3b6a5ff2bd8ec6a86c05b2922a0f7454579ecc07637e94dfd1d0639b6")
 	rd := rawDescriptor{
 		DataType: DataOCIBlob,
 	}
-	if err := rd.setExtra(binaryMarshaler{o}); err != nil {
+	if err := rd.setExtra(newOCIBlobDigest()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -423,7 +421,7 @@ func TestDescriptor_OCIBlobMetadata(t *testing.T) {
 		{
 			name:       "OK",
 			rd:         rd,
-			wantDigest: "sha256:8a49fdb3b6a5ff2bd8ec6a86c05b2922a0f7454579ecc07637e94dfd1d0639b6",
+			wantDigest: "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 		},
 	}
 	for _, tt := range tests {
@@ -438,7 +436,7 @@ func TestDescriptor_OCIBlobMetadata(t *testing.T) {
 
 			if err == nil {
 				if got, want := f, tt.wantDigest; got != want {
-					t.Fatalf("got format %v, want %v", got, want)
+					t.Fatalf("got digest %v, want %v", got, want)
 				}
 			}
 		})
