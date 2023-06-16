@@ -126,7 +126,7 @@ func Test_clearsignDecoder_verifyMessage(t *testing.T) {
 			name:      "CorruptedClearsign",
 			corrupter: corruptClearsign,
 			de:        newClearsignDecoder(openpgp.EntityList{e}),
-			wantErr:   pgperrors.SignatureError("hash tag doesn't match"),
+			wantErr:   pgperrors.SignatureError("RSA verification failure"),
 		},
 		{
 			name:      "CorruptedSignature",
