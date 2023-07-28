@@ -12,9 +12,10 @@ Flags:
       --alignment int       set alignment [default: 4096 with --datatype 4-Partition, 0 otherwise]
       --datatype int        the type of data to add
                             [NEEDED, no default]:
-                              1-Deffile,       2-EnvVar,        3-Labels,
-                              4-Partition,     5-Signature,     6-GenericJSON,
-                              7-Generic,       8-CryptoMessage, 9-SBOM
+                              1-Deffile,        2-EnvVar,        3-Labels,
+                              4-Partition,      5-Signature,     6-GenericJSON,
+                              7-Generic,        8-CryptoMessage, 9-SBOM,
+                              10-OCI.RootIndex, 11-OCI.Blob
       --filename string     set logical filename/handle [default: input filename]
       --groupid uint32      set groupid [default: 0]
   -h, --help                help for add

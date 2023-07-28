@@ -189,6 +189,14 @@ func TestNewDescriptorInput(t *testing.T) {
 				OptSBOMMetadata(SBOMFormatCycloneDXJSON),
 			},
 		},
+		{
+			name: "DataOCIRootIndex",
+			t:    DataOCIRootIndex,
+		},
+		{
+			name: "DataOCIBlob",
+			t:    DataOCIBlob,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

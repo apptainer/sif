@@ -52,6 +52,7 @@ func getEntity() (*openpgp.Entity, error) {
 	return el[0], nil
 }
 
+//nolint:maintidx
 func generateImages() error {
 	ed25519, err := getSigner("ed25519-private.pem", crypto.Hash(0))
 	if err != nil {
@@ -91,6 +92,24 @@ func generateImages() error {
 		return sif.NewDescriptorInput(sif.DataSBOM, bytes.NewReader(b),
 			sif.OptSBOMMetadata(sif.SBOMFormatCycloneDXJSON),
 		)
+	}
+
+	objectOCIRootIndex := func() (sif.DescriptorInput, error) {
+		b, err := os.ReadFile(filepath.Join("..", "input", "index.json"))
+		if err != nil {
+			return sif.DescriptorInput{}, err
+		}
+
+		return sif.NewDescriptorInput(sif.DataOCIRootIndex, bytes.NewReader(b))
+	}
+
+	objectOCIBlobMetadata := func() (sif.DescriptorInput, error) {
+		b, err := os.ReadFile(filepath.Join("..", "input", "oci-config.json"))
+		if err != nil {
+			return sif.DescriptorInput{}, err
+		}
+
+		return sif.NewDescriptorInput(sif.DataOCIBlob, bytes.NewReader(b))
 	}
 
 	partSystem := func() (sif.DescriptorInput, error) {
@@ -172,6 +191,18 @@ func generateImages() error {
 			path: "one-object-sbom.sif",
 			diFns: []func() (sif.DescriptorInput, error){
 				objectSBOM,
+			},
+		},
+		{
+			path: "one-object-oci-root-index.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				objectOCIRootIndex,
+			},
+		},
+		{
+			path: "one-object-oci-blob.sif",
+			diFns: []func() (sif.DescriptorInput, error){
+				objectOCIBlobMetadata,
 			},
 		},
 

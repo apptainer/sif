@@ -137,6 +137,8 @@ const (
 	DataGeneric                                // generic / raw data
 	DataCryptoMessage                          // cryptographic message data object
 	DataSBOM                                   // software bill of materials
+	DataOCIRootIndex                           // root OCI index
+	DataOCIBlob                                // oci blob data object
 )
 
 // String returns a human-readable representation of t.
@@ -160,6 +162,10 @@ func (t DataType) String() string {
 		return "Cryptographic Message"
 	case DataSBOM:
 		return "SBOM"
+	case DataOCIRootIndex:
+		return "OCI.RootIndex"
+	case DataOCIBlob:
+		return "OCI.Blob"
 	}
 	return "Unknown"
 }

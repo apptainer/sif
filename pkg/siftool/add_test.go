@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -35,6 +35,12 @@ func Test_command_getAdd(t *testing.T) {
 				"--datatype", "5",
 				"--signhash", "1",
 				"--signentity", "433FE984155206BD962725E20E8713472A879943",
+			},
+		},
+		{
+			name: "DataOCIRootIndex",
+			flags: []string{
+				"--datatype", "10",
 			},
 		},
 	}

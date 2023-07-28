@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // Copyright (c) 2018, Divya Cote <divya.cote@gmail.com> All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
@@ -229,6 +229,14 @@ func writeInfo(w io.Writer, v sif.Descriptor) error {
 		}
 
 		fmt.Fprintf(tw, "\tFormat:\t%v\n", f)
+
+	case sif.DataOCIRootIndex, sif.DataOCIBlob:
+		h, err := v.OCIBlobDigest()
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(tw, "\tDigest:\t%s\n", h)
 	}
 
 	return tw.Flush()

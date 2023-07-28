@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"testing"
 
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sebdah/goldie/v2"
 )
 
@@ -392,6 +393,53 @@ func TestDescriptor_SBOMMetadata(t *testing.T) {
 				if got, want := f, tt.wantFormat; got != want {
 					t.Fatalf("got format %v, want %v", got, want)
 				}
+			}
+		})
+	}
+}
+
+func TestDescriptor_OCIBlobMetadata(t *testing.T) {
+	rd := rawDescriptor{
+		DataType: DataOCIBlob,
+	}
+	if err := rd.setExtra(newOCIBlobDigest()); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name       string
+		rd         rawDescriptor
+		wantDigest v1.Hash
+		wantErr    error
+	}{
+		{
+			name: "UnexpectedDataType",
+			rd: rawDescriptor{
+				DataType: DataGeneric,
+			},
+			wantErr: &unexpectedDataTypeError{DataGeneric, []DataType{DataOCIBlob, DataOCIRootIndex}},
+		},
+		{
+			name: "OK",
+			rd:   rd,
+			wantDigest: v1.Hash{
+				Algorithm: "sha256",
+				Hex:       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := Descriptor{raw: tt.rd}
+
+			h, err := d.OCIBlobDigest()
+
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+
+			if got, want := h, tt.wantDigest; got != want {
+				t.Fatalf("got digest %v, want %v", got, want)
 			}
 		})
 	}
