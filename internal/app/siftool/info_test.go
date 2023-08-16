@@ -394,24 +394,19 @@ func TestApp_Dump(t *testing.T) {
 		},
 		{
 			name:    "InvalidObjectID",
-			path:    filepath.Join(corpus, "one-group-signed-pgp.sif"),
+			path:    filepath.Join(corpus, "one-group.sif"),
 			id:      0,
 			wantErr: sif.ErrInvalidObjectID,
 		},
 		{
 			name: "One",
-			path: filepath.Join(corpus, "one-group-signed-pgp.sif"),
+			path: filepath.Join(corpus, "one-group.sif"),
 			id:   1,
 		},
 		{
 			name: "Two",
-			path: filepath.Join(corpus, "one-group-signed-pgp.sif"),
+			path: filepath.Join(corpus, "one-group.sif"),
 			id:   2,
-		},
-		{
-			name: "Three",
-			path: filepath.Join(corpus, "one-group-signed-pgp.sif"),
-			id:   3,
 		},
 	}
 	for _, tt := range tests {

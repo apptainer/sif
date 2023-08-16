@@ -1,5 +1,5 @@
-github.com/ProtonMail/go-crypto v0.0.0-20230528122434-6f98819771a1 h1:JMDGhoQvXNTqH6Y3MC0IUw6tcZvaUdujNqzK2HYWZc8=
-github.com/ProtonMail/go-crypto v0.0.0-20230528122434-6f98819771a1/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
+github.com/ProtonMail/go-crypto v0.0.0-20230710112148-e01326fd72eb h1:RU+Ff2vE68zFQSoBqlb/LChFztEWWJ9EZ8LU4gA3ubU=
+github.com/ProtonMail/go-crypto v0.0.0-20230710112148-e01326fd72eb/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/bwesterb/go-ristretto v1.2.3/go.mod h1:fUIoIZaG73pV5biE2Blr2xEzDoMj7NFEuV9ekS419A0=
 github.com/cespare/xxhash/v2 v2.2.0 h1:DC2CZ1Ep5Y4k3ZQ899DldepgrayRUGE6BBZ/cd9Cj44=
