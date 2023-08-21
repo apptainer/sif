@@ -115,7 +115,6 @@ func (e *unexpectedDataTypeError) Error() string {
 }
 
 func (e *unexpectedDataTypeError) Is(target error) bool {
-	//nolint:errorlint // don't compare wrapped errors in Is()
 	t, ok := target.(*unexpectedDataTypeError)
 	if !ok {
 		return false
