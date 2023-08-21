@@ -23,7 +23,6 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 	pgperrors "github.com/ProtonMail/go-crypto/openpgp/errors"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
-	"github.com/sebdah/goldie/v2"
 )
 
 var testMessage = `{"One":1,"Two":2}
@@ -38,6 +37,7 @@ func Test_clearsignEncoder_signMessage(t *testing.T) {
 	tests := []struct {
 		name     string
 		en       *clearsignEncoder
+		de       *clearsignDecoder
 		wantErr  bool
 		wantHash crypto.Hash
 	}{
@@ -49,6 +49,7 @@ func Test_clearsignEncoder_signMessage(t *testing.T) {
 		{
 			name:     "OK",
 			en:       newClearsignEncoder(e, fixedTime),
+			de:       newClearsignDecoder(openpgp.EntityList{e}),
 			wantHash: crypto.SHA256,
 		},
 	}
@@ -68,8 +69,15 @@ func Test_clearsignEncoder_signMessage(t *testing.T) {
 					t.Errorf("got hash %v, want %v", got, want)
 				}
 
-				g := goldie.New(t, goldie.WithTestNameForDir(true))
-				g.Assert(t, tt.name, b.Bytes())
+				var vr VerifyResult
+				b, err := tt.de.verifyMessage(context.Background(), bytes.NewReader(b.Bytes()), ht, &vr)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if got, want := string(b), testMessage; got != want {
+					t.Errorf("got message '%v', want '%v'", got, want)
+				}
 			}
 		})
 	}

@@ -21,7 +21,6 @@ import (
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/apptainer/sif/v2/pkg/sif"
-	"github.com/sebdah/goldie/v2"
 )
 
 func TestOptSignGroupObjects(t *testing.T) {
@@ -367,12 +366,33 @@ func TestGroupSigner_Sign(t *testing.T) {
 					}
 				})
 
-				if err := fi.UnloadContainer(); err != nil {
-					t.Error(err)
+				d, err := fi.GetDescriptor(sif.WithDataType(sif.DataSignature))
+				if err != nil {
+					t.Fatal(err)
 				}
 
-				g := goldie.New(t, goldie.WithTestNameForDir(true))
-				g.Assert(t, tt.name, buf.Bytes())
+				if got, want := d.GroupID(), uint32(0); got != want {
+					t.Errorf("got group ID %v, want %v", got, want)
+				}
+
+				id, isGroup := d.LinkedID()
+				if got, want := id, tt.gs.id; got != want {
+					t.Errorf("got linked ID %v, want %v", got, want)
+				}
+				if !isGroup {
+					t.Error("got linked object, want linked group")
+				}
+
+				ht, fp, err := d.SignatureMetadata()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got, want := ht, crypto.SHA256; got != want {
+					t.Errorf("got hash %v, want %v", got, want)
+				}
+				if got, want := fp, tt.gs.fp; !bytes.Equal(got, want) {
+					t.Errorf("got fingerprint %v, want %v", got, want)
+				}
 			}
 		})
 	}
@@ -555,6 +575,7 @@ func TestNewSigner(t *testing.T) {
 	}
 }
 
+//nolint:maintidx
 func TestSigner_Sign(t *testing.T) {
 	e := getTestEntity(t)
 
@@ -563,176 +584,248 @@ func TestSigner_Sign(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sv := getTestSigner(t, "ed25519-private.pem", crypto.Hash(0))
+	ss := getTestSigner(t, "ed25519-private.pem", crypto.Hash(0))
+	sv := getTestVerifier(t, "ed25519-public.pem", crypto.Hash(0))
 
 	tests := []struct {
-		name      string
-		inputFile string
-		opts      []SignerOpt
-		wantErr   bool
+		name       string
+		inputFile  string
+		signOpts   []SignerOpt
+		verifyOpts []VerifierOpt
+		wantErr    bool
 	}{
 		{
 			name:      "EncryptedKey",
 			inputFile: "one-group.sif",
-			opts:      []SignerOpt{OptSignWithEntity(encrypted)},
+			signOpts:  []SignerOpt{OptSignWithEntity(encrypted)},
 			wantErr:   true,
 		},
 		{
 			name:      "OneGroupDSSE",
 			inputFile: "one-group.sif",
-			opts: []SignerOpt{
-				OptSignWithSigner(sv),
+			signOpts: []SignerOpt{
+				OptSignWithSigner(ss),
 				OptSignWithTime(fixedTime),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithVerifier(sv),
 			},
 		},
 		{
 			name:      "OneGroupPGP",
 			inputFile: "one-group.sif",
-			opts: []SignerOpt{
+			signOpts: []SignerOpt{
 				OptSignWithEntity(e),
 				OptSignWithTime(fixedTime),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithKeyRing(openpgp.EntityList{e}),
 			},
 		},
 		{
 			name:      "TwoGroupsDSSE",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
-				OptSignWithSigner(sv),
+			signOpts: []SignerOpt{
+				OptSignWithSigner(ss),
 				OptSignWithTime(fixedTime),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithVerifier(sv),
 			},
 		},
 		{
 			name:      "TwoGroupsPGP",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
+			signOpts: []SignerOpt{
 				OptSignWithEntity(e),
 				OptSignWithTime(fixedTime),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithKeyRing(openpgp.EntityList{e}),
 			},
 		},
 		{
 			name:      "OptSignGroup1DSSE",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
-				OptSignWithSigner(sv),
+			signOpts: []SignerOpt{
+				OptSignWithSigner(ss),
 				OptSignWithTime(fixedTime),
 				OptSignGroup(1),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithVerifier(sv),
+				OptVerifyGroup(1),
 			},
 		},
 		{
 			name:      "OptSignGroup1PGP",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
+			signOpts: []SignerOpt{
 				OptSignWithEntity(e),
 				OptSignWithTime(fixedTime),
 				OptSignGroup(1),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithKeyRing(openpgp.EntityList{e}),
+				OptVerifyGroup(1),
 			},
 		},
 		{
 			name:      "OptSignGroup2DSSE",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
-				OptSignWithSigner(sv),
+			signOpts: []SignerOpt{
+				OptSignWithSigner(ss),
 				OptSignWithTime(fixedTime),
 				OptSignGroup(2),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithVerifier(sv),
+				OptVerifyGroup(2),
 			},
 		},
 		{
 			name:      "OptSignGroup2PGP",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
+			signOpts: []SignerOpt{
 				OptSignWithEntity(e),
 				OptSignWithTime(fixedTime),
 				OptSignGroup(2),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithKeyRing(openpgp.EntityList{e}),
+				OptVerifyGroup(2),
 			},
 		},
 		{
 			name:      "OptSignObject1DSSE",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
-				OptSignWithSigner(sv),
+			signOpts: []SignerOpt{
+				OptSignWithSigner(ss),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(1),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithVerifier(sv),
+				OptVerifyObject(1),
 			},
 		},
 		{
 			name:      "OptSignObject1PGP",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
+			signOpts: []SignerOpt{
 				OptSignWithEntity(e),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(1),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithKeyRing(openpgp.EntityList{e}),
+				OptVerifyObject(1),
 			},
 		},
 		{
 			name:      "OptSignObject2DSSE",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
-				OptSignWithSigner(sv),
+			signOpts: []SignerOpt{
+				OptSignWithSigner(ss),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(2),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithVerifier(sv),
+				OptVerifyObject(2),
 			},
 		},
 		{
 			name:      "OptSignObject2PGP",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
+			signOpts: []SignerOpt{
 				OptSignWithEntity(e),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(2),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithKeyRing(openpgp.EntityList{e}),
+				OptVerifyObject(2),
 			},
 		},
 		{
 			name:      "OptSignObject3DSSE",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
-				OptSignWithSigner(sv),
+			signOpts: []SignerOpt{
+				OptSignWithSigner(ss),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(3),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithVerifier(sv),
+				OptVerifyObject(3),
 			},
 		},
 		{
 			name:      "OptSignObject3PGP",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
+			signOpts: []SignerOpt{
 				OptSignWithEntity(e),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(3),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithKeyRing(openpgp.EntityList{e}),
+				OptVerifyObject(3),
 			},
 		},
 		{
 			name:      "OptSignObjectsDSSE",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
-				OptSignWithSigner(sv),
+			signOpts: []SignerOpt{
+				OptSignWithSigner(ss),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(1, 2, 3),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithVerifier(sv),
+				OptVerifyObject(1),
+				OptVerifyObject(2),
+				OptVerifyObject(3),
 			},
 		},
 		{
 			name:      "OptSignObjectsPGP",
 			inputFile: "two-groups.sif",
-			opts: []SignerOpt{
+			signOpts: []SignerOpt{
 				OptSignWithEntity(e),
 				OptSignWithTime(fixedTime),
 				OptSignObjects(1, 2, 3),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithKeyRing(openpgp.EntityList{e}),
+				OptVerifyObject(1),
+				OptVerifyObject(2),
+				OptVerifyObject(3),
 			},
 		},
 		{
 			name:      "OptSignDeterministicDSSE",
 			inputFile: "one-group.sif",
-			opts: []SignerOpt{
-				OptSignWithSigner(sv),
+			signOpts: []SignerOpt{
+				OptSignWithSigner(ss),
 				OptSignWithTime(fixedTime),
 				OptSignDeterministic(),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithVerifier(sv),
 			},
 		},
 		{
 			name:      "OptSignDeterministicPGP",
 			inputFile: "one-group.sif",
-			opts: []SignerOpt{
+			signOpts: []SignerOpt{
 				OptSignWithEntity(e),
 				OptSignWithTime(fixedTime),
 				OptSignDeterministic(),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithKeyRing(openpgp.EntityList{e}),
 			},
 		},
 	}
@@ -758,7 +851,7 @@ func TestSigner_Sign(t *testing.T) {
 				}
 			})
 
-			s, err := NewSigner(f, tt.opts...)
+			s, err := NewSigner(f, tt.signOpts...)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -767,8 +860,16 @@ func TestSigner_Sign(t *testing.T) {
 				t.Fatalf("got error %v, wantErr %v", err, tt.wantErr)
 			}
 
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, buf.Bytes())
+			if !tt.wantErr {
+				v, err := NewVerifier(f, tt.verifyOpts...)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if err := v.Verify(); err != nil {
+					t.Fatal(err)
+				}
+			}
 		})
 	}
 }
