@@ -682,7 +682,7 @@ func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
 	return nil
 }
 
-// SetMetadata the metadata of the data object with id to md, according to opts.
+// SetMetadata sets the metadata of the data object with id to md, according to opts.
 //
 // By default, the image/object modification times are set to the current time for
 // non-deterministic images, and unset otherwise. To override this, consider using
