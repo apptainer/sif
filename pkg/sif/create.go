@@ -682,7 +682,11 @@ func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
 	return nil
 }
 
-// SetMetadata writes the mutated descriptors and returns an error if any.
+// SetMetadata the metadata of the data object with id to md, according to opts.
+//
+// By default, the image/object modification times are set to the current time for
+// non-deterministic images, and unset otherwise. To override this, consider using
+// OptSetDeterministic or OptSetWithTime.
 func (f *FileImage) SetMetadata(id uint32, md encoding.BinaryMarshaler, opts ...SetOpt) error {
 	so := setOpts{}
 
