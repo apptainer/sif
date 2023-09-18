@@ -80,10 +80,5 @@ func AddCommands(cmd *cobra.Command, opts ...CommandOpt) error {
 		c.getSetPrim(),
 	)
 
-	if c.opts.experimental {
-		cmd.AddCommand(c.getMount())
-		cmd.AddCommand(c.getUnmount())
-	}
-
 	return nil
 }
