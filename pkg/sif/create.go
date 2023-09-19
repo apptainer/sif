@@ -352,25 +352,6 @@ func zeroData(fimg *FileImage, descr *rawDescriptor) error {
 	return nil
 }
 
-func resetDescriptor(fimg *FileImage, index int) error {
-	// If we remove the primary partition, set the global header Arch field to HdrArchUnknown
-	// to indicate that the SIF file doesn't include a primary partition and no dependency
-	// on any architecture exists.
-	if fimg.rds[index].isPartitionOfType(PartPrimSys) {
-		fimg.h.Arch = hdrArchUnknown
-	}
-
-	offset := fimg.h.DescriptorsOffset + int64(index)*int64(binary.Size(fimg.rds[0]))
-
-	// first, move to descriptor offset
-	if _, err := fimg.rw.Seek(offset, io.SeekStart); err != nil {
-		return err
-	}
-
-	var emptyDesc rawDescriptor
-	return binary.Write(fimg.rw, binary.LittleEndian, emptyDesc)
-}
-
 // addOpts accumulates object add options.
 type addOpts struct {
 	t time.Time
@@ -551,15 +532,17 @@ func (f *FileImage) DeleteObject(id uint32, opts ...DeleteOpt) error {
 	f.h.DescriptorsFree++
 	f.h.ModifiedAt = do.t.Unix()
 
-	index := 0
-	for i, od := range f.rds {
-		if od.ID == id {
-			index = i
-			break
-		}
+	// If we remove the primary partition, set the global header Arch field to HdrArchUnknown
+	// to indicate that the SIF file doesn't include a primary partition and no dependency
+	// on any architecture exists.
+	if d.isPartitionOfType(PartPrimSys) {
+		f.h.Arch = hdrArchUnknown
 	}
 
-	if err := resetDescriptor(f, index); err != nil {
+	// Reset rawDescripter with empty struct
+	*d = rawDescriptor{}
+
+	if err := f.writeDescriptors(); err != nil {
 		return fmt.Errorf("%w", err)
 	}
 
