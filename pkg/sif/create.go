@@ -12,6 +12,7 @@
 package sif
 
 import (
+	"encoding"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -672,6 +673,48 @@ func (f *FileImage) SetPrimPart(id uint32, opts ...SetOpt) error {
 	}
 
 	f.h.Arch = p.Arch
+	f.h.ModifiedAt = so.t.Unix()
+
+	if err := f.writeHeader(); err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
+}
+
+// SetMetadata sets the metadata of the data object with id to md, according to opts.
+//
+// By default, the image/object modification times are set to the current time for
+// non-deterministic images, and unset otherwise. To override this, consider using
+// OptSetDeterministic or OptSetWithTime.
+func (f *FileImage) SetMetadata(id uint32, md encoding.BinaryMarshaler, opts ...SetOpt) error {
+	so := setOpts{}
+
+	if !f.isDeterministic() {
+		so.t = time.Now()
+	}
+
+	for _, opt := range opts {
+		if err := opt(&so); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+	}
+
+	rd, err := f.getDescriptor(WithID(id))
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	if err := rd.setExtra(md); err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	rd.ModifiedAt = so.t.Unix()
+
+	if err := f.writeDescriptors(); err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
 	f.h.ModifiedAt = so.t.Unix()
 
 	if err := f.writeHeader(); err != nil {
