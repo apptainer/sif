@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230717121422-5aa5874ade95
-	github.com/google/go-containerregistry v0.16.1
+	github.com/google/go-containerregistry v0.17.0
 	github.com/google/uuid v1.4.0
 	github.com/sebdah/goldie/v2 v2.5.3
 	github.com/secure-systems-lab/go-securesystemslib v0.7.0
