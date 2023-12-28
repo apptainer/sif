@@ -552,6 +552,69 @@ func TestDeleteObject(t *testing.T) {
 	}
 }
 
+func TestDeleteObjectAndAddObject(t *testing.T) {
+	tests := []struct {
+		name string
+		id   uint32
+		opts []DeleteOpt
+	}{
+		{
+			name: "Compact",
+			id:   2,
+			opts: []DeleteOpt{
+				OptDeleteCompact(true),
+			},
+		},
+		{
+			name: "NoCompact",
+			id:   2,
+		},
+		{
+			name: "Zero",
+			id:   2,
+			opts: []DeleteOpt{
+				OptDeleteZero(true),
+			},
+		},
+		{
+			name: "ZeroCompact",
+			id:   2,
+			opts: []DeleteOpt{
+				OptDeleteZero(true),
+				OptDeleteCompact(true),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var b Buffer
+
+			f, err := CreateContainer(&b,
+				OptCreateDeterministic(),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataGeneric, []byte("abc")),
+					getDescriptorInput(t, DataGeneric, []byte("def")),
+				),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err := f.DeleteObject(tt.id, tt.opts...); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := f.AddObject(getDescriptorInput(t, DataGeneric, []byte("ghi"))); err != nil {
+				t.Fatal(err)
+			}
+
+			g := goldie.New(t, goldie.WithTestNameForDir(true))
+			g.Assert(t, tt.name, b.Bytes())
+		})
+	}
+}
+
 func TestSetPrimPart(t *testing.T) {
 	tests := []struct {
 		name       string
