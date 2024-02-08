@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // Copyright (c) 2018, Divya Cote <divya.cote@gmail.com> All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
@@ -25,7 +25,7 @@ func (c *command) getHeader() *cobra.Command {
 		Example: c.opts.rootPath + " header image.sif",
 		Args:    cobra.ExactArgs(1),
 		PreRunE: c.initApp,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			return c.app.Header(args[0])
 		},
 		DisableFlagsInUseLine: true,
