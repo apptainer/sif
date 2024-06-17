@@ -49,6 +49,9 @@ jobs:
         run: |
           golangci-lint run
 
+      - name: Install Cosign
+        run: go install github.com/sigstore/cosign/v2/cmd/cosign@latest
+
       - name: Run Tests
         run: go test -coverprofile cover.out -race ./...
 
