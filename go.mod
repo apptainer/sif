@@ -1,6 +1,8 @@
 module github.com/apptainer/sif/v2
 
-go 1.20
+go 1.21
+
+toolchain go1.21.9
 
 require (
 	github.com/ProtonMail/go-crypto v1.0.0
