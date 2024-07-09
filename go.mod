@@ -6,7 +6,7 @@ toolchain go1.21.9
 
 require (
 	github.com/ProtonMail/go-crypto v1.0.0
-	github.com/google/go-containerregistry v0.19.2
+	github.com/google/go-containerregistry v0.20.0
 	github.com/google/uuid v1.6.0
 	github.com/sebdah/goldie/v2 v2.5.3
 	github.com/secure-systems-lab/go-securesystemslib v0.8.0
