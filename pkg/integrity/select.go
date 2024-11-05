@@ -11,8 +11,11 @@ package integrity
 
 import (
 	"bytes"
+	"cmp"
 	"errors"
 	"fmt"
+	"math"
+	"slices"
 	"sort"
 
 	"github.com/ProtonMail/go-crypto/openpgp/clearsign"
@@ -24,21 +27,18 @@ var (
 	errNoGroupsFound = errors.New("no groups found")
 )
 
-// insertSorted inserts unique vals into the sorted slice s.
-func insertSorted(s []uint32, vals ...uint32) []uint32 {
-	for _, val := range vals {
-		val := val
+// insertSorted inserts v into the sorted slice s. If s already contains v, the original slice is
+// returned.
+func insertSorted[S ~[]E, E cmp.Ordered](s S, v E) S { //nolint:ireturn
+	return insertSortedFunc(s, v, cmp.Compare[E])
+}
 
-		i := sort.Search(len(s), func(i int) bool { return s[i] >= val })
-		if i < len(s) && s[i] == val {
-			continue
-		}
-
-		s = append(s, 0)
-		copy(s[i+1:], s[i:])
-		s[i] = val
+// insertSorted inserts v into the sorted slice s, using comparison function cmp. If s already
+// contains v, the original slice is returned.
+func insertSortedFunc[S ~[]E, E any](s S, v E, cmp func(E, E) int) S { //nolint:ireturn
+	if i, found := slices.BinarySearchFunc(s, v, cmp); !found {
+		return slices.Insert(s, i, v)
 	}
-
 	return s
 }
 
@@ -147,20 +147,16 @@ func getGroupSignatures(f *sif.FileImage, groupID uint32, legacy bool) ([]sif.De
 // in the object group with identifier groupID. If no such object group is found, errGroupNotFound
 // is returned.
 func getGroupMinObjectID(f *sif.FileImage, groupID uint32) (uint32, error) {
-	minID := ^uint32(0)
+	var minID uint32 = math.MaxUint32
 
 	f.WithDescriptors(func(od sif.Descriptor) bool {
-		if od.GroupID() != groupID {
-			return false
-		}
-
-		if id := od.ID(); id < minID {
-			minID = id
+		if od.GroupID() == groupID {
+			minID = min(minID, od.ID())
 		}
 		return false
 	})
 
-	if minID == ^uint32(0) {
+	if minID == math.MaxUint32 {
 		return 0, errGroupNotFound
 	}
 	return minID, nil

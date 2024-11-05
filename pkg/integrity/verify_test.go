@@ -1,12 +1,13 @@
 // Copyright (c) Contributors to the Apptainer project, established as
-//   Apptainer a Series of LF Projects LLC.
-//   For website terms of use, trademark policy, privacy policy and other
-//   project policies see https://lfprojects.org/policies
+//
+//	Apptainer a Series of LF Projects LLC.
+//	For website terms of use, trademark policy, privacy policy and other
+//	project policies see https://lfprojects.org/policies
+//
 // Copyright (c) 2020-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
-
 package integrity
 
 import (
@@ -55,7 +56,6 @@ func TestGroupVerifier_signatures(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			v := &groupVerifier{
 				f:       tt.f,
@@ -148,7 +148,6 @@ func TestGroupVerifier_verify(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			ods := make([]sif.Descriptor, len(tt.objectIDs))
 			for i, id := range tt.objectIDs {
@@ -215,7 +214,6 @@ func TestLegacyGroupVerifier_signatures(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			v := &legacyGroupVerifier{
 				f:       tt.f,
@@ -283,7 +281,6 @@ func TestLegacyGroupVerifier_verify(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			ods, err := getGroupObjects(tt.f, tt.groupID)
 			if err != nil {
@@ -348,7 +345,6 @@ func TestLegacyObjectVerifier_signatures(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			od, err := tt.f.GetDescriptor(sif.WithID(tt.id))
 			if err != nil {
@@ -424,7 +420,6 @@ func TestLegacyObjectVerifier_verify(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			od, err := tt.f.GetDescriptor(sif.WithID(tt.id))
 			if err != nil {
@@ -681,7 +676,6 @@ func TestNewVerifier(t *testing.T) { //nolint:maintidx
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			v, err := NewVerifier(tt.fi, tt.opts...)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
@@ -849,7 +843,6 @@ func TestVerifier_AnySignedBy(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			v := Verifier{tasks: tt.tasks}
 
@@ -945,7 +938,6 @@ func TestVerifier_AllSignedBy(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			v := Verifier{tasks: tt.tasks}
 
@@ -1082,7 +1074,6 @@ func TestVerifier_Verify(t *testing.T) {
 			testCallback:    true,
 			wantCBSignature: sigPGP,
 			wantCBVerified:  verifiedPGP,
-			wantCBKeys:      []crypto.PublicKey{},
 			wantCBEntity:    e,
 		},
 		{
@@ -1094,14 +1085,12 @@ func TestVerifier_Verify(t *testing.T) {
 			testCallback:    true,
 			ignoreError:     true,
 			wantCBSignature: sigPGP,
-			wantCBKeys:      []crypto.PublicKey{},
 			wantCBEntity:    nil,
 			wantCBErr:       &SignatureNotValidError{ID: 3},
 		},
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			var vr VerifyResult
 

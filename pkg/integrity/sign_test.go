@@ -16,7 +16,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
@@ -72,7 +72,6 @@ func TestOptSignGroupObjects(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			gs := groupSigner{f: twoGroupImage, id: tt.groupID}
 
@@ -86,7 +85,7 @@ func TestOptSignGroupObjects(t *testing.T) {
 				for _, od := range gs.ods {
 					got = append(got, od.ID())
 				}
-				if want := tt.ids; !reflect.DeepEqual(got, want) {
+				if want := tt.ids; !slices.Equal(got, want) {
 					t.Errorf("got objects %v, want %v", got, want)
 				}
 			}
@@ -199,7 +198,6 @@ func TestNewGroupSigner(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			en := newClearsignEncoder(getTestEntity(t), fixedTime)
 
@@ -225,7 +223,7 @@ func TestNewGroupSigner(t *testing.T) {
 				for _, od := range s.ods {
 					got = append(got, od.ID())
 				}
-				if want := tt.wantObjects; !reflect.DeepEqual(got, want) {
+				if want := tt.wantObjects; !slices.Equal(got, want) {
 					t.Errorf("got objects %v, want %v", got, want)
 				}
 
@@ -343,7 +341,6 @@ func TestGroupSigner_Sign(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			di, err := tt.gs.sign(context.Background())
 			if (err != nil) != tt.wantErr {
@@ -538,7 +535,6 @@ func TestNewSigner(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			s, err := NewSigner(tt.fi, tt.opts...)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
@@ -565,7 +561,7 @@ func TestNewSigner(t *testing.T) {
 							got = append(got, od.ID())
 						}
 
-						if !reflect.DeepEqual(got, want) {
+						if !slices.Equal(got, want) {
 							t.Errorf("got objects %v, want %v", got, want)
 						}
 					}
@@ -831,8 +827,6 @@ func TestSigner_Sign(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.name, func(t *testing.T) {
 			b, err := os.ReadFile(filepath.Join(corpus, tt.inputFile))
 			if err != nil {
