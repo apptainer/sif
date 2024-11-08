@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/apptainer/sif/v2/pkg/sif"
 )
 
@@ -199,7 +200,7 @@ func TestNewGroupSigner(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			en := newClearsignEncoder(getTestEntity(t), fixedTime)
+			en := newClearsignEncoder(getTestEntity(t), &packet.Config{Time: fixedTime})
 
 			s, err := newGroupSigner(en, tt.fi, tt.groupID, tt.opts...)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
@@ -258,12 +259,12 @@ func TestGroupSigner_Sign(t *testing.T) {
 	}
 
 	e := getTestEntity(t)
-	clearsign := newClearsignEncoder(e, fixedTime)
+	clearsign := newClearsignEncoder(e, &packet.Config{Time: fixedTime})
 
 	encrypted := getTestEntity(t)
 	encrypted.PrivateKey.Encrypted = true
 
-	clearsignEncrypted := newClearsignEncoder(encrypted, fixedTime)
+	clearsignEncrypted := newClearsignEncoder(encrypted, &packet.Config{Time: fixedTime})
 
 	tests := []struct {
 		name    string
@@ -452,6 +453,11 @@ func TestNewSigner(t *testing.T) {
 				OptSignObjects(1),
 			},
 			wantErr: sif.ErrNoObjects,
+		},
+		{
+			name:    "NoKeyMaterial",
+			fi:      oneGroupImage,
+			wantErr: ErrNoKeyMaterial,
 		},
 		{
 			name: "InvalidObjectID",
@@ -819,6 +825,18 @@ func TestSigner_Sign(t *testing.T) {
 				OptSignWithEntity(e),
 				OptSignWithTime(fixedTime),
 				OptSignDeterministic(),
+			},
+			verifyOpts: []VerifierOpt{
+				OptVerifyWithKeyRing(openpgp.EntityList{e}),
+			},
+		},
+		{
+			name:      "OptSignWithoutPGPSignatureSalt",
+			inputFile: "one-group.sif",
+			signOpts: []SignerOpt{
+				OptSignWithEntity(e),
+				OptSignWithTime(fixedTime),
+				OptSignWithoutPGPSignatureSalt(),
 			},
 			verifyOpts: []VerifierOpt{
 				OptVerifyWithKeyRing(openpgp.EntityList{e}),

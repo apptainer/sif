@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -43,12 +43,12 @@ func Test_clearsignEncoder_signMessage(t *testing.T) {
 	}{
 		{
 			name:    "EncryptedKey",
-			en:      newClearsignEncoder(encrypted, fixedTime),
+			en:      newClearsignEncoder(encrypted, &packet.Config{Time: fixedTime}),
 			wantErr: true,
 		},
 		{
 			name:     "OK",
-			en:       newClearsignEncoder(e, fixedTime),
+			en:       newClearsignEncoder(e, &packet.Config{Time: fixedTime}),
 			de:       newClearsignDecoder(openpgp.EntityList{e}),
 			wantHash: crypto.SHA256,
 		},
