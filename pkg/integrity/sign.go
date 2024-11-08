@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/apptainer/sif/v2/pkg/sif"
 	"github.com/sigstore/sigstore/pkg/signature"
 )
@@ -183,13 +184,14 @@ func (gs *groupSigner) sign(ctx context.Context) (sif.DescriptorInput, error) {
 }
 
 type signOpts struct {
-	ss            []signature.Signer
-	e             *openpgp.Entity
-	groupIDs      []uint32
-	objectIDs     [][]uint32
-	timeFunc      func() time.Time
-	deterministic bool
-	ctx           context.Context //nolint:containedctx
+	ss                      []signature.Signer
+	e                       *openpgp.Entity
+	groupIDs                []uint32
+	objectIDs               [][]uint32
+	timeFunc                func() time.Time
+	deterministic           bool
+	ctx                     context.Context //nolint:containedctx
+	withoutPGPSignatureSalt bool
 }
 
 // SignerOpt are used to configure so.
@@ -257,6 +259,16 @@ func OptSignDeterministic() SignerOpt {
 func OptSignWithContext(ctx context.Context) SignerOpt {
 	return func(so *signOpts) error {
 		so.ctx = ctx
+		return nil
+	}
+}
+
+// OptSignWithoutPGPSignatureSalt disables the addition of a salt notation for v4 and v5 PGP keys.
+// While this increases determinism, it should be used with caution as the salt notation increases
+// protection for certain kinds of attacks.
+func OptSignWithoutPGPSignatureSalt() SignerOpt {
+	return func(so *signOpts) error {
+		so.withoutPGPSignatureSalt = true
 		return nil
 	}
 }
@@ -343,11 +355,10 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 	case so.ss != nil:
 		en = newDSSEEncoder(so.ss)
 	case so.e != nil:
-		timeFunc := time.Now
-		if so.timeFunc != nil {
-			timeFunc = so.timeFunc
-		}
-		en = newClearsignEncoder(so.e, timeFunc)
+		en = newClearsignEncoder(so.e, &packet.Config{
+			Time:                                  so.timeFunc,
+			NonDeterministicSignaturesViaNotation: packet.BoolPointer(!so.withoutPGPSignatureSalt),
+		})
 		commonOpts = append(commonOpts, optSignGroupFingerprint(so.e.PrimaryKey.Fingerprint))
 	default:
 		return nil, fmt.Errorf("integrity: %w", ErrNoKeyMaterial)
