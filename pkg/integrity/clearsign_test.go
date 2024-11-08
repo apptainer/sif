@@ -55,7 +55,6 @@ func Test_clearsignEncoder_signMessage(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			b := bytes.Buffer{}
 
@@ -174,7 +173,6 @@ func Test_clearsignDecoder_verifyMessage(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			b := bytes.Buffer{}
 

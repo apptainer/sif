@@ -66,8 +66,6 @@ func Test_readableSize(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.name, func(t *testing.T) {
 			if got, want := readableSize(tt.size), tt.want; got != want {
 				t.Errorf("got %v, want %v", got, want)

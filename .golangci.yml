@@ -10,21 +10,21 @@ linters:
     - bodyclose
     - containedctx
     - contextcheck
+    - copyloopvar
     - decorder
     - dogsled
     - dupl
     - dupword
+    - err113
     - errcheck
     - errchkjson
     - errname
     - errorlint
-    - exportloopref
     - forcetypeassert
     - gochecknoinits
     - gocritic
     - godot
     - godox
-    - goerr113
     - gofumpt
     - goimports
     - gomodguard
@@ -35,6 +35,7 @@ linters:
     - grouper
     - ineffassign
     - interfacebloat
+    - intrange
     - ireturn
     - lll
     - maintidx

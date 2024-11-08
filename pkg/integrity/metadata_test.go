@@ -50,7 +50,6 @@ func TestGetHeaderMetadata(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			md, err := getHeaderMetadata(tt.header, tt.hash)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
@@ -106,7 +105,6 @@ func TestGetObjectMetadata(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			md, err := getObjectMetadata(tt.relativeID, tt.descr, tt.data, tt.hash)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
@@ -159,7 +157,6 @@ func TestGetImageMetadata(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			md, err := getImageMetadata(f, tt.minID, tt.ods, tt.hash)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {

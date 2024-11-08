@@ -96,7 +96,9 @@ func newOCIBlobDigest() *ociBlob {
 
 // MarshalBinary encodes ob into binary format.
 func (ob *ociBlob) MarshalBinary() ([]byte, error) {
-	ob.digest.Hex = hex.EncodeToString(ob.hasher.Sum(nil))
+	if ob.digest.Hex == "" {
+		ob.digest.Hex = hex.EncodeToString(ob.hasher.Sum(nil))
+	}
 
 	return ob.digest.MarshalText()
 }

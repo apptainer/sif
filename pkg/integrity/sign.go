@@ -17,7 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
@@ -142,13 +142,7 @@ func (gs *groupSigner) addObject(od sif.Descriptor) error {
 	}
 
 	// Insert into sorted descriptor list, if not already present.
-	i := sort.Search(len(gs.ods), func(i int) bool { return gs.ods[i].ID() >= od.ID() })
-	if i < len(gs.ods) && gs.ods[i].ID() == od.ID() {
-		return nil
-	}
-	gs.ods = append(gs.ods, sif.Descriptor{})
-	copy(gs.ods[i+1:], gs.ods[i:])
-	gs.ods[i] = od
+	gs.ods = insertSortedFunc(gs.ods, od, func(a, b sif.Descriptor) int { return int(a.ID()) - int(b.ID()) })
 
 	return nil
 }
@@ -288,7 +282,7 @@ func withGroupedObjects(f *sif.FileImage, ids []uint32, fn func(uint32, []uint32
 		groupObjectIDs[groupID] = append(groupObjectIDs[groupID], id)
 	}
 
-	sort.Slice(groupIDs, func(i, j int) bool { return groupIDs[i] < groupIDs[j] })
+	slices.Sort(groupIDs)
 
 	for _, groupID := range groupIDs {
 		if err := fn(groupID, groupObjectIDs[groupID]); err != nil {
@@ -347,11 +341,7 @@ func NewSigner(f *sif.FileImage, opts ...SignerOpt) (*Signer, error) {
 	var en encoder
 	switch {
 	case so.ss != nil:
-		var err error
-		en, err = newDSSEEncoder(so.ss)
-		if err != nil {
-			return nil, fmt.Errorf("integrity: %w", err)
-		}
+		en = newDSSEEncoder(so.ss)
 	case so.e != nil:
 		timeFunc := time.Now
 		if so.timeFunc != nil {

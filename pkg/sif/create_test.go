@@ -11,6 +11,7 @@ package sif
 
 import (
 	"errors"
+	"math"
 	"os"
 	"testing"
 	"time"
@@ -19,27 +20,34 @@ import (
 )
 
 func TestNextAligned(t *testing.T) {
-	cases := []struct {
-		name     string
-		offset   int64
-		align    int
-		expected int64
+	tests := []struct {
+		name       string
+		offset     int64
+		align      int
+		wantOffset int64
+		wantErr    error
 	}{
-		{name: "align 0 to 0", offset: 0, align: 0, expected: 0},
-		{name: "align 1 to 0", offset: 1, align: 0, expected: 1},
-		{name: "align 0 to 1024", offset: 0, align: 1024, expected: 0},
-		{name: "align 1 to 1024", offset: 1, align: 1024, expected: 1024},
-		{name: "align 1023 to 1024", offset: 1023, align: 1024, expected: 1024},
-		{name: "align 1024 to 1024", offset: 1024, align: 1024, expected: 1024},
-		{name: "align 1025 to 1024", offset: 1025, align: 1024, expected: 2048},
+		{name: "align 0 to 0", offset: 0, align: 0, wantOffset: 0},
+		{name: "align 1 to 0", offset: 1, align: 0, wantOffset: 1},
+		{name: "align 0 to 1024", offset: 0, align: 1024, wantOffset: 0},
+		{name: "align 1 to 1024", offset: 1, align: 1024, wantOffset: 1024},
+		{name: "align 1023 to 1024", offset: 1023, align: 1024, wantOffset: 1024},
+		{name: "align 1024 to 1024", offset: 1024, align: 1024, wantOffset: 1024},
+		{name: "align 1025 to 1024", offset: 1025, align: 1024, wantOffset: 2048},
+		{name: "align max to 1024", offset: math.MaxInt64, align: 1024, wantErr: errAlignmentOverflow},
+		{name: "align max to max", offset: math.MaxInt64, align: math.MaxInt - 1, wantErr: errAlignmentOverflow},
 	}
 
-	for _, tc := range cases {
-		actual := nextAligned(tc.offset, tc.align)
-		if actual != tc.expected {
-			t.Errorf("nextAligned case: %q, offset: %d, align: %d, expecting: %d, actual: %d\n",
-				tc.name, tc.offset, tc.align, tc.expected, actual)
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			offset, err := nextAligned(tt.offset, tt.align)
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Errorf("got error %v, want %v", got, want)
+			}
+			if got, want := offset, tt.wantOffset; got != want {
+				t.Errorf("got offset %v, want %v", got, want)
+			}
+		})
 	}
 }
 
@@ -183,6 +191,13 @@ func TestCreateContainerAtPath(t *testing.T) {
 		wantErr error
 	}{
 		{
+			name: "ErrDescriptorCapacityNotSupported",
+			opts: []CreateOpt{
+				OptCreateWithDescriptorCapacity(math.MaxUint32),
+			},
+			wantErr: errDescriptorCapacityNotSupported,
+		},
+		{
 			name: "ErrInsufficientCapacity",
 			opts: []CreateOpt{
 				OptCreateDeterministic(),
@@ -287,513 +302,6 @@ func TestCreateContainerAtPath(t *testing.T) {
 				g := goldie.New(t, goldie.WithTestNameForDir(true))
 				g.Assert(t, tt.name, b)
 			}
-		})
-	}
-}
-
-func TestAddObject(t *testing.T) {
-	tests := []struct {
-		name       string
-		createOpts []CreateOpt
-		di         DescriptorInput
-		opts       []AddOpt
-		wantErr    error
-	}{
-		{
-			name: "ErrInsufficientCapacity",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptorCapacity(0),
-			},
-			di:      getDescriptorInput(t, DataGeneric, []byte{0xfe, 0xed}),
-			wantErr: errInsufficientCapacity,
-		},
-		{
-			name: "ErrPrimaryPartition",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataPartition, []byte{0xfa, 0xce},
-						OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
-					),
-				),
-			},
-			di: getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
-				OptPartitionMetadata(FsSquash, PartPrimSys, "amd64"),
-			),
-			wantErr: errPrimaryPartition,
-		},
-		{
-			name: "Deterministic",
-			createOpts: []CreateOpt{
-				OptCreateWithID("de170c43-36ab-44a8-bca9-1ea1a070a274"),
-				OptCreateWithTime(time.Unix(946702800, 0)),
-			},
-			di: getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
-			opts: []AddOpt{
-				OptAddDeterministic(),
-			},
-		},
-		{
-			name: "WithTime",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-			},
-			di: getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
-			opts: []AddOpt{
-				OptAddWithTime(time.Unix(946702800, 0)),
-			},
-		},
-		{
-			name: "Empty",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-			},
-			di: getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
-		},
-		{
-			name: "EmptyNotAligned",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-			},
-			di: getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
-				OptObjectAlignment(0),
-			),
-		},
-		{
-			name: "EmptyAligned",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-			},
-			di: getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce},
-				OptObjectAlignment(128),
-			),
-		},
-		{
-			name: "NotEmpty",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
-				),
-			},
-			di: getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
-				OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
-			),
-		},
-		{
-			name: "NotEmptyNotAligned",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
-				),
-			},
-			di: getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
-				OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
-				OptObjectAlignment(0),
-			),
-		},
-		{
-			name: "NotEmptyAligned",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
-				),
-			},
-			di: getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
-				OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
-				OptObjectAlignment(128),
-			),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var b Buffer
-
-			f, err := CreateContainer(&b, tt.createOpts...)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if got, want := f.AddObject(tt.di, tt.opts...), tt.wantErr; !errors.Is(got, want) {
-				t.Errorf("got error %v, want %v", got, want)
-			}
-
-			if err := f.UnloadContainer(); err != nil {
-				t.Error(err)
-			}
-
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, b.Bytes())
-		})
-	}
-}
-
-func TestDeleteObject(t *testing.T) {
-	tests := []struct {
-		name       string
-		createOpts []CreateOpt
-		id         uint32
-		opts       []DeleteOpt
-		wantErr    error
-	}{
-		{
-			name: "ErrObjectNotFound",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-			},
-			id:      1,
-			wantErr: ErrObjectNotFound,
-		},
-		{
-			name: "Zero",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
-				),
-			},
-			id: 1,
-			opts: []DeleteOpt{
-				OptDeleteZero(true),
-			},
-		},
-		{
-			name: "Compact",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
-				),
-			},
-			id: 1,
-			opts: []DeleteOpt{
-				OptDeleteCompact(true),
-			},
-		},
-		{
-			name: "ZeroCompact",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
-				),
-			},
-			id: 1,
-			opts: []DeleteOpt{
-				OptDeleteZero(true),
-				OptDeleteCompact(true),
-			},
-		},
-		{
-			name: "Deterministic",
-			createOpts: []CreateOpt{
-				OptCreateWithID("de170c43-36ab-44a8-bca9-1ea1a070a274"),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
-				),
-				OptCreateWithTime(time.Unix(946702800, 0)),
-			},
-			id: 1,
-			opts: []DeleteOpt{
-				OptDeleteDeterministic(),
-			},
-		},
-		{
-			name: "WithTime",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataGeneric, []byte{0xfa, 0xce}),
-				),
-			},
-			id: 1,
-			opts: []DeleteOpt{
-				OptDeleteWithTime(time.Unix(946702800, 0)),
-			},
-		},
-		{
-			name: "PrimaryPartition",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataPartition, []byte{0xfa, 0xce},
-						OptPartitionMetadata(FsSquash, PartPrimSys, "386"),
-					),
-				),
-			},
-			id: 1,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var b Buffer
-
-			f, err := CreateContainer(&b, tt.createOpts...)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if got, want := f.DeleteObject(tt.id, tt.opts...), tt.wantErr; !errors.Is(got, want) {
-				t.Errorf("got error %v, want %v", got, want)
-			}
-
-			if err := f.UnloadContainer(); err != nil {
-				t.Error(err)
-			}
-
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, b.Bytes())
-		})
-	}
-}
-
-func TestDeleteObjectAndAddObject(t *testing.T) {
-	tests := []struct {
-		name string
-		id   uint32
-		opts []DeleteOpt
-	}{
-		{
-			name: "Compact",
-			id:   2,
-			opts: []DeleteOpt{
-				OptDeleteCompact(true),
-			},
-		},
-		{
-			name: "NoCompact",
-			id:   2,
-		},
-		{
-			name: "Zero",
-			id:   2,
-			opts: []DeleteOpt{
-				OptDeleteZero(true),
-			},
-		},
-		{
-			name: "ZeroCompact",
-			id:   2,
-			opts: []DeleteOpt{
-				OptDeleteZero(true),
-				OptDeleteCompact(true),
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var b Buffer
-
-			f, err := CreateContainer(&b,
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataGeneric, []byte("abc")),
-					getDescriptorInput(t, DataGeneric, []byte("def")),
-				),
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if err := f.DeleteObject(tt.id, tt.opts...); err != nil {
-				t.Fatal(err)
-			}
-
-			if err := f.AddObject(getDescriptorInput(t, DataGeneric, []byte("ghi"))); err != nil {
-				t.Fatal(err)
-			}
-
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, b.Bytes())
-		})
-	}
-}
-
-func TestSetPrimPart(t *testing.T) {
-	tests := []struct {
-		name       string
-		createOpts []CreateOpt
-		id         uint32
-		opts       []SetOpt
-		wantErr    error
-	}{
-		{
-			name: "ErrObjectNotFound",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-			},
-			id:      1,
-			wantErr: ErrObjectNotFound,
-		},
-		{
-			name: "Deterministic",
-			createOpts: []CreateOpt{
-				OptCreateWithID("de170c43-36ab-44a8-bca9-1ea1a070a274"),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataPartition, []byte{0xfa, 0xce},
-						OptPartitionMetadata(FsRaw, PartSystem, "386"),
-					),
-				),
-				OptCreateWithTime(time.Unix(946702800, 0)),
-			},
-			id: 1,
-			opts: []SetOpt{
-				OptSetDeterministic(),
-			},
-		},
-		{
-			name: "WithTime",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataPartition, []byte{0xfa, 0xce},
-						OptPartitionMetadata(FsRaw, PartPrimSys, "386"),
-					),
-					getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
-						OptPartitionMetadata(FsRaw, PartSystem, "amd64"),
-					),
-				),
-			},
-			id: 2,
-			opts: []SetOpt{
-				OptSetWithTime(time.Unix(946702800, 0)),
-			},
-		},
-		{
-			name: "One",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataPartition, []byte{0xfa, 0xce},
-						OptPartitionMetadata(FsRaw, PartSystem, "386"),
-					),
-				),
-			},
-			id: 1,
-		},
-		{
-			name: "Two",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataPartition, []byte{0xfa, 0xce},
-						OptPartitionMetadata(FsRaw, PartPrimSys, "386"),
-					),
-					getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
-						OptPartitionMetadata(FsRaw, PartSystem, "amd64"),
-					),
-				),
-			},
-			id: 2,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var b Buffer
-
-			f, err := CreateContainer(&b, tt.createOpts...)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if got, want := f.SetPrimPart(tt.id, tt.opts...), tt.wantErr; !errors.Is(got, want) {
-				t.Errorf("got error %v, want %v", got, want)
-			}
-
-			if err := f.UnloadContainer(); err != nil {
-				t.Error(err)
-			}
-
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, b.Bytes())
-		})
-	}
-}
-
-func TestSetMetadata(t *testing.T) {
-	tests := []struct {
-		name       string
-		createOpts []CreateOpt
-		id         uint32
-		opts       []SetOpt
-		wantErr    error
-	}{
-		{
-			name: "Deterministic",
-			createOpts: []CreateOpt{
-				OptCreateWithID("de170c43-36ab-44a8-bca9-1ea1a070a274"),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataOCIBlob, []byte{0xfa, 0xce}),
-				),
-				OptCreateWithTime(time.Unix(946702800, 0)),
-			},
-			id: 1,
-			opts: []SetOpt{
-				OptSetDeterministic(),
-			},
-		},
-		{
-			name: "WithTime",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataOCIBlob, []byte{0xfa, 0xce}),
-				),
-			},
-			id: 1,
-			opts: []SetOpt{
-				OptSetWithTime(time.Unix(946702800, 0)),
-			},
-		},
-		{
-			name: "One",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataOCIBlob, []byte{0xfa, 0xce}),
-				),
-			},
-			id: 1,
-		},
-		{
-			name: "Two",
-			createOpts: []CreateOpt{
-				OptCreateDeterministic(),
-				OptCreateWithDescriptors(
-					getDescriptorInput(t, DataOCIBlob, []byte{0xfa, 0xce}),
-					getDescriptorInput(t, DataOCIBlob, []byte{0xfe, 0xed}),
-				),
-			},
-			id: 2,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var b Buffer
-
-			f, err := CreateContainer(&b, tt.createOpts...)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if got, want := f.SetMetadata(tt.id, newOCIBlobDigest(), tt.opts...), tt.wantErr; !errors.Is(got, want) {
-				t.Errorf("got error %v, want %v", got, want)
-			}
-
-			if err := f.UnloadContainer(); err != nil {
-				t.Error(err)
-			}
-
-			g := goldie.New(t, goldie.WithTestNameForDir(true))
-			g.Assert(t, tt.name, b.Bytes())
 		})
 	}
 }
