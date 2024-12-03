@@ -33,6 +33,7 @@ linters:
     - gosimple
     - govet
     - grouper
+    - iface
     - ineffassign
     - interfacebloat
     - intrange
