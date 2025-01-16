@@ -1,12 +1,11 @@
 module github.com/apptainer/sif/v2
 
 go 1.22.5
-
-toolchain go1.22.7
+toolchain go1.23.5
 
 require (
 	github.com/ProtonMail/go-crypto v1.1.5
-	github.com/google/go-containerregistry v0.20.2
+	github.com/google/go-containerregistry v0.20.3
 	github.com/google/uuid v1.6.0
 	github.com/sebdah/goldie/v2 v2.5.5
 	github.com/sigstore/sigstore v1.8.12
@@ -28,6 +27,6 @@ require (
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
-	google.golang.org/protobuf v1.34.2 // indirect
+	google.golang.org/protobuf v1.36.3 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
