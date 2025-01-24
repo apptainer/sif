@@ -4,7 +4,7 @@
 //	For website terms of use, trademark policy, privacy policy and other
 //	project policies see https://lfprojects.org/policies
 //
-// Copyright (c) 2021-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,7 +13,6 @@ package siftool
 import (
 	"bytes"
 	"errors"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -27,24 +26,19 @@ var corpus = filepath.Join("..", "..", "test", "images")
 
 //nolint:thelper // Complex enough to justify keeping file/line information on error.
 func makeTestSIF(t *testing.T, withDataObject bool) string {
-	tf, err := os.CreateTemp("", "sif-test-*")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.Remove(tf.Name()) })
-	tf.Close()
-
 	app, err := siftool.New()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := app.New(tf.Name()); err != nil {
+	path := filepath.Join(t.TempDir(), "sif")
+
+	if err := app.New(path); err != nil {
 		t.Fatal(err)
 	}
 
 	if withDataObject {
-		err := app.Add(tf.Name(), sif.DataPartition, bytes.NewReader([]byte{0xde, 0xad, 0xbe, 0xef}),
+		err := app.Add(path, sif.DataPartition, bytes.NewReader([]byte{0xde, 0xad, 0xbe, 0xef}),
 			sif.OptPartitionMetadata(sif.FsSquash, sif.PartSystem, "386"),
 		)
 		if err != nil {
@@ -52,7 +46,7 @@ func makeTestSIF(t *testing.T, withDataObject bool) string {
 		}
 	}
 
-	return tf.Name()
+	return path
 }
 
 //nolint:unparam

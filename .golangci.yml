@@ -20,6 +20,7 @@ linters:
     - errchkjson
     - errname
     - errorlint
+    - exptostd
     - forcetypeassert
     - gochecknoinits
     - gocritic
@@ -42,6 +43,7 @@ linters:
     - maintidx
     - mirror
     - misspell
+    - nilnesserr
     - nilnil
     - nolintlint
     - nonamedreturns
@@ -55,6 +57,7 @@ linters:
     - unconvert
     - unparam
     - unused
+    - usetesting
     - whitespace
 
 linters-settings:

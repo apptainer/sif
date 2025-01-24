@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,6 +13,7 @@ import (
 	"errors"
 	"math"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -276,14 +277,9 @@ func TestCreateContainerAtPath(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tf, err := os.CreateTemp("", "sif-test-*")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(tf.Name())
-			tf.Close()
+			path := filepath.Join(t.TempDir(), "sif")
 
-			f, err := CreateContainerAtPath(tf.Name(), tt.opts...)
+			f, err := CreateContainerAtPath(path, tt.opts...)
 
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Fatalf("got error %v, want %v", got, want)
@@ -294,7 +290,7 @@ func TestCreateContainerAtPath(t *testing.T) {
 					t.Error(err)
 				}
 
-				b, err := os.ReadFile(tf.Name())
+				b, err := os.ReadFile(path)
 				if err != nil {
 					t.Fatal(err)
 				}
