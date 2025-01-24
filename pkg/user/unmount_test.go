@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -25,20 +25,12 @@ var corpus = filepath.Join("..", "..", "test", "images")
 
 func Test_Unmount(t *testing.T) {
 	if _, err := exec.LookPath("squashfuse"); err != nil {
-		t.Skip(" not found, skipping mount tests")
+		t.Skip("squashfuse not found, skipping mount tests")
 	}
 	fusermountPath, err := exec.LookPath("fusermount")
 	if err != nil {
-		t.Skip(" not found, skipping mount tests")
+		t.Skip("fusermount not found, skipping mount tests")
 	}
-
-	path, err := os.MkdirTemp("", "siftool-mount-*")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		os.RemoveAll(path)
-	})
 
 	tests := []struct {
 		name          string
@@ -51,14 +43,14 @@ func Test_Unmount(t *testing.T) {
 		{
 			name:          "Mounted",
 			mountSIF:      filepath.Join(corpus, "one-group.sif"),
-			mountPath:     path,
+			mountPath:     t.TempDir(),
 			wantErr:       false,
 			wantUnmounted: true,
 		},
 		{
 			name:      "NotMounted",
 			mountSIF:  "",
-			mountPath: path,
+			mountPath: t.TempDir(),
 			wantErr:   true,
 		},
 		{
@@ -70,14 +62,14 @@ func Test_Unmount(t *testing.T) {
 		{
 			name:      "FusermountBare",
 			mountSIF:  "",
-			mountPath: path,
+			mountPath: t.TempDir(),
 			opts:      []UnmountOpt{OptUnmountFusermountPath("fusermount")},
 			wantErr:   true,
 		},
 		{
 			name:          "FusermountValid",
 			mountSIF:      filepath.Join(corpus, "one-group.sif"),
-			mountPath:     path,
+			mountPath:     t.TempDir(),
 			opts:          []UnmountOpt{OptUnmountFusermountPath(fusermountPath)},
 			wantErr:       false,
 			wantUnmounted: true,
@@ -86,7 +78,7 @@ func Test_Unmount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.mountSIF != "" {
-				err := Mount(context.Background(), tt.mountSIF, path)
+				err := Mount(context.Background(), tt.mountSIF, tt.mountPath)
 				if err != nil {
 					t.Fatal(err)
 				}

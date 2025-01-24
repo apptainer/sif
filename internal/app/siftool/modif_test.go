@@ -25,11 +25,10 @@ func TestApp_New(t *testing.T) {
 		t.Fatalf("failed to create app: %v", err)
 	}
 
-	tf, err := os.CreateTemp("", "sif-test-*")
+	tf, err := os.CreateTemp(t.TempDir(), "sif-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tf.Name())
 	tf.Close()
 
 	if err := a.New(tf.Name()); err != nil {
@@ -98,11 +97,10 @@ func TestApp_Add(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tf, err := os.CreateTemp("", "sif-test-*")
+			tf, err := os.CreateTemp(t.TempDir(), "sif-test-*")
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer os.Remove(tf.Name())
 			tf.Close()
 
 			if err := a.New(tf.Name()); err != nil {
@@ -123,11 +121,10 @@ func TestApp_Del(t *testing.T) {
 		t.Fatalf("failed to create app: %v", err)
 	}
 
-	tf, err := os.CreateTemp("", "sif-test-*")
+	tf, err := os.CreateTemp(t.TempDir(), "sif-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tf.Name())
 	tf.Close()
 
 	if err := a.New(tf.Name()); err != nil {
@@ -150,11 +147,10 @@ func TestApp_Setprim(t *testing.T) {
 		t.Fatalf("failed to create app: %v", err)
 	}
 
-	tf, err := os.CreateTemp("", "sif-test-*")
+	tf, err := os.CreateTemp(t.TempDir(), "sif-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tf.Name())
 	tf.Close()
 
 	if err := a.New(tf.Name()); err != nil {
