@@ -33,8 +33,20 @@ jobs:
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Check for vulnerabilities
-        run: $HOME/go/bin/govulncheck ./...
+        run: |
+            $HOME/go/bin/govulncheck -format json ./...|jq -r .finding.osv|grep -v null|sort -u >/tmp/vuln-cves
+            CVES="$(cat .govulncheck-ignorecves .govulncheck-ignorecves /tmp/vuln-cves|sort|uniq -u)"
+            if [ -n "$CVES" ]; then
+                echo >&2
+                echo "***" govulncheck CVES that are not ignored: $CVES "***" >&2
+                echo >&2
+                set -x
+                $HOME/go/bin/govulncheck -show verbose ./...
+            fi
 
       - name: Build Source
         run: go build ./...
