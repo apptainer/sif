@@ -11,7 +11,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.5.5
 	github.com/sigstore/sigstore v1.8.12
 	github.com/spf13/cobra v1.8.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 )
 
 require (
