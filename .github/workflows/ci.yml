@@ -52,9 +52,9 @@ jobs:
         run: go build ./...
 
       - name: Install Lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.63
+          version: v2.0.2
           skip-pkg-cache: true
           skip-build-cache: true
 
