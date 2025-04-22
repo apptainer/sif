@@ -1,8 +1,7 @@
 module github.com/apptainer/sif/v2
 
 go 1.22.5
-
-toolchain go1.22.7
+toolchain go1.24.1
 
 require (
 	github.com/ProtonMail/go-crypto v1.2.0
@@ -26,7 +25,7 @@ require (
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/sigstore/protobuf-specs v0.4.0 // indirect
 	github.com/titanous/rocacheck v0.0.0-20171023193734-afe73141d399 // indirect
-	golang.org/x/crypto v0.33.0 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.29.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240520151616-dc85e6b867a5 // indirect
