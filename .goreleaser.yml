@@ -2,6 +2,8 @@
 #   For website terms of use, trademark policy, privacy policy and other
 #   project policies see https://lfprojects.org/policies
 
+version: 2
+
 release:
   prerelease: auto
 
@@ -63,11 +65,11 @@ builds:
 
 archives:
   - id: darwin-archives
-    builds:
+    ids:
       - darwin-builds
 
   - id: linux-archives
-    builds:
+    ids:
       - linux-builds
 
 sboms:
