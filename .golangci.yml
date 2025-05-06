@@ -51,7 +51,6 @@ linters:
     - reassign
     - revive
     - staticcheck
-    - tenv
     - thelper
     - typecheck
     - unconvert
