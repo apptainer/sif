@@ -3,7 +3,7 @@ module github.com/apptainer/sif/v2
 go 1.23.6
 
 require (
-	github.com/ProtonMail/go-crypto v1.2.0
+	github.com/ProtonMail/go-crypto v1.3.0
 	github.com/google/go-containerregistry v0.20.3
 	github.com/google/uuid v1.6.0
 	github.com/sebdah/goldie/v2 v2.5.5
