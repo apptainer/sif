@@ -1,9 +1,10 @@
 # Copyright (c) 2021 Apptainer a Series of LF Projects LLC
 #   For website terms of use, trademark policy, privacy policy and other
 #   project policies see https://lfprojects.org/policies
+version: "2"
 
 linters:
-  disable-all: true
+  default: none
   enable:
     - asciicheck
     - bidichk
@@ -26,12 +27,9 @@ linters:
     - gocritic
     - godot
     - godox
-    - gofumpt
-    - goimports
     - gomodguard
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
     - grouper
     - iface
@@ -52,13 +50,22 @@ linters:
     - revive
     - staticcheck
     - thelper
-    - typecheck
     - unconvert
     - unparam
     - unused
     - usetesting
     - whitespace
+  settings:
+    misspell:
+      locale: US
+  exclusions:
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
 
-linters-settings:
-  misspell:
-    locale: US
+formatters:
+  enable:
+    - gofumpt
+    - goimports
