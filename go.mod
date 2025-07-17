@@ -9,7 +9,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.7.1
 	github.com/sigstore/sigstore v1.9.5
 	github.com/spf13/cobra v1.9.1
-	github.com/spf13/pflag v1.0.6
+	github.com/spf13/pflag v1.0.7
 )
 
 require (
