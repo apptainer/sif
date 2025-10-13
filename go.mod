@@ -1,12 +1,12 @@
 module github.com/apptainer/sif/v2
 
-go 1.24
+go 1.24.6
 
 require (
 	github.com/ProtonMail/go-crypto v1.3.0
 	github.com/google/go-containerregistry v0.20.6
 	github.com/google/uuid v1.6.0
-	github.com/sebdah/goldie/v2 v2.7.1
+	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/sigstore/sigstore v1.9.5
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10
