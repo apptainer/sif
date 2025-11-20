@@ -24,9 +24,9 @@ require (
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/sigstore/protobuf-specs v0.4.1 // indirect
 	github.com/titanous/rocacheck v0.0.0-20171023193734-afe73141d399 // indirect
-	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/term v0.30.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/term v0.37.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240520151616-dc85e6b867a5 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
