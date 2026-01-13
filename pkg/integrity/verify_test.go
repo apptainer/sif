@@ -4,7 +4,7 @@
 //	For website terms of use, trademark policy, privacy policy and other
 //	project policies see https://lfprojects.org/policies
 //
-// Copyright (c) 2020-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -734,7 +734,8 @@ func getSignedDummy(t *testing.T, fps ...[]byte) *sif.FileImage {
 		t.Fatal(err)
 	}
 
-	dis := []sif.DescriptorInput{di}
+	dis := make([]sif.DescriptorInput, 0, 1+len(fps))
+	dis = append(dis, di)
 
 	for _, fp := range fps {
 		di, err := sif.NewDescriptorInput(sif.DataSignature, strings.NewReader("sig"),
