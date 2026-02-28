@@ -72,7 +72,8 @@ func addFlags(fs *pflag.FlagSet) {
   1-386,       2-amd64,     3-arm,
   4-arm64,     5-ppc64,     6-ppc64le,
   7-mips,      8-mipsle,    9-mips64,
-  10-mips64le, 11-s390x,    12-riscv64`)
+  10-mips64le, 11-s390x,    12-riscv64,
+  13-loong64`)
 	signHash = fs.Int32("signhash", 0, `the signature hash used (with --datatype 5-Signature)
 [NEEDED, no default]:
   1-SHA256,      2-SHA384,      3-SHA512,
@@ -148,6 +149,8 @@ func getArch() string {
 		return "s390x"
 	case 12:
 		return "riscv64"
+	case 13:
+		return "loong64"
 	default:
 		return "unknown"
 	}
