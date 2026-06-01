@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -174,10 +174,7 @@ func Test_dsseDecoder_verifyMessage(t *testing.T) {
 			de: newDSSEDecoder(
 				getTestVerifier(t, "rsa-public.pem", crypto.SHA256),
 			),
-			wantErr: errDSSEUnexpectedPayloadType,
-			wantKeys: []crypto.PublicKey{
-				getTestPublicKey(t, "rsa-public.pem"),
-			},
+			wantErr: errDSSEVerifyEnvelopeFailed,
 		},
 		{
 			name: "CorruptPayload",

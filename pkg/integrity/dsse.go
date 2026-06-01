@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -10,7 +10,6 @@
 package integrity
 
 import (
-	"bytes"
 	"context"
 	"crypto"
 	"encoding/base64"
@@ -79,10 +78,7 @@ func newDSSEDecoder(vs ...signature.Verifier) *dsseDecoder {
 	}
 }
 
-var (
-	errDSSEVerifyEnvelopeFailed  = errors.New("dsse: verify envelope failed")
-	errDSSEUnexpectedPayloadType = errors.New("unexpected DSSE payload type")
-)
+var errDSSEVerifyEnvelopeFailed = errors.New("dsse: verify envelope failed")
 
 // verifyMessage reads a message from r, verifies its signature(s), and returns the message
 // contents. On success, the accepted public keys are set in vr.
@@ -96,27 +92,17 @@ func (de *dsseDecoder) verifyMessage(ctx context.Context, r io.Reader, h crypto.
 		})
 	}
 
-	raw, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
+	var decoded []byte
+	v := dsse.WrapMultiVerifierWithOpts(metadataMediaType, 1, vs,
+		dsse.WithDecodedPayload(&decoded),
+		dsse.WithExpectedPayloadType(metadataMediaType),
+	)
 
-	v := dsse.WrapMultiVerifier(metadataMediaType, 1, vs...)
-
-	if err := v.VerifySignature(bytes.NewReader(raw), nil, options.WithContext(ctx), options.WithHash(h)); err != nil {
+	if err := v.VerifySignature(r, nil, options.WithContext(ctx), options.WithHash(h)); err != nil {
 		return nil, fmt.Errorf("%w: %w", errDSSEVerifyEnvelopeFailed, err)
 	}
 
-	var e dsseEnvelope
-	if err := json.Unmarshal(raw, &e); err != nil {
-		return nil, err
-	}
-
-	if e.PayloadType != metadataMediaType {
-		return nil, fmt.Errorf("%w: %v", errDSSEUnexpectedPayloadType, e.PayloadType)
-	}
-
-	return e.DecodedPayload()
+	return decoded, nil
 }
 
 type wrappedVerifier struct {
