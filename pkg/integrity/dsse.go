@@ -12,12 +12,12 @@ package integrity
 import (
 	"context"
 	"crypto"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 
+	dssetypes "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sigstore/sigstore/pkg/signature/dsse"
 	"github.com/sigstore/sigstore/pkg/signature/options"
@@ -123,28 +123,9 @@ func (wv wrappedVerifier) VerifySignature(signature, message io.Reader, opts ...
 	return err
 }
 
-// dsseEnvelope describes a DSSE envelope.
-type dsseEnvelope struct {
-	PayloadType string `json:"payloadType"`
-	Payload     string `json:"payload"`
-	Signatures  []struct {
-		KeyID string `json:"keyid"`
-		Sig   string `json:"sig"`
-	} `json:"signatures"`
-}
-
-// DecodedPayload returns the decoded payload from envelope e.
-func (e *dsseEnvelope) DecodedPayload() ([]byte, error) {
-	b, err := base64.StdEncoding.DecodeString(e.Payload)
-	if err != nil {
-		return base64.URLEncoding.DecodeString(e.Payload)
-	}
-	return b, nil
-}
-
 // isDSSESignature returns true if r contains a signature in a DSSE envelope.
 func isDSSESignature(r io.Reader) bool {
-	var e dsseEnvelope
+	var e dssetypes.Envelope
 	if err := json.NewDecoder(r).Decode(&e); err != nil {
 		return false
 	}
