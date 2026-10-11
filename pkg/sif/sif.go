@@ -296,6 +296,7 @@ const (
 	SBOMFormatSPDXTagValue                        // SPDX (tag/value)
 	SBOMFormatSPDXYAML                            // SPDX (YAML)
 	SBOMFormatSyftJSON                            // Syft (JSON)
+	SBOMFormatTrivyJSON                           // Trivy (JSON)
 )
 
 // String returns a human-readable representation of f.
@@ -317,6 +318,8 @@ func (f SBOMFormat) String() string {
 		return "spdx-yaml"
 	case SBOMFormatSyftJSON:
 		return "syft-json"
+	case SBOMFormatTrivyJSON:
+		return "trivy-json"
 	}
 	return "unknown"
 }
