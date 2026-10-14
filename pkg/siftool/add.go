@@ -195,6 +195,8 @@ func getSBOMFormat() (sif.SBOMFormat, error) {
 		return sif.SBOMFormatSPDXYAML, nil
 	case "syft-json":
 		return sif.SBOMFormatSyftJSON, nil
+	case "trivy-json":
+		return sif.SBOMFormatTrivyJSON, nil
 	default:
 		return 0, fmt.Errorf("%w: %v", errInvalidSBOMFormat, *sbomFormat)
 	}
