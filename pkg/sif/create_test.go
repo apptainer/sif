@@ -185,6 +185,79 @@ func TestCreateContainer(t *testing.T) {
 	}
 }
 
+func TestFileImage_PrimaryArch(t *testing.T) {
+	tests := []struct {
+		name     string
+		opts     []CreateOpt
+		wantErr  error
+		wantArch string
+	}{
+		{
+			name: "OnePartPrimSys",
+			opts: []CreateOpt{
+				OptCreateDeterministic(),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
+						OptPartitionMetadata(FsSquash, PartPrimSys, "amd64"),
+					),
+				),
+			},
+			wantArch: "amd64",
+		},
+		{
+			name: "TwoPartPrimSys",
+			opts: []CreateOpt{
+				OptCreateDeterministic(),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataPartition, []byte{0xfe, 0xed},
+						OptPartitionMetadata(FsSquash, PartPrimSys, "amd64"),
+					),
+					getDescriptorInput(t, DataPartition, []byte{0xca, 0xfe},
+						OptPartitionMetadata(FsSquash, PartPrimSys, "arm64"),
+					),
+				),
+			},
+			wantErr: errPrimaryPartition,
+		},
+		{
+			name: "OneOverlay",
+			opts: []CreateOpt{
+				OptCreateDeterministic(),
+				OptCreateWithDescriptors(
+					getDescriptorInput(t, DataPartition, []byte{0xca, 0xfe},
+						OptPartitionMetadata(FsSquash, PartOverlay, "arm64"),
+					),
+				),
+			},
+			wantArch: "arm64",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var b Buffer
+
+			f, err := CreateContainer(&b, tt.opts...)
+
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Fatalf("got error %v, want %v", got, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			if got, want := f.PrimaryArch(), tt.wantArch; got != want {
+				t.Errorf("got primary arch %q, want %q", got, want)
+			}
+
+			if err := f.UnloadContainer(); err != nil {
+				t.Error(err)
+			}
+		})
+	}
+}
+
 func TestCreateContainerAtPath(t *testing.T) {
 	tests := []struct {
 		name    string
