@@ -91,7 +91,7 @@ func addFlags(fs *pflag.FlagSet) {
 	name = fs.String("filename", "", "set logical filename/handle [default: input filename]")
 }
 
-var errDataTypeRequired = errors.New("-datatype flag is required with a valid range")
+var errDataTypeRequired = errors.New("--datatype flag is required with a valid range")
 
 // getDataType returns the data type corresponding to input.
 func getDataType() (sif.DataType, error) {
