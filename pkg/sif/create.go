@@ -103,14 +103,22 @@ func (f *FileImage) writeDataObject(i int, di DescriptorInput, t time.Time) erro
 		return errObjectIDOverflow
 	}
 
-	// If this is a primary partition, verify there isn't another primary partition, and update the
-	// architecture in the global header.
-	if p, ok := di.opts.md.(partition); ok && p.Parttype == PartPrimSys {
-		if ds, err := f.GetDescriptors(WithPartitionType(PartPrimSys)); err == nil && len(ds) > 0 {
-			return errPrimaryPartition
+	if p, ok := di.opts.md.(partition); ok {
+		// If this is a primary partition, verify there isn't another primary partition,
+		// and update the architecture in the global header.  On the other hand, if this
+		// is an overlay partition and there is no primary partition, also update the
+		// global architecture because this is an overlay-only SIF.
+		switch p.Parttype {
+		case PartPrimSys:
+			if ds, err := f.GetDescriptors(WithPartitionType(PartPrimSys)); err == nil && len(ds) > 0 {
+				return errPrimaryPartition
+			}
+			f.h.Arch = p.Arch
+		case PartOverlay:
+			if ds, err := f.GetDescriptors(WithPartitionType(PartPrimSys)); err != nil || len(ds) == 0 {
+				f.h.Arch = p.Arch
+			}
 		}
-
-		f.h.Arch = p.Arch
 	}
 
 	d := &f.rds[i]
