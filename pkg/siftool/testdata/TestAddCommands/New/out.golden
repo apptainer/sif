@@ -7,4 +7,4 @@ Examples:
 siftool new image.sif
 
 Flags:
-  -h, --help   help for new
+  -h, --help[=true|false]   help for new

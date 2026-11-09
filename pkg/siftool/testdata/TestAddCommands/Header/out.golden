@@ -7,4 +7,4 @@ Examples:
 siftool header image.sif
 
 Flags:
-  -h, --help   help for header
+  -h, --help[=true|false]   help for header

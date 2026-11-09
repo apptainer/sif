@@ -7,4 +7,4 @@ Examples:
 siftool setprim 1 image.sif
 
 Flags:
-  -h, --help   help for setprim
+  -h, --help[=true|false]   help for setprim

@@ -7,4 +7,4 @@ Examples:
 siftool list image.sif
 
 Flags:
-  -h, --help   help for list
+  -h, --help[=true|false]   help for list
