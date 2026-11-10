@@ -7,4 +7,4 @@ Examples:
 siftool info 1 image.sif
 
 Flags:
-  -h, --help   help for info
+  -h, --help[=true|false]   help for info

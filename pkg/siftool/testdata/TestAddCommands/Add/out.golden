@@ -18,7 +18,7 @@ Flags:
                               10-OCI.RootIndex, 11-OCI.Blob
       --filename string     set logical filename/handle [default: input filename]
       --groupid uint32      set groupid [default: 0]
-  -h, --help                help for add
+  -h, --help[=true|false]   help for add
       --link uint32         set link pointer [default: 0]
       --partarch int32      the main architecture used (with --datatype 4-Partition)
                             [NEEDED, no default]:
